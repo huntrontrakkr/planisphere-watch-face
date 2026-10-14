@@ -411,10 +411,20 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     sprites.paint(img, sprites.moon_for(f, pos["moon_waxing"]), int(math.floor(mx)), int(math.floor(my)), moon_cols,
                   where=inside)
 
-    # the Sun, with its face (after the Sun of May), by day; on a printed chart always
+    # the Sun, with its face (after the Sun of May), by day; on a printed chart always. In a live sky it stands
+    # in its own light, as the first takes drew it: a pale disc and a glow stippled thinner outward, the sky
+    # brightest round the Sun. The drawn Sun goes over it, the glow showing between the rays and past them.
     sx, sy = dial.project(*pos["sun"], lst)
     if sun_alt > -0.8 or paper:
-        sprites.paint(img, sprites.sun_of_may(), int(math.floor(sx)), int(math.floor(sy)), sun_c, where=inside)
+        si, sj = int(math.floor(sx)), int(math.floor(sy))
+        if not paper:
+            dd = np.hypot(xx - si, yy - sj)
+            glow = np.clip(1 - (dd - 4.0) / 13.0, 0, 1) ** 1.5 * 0.85
+            red = P["window"] == "red"
+            light = c8(2, 0, 0) if red else c8(3, 3, 2) if sun_alt < 6 else c8(2, 3, 3)   # warm when the Sun is low
+            img[(glow > tt) & inside & (dd > 4.0)] = light
+            img[(dd <= 4.4) & inside] = c8(3, 0, 0) if red else c8(3, 3, 1)
+        sprites.paint(img, sprites.sun_of_may(), si, sj, sun_c, where=inside)
 
     # names in the sky, in pixel type
     boxes = []

@@ -32,7 +32,7 @@ The Time 2 comes first. Its ring is a cushion: arcs along the top and bottom, th
 
 ![Every plate on the Time 2 at 9:30 pm, then the paper planisphere at dusk and at noon](docs/time2-plates.png)
 
-By day the Sun in the window has a face and sixteen rays, straight and flaming in turn, after the Sun of May. A small rayed Sun points at the hour on the ring and passes behind the lettering, which stays whole.
+By day the Sun in the window has a face and sixteen rays, straight and flaming in turn, after the Sun of May. It stands in its own light, as the first takes drew it: a glow stippled thinner outward, the sky brightest round the Sun, white by day and warm when the Sun is low. The glow shows between the rays and past them, and draws the eye to the Sun, the hour hand. A small rayed Sun points at the hour on the ring and passes behind the lettering, which stays whole.
 
 ### The 12-hour or the 24-hour clock
 
