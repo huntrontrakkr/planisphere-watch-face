@@ -12,6 +12,14 @@ The time is large above the window, with the date and the Sun's next rising or s
 
 ![The readable version at 9:30 pm, noon, dusk and before dawn, on the Round 2 and the Time 2](docs/readable-moods.png)
 
+## Compass, on a flick
+
+The magnetometer costs battery while it runs, so it only runs when you ask. Flick your wrist and the compass turns on for half a minute. The face becomes a window onto the sky where the watch points: the horizon along the bottom, the compass points on it, and names on what is bright. Then the compass switches off and the planisphere comes back; a second flick ends it sooner.
+
+![Turning round under the evening sky, 4 degrees a frame](docs/compass-turn.gif)
+
+![Pointing northeast (Capella rising), southeast (Saturn), southwest (Altair and the Milky Way) and northwest (Vega)](docs/compass-views.png)
+
 ## The instrument version
 
 The first take, before readability: no clock, only the planisphere. The Sun's golden pointer on the 24-hour ring is the only way to read the time.
@@ -38,6 +46,7 @@ Every image above is drawn at the watch's own size (260×260 round, 200×228) in
 
 - `proto/astro.py`: sidereal time, the Sun, the Moon (with its main perturbations) and the planets, from Paul Schlyter's orbital elements. That is well under a pixel at this scale.
 - `proto/render2.py`: the face. The projection is equidistant from the pole, the window is the horizon for your latitude, and the sky model works out its colour bands.
+- `proto/look.py`: the compass view.
 - `proto/film.py`, `proto/film_readable.py`: the day films and the stills (`readable=True` in `render2.render` gives the readable version).
 
 ```
