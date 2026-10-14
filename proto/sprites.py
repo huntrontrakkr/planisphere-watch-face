@@ -374,6 +374,12 @@ SOUTH_STAR = art([
     "..R..",
     "..R..",
 ])
+BIRD = [art(["W...W",           # a bird crossing the day sky, its wings up
+              ".W.W.",
+              "..W.."]),
+        art([".WWW.",           # and down
+              "W...W",
+              "....."])]
 DIAMOND = art([                 # the diamond ring's diamond: the Sun's last light at the Moon's edge
     "....W....",
     "....W....",

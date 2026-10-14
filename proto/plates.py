@@ -412,7 +412,13 @@ def tick_pixels(dial, a_deg, length):
     return pts
 
 
-def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=False):
+def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=False, sky_offset=None, extras=None,
+           names=True):
+    """The face at `when`. Its sky may be drawn at another time (`sky_offset`, for the hourly turn) while the clock
+    keeps `when`; `extras(img, ctx)` draws passing things (meteors, birds) into the sky, under the names."""
+    clock_when = when
+    if sky_offset is not None:
+        when = when + sky_offset
     P = PLATES[plate]
     fn, fw = P["font"]
     fi, fiw = P["italic"]
@@ -422,7 +428,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     pos = astro.positions(when)
     sun_alt = astro.altitude(*pos["sun"], lst, dial.lat)
     lat = abs(dial.lat) * astro.D2R
-    local = when.astimezone(tz)
+    local = clock_when.astimezone(tz)
     rect = getattr(dial, "rect", False)
     SS = 4
     sun_c, planet_c, moon_c = piece_colours(P)
@@ -736,26 +742,26 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             stamp(img, mask, lx, y, colour, halo=ground, where=inside, anchor=anchor)
             return True
         return False
-    if astro.altitude(*pos["moon"], lst, dial.lat) > 0:
+    if names and astro.altitude(*pos["moon"], lst, dial.lat) > 0:
         place(pixel_text("Moon"), mi, mj, P["planet"], clear=(-3, 3), own=True)
     for pn in ("venus", "jupiter", "mars", "saturn", "mercury"):
-        if (not paper and s_eff > -3) or astro.altitude(*pos[pn], lst, dial.lat) <= 2:
+        if not names or (not paper and s_eff > -3) or astro.altitude(*pos[pn], lst, dial.lat) <= 2:
             continue
         x, y = dial.project(*pos[pn], lst)
         lo, hi = reach.get(pn, (-2, 2))
         place(pixel_text(pn.capitalize()), int(math.floor(x)), int(math.floor(y)), P["planet"], clear=(lo + 1, hi - 2), own=True)
-    if radiant:
+    if radiant and names:
         place(pixel_text(shower[0], oblique=True), radiant[0] + 3, radiant[1], P["accent"])
-    if dark or paper:
-        names = star_names()
+    if names and (dark or paper):
+        star_name = star_names()
         shown = 0
         for ra, de, mg, bv, hip in sorted(named, key=lambda s: s[2]):
             if shown >= 3 or mg > 1.3:
                 break
-            if astro.altitude(ra, de, lst, dial.lat) < 8 or hip not in names:
+            if astro.altitude(ra, de, lst, dial.lat) < 8 or hip not in star_name:
                 continue
             x, y = dial.project(ra, de, lst)
-            if place(pixel_text(names[hip], oblique=True), int(math.floor(x)) + 1, int(math.floor(y)), P["label"], own=True):
+            if place(pixel_text(star_name[hip], oblique=True), int(math.floor(x)) + 1, int(math.floor(y)), P["label"], own=True):
                 shown += 1
         cshown = 0
         for name, rank, ra, de in sorted(constellations(), key=lambda c: c[1]):
@@ -792,6 +798,11 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             img[ring_] = ground[ring_]
             img[halo] = P["const"]
             boxes.append((xi - 4, yi - 4, xi + 5, yi + 5))
+
+    # passing things in the sky (meteors, birds): a flash across everything in the window, names too
+    if extras is not None:
+        extras(img, dict(inside=inside, ground=ground, dial=dial, lst=lst, pos=pos, sun_alt=sun_alt, dark=dark,
+                         paper=paper, P=P, shower=shower, blocked=blocked))
 
     # the window's edge: a clean rule round it and a second a little way out, as a printed neatline
     rim1 = outline(inside)
@@ -996,7 +1007,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     big = 30 if W >= 240 else 26
     hour = (lambda h: h if clock24 else (h % 12 or 12))
     # on a day with news in the sky, the news takes the Sun's rising or setting line
-    news = events.news(when, tz, dial.lat, dial.lon)
+    news = events.news(clock_when, tz, dial.lat, dial.lon)
     if (sol and sol["kind"] == "total") or (lun and lun["kind"] == "total"):
         news = ("TOTALITY",)
     rows_at = (0.345, 0.675, 0.915)
@@ -1015,7 +1026,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     db = box_of(date, left + day_sign.shape[1] + 4, y_date, "left")
     stamp(img, day_sign, left + day_sign.shape[1] / 2, (db[1] + db[3]) / 2 - 1, P["accent"])
     stamp(img, date, left + day_sign.shape[1] + 4, y_date, P["ink"], anchor="left")
-    kind, at = next_sun_event(when, dial.lat, dial.lon)
+    kind, at = next_sun_event(clock_when, dial.lat, dial.lon)
     fits = [m for m in (pixel_text(w) for w in (news or ())) if m.shape[1] <= (W - 2 * r_in) * 0.84]
     if fits:
         stamp(img, fits[0], dial.cx, ring_in + span * rows_at[2], P["accent"])

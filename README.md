@@ -86,6 +86,22 @@ And the filigree, all drawn by hand:
 
 ![At the Orionids' peak, at an eclipse of the Moon, at an eclipse of the Sun, and as Venus meets Jupiter; below, Jupiter's moons, the village by day, and the glory on Flamsteed's plate](docs/almanac.png)
 
+## Animations
+
+Each plays for a moment, then the face is still again: a watch has no battery for more.
+
+- **Falling stars.** Now and then at night a meteor streaks across the window, its head a small cross of white, its trail fading through cream and grey into the sky. On a shower's peak night they come often, and all streak out from the shower's radiant.
+- **Birds.** Now and then by day a little flock crosses the sky in a loose V, wings beating, in the village's dark ink.
+- **The turn.** At the top of the hour the star disc spins through a whole day in a few seconds, then settles back to now, as a planisphere turns in the hand. The window races from night through dawn, the day and dusk, while the Sun's pointer sweeps round the ring. The clock keeps its time throughout.
+
+![Falling stars from the Orionids' radiant on their peak night, at the watch's own frame rate](docs/anim-meteors.gif)
+
+![A flock crossing the morning sky](docs/anim-birds.gif)
+
+![The turn at 9 pm on the Time 2](docs/anim-turn-time2.gif)
+
+![The turn on the Round 2](docs/anim-turn-round2.gif)
+
 ## Experimental: the compass, on a flick
 
 Off unless you turn it on, as an experimental setting. The magnetometer costs battery while it runs, so it only runs when you ask. Flick your wrist and the compass turns on for half a minute. The face becomes a window onto the sky where the watch points: the horizon along the bottom, the compass points on it, and names on what is bright. Then the compass switches off and the planisphere comes back; a second flick ends it sooner.
@@ -155,7 +171,7 @@ The pieces are drawn by hand, pixel by pixel, not generated from shapes. Each is
 - `proto/events.py`: Jupiter's moons, eclipses, planets meeting and the meteor showers, for the almanac.
 - `proto/sprites.py`: the hand-drawn pieces; `proto/letterer.py` and `proto/coverage.py`: the drafting table the curved words were drawn from; `proto/closeup.py`: close-ups of the faces, pixel by pixel, for checking.
 - `proto/typeset.py`: the large type, the astronomers' 21ʰ 30ᵐ; `proto/pixeltext.py`: the pixel type.
-- `proto/look.py`: the compass view.
+- `proto/look.py`: the compass view; `proto/animate.py`: the animations and their films.
 - `proto/film_plates.py`: the plates' films and stills; `proto/film.py`, `proto/film_readable.py`: the earlier takes' (`proto/render2.py` draws those).
 
 ```
