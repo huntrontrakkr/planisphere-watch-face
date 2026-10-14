@@ -41,6 +41,16 @@ def main():
         im = Image.fromarray(render(t.astimezone(timezone.utc), t2, sky, NY, pl, False)).resize((400, 456), Image.NEAREST)
         sheet.paste(im, (i * 412 + 6, 4))
     sheet.save(ROOT / "docs" / "time2-plates.png")
+    # the 12-hour and 24-hour clocks side by side at 9:30 pm, on the Time 2 and the Round 2
+    shots = [(t2, False, False), (t2, False, True), (r2, True, False), (r2, True, True)]
+    sizes = [(400, 456) if not rnd else (456, 456) for _, rnd, _ in shots]
+    sheet = Image.new("RGB", (sum(w + 12 for w, _ in sizes), 464), (24, 24, 26))
+    x = 6
+    for (dial, rnd, c24), size in zip(shots, sizes):
+        im = Image.fromarray(render(night.astimezone(timezone.utc), dial, sky, NY, "planisphere", rnd, clock24=c24))
+        sheet.paste(im.resize(size, Image.NEAREST), (x, 4))
+        x += size[0] + 12
+    sheet.save(ROOT / "docs" / "clock-12-24.png")
     print(len(frames), "frames")
 
 

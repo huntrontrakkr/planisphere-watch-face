@@ -83,37 +83,111 @@ LITTLE_SUN = art([               # the Sun's pointer on the ring: a disc and eig
     "...Y...",
 ])
 
-# ---- the Moon in eight phases, lit side to the right while it waxes ----------------------------
-# W the lit face, K the outline and the engraver's hatching on the dark part, M the dark ground
-_MOON_LIT = {                    # per row (y -4..4) the leftmost lit x of the inside (x -4..4), by phase
-    1: [3, 3, 2, 2, 2, 2, 2, 3, 3],          # a crescent
-    2: [0, 0, 0, 0, 0, 0, 0, 0, 0],          # first quarter
-    3: [-2, -3, -3, -3, -3, -3, -3, -3, -2],  # gibbous
+# ---- the Moon in its phases, drawn waxing (lit on the right); waning is the mirror -----------------------
+# W the lit face, reaching the limb; K the limb on the dark side; d the dark face, hatched by the engraver
+# (every other pixel). The terminator curves as it does on the real Moon: a crescent's inner edge bows the
+# same way as the limb, so the horns thin to points; a gibbous Moon's bows the other way.
+MOON_PHASES = {
+    "new": ["...KKKKK...",
+            "..KdddddK..",
+            ".KdddddddK.",
+            "KdddddddddK",
+            "KdddddddddK",
+            "KdddddddddK",
+            "KdddddddddK",
+            "KdddddddddK",
+            ".KdddddddK.",
+            "..KdddddK..",
+            "...KKKKK..."],
+    "thin": ["...KKKKW...",     # a young crescent, a seventh lit
+             "..KdddddW..",
+             ".KdddddddW.",
+             "KddddddddWW",
+             "KddddddddWW",
+             "KddddddddWW",
+             "KddddddddWW",
+             "KddddddddWW",
+             ".KdddddddW.",
+             "..KdddddW..",
+             "...KKKKW..."],
+    "crescent": ["...KKKKW...",
+                 "..KddddWW..",
+                 ".KdddddWWW.",
+                 "KdddddddWWW",
+                 "KdddddddWWW",
+                 "KdddddddWWW",
+                 "KdddddddWWW",
+                 "KdddddddWWW",
+                 ".KdddddWWW.",
+                 "..KddddWW..",
+                 "...KKKKW..."],
+    "quarter": ["...KKKWW...",
+                "..KdddWWW..",
+                ".KddddWWWW.",
+                "KdddddWWWWW",
+                "KdddddWWWWW",
+                "KdddddWWWWW",
+                "KdddddWWWWW",
+                "KdddddWWWWW",
+                ".KddddWWWW.",
+                "..KdddWWW..",
+                "...KKKWW..."],
+    "gibbous": ["...KKWWW...",
+                "..KdWWWWW..",
+                ".KddWWWWWW.",
+                "KddWWWWWWWW",
+                "KddWWWWWWWW",
+                "KddWWWWWWWW",
+                "KddWWWWWWWW",
+                "KddWWWWWWWW",
+                ".KddWWWWWW.",
+                "..KdWWWWW..",
+                "...KKWWW..."],
+    "fat": ["...KWWWW...",       # nearly full: a sliver of dark on the left
+            "..KWWWWWW..",
+            ".KWWWWWWWW.",
+            "KdWWWWWWWWW",
+            "KdWWWWWWWWW",
+            "KdWWWWWWWWW",
+            "KdWWWWWWWWW",
+            "KdWWWWWWWWW",
+            ".KWWWWWWWW.",
+            "..KWWWWWW..",
+            "...KWWWW..."],
+    "full": ["...WWWWW...",
+             "..WWWWWWW..",
+             ".WWWWWWWWW.",
+             "WWWWWWWWWWW",
+             "WWWWWWWWWWW",
+             "WWWWWWWWWWW",
+             "WWWWWWWWWWW",
+             "WWWWWWWWWWW",
+             ".WWWWWWWWW.",
+             "..WWWWWWW..",
+             "...WWWWW..."],
 }
+# which drawing for how much of the face is lit (its illuminated fraction), up to each bound
+_MOON_BY_LIGHT = [(0.04, "new"), (0.22, "thin"), (0.40, "crescent"), (0.60, "quarter"), (0.78, "gibbous"),
+                  (0.96, "fat"), (1.01, "full")]
 
 
-def moon(phase):
-    """phase 0 new, 1 crescent, 2 first quarter, 3 gibbous, 4 full, 5..7 waning (the mirror of 3..1)."""
-    waning = phase > 4
-    p = 8 - phase if waning else phase
-    a = np.zeros((11, 11), np.uint8)
-    c = 5
-    for x, y in _DISC:
-        a[c + y, c + x] = ROLE["K"]
-    inner = {-4: 2, -3: 3, -2: 4, -1: 4, 0: 4, 1: 4, 2: 4, 3: 3, 4: 2}
-    for y in range(-4, 5):
-        for x in range(-inner[y], inner[y] + 1):
-            if p == 4:
-                lit = True
-            elif p == 0:
-                lit = False
+def moon(name, waning=False):
+    """The Moon drawn in phase `name` (MOON_PHASES), lit on the right; waning, the mirror (lit on the left)."""
+    rows = MOON_PHASES[name]
+    a = np.zeros((len(rows), len(rows[0])), np.uint8)
+    for y, r in enumerate(rows):
+        for x, ch in enumerate(r):
+            if ch == "d":
+                a[y, x] = ROLE["K"] if (x + y) % 2 == 0 else ROLE["M"]
             else:
-                lit = x >= _MOON_LIT[p][y + 4]
-            if lit:
-                a[c + y, c + x] = ROLE["W"]
-            else:
-                a[c + y, c + x] = ROLE["K"] if (x + y) % 2 == 0 else ROLE["M"]
+                a[y, x] = ROLE[ch]
     return a[:, ::-1] if waning else a
+
+
+def moon_for(lit, waxing):
+    """The drawing for a Moon with fraction `lit` of its face lit, waxing or waning."""
+    name = next(n for bound, n in _MOON_BY_LIGHT if lit < bound)
+    return moon(name, waning=not waxing)
 
 
 # ---- stars, by brightness; and the planets' little pictures --------------------------------------
@@ -290,6 +364,32 @@ NUMERALS = {
 }
 
 
+# figures for the 24-hour ring (and the plain plates' ring), five pixels wide, drawn in the same thin stroke
+FIGURES = {
+    "0": [".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
+    "1": [".#.", "##.", ".#.", ".#.", ".#.", ".#.", "###"],
+    "2": [".###.", "#...#", "....#", "...#.", "..#..", ".#...", "#####"],
+    "3": [".###.", "#...#", "....#", "..##.", "....#", "#...#", ".###."],
+    "4": ["...#.", "..##.", ".#.#.", "#..#.", "#####", "...#.", "..###"],
+    "5": ["#####", "#....", "####.", "....#", "....#", "#...#", ".###."],
+    "6": ["..##.", ".#...", "#....", "####.", "#...#", "#...#", ".###."],
+    "7": ["#####", "#...#", "...#.", "..#..", "..#..", "..#..", "..#.."],
+    "8": [".###.", "#...#", "#...#", ".###.", "#...#", "#...#", ".###."],
+    "9": [".###.", "#...#", "#...#", ".####", "....#", "...#.", ".##.."],
+}
+
+
+def figures(text, gap=1):
+    glyphs = [np.array([[c == "#" for c in r] for r in FIGURES[ch]]) for ch in text]
+    W = sum(g.shape[1] for g in glyphs) + gap * (len(glyphs) - 1)
+    out = np.zeros((7, W), bool)
+    x = 0
+    for g in glyphs:
+        out[:, x: x + g.shape[1]] = g
+        x += g.shape[1] + gap
+    return out
+
+
 def numerals(text, gap=1):
     glyphs = [np.array([[c == "#" for c in r] for r in NUMERALS[ch]]) for ch in text]
     W = sum(g.shape[1] for g in glyphs) + gap * (len(glyphs) - 1)
@@ -395,16 +495,18 @@ if __name__ == "__main__":
     rows = [
         [block(sun_of_may(), gold, cream), block(LITTLE_SUN, gold, cream), block(FLEUR, gold, cream),
          block(LOZENGE, gold, cream), block(CORNER, gold, cream)]
-        + [mask_block(numerals(t), ink_, cream) for t in ("III", "VI", "IX")],
-        [block(moon(i), {1: (85, 85, 85), 5: (255, 255, 170), 6: None}, sky) for i in range(8)]
+        + [mask_block(numerals(t), ink_, cream) for t in ("III", "VI", "IX")]
+        + [mask_block(figures(t), ink_, cream) for t in ("3", "6", "9", "15", "18", "21")],
+        [block(moon(n, w), {1: (85, 85, 85), 5: (255, 255, 170), 6: None}, sky)
+         for n, w in [(n, False) for n in MOON_PHASES] + [(n, True) for n in list(MOON_PHASES)[-2:0:-1]]]
         + [block(st, {5: (255, 255, 255)}, sky) for st in STAR]
         + [block(PLANET[k], {1: (170, 85, 0), 2: (255, 85, 0), 3: (255, 170, 0), 4: (170, 85, 0), 5: (255, 255, 170),
                              7: (170, 170, 170)}, sky) for k in ("saturn", "jupiter", "mars", "venus", "mercury")],
         [mask_block(word_art(w, 200, 228)[0], red, cream) for w in ("MIDNIGHT", "NOON")],
         [mask_block(word_art(w, 260, 260)[0], red, cream) for w in ("MIDNIGHT", "NOON")],
     ]
-    labels = ["The Sun after the Sun of May, its pointer, the fleur-de-lis, lozenge, compass star, numerals",
-              "The Moon's eight phases, the stars by brightness, Saturn, Jupiter, Mars, Venus, Mercury",
+    labels = ["The Sun after the Sun of May, its pointer, the fleur-de-lis, lozenge, compass star, the ring's hours (12 and 24-hour)",
+              "The Moon through a month, the stars by brightness, Saturn, Jupiter, Mars, Venus, Mercury",
               "MIDNIGHT and NOON along the Time 2's ring", "MIDNIGHT and NOON along the Round 2's ring"]
     tiles = []
     for r, label in zip(rows, labels):

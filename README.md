@@ -4,7 +4,7 @@ A watch face prototype for the Pebble Round 2 and Time 2: the sky as it is right
 
 ## Plates
 
-Like Groundtrack's plates, each plate follows a real tradition of sky charts, set in the type of its time. Every plate sets the time the way astronomers write it, **21ʰ 30ᵐ**, large in the card above the window. The small type is pixel type, every letter in whole pixels: Not Jam Old Style (CC0), a pixel serif after the old Garalde faces, with star names leaning in an oblique cut from it a pixel at a time. Under it are the date in italic and the Sun's next rising or setting in small capitals. The sky carries names the way the old atlases letter them: constellations in spaced capitals, stars in italic, planets in small capitals.
+Like Groundtrack's plates, each plate follows a real tradition of sky charts, set in the type of its time. Every plate sets the time in hours and minutes the way almanacs and astronomers write it, **9ʰ 30ᵐ**, large in the card above the window (or **21ʰ 30ᵐ** on the 24-hour clock, below). The small type is pixel type, every letter in whole pixels: Not Jam Old Style (CC0), a pixel serif after the old Garalde faces, with star names leaning in an oblique cut from it a pixel at a time. Under it are the date in italic and the Sun's next rising or setting in small capitals. The sky carries names the way the old atlases letter them: constellations in spaced capitals, stars in italic, planets in small capitals.
 
 ![A day on the Time 2, the paper planisphere plate, eight minutes a frame](docs/plate-planisphere-day-time2.gif)
 
@@ -33,6 +33,12 @@ The Time 2 comes first. Its ring is a cushion: arcs along the top and bottom, th
 ![Every plate on the Time 2 at 9:30 pm, then the paper planisphere at dusk and at noon](docs/time2-plates.png)
 
 By day the Sun in the window has a face and sixteen rays, straight and flaming in turn, after the Sun of May. A small rayed Sun points at the hour on the ring and passes behind the lettering, which stays whole.
+
+### The 12-hour or the 24-hour clock
+
+The ring counts the hours as old planispheres do, twelve and twelve: III, VI and IX in the morning and again in the evening, with MIDNIGHT and NOON between. The time reads 9ʰ 30ᵐ. The 24-hour clock is an option. With it the ring's figures run on through the day (3, 6, 9, 15, 18, 21), and the time reads 21ʰ 30ᵐ, as astronomers write it. On the watch the option starts from the watch's own 12 or 24-hour setting.
+
+![9:30 pm on the 12-hour and the 24-hour clock, on the Time 2 and the Round 2](docs/clock-12-24.png)
 
 ## Experimental: the compass, on a flick
 
@@ -87,11 +93,11 @@ Every image above is drawn at the watch's own size (260×260 round, 200×228) in
 The pieces are drawn by hand, pixel by pixel, not generated from shapes. Each is kept as text art in `proto/sprites.py`:
 
 - **The Sun** has a face and sixteen rays. One eighth of the rays is drawn and turned round the circle, so they are exactly symmetric.
-- **The Moon** has its eight phases, with the engraver's hatching on the dark part.
+- **The Moon** goes through its phases across the month. The terminator curves as on the real Moon, so a crescent thins to points at its horns. The dark part carries the engraver's hatching.
 - **The stars** are drawn by brightness: eight points, four, a cross, a point.
 - **The planets** each have a little picture: Saturn's ring, Jupiter's bands.
 - **The ornaments** are the fleur-de-lis standing on the window at the north, the lozenges, and the compass stars.
-- **The ring's numerals** are hand-drawn roman figures.
+- **The ring's hours** are hand-drawn too: roman numerals on the 12-hour clock, figures on the 24-hour clock.
 - **MIDNIGHT and NOON** are roman capitals with thick stems, thin hairlines and serifs. Each letter is drawn turned to its own place on each screen's ring, its stems stepping and its bars sloping as the curve turns.
 
 ![The hand-drawn pieces at six times and at their own size](docs/pieces.png)

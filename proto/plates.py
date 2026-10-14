@@ -12,8 +12,8 @@ the type of its time, the way Groundtrack's plates follow real charts:
   observatory   red light for eyes adapted to the dark (Old Standard)
   night         the first take: a black jacket, white type
 
-Each shows the time as astronomers write it, 21ʰ 30ᵐ, large in the jacket
-above the window, the date in italic, the Sun's next rising or setting in
+Each shows the time as almanacs and astronomers write it, 9ʰ 30ᵐ (21ʰ 30ᵐ on
+the 24-hour clock), large in the jacket above the window, the date in italic, the Sun's next rising or setting in
 small capitals, and names in the sky: constellations in spaced capitals,
 stars in italic, planets in small capitals.
 
@@ -270,7 +270,7 @@ def tick_pixels(dial, a_deg, length):
     return pts
 
 
-def render(when, dial, sky, tz, plate="planisphere", round_screen=True):
+def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=False):
     P = PLATES[plate]
     fn, fw = P["font"]
     fi, fiw = P["italic"]
@@ -402,16 +402,14 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True):
         x, y = dial.project(*pos[pn], lst)
         sprites.paint(img, sprites.PLANET[pn], int(math.floor(x)), int(math.floor(y)), planet_c, where=inside)
 
-    # the Moon, drawn in its phase (lit side toward the Sun: right while it waxes)
+    # the Moon, drawn in its phase (lit side toward the Sun: right while it waxes); by day only its lit face
     mx, my = dial.project(*pos["moon"], lst)
     f = pos["moon_phase"]
-    ph = 0 if f < 0.04 else 1 if f < 0.35 else 2 if f < 0.65 else 3 if f < 0.96 else 4
-    if ph in (1, 2, 3) and not pos["moon_waxing"]:
-        ph = 8 - ph
     moon_cols = dict(moon_c)
-    if not dark and not paper:
-        moon_cols[1] = None if ph not in (0,) else moon_cols[1]
-    sprites.paint(img, sprites.moon(ph), int(math.floor(mx)), int(math.floor(my)), moon_cols, where=inside)
+    if not dark and not paper and f >= 0.04:
+        moon_cols[1] = None
+    sprites.paint(img, sprites.moon_for(f, pos["moon_waxing"]), int(math.floor(mx)), int(math.floor(my)), moon_cols,
+                  where=inside)
 
     # the Sun, with its face (after the Sun of May), by day; on a printed chart always
     sx, sy = dial.project(*pos["sun"], lst)
@@ -485,7 +483,13 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True):
     img[rule_in] = P["ink"]
     img[rule_out] = P["ink"]
     words = {0: "MIDNIGHT", 12: "NOON"}
-    numerals = {3: "III", 6: "VI", 9: "IX", 15: "III", 18: "VI", 21: "IX"} if P["ring"] == "roman" else {h: None for h in range(3, 24, 3) if h != 12}
+    # the hours every three: on the 12-hour clock twelve and twelve (III, VI, IX each morning and evening, or
+    # figures on the plain plates); on the 24-hour clock, figures running on through the day
+    roman = P["ring"] == "roman" and not clock24
+    if roman:
+        numerals = {3: "III", 6: "VI", 9: "IX", 15: "III", 18: "VI", 21: "IX"}
+    else:
+        numerals = {h: str(h if clock24 else h % 12) for h in (3, 6, 9, 15, 18, 21)}
     ticks = set()
     for half in range(48):
         hour = half / 2
@@ -526,7 +530,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True):
     room = clear_distance(held)
     for hr, text in numerals.items():
         a = (hr - 12) * 15
-        m = sprites.numerals(text) if text else pixel_text(str(hr))
+        m = sprites.numerals(text) if roman else sprites.figures(text)
         x0_, y0_ = edge_point(dial, a)
         x1_, y1_ = track_point(dial, a, r_out + 1)
         best = None
@@ -576,7 +580,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True):
     top_of_window = fy0 - 1                            # above the fleur-de-lis
     span = top_of_window - ring_in
     big = 30 if W >= 240 else 26
-    ink(img, astro_time(str(local.hour), f"{local.minute:02d}", fn, big, fw, feats=("onum",)), dial.cx,
+    hour = (lambda h: h if clock24 else (h % 12 or 12))
+    ink(img, astro_time(str(hour(local.hour)), f"{local.minute:02d}", fn, big, fw, feats=("onum",)), dial.cx,
         ring_in + span * 0.36, P["ink"])
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
@@ -587,7 +592,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True):
     kind, at = next_sun_event(when, dial.lat, dial.lon)
     if kind:
         t_ = at.astimezone(tz)
-        stamp(img, concat(pixel_text(kind), time_text(t_.hour, t_.minute), gap=3), dial.cx, ring_in + span * 0.90, P["accent"])
+        stamp(img, concat(pixel_text(kind), time_text(hour(t_.hour), t_.minute), gap=3), dial.cx, ring_in + span * 0.90, P["accent"])
     if round_screen:
         img[np.hypot(xx + 0.5 - dial.cx, yy + 0.5 - dial.cy) > W / 2] = 0
     return nearest(img)
