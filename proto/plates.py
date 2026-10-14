@@ -79,6 +79,44 @@ def constellations():
     return CONSTELLATIONS
 
 
+def track_point(dial, a_deg, inset):
+    """Where the ray from the pole at dial angle `a_deg` (from the bottom, anticlockwise) meets the ring's
+    track `inset` pixels in from its outer edge: a circle, or on the Time 2 a rounded rectangle."""
+    a = math.radians(a_deg)
+    dx, dy = math.sin(a), math.cos(a)
+    if not getattr(dial, "rect", False):
+        r = dial.R - inset
+        return dial.cx + r * dx, dial.cy + r * dy
+    mx, my = dial.w / 2, dial.h / 2
+    hx, hy, rc = dial.w / 2 - inset, dial.h / 2 - inset, max(2.0, dial.rc - inset)
+    def sdf(x, y):
+        qx, qy = abs(x - mx) - (hx - rc), abs(y - my) - (hy - rc)
+        return math.hypot(max(qx, 0), max(qy, 0)) + min(max(qx, qy), 0) - rc
+    lo, hi = 0.0, 600.0
+    for _ in range(48):
+        mid = (lo + hi) / 2
+        if sdf(dial.cx + mid * dx, dial.cy + mid * dy) < 0:
+            lo = mid
+        else:
+            hi = mid
+    return dial.cx + lo * dx, dial.cy + lo * dy
+
+
+class RectDial(Dial):
+    """The Time 2's layout: the ring a rounded rectangle along the screen's edges, the time across the
+    top, and the window as large as the rest of the card allows, the pole placed to suit it."""
+
+    def __init__(self, w, h, lat, lon, band=15.0, block=58.0, rc=22.0):
+        super().__init__(w, h, lat, lon)
+        self.rect, self.rc, self.band = True, rc, band
+        top, bottom = band + block, h - band - 3
+        self.k = (bottom - top) / 180.0                # the window spans 180 degrees from its top to its bottom
+        self.k = min(self.k, (w / 2 - band - 6) / 90.0)
+        self.cy = top + abs(lat) * self.k
+        self.r_disc = self.reach * self.k
+        self.R = min(w, h) / 2
+
+
 def nearest(img):
     return (np.clip(np.floor(np.clip(img, 0, 255) / 85 + 0.5), 0, 3) * 85).astype(np.uint8)
 
@@ -323,26 +361,34 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, corners=
             if place(pixel_text(name.upper(), track=1), x, y, P["const"], centred=True):
                 cshown += 1
 
-    # the jacket: the 24-hour ring, set for civil time, read by the Sun's pointer
+    # the jacket: the 24-hour ring, set for civil time, read by the Sun's pointer. On the Round 2 a circle;
+    # on the Time 2 a rounded rectangle along the screen's edges, its marks where the hour's ray from the
+    # pole meets it (unevenly spaced along the straight sides, as hour lines on a rectangular sundial)
+    rect = getattr(dial, "rect", False)
     R = dial.R
+    ins = (lambda f: (1 - f) * R) if not rect else (lambda f: {0.875: 15.0, 0.905: 11.0, 0.888: 13.0, 0.948: 6.5, 0.895: 12.0}[f])
     sun_ang = lst - pos["sun"][0]
     minutes = local.hour * 60 + local.minute + local.second / 60
     ring = lambda m: sun_ang + (m - minutes) * 0.25
     dots = Image.new("L", (W * SS, H * SS), 0)
     for q in range(96):
-        a = math.radians(ring(q * 15))
-        s, c = math.sin(a), math.cos(a)
-        r0, r1 = (R * 0.875, R * 0.905) if q % 4 == 0 else (R * 0.875, R * 0.888)
+        a = ring(q * 15)
         if q % 4 == 0 and (q // 4) % 3 == 0:
             continue
-        ImageDraw.Draw(dots).line([((dial.cx + r0 * s) * SS, (dial.cy + r0 * c) * SS), ((dial.cx + r1 * s) * SS, (dial.cy + r1 * c) * SS)],
-                                  fill=255, width=max(1, round(SS * (0.9 if q % 4 == 0 else 0.6))))
+        x0, y0 = track_point(dial, a, ins(0.875))
+        x1, y1 = track_point(dial, a, ins(0.905) if q % 4 == 0 else ins(0.888))
+        ImageDraw.Draw(dots).line([(x0 * SS, y0 * SS), (x1 * SS, y1 * SS)], fill=255, width=max(1, round(SS * (0.9 if q % 4 == 0 else 0.6))))
     d = np.asarray(dots, np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3)) / 255
     img[(d > 0.42) & ~inside] = P["ink"]
-    # a fine circle closing the scale
+    # a fine line closing the scale
     circ = Image.new("L", (W * SS, H * SS), 0)
-    rr = R * 0.873 * SS
-    ImageDraw.Draw(circ).ellipse([dial.cx * SS - rr, dial.cy * SS - rr, dial.cx * SS + rr, dial.cy * SS + rr], outline=255, width=max(1, round(SS * 0.6)))
+    if rect:
+        e = ins(0.875)
+        ImageDraw.Draw(circ).rounded_rectangle([e * SS, e * SS, (W - e) * SS, (H - e) * SS], radius=(dial.rc - e) * SS,
+                                               outline=255, width=max(1, round(SS * 0.6)))
+    else:
+        rr = R * 0.873 * SS
+        ImageDraw.Draw(circ).ellipse([dial.cx * SS - rr, dial.cy * SS - rr, dial.cx * SS + rr, dial.cy * SS + rr], outline=255, width=max(1, round(SS * 0.6)))
     cimg = np.asarray(circ, np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3)) / 255
     img[(cimg > 0.42) & ~inside] = P["ink"]
     if P["ring"] == "roman":
@@ -352,8 +398,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, corners=
     for hr, text in labels.items():
         ang = ring(hr * 60)
         a = math.radians(ang)
-        rr = R * 0.948
-        if len(text) > 3:                              # words follow the ring, each letter upright
+        x, y = track_point(dial, ang, ins(0.948))
+        if len(text) > 3 and not rect:                 # on a circle, words follow it, each letter upright
+            rr = R * 0.948
             up = math.cos(a) < 0
             masks = [pixel_text(ch) for ch in text]
             gap = 2
@@ -364,37 +411,38 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, corners=
                 aa = math.radians(ang + (-1 if up else 1) * math.degrees(mid / rr))
                 stamp(img, m, dial.cx + rr * math.sin(aa), dial.cy + rr * math.cos(aa), P["accent"])
                 s += m.shape[1] + gap
+        elif len(text) > 3:                            # on a rectangle's top and bottom, straight
+            stamp(img, pixel_text(text, track=1), x, y, P["accent"])
         else:
-            stamp(img, pixel_text(text), dial.cx + rr * math.sin(a), dial.cy + rr * math.cos(a), P["ink"])
-    # the Sun's pointer
-    a = math.radians(sun_ang)
-    s, c = math.sin(a), math.cos(a)
-    pip = Image.new("L", (W * SS, H * SS), 0)
-    tip, base_r, half = R * 0.873, R * 0.915, R * 0.026
-    ImageDraw.Draw(pip).polygon([((dial.cx + tip * s) * SS, (dial.cy + tip * c) * SS),
-                                 ((dial.cx + base_r * s - half * c) * SS, (dial.cy + base_r * c + half * s) * SS),
-                                 ((dial.cx + base_r * s + half * c) * SS, (dial.cy + base_r * c - half * s) * SS)], fill=255)
-    px_, py_ = dial.cx + R * 0.895 * s, dial.cy + R * 0.895 * c
+            m = pixel_text(text)
+            if rect:                                   # kept clear of the screen's edges
+                hw = m.shape[1] / 2
+                x = min(max(x, hw + 2), W - hw - 2)
+                y = min(max(y, 6), H - 6)
+            stamp(img, m, x, y, P["ink"])
+    # the Sun's pointer: a small rayed Sun on the ring
+    px_, py_ = track_point(dial, sun_ang, ins(0.895))
     flair.paint(img, flair.little_sun(), px_, py_, {1: P["accent"], 2: c8(3, 2, 0) if P["window"] != "red" else c8(3, 0, 0)})
 
     # the time, as an astronomer writes it, with the date and the Sun's next rising or setting
     top_of_window = dial.cy - abs(dial.lat) * dial.k
-    ring_in = dial.cy - R * 0.875
+    ring_in = dial.cy - R * 0.875 if not rect else ins(0.875)
     span = top_of_window - ring_in
-    big = 30 if W >= 240 else 25
-    ink(img, astro_time(str(local.hour), f"{local.minute:02d}", fn, big, fw, feats=("onum", "lnum")[:1]), dial.cx, ring_in + span * 0.36, P["ink"])
+    big = 30 if W >= 240 else 26
+    ink(img, astro_time(str(local.hour), f"{local.minute:02d}", fn, big, fw, feats=("onum", "lnum")[:1]), dial.cx,
+        ring_in + span * (0.36 if not rect else 0.31), P["ink"])
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
     date = pixel_text(f"{days[local.weekday()]} {local.day} {months[local.month - 1]}", oblique=True)
     if date.shape[1] > span * 2.1:
         date = pixel_text(f"{days[local.weekday()][:3]} {local.day} {months[local.month - 1][:3]}", oblique=True)
-    stamp(img, date, dial.cx, ring_in + span * 0.665, P["ink"])
+    stamp(img, date, dial.cx, ring_in + span * (0.665 if not rect else 0.64), P["ink"])
     kind, at = next_sun_event(when, dial.lat, dial.lon)
     if kind:
         t_ = at.astimezone(tz)
-        stamp(img, concat(pixel_text(kind), time_text(t_.hour, t_.minute), gap=3), dial.cx, ring_in + span * 0.845, P["accent"])
+        stamp(img, concat(pixel_text(kind), time_text(t_.hour, t_.minute), gap=3), dial.cx, ring_in + span * (0.845 if not rect else 0.835), P["accent"])
     # the Time 2's corners: a quiet woodcut texture on the card, nothing to read
-    if not round_screen and corners:
+    if not round_screen and corners and not rect:
         ornament(img, dial, P, corners)
     if round_screen:
         img[np.hypot(xx + 0.5 - dial.cx, yy + 0.5 - dial.cy) > W / 2] = 0
@@ -443,7 +491,7 @@ if __name__ == "__main__":
     out = ROOT / "out"
     when = datetime(2026, 10, 14, 21, 30, tzinfo=NY)
     noon = datetime(2026, 10, 14, 12, 15, tzinfo=NY)
-    r2, t2 = Dial(260, 260, 40.71, -74.01), Dial(200, 228, 40.71, -74.01)
+    r2, t2 = Dial(260, 260, 40.71, -74.01), RectDial(200, 228, 40.71, -74.01)
     names = list(PLATES)
     S = Image.new("RGB", (len(names) * 266, 266 * 2 + 236), (24, 24, 26))
     for i, pl in enumerate(names):

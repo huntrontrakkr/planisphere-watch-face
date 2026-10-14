@@ -6,7 +6,9 @@ A watch face prototype for the Pebble Round 2 and Time 2: the sky as it is right
 
 Like Groundtrack's plates, each plate follows a real tradition of sky charts, set in the type of its time. Every plate sets the time the way astronomers write it, **21ʰ 30ᵐ**, large in the card above the window. The small type is pixel type, every letter in whole pixels: Not Jam Old Style (CC0), a pixel serif after the old Garalde faces, with star names leaning in an oblique cut from it a pixel at a time. Under it are the date in italic and the Sun's next rising or setting in small capitals. The sky carries names the way the old atlases letter them: constellations in spaced capitals, stars in italic, planets in small capitals.
 
-![A day on the paper planisphere, eight minutes a frame](docs/plate-planisphere-day.gif)
+![A day on the Time 2, the paper planisphere plate, eight minutes a frame](docs/plate-planisphere-day-time2.gif)
+
+![The same day on the Round 2](docs/plate-planisphere-day.gif)
 
 ![Every plate at 9:30 pm and at noon on the Round 2, and at 9:30 pm on the Time 2](docs/plates.png)
 
@@ -24,11 +26,15 @@ The planisphere, observatory and night plates show the live sky in their window:
 
 ![Flamsteed's plate at 9:30 pm](docs/plate-flamsteed.png)
 
-## On the Round 2, and the Time 2
+## On the Time 2, and the Round 2
 
-The planisphere is a round instrument, and the Round 2 is its home. On the Time 2 the card fills the rectangle, and its corners carry no information, only a woodcut texture: fine rays behind the instrument, as engraved title pages put rays behind their centrepiece (stars or an engraver's hatching are the quieter choices, and the corners can also stay plain). By day the Sun in the window is drawn with a face, its rays turning between straight and wavy (after the Sun of May), and a small rayed Sun points at the hour on the ring.
+The Time 2 comes first. On it the ring is a rounded rectangle along the screen's edges, so the window can be as large as on the Round 2 (137 pixels across instead of 109 inside a circle). Each hour mark sits where that hour's ray from the pole meets the ring, so the marks fall unevenly along the straight sides, as hour lines do on a rectangular sundial plate. MIDNIGHT and NOON run straight along the top and bottom edges. On the Round 2 the ring is a circle, with its words lettered round it.
 
-![The Time 2 with rays, stars, hatching and plain corners; the Sun at noon on the paper planisphere and on Burritt's plate](docs/time2-corners.png)
+![Every plate on the Time 2 at 9:30 pm, then the paper planisphere at dusk and at noon](docs/time2-plates.png)
+
+By day the Sun in the window is drawn with a face, its rays turning between straight and wavy (after the Sun of May), and a small rayed Sun points at the hour on the ring. A round ring on the Time 2 is still possible; its corners would then carry only a woodcut texture (rays, stars or hatching), never anything to read:
+
+![The round ring on the Time 2 with rays, stars, hatching and plain corners; the Sun at noon](docs/time2-corners.png)
 
 ## Experimental: the compass, on a flick
 
