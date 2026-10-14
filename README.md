@@ -20,7 +20,7 @@ Like Groundtrack's plates, each plate follows a real tradition of sky charts, se
 | **Observatory** | Red light, for eyes adapted to the dark | Old Standard |
 | **Night** | The first take: a black card, white type | Old Standard |
 
-The planisphere, observatory and night plates show the live sky in their window: night blue, the blue hour with its warm glow, day blue with the Sun in it. Burritt and Flamsteed are printed atlases, so their windows keep the stars by day as a chart would, and mark the Sun with its own sign, a circle with a point.
+The planisphere, observatory and night plates show the live sky in their window: night blue, the blue hour with its warm glow, day blue with the Sun in it. Burritt and Flamsteed are printed atlases, so their windows keep the stars by day as a chart would, with the Sun drawn among them.
 
 ![The paper planisphere at 9:30 pm](docs/plate-planisphere.png)
 
@@ -28,13 +28,11 @@ The planisphere, observatory and night plates show the live sky in their window:
 
 ## On the Time 2, and the Round 2
 
-The Time 2 comes first. On it the ring is a rounded rectangle along the screen's edges, so the window can be as large as on the Round 2 (137 pixels across instead of 109 inside a circle). Each hour mark sits where that hour's ray from the pole meets the ring, so the marks fall unevenly along the straight sides, as hour lines do on a rectangular sundial plate. MIDNIGHT and NOON run straight along the top and bottom edges. On the Round 2 the ring is a circle, with its words lettered round it.
+The Time 2 comes first. Its ring is a cushion: arcs along the top and bottom, the sides gently bowed, the corners rounded. It fills the screen, so the window stays as large as the card allows, and MIDNIGHT and NOON still curve along it as they do round a planisphere's ring. The band is wider in the corners, its inner edge rounder than its outer, which leaves room for the hours that fall there. Each hour's tick stands where that hour's ray from the pole meets the ring, so the ticks fall unevenly round the cushion, as hour lines do on a sundial plate. Each numeral sits on its own ray, wherever it stands clearest of the rules and ticks. The four corners outside the ring each carry a small compass star, the way a printer finishes a border. On the Round 2 the ring is a circle.
 
 ![Every plate on the Time 2 at 9:30 pm, then the paper planisphere at dusk and at noon](docs/time2-plates.png)
 
-By day the Sun in the window is drawn with a face, its rays turning between straight and wavy (after the Sun of May), and a small rayed Sun points at the hour on the ring. A round ring on the Time 2 is still possible; its corners would then carry only a woodcut texture (rays, stars or hatching), never anything to read:
-
-![The round ring on the Time 2 with rays, stars, hatching and plain corners; the Sun at noon](docs/time2-corners.png)
+By day the Sun in the window has a face and sixteen rays, straight and flaming in turn, after the Sun of May. A small rayed Sun points at the hour on the ring and passes behind the lettering, which stays whole.
 
 ## Experimental: the compass, on a flick
 
@@ -45,6 +43,12 @@ Off unless you turn it on, as an experimental setting. The magnetometer costs ba
 ![Pointing northeast (Capella rising), southeast (Saturn), southwest (Altair and the Milky Way) and northwest (Vega)](docs/compass-views.png)
 
 ## Earlier takes
+
+### A round ring on the Time 2
+
+Before the cushion, the Time 2 had the Round 2's circular ring, with a woodcut texture in the corners (rays, stars or hatching) and nothing there to read. The circle made the window smaller.
+
+![The round ring on the Time 2 with rays, stars, hatching and plain corners; the Sun at noon](docs/time2-corners.png)
 
 ### The readable version
 
@@ -68,7 +72,7 @@ The first take, before readability: no clock, only the planisphere. The Sun's go
 
 - **The star disc** is the whole sky as a planisphere draws it: the celestial pole at the centre, the stars round it, turning once a sidereal day as the real sky does.
 - **The window** is your horizon. The black jacket hides everything below it, so the oval shows exactly the sky above you now (here, New York; east is on the left, as when you look up).
-- **The Sun is the hour hand.** It rides the ecliptic through the sky, and the golden pointer on the jacket's 24-hour ring reads it. The ring is set to civil time, so it sits a little turned: in New York in October the Sun crosses the south at 12:42.
+- **The Sun is the hour hand.** It rides the ecliptic through the sky, and the small rayed Sun on the ring follows it. The ring keeps the Sun's own time, as a sundial does: NOON under the window's south point and MIDNIGHT above the pole, fixed, so the pointer reaches NOON as the Sun crosses the south (12:42 by the clock in New York in October). The large numerals keep the clock's time.
 - **The sky's colour is the real sky's**, from the Sun's height and direction: flat night blue with the Milky Way, the blue hour with a warm glow on the Sun's side, day blue with the Sun in it. The colours come in clean bands along the sky's own contours, each edge softened by a fine dither.
 - About 1,000 stars, down to magnitude 4.6, in their own colours. The figures are drawn only between the brighter stars, and stop just short of them. The Moon shows its true phase, lit from the Sun's side, and the five bright planets are there too.
 
@@ -78,19 +82,33 @@ The first take, before readability: no clock, only the planisphere. The Sun's go
 
 ## How it is drawn
 
-Every image above is drawn at the watch's own size (260×260 round, 200×228) in its 64 colours (two bits a channel), so what you see is what the watch can show. The stars are stamped by brightness, the lines and edges are kept to whole palette colours, and the only dithered texture at night is the Milky Way, as blue-noise grain.
+Every image above is drawn at the watch's own size (260×260 round, 200×228) in its 64 colours (two bits a channel), so what you see is what the watch can show. The lines and edges are kept to whole palette colours, and the only dithered texture at night is the Milky Way, as blue-noise grain.
+
+The pieces are drawn by hand, pixel by pixel, not generated from shapes. Each is kept as text art in `proto/sprites.py`:
+
+- **The Sun** has a face and sixteen rays. One eighth of the rays is drawn and turned round the circle, so they are exactly symmetric.
+- **The Moon** has its eight phases, with the engraver's hatching on the dark part.
+- **The stars** are drawn by brightness: eight points, four, a cross, a point.
+- **The planets** each have a little picture: Saturn's ring, Jupiter's bands.
+- **The ornaments** are the fleur-de-lis standing on the window at the north, the lozenges, and the compass stars.
+- **The ring's numerals** are hand-drawn roman figures.
+- **MIDNIGHT and NOON** are roman capitals with thick stems, thin hairlines and serifs. Each letter is drawn turned to its own place on each screen's ring, its stems stepping and its bars sloping as the curve turns.
+
+![The hand-drawn pieces at six times and at their own size](docs/pieces.png)
 
 - `proto/astro.py`: sidereal time, the Sun, the Moon (with its main perturbations) and the planets, from Paul Schlyter's orbital elements. That is well under a pixel at this scale.
-- `proto/render2.py`: the face. The projection is equidistant from the pole, the window is the horizon for your latitude, and the sky model works out its colour bands.
-- `proto/plates.py`: the plates (the current design); `proto/typeset.py`: type at the watch's size, the astronomers' 21ʰ 30ᵐ, lettering along the ring.
+- `proto/plates.py`: the plates (the current design): the projection, the window as the horizon for your latitude, the sky's colour bands, and the ring.
+- `proto/frame.py`: the Time 2's cushion, with exact distances to its edge, so the rules, ticks and lettering run along true parallels of it.
+- `proto/sprites.py`: the hand-drawn pieces; `proto/letterer.py` and `proto/coverage.py`: the drafting table the curved words were drawn from; `proto/closeup.py`: close-ups of the faces, pixel by pixel, for checking.
+- `proto/typeset.py`: the large type, the astronomers' 21ʰ 30ᵐ; `proto/pixeltext.py`: the pixel type.
 - `proto/look.py`: the compass view.
-- `proto/film.py`, `proto/film_readable.py`: the day films and the stills (`readable=True` in `render2.render` gives the readable version).
+- `proto/film_plates.py`: the plates' films and stills; `proto/film.py`, `proto/film_readable.py`: the earlier takes' (`proto/render2.py` draws those).
 
 ```
-uv run python proto/film.py      # writes out/
+uv run python proto/film_plates.py      # writes docs/
 ```
 
-Next: the same drawing in C for the watch, with the stars and figures as a small table.
+Next: the same drawing in C for the watch, with the pieces and the stars as small tables.
 
 ## Credits
 
