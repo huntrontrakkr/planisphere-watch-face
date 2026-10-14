@@ -92,13 +92,19 @@ Each plays for a moment, then the face is still again: a watch has no battery fo
 
 - **Falling stars.** Now and then at night a meteor streaks across the window, its head a small cross of white, its trail fading through cream and grey into the sky. On a shower's peak night they come often, and all streak out from the shower's radiant.
 - **Birds.** Now and then by day a little flock crosses the sky in a loose V, wings beating, in the village's dark ink.
-- **The turn.** At the top of the hour the star disc spins through a whole day in a few seconds, then settles back to now, as a planisphere turns in the hand. The window races from night through dawn, the day and dusk, while the Sun's pointer sweeps round the ring. The clock keeps its time throughout.
+- **The hour.** At the top of each hour, one of two animations, as you choose:
+  - **The constellations** (the default). The figures in the window are traced one by one, without their names, each over a second. A cream line runs star to star like an engraver's pen, with its tip white, and each star flashes as the line reaches it. The figure holds a moment, then fades back as the next begins. Those that came into the window during the hour go first, east to west, then the highest in the sky; five at most. By day the figures that are up behind the blue are sketched faintly in white, then fade.
+  - **The turn.** The star disc spins through a whole day in a few seconds, then settles back to now, as a planisphere turns in the hand. The window races from night through dawn, the day and dusk, while the Sun's pointer sweeps round the ring. The clock keeps its time throughout.
 
 ![Falling stars from the Orionids' radiant on their peak night, at the watch's own frame rate](docs/anim-meteors.gif)
 
 ![A flock crossing the morning sky](docs/anim-birds.gif)
 
-![The turn at 9 pm on the Time 2](docs/anim-turn-time2.gif)
+![The hour's constellations at 9 pm: Taurus and Auriga just risen, then Grus, Cygnus and Cepheus](docs/anim-constellations-night.gif)
+
+![And at noon, sketched over the day sky](docs/anim-constellations-day.gif)
+
+![Or the turn, at 9 pm on the Time 2](docs/anim-turn-time2.gif)
 
 ![The turn on the Round 2](docs/anim-turn-round2.gif)
 

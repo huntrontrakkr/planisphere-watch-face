@@ -365,6 +365,21 @@ def draw_corona(img, si, sj, moon_at, sol, inside, tt, red):
         sprites.paint(img, sprites.DIAMOND, gx, gy, {5: c8(3, 3, 3) if not red else c8(3, 1, 1)}, where=inside)
 
 
+def window_mask(dial, SS=4):
+    """The window: the pixels showing the sky above the horizon (the same at every hour, so kept)."""
+    if "_window" not in dial.__dict__:
+        H, W = dial.h, dial.w
+        lat = abs(dial.lat) * astro.D2R
+        ys, xs = np.mgrid[0:H * SS, 0:W * SS]
+        dx, dy = (xs + 0.5) / SS - dial.cx, (ys + 0.5) / SS - dial.cy
+        rho = np.hypot(dx, dy)
+        dec = (90 - rho / dial.k) * astro.D2R
+        sin_alt = np.sin(lat) * np.sin(dec) + np.cos(lat) * np.cos(dec) * np.cos(np.arctan2(dx, dy))
+        win = ((sin_alt > 0) & (rho <= dial.r_disc)).astype(np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3))
+        dial._window = win > 0.5
+    return dial._window
+
+
 def bead_pixels(dial, inset):
     """Every third pixel along the ring's track `inset` in: the beads (the same for every frame, so kept)."""
     cache = dial.__dict__.setdefault("_beads", {})
@@ -440,13 +455,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     s_eff = sun_alt + (-6.0 - sun_alt) * umbra if umbra > 0 else sun_alt
 
     # the window: the sky above the horizon (symmetric about the meridian by construction)
-    ys, xs = np.mgrid[0:H * SS, 0:W * SS]
-    dx, dy = (xs + 0.5) / SS - dial.cx, (ys + 0.5) / SS - dial.cy
-    rho = np.hypot(dx, dy)
-    dec = (90 - rho / dial.k) * astro.D2R
-    sin_alt = np.sin(lat) * np.sin(dec) + np.cos(lat) * np.cos(dec) * np.cos(np.arctan2(dx, dy))
-    win = ((sin_alt > 0) & (rho <= dial.r_disc)).astype(np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3))
-    inside = win > 0.5
+    inside = window_mask(dial)
     img = np.zeros((H, W, 3)) + P["jacket"]
 
     # the window's ground: the live sky, red light, or the paper of a printed chart
