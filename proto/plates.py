@@ -36,6 +36,7 @@ from render2 import (COOL, WARM, bn_tile, sky_scalar, banded, smooth, star_names
 from typeset import ink, astro_time
 from pixeltext import pixel_text, time_text, concat, stamp, box_of
 import events
+import figures
 import frame
 import sprites
 
@@ -47,23 +48,23 @@ PLATES = {
     "planisphere": dict(jacket=c8(3, 3, 2), ink=c8(0, 0, 0), accent=c8(2, 0, 0), window="sky", night=c8(0, 0, 1),
                         star=c8(3, 3, 3), glyph="cross", line=c8(1, 1, 2), milky=c8(1, 1, 2), label=c8(3, 3, 2),
                         const=c8(2, 2, 3), planet=c8(3, 2, 1), rule=c8(0, 0, 0), font=(OLD, None), italic=(OLD_I, None),
-                        ring="roman"),
+                        ring="roman", figures="modern"),
     "burritt": dict(jacket=c8(0, 0, 1), ink=c8(3, 3, 2), accent=c8(3, 2, 1), window="paper", night=c8(0, 1, 2),
                     star=c8(3, 3, 3), glyph="rays", line=c8(2, 2, 3), milky=c8(1, 2, 3), label=c8(3, 3, 3),
                     const=c8(3, 3, 2), planet=c8(3, 3, 1), rule=c8(3, 3, 2), font=("PlayfairDisplay[wght].ttf", 450),
-                    italic=("PlayfairDisplay-Italic[wght].ttf", 450), ring="roman"),
+                    italic=("PlayfairDisplay-Italic[wght].ttf", 450), ring="roman", figures="copperplate"),
     "flamsteed": dict(jacket=c8(3, 3, 2), ink=c8(1, 0, 0), accent=c8(2, 0, 0), window="paper", night=c8(3, 3, 3),
                       star=c8(0, 0, 0), glyph="rays", line=c8(2, 1, 1), milky=c8(2, 2, 2), label=c8(1, 0, 0),
                       const=c8(2, 0, 0), planet=c8(2, 0, 0), rule=c8(1, 0, 0), font=("LibreCaslonText[wght].ttf", 450),
-                      italic=("LibreCaslonText-Italic[wght].ttf", 450), ring="roman"),
+                      italic=("LibreCaslonText-Italic[wght].ttf", 450), ring="roman", figures="caslon"),
     "observatory": dict(jacket=c8(0, 0, 0), ink=c8(2, 0, 0), accent=c8(3, 0, 0), window="red", night=c8(0, 0, 0),
                         star=c8(3, 0, 0), glyph="cross", line=c8(1, 0, 0), milky=c8(1, 0, 0), label=c8(2, 0, 0),
                         const=c8(1, 0, 0), planet=c8(3, 1, 0), rule=c8(1, 0, 0), font=(OLD, None), italic=(OLD_I, None),
-                        ring="hours"),
+                        ring="hours", figures="modern"),
     "night": dict(jacket=c8(0, 0, 0), ink=c8(3, 3, 3), accent=c8(3, 2, 0), window="sky", night=c8(0, 0, 1),
                   star=c8(3, 3, 3), glyph="cross", line=c8(0, 1, 2), milky=c8(1, 1, 2), label=c8(2, 2, 2),
                   const=c8(1, 1, 2), planet=c8(3, 2, 1), rule=c8(1, 1, 1), font=(OLD, None), italic=(OLD_I, None),
-                  ring="hours"),
+                  ring="hours", figures="modern"),
 }
 
 CONSTELLATIONS = None
@@ -1040,8 +1041,19 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     if (sol and sol["kind"] == "total") or (lun and lun["kind"] == "total"):
         news = ("TOTALITY",)
     rows_at = (0.345, 0.675, 0.915)
-    ink(img, astro_time(str(hour(local.hour)), f"{local.minute:02d}", fn, big, fw, feats=("onum",)), dial.cx,
-        ring_in + span * rows_at[0], P["ink"])
+    # the time in the plate's own figures, drawn by hand for this watch (the typeface itself where none are yet)
+    comp = figures.compose(P.get("figures", "modern"), "time2" if rect else "round2", str(hour(local.hour)),
+                           f"{local.minute:02d}")
+    if comp is not None:
+        m, asc, small = comp
+        cy_ = ring_in + span * rows_at[0]
+        x0_, y0_ = int(round(dial.cx - m.shape[1] / 2)), int(round(cy_ - (asc - small / 2)))
+        for j, i in zip(*np.nonzero(m)):
+            if 0 <= y0_ + j < H and 0 <= x0_ + i < W:
+                img[y0_ + j, x0_ + i] = P["ink"]
+    else:
+        ink(img, astro_time(str(hour(local.hour)), f"{local.minute:02d}", fn, big, fw, feats=("onum",)), dial.cx,
+            ring_in + span * rows_at[0], P["ink"])
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
     # the date, after the sign of the planet that rules the day, as the almanacs mark their days
