@@ -107,7 +107,7 @@ def band_curve(dial, inset, top=True):
     if getattr(dial, "rect", False):
         key = (inset, top)
         if key not in dial.curves:
-            xs = np.linspace(-dial.w * 0.36, dial.w * 0.36, 289)
+            xs = np.linspace(-dial.w * 0.46, dial.w * 0.46, 369)
             ys = []
             for x in xs:
                 lo, hi = 0.0, dial.h / 2                # down from the edge (top) or up from it (bottom)
@@ -187,6 +187,49 @@ def eq_to_ecl(ra, dec, eps):
     e = math.radians(eps)
     yy, zz = y * math.cos(e) + z * math.sin(e), -y * math.sin(e) + z * math.cos(e)
     return math.degrees(math.atan2(yy, x)) % 360, math.degrees(math.asin(max(-1, min(1, zz))))
+
+
+PLACES = [                       # the inscription's names for a place: the nearest of these within 60 km (on the
+    ("NEW YORK", "U.S.A.", 40.7128, -74.0060),       # watch the phone would name the place)
+    ("DALLAS", "U.S.A.", 32.7767, -96.7970),
+    ("BURGOS", "SPAIN", 42.3439, -3.6969),
+    ("LONDON", "ENGLAND", 51.5072, -0.1276),
+    ("PARIS", "FRANCE", 48.8566, 2.3522),
+    ("SAN FRANCISCO", "U.S.A.", 37.7749, -122.4194),
+    ("TOKYO", "JAPAN", 35.6762, 139.6503),
+    ("SYDNEY", "AUSTRALIA", -33.8688, 151.2093),
+]
+
+
+def place_name(lat, lon):
+    """(city, country) of the nearest known place within 60 km, else (None, None)."""
+    best = None
+    for city, country, la, lo in PLACES:
+        d = 6371 * astro.separation((lo, la), (lon, lat)) * astro.D2R
+        if d < 60 and (best is None or d < best[0]):
+            best = (d, city, country)
+    return (best[1], best[2]) if best else (None, None)
+
+
+def shortened(name):
+    """A name, then shorter forms of it: its leading words cut to their initials one by one (NEW YORK, N. YORK),
+    then its initials alone (N.Y.)."""
+    words_ = name.split()
+    forms = [name]
+    for k in range(1, len(words_)):
+        forms.append(" ".join([w[0] + "." for w in words_[:k]] + words_[k:]))
+    if len(words_) > 1:
+        forms.append("".join(w[0] + "." for w in words_))
+    return forms
+
+
+def dms(v, pos, neg):
+    """Degrees and minutes as a chart gives them: 40°43'N."""
+    d = abs(v)
+    deg, mins = int(d), int(round((abs(v) - int(d)) * 60))
+    if mins == 60:
+        deg, mins = deg + 1, 0
+    return f"{deg}°{mins:02d}'{pos if v >= 0 else neg}"
 
 
 HATCH = (9, 7, 5, 4)                    # the night's hatching on the ring: every n-th diagonal, civil twilight to night
@@ -848,6 +891,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             if 0 <= xx_ < W and 0 <= y < H:
                 held[y, xx_] = True
     room = clear_distance(held)
+    numeral_px = np.zeros((H, W), bool)
     for hr, text in numerals.items():
         a = (hr - 12) * 15
         m = sprites.numerals(text) if roman else sprites.figures(text)
@@ -865,6 +909,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                 best = (key, lx, ty)
         _, lx, ty = best
         img[ty: ty + m.shape[0], lx: lx + m.shape[1]][m] = P["ink"]
+        numeral_px[ty: ty + m.shape[0], lx: lx + m.shape[1]] |= m
     # MIDNIGHT and NOON, lettered along the ring (hand-finished art; drafts where none is finished yet),
     # a lozenge either side
     for hr, word in words.items():
@@ -883,6 +928,50 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         for sgn in (-1, 1):
             lx, ly, _ = curve(sgn * (half_w + 6))
             sprites.paint(img, sprites.LOZENGE, lx - 0.5, ly - 0.5, {2: P["accent"], 1: P["ink"]})
+    # the place, as a map's border gives it: its city and country either side of MIDNIGHT, its latitude and
+    # longitude either side of NOON, in small capitals along the ring, each centred in the room the band has
+    # there; a city too long for its room is shortened, its leading words to their initials, then all of it
+    city, country = place_name(dial.lat, dial.lon)
+    keep_off = grow(numeral_px | studs, 1)
+    for top, side, text in ((True, -1, city), (True, 1, country),
+                            (False, -1, dms(dial.lat, "N", "S")), (False, 1, dms(dial.lon, "E", "W"))):
+        if not text:
+            continue
+        word = words[0 if top else 12]
+        curve = band_curve(dial, rp["word"], top)
+        half_w = (sum(len(sprites.CAPS9[ch][0]) for ch in word) + 2 * (len(word) - 1)) / 2
+        s0 = half_w + 6 + 4.5                            # past the word's lozenge
+        s1 = s0
+        while s1 < 140:                                  # out along the band until a numeral or stud is near
+            x_, y_, _ = curve(side * s1)
+            xi_, yi_ = int(math.floor(x_)), int(math.floor(y_))
+            if not (0 <= xi_ < W and 3 <= yi_ < H - 3) or keep_off[yi_ - 3: yi_ + 4, xi_].any():
+                break
+            s1 += 0.5
+        # set across the screen, letter by letter, each at the band's height where it stands (spaced by their own
+        # widths, not along the slope, where they would crowd)
+        xa, xb = curve(side * s0)[0], curve(side * s1)[0]
+        lo_x, hi_x = min(xa, xb), max(xa, xb)
+        track = 1                                        # letters a pixel apart, or not at all: never touching
+        for form in shortened(text):
+            glyphs = [sprites.tiny(ch, track) if ch != " " else np.zeros((5, 3), bool) for ch in form]
+            width = sum(g.shape[1] for g in glyphs) + track * (len(glyphs) - 1)
+            if width <= hi_x - lo_x:
+                break
+        else:
+            continue
+        ss = np.linspace(-side * 2, side * (s1 + 4), 600)
+        pts = np.array([curve(v)[:2] for v in ss])
+        order = np.argsort(pts[:, 0])
+        cx_s, cy_s = pts[order, 0], pts[order, 1]
+        gx = (lo_x + hi_x) / 2 - width / 2
+        for g in glyphs:
+            y_ = float(np.interp(gx + g.shape[1] / 2, cx_s, cy_s))
+            x0_, y0_ = int(round(gx)), int(round(y_ - 2.5))
+            for j, i in zip(*np.nonzero(g)):
+                if 0 <= y0_ + j < H and 0 <= x0_ + i < W:
+                    img[y0_ + j, x0_ + i] = P["ink"]
+            gx += g.shape[1] + track
     # the Time 2's corners, outside the ring: a leaf turning into each, where the corner has most room
     if rect:
         spandrel = dial.outline.grid(W, H) < 0.5

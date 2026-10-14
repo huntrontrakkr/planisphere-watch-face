@@ -56,6 +56,7 @@ The face carries what an almanac page would, each thing in its old form.
 
   The eclipses and the planets come from the same ephemeris as the rest of the face; the showers from where the Earth is in its orbit. During an eclipse the Moon turns copper in the Earth's shadow, or the Moon's dark disc crosses the Sun's face. At a shower's peak its radiant is drawn in the sky, where the meteors seem to come from.
 - **Jupiter's moons.** Beside Jupiter its four great moons stand where they are tonight (Meeus's theory), magnified along its equator. At the chart's scale they would all fall inside one pixel.
+- **The place.** The face says whose sky it is, as a map's border does. The city and its country stand either side of MIDNIGHT, and the latitude and longitude either side of NOON, in small capitals that follow the ring. A city too long for its room has its leading words cut to their initials (N. YORK), or becomes all initials (N.Y.). On the watch the phone would give the place.
 
 ### Eclipses
 
