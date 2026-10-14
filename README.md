@@ -4,7 +4,7 @@ A watch face prototype for the Pebble Round 2 and Time 2: the sky as it is right
 
 ## Plates
 
-Like Groundtrack's plates, each plate follows a real tradition of sky charts, set in the type of its time. Every plate sets the time the way astronomers write it, **21ʰ 30ᵐ**, large in the card above the window. Under it are the date in italic and the Sun's next rising or setting in small capitals. The sky carries names the way the old atlases letter them: constellations in spaced capitals, stars in italic, planets in small capitals.
+Like Groundtrack's plates, each plate follows a real tradition of sky charts, set in the type of its time. Every plate sets the time the way astronomers write it, **21ʰ 30ᵐ**, large in the card above the window. The small type is pixel type, every letter in whole pixels: Not Jam Old Style (CC0), a pixel serif after the old Garalde faces, with star names leaning in an oblique cut from it a pixel at a time. Under it are the date in italic and the Sun's next rising or setting in small capitals. The sky carries names the way the old atlases letter them: constellations in spaced capitals, stars in italic, planets in small capitals.
 
 ![A day on the paper planisphere, eight minutes a frame](docs/plate-planisphere-day.gif)
 
@@ -23,6 +23,12 @@ The planisphere, observatory and night plates show the live sky in their window:
 ![The paper planisphere at 9:30 pm](docs/plate-planisphere.png)
 
 ![Flamsteed's plate at 9:30 pm](docs/plate-flamsteed.png)
+
+## On the Round 2, and the Time 2
+
+The planisphere is a round instrument, and the Round 2 is its home. On the Time 2 the card fills the rectangle, and its corners carry no information, only a woodcut texture: fine rays behind the instrument, as engraved title pages put rays behind their centrepiece (stars or an engraver's hatching are the quieter choices, and the corners can also stay plain). By day the Sun in the window is drawn with a face, its rays turning between straight and wavy (after the Sun of May), and a small rayed Sun points at the hour on the ring.
+
+![The Time 2 with rays, stars, hatching and plain corners; the Sun at noon on the paper planisphere and on Burritt's plate](docs/time2-corners.png)
 
 ## Experimental: the compass, on a flick
 
@@ -84,4 +90,4 @@ Next: the same drawing in C for the watch, with the stars and figures as a small
 
 Star positions and colours, constellation lines and the Milky Way's outline come from [d3-celestial](https://github.com/ofrohn/d3-celestial), © 2015 Olaf Frohn, BSD 3-Clause (`data/`). The numerals use the monoline stroke font made for Morphogen 9.
 
-Type: Old Standard TT (Alexey Kryukov), Libre Caslon Text, Playfair Display, with IM Fell, EB Garamond and Cinzel tried in [the type specimen](docs/type-specimen.png). All are SIL Open Font License 1.1, and the licences are in `fonts/`.
+Pixel type: Not Jam Old Style 11 by Not Jam (CC0, `fonts/pixel/`). Type: Old Standard TT (Alexey Kryukov), Libre Caslon Text, Playfair Display, with IM Fell, EB Garamond and Cinzel tried in [the type specimen](docs/type-specimen.png). All are SIL Open Font License 1.1, and the licences are in `fonts/`.

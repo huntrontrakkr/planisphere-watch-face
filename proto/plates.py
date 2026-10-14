@@ -401,23 +401,6 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, corners=
     return nearest(img)
 
 
-if __name__ == "__main__":
-    sky = load_sky(4.6)
-    out = ROOT / "out"
-    when = datetime(2026, 10, 14, 21, 30, tzinfo=NY)
-    noon = datetime(2026, 10, 14, 12, 15, tzinfo=NY)
-    r2, t2 = Dial(260, 260, 40.71, -74.01), Dial(200, 228, 40.71, -74.01)
-    names = list(PLATES)
-    S = Image.new("RGB", (len(names) * 266, 266 * 2 + 236), (24, 24, 26))
-    for i, pl in enumerate(names):
-        for row, (t, dial, rnd) in enumerate(((when, r2, True), (noon, r2, True), (when, t2, False))):
-            im = Image.fromarray(render(t.astimezone(timezone.utc), dial, sky, NY, pl, rnd, "glory"))
-            im.save(out / f"plate-{pl}-{['night', 'noon', 'time2'][row]}.png")
-            S.paste(im, (i * 266 + (3 if rnd else 33), row * 266 + 3))
-    S.save(out / "plates.png")
-    S.resize((S.width * 2, S.height * 2), Image.NEAREST).save(out / "plates-2x.png")
-    print("ok")
-
 
 def ornament(img, dial, P, kind):
     """Woodcut texture in the card's corners (outside the ring), in a tint a little away from the card's own:
@@ -454,3 +437,20 @@ def ornament(img, dial, P, kind):
             for ox, oy in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)) + (((2, 0), (-2, 0), (0, 2), (0, -2)) if big else ()):
                 if 0 <= yi + oy < H and 0 <= xi + ox < W and outside[yi + oy, xi + ox]:
                     img[yi + oy, xi + ox] = tint
+
+if __name__ == "__main__":
+    sky = load_sky(4.6)
+    out = ROOT / "out"
+    when = datetime(2026, 10, 14, 21, 30, tzinfo=NY)
+    noon = datetime(2026, 10, 14, 12, 15, tzinfo=NY)
+    r2, t2 = Dial(260, 260, 40.71, -74.01), Dial(200, 228, 40.71, -74.01)
+    names = list(PLATES)
+    S = Image.new("RGB", (len(names) * 266, 266 * 2 + 236), (24, 24, 26))
+    for i, pl in enumerate(names):
+        for row, (t, dial, rnd) in enumerate(((when, r2, True), (noon, r2, True), (when, t2, False))):
+            im = Image.fromarray(render(t.astimezone(timezone.utc), dial, sky, NY, pl, rnd, "glory"))
+            im.save(out / f"plate-{pl}-{['night', 'noon', 'time2'][row]}.png")
+            S.paste(im, (i * 266 + (3 if rnd else 33), row * 266 + 3))
+    S.save(out / "plates.png")
+    S.resize((S.width * 2, S.height * 2), Image.NEAREST).save(out / "plates-2x.png")
+    print("ok")
