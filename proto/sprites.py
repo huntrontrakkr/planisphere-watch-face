@@ -154,15 +154,15 @@ MOON_PHASES = {
             ".KWWWWWWWW.",
             "..KWWWWWW..",
             "...KWWWW..."],
-    "full": ["...WWWWW...",
+    "full": ["...WWWWW...",      # full, with the face the almanacs give it, in a quiet line
              "..WWWWWWW..",
-             ".WWWWWWWWW.",
+             ".WWSSWSSWW.",
              "WWWWWWWWWWW",
+             "WWWSWWWSWWW",
+             "WWWWWSWWWWW",
+             "WWWWWSWWWWW",
              "WWWWWWWWWWW",
-             "WWWWWWWWWWW",
-             "WWWWWWWWWWW",
-             "WWWWWWWWWWW",
-             ".WWWWWWWWW.",
+             ".WWWSSSWWW.",
              "..WWWWWWW..",
              "...WWWWW..."],
 }
@@ -248,15 +248,6 @@ FLEUR = art(mirror_h([          # the left half and the middle column; the right
     "...R.RR",                  # below it, the feet curling out and the middle point
     "..R...R",
 ]))
-CORNER = art([                  # a compass star for the Time 2's corners, as a printer finishes a border
-    "...R...",
-    "...R...",
-    "..RKR..",
-    "RRK.KRR",
-    "..RKR..",
-    "...R...",
-    "...R...",
-])
 LOZENGE = art([
     "..R..",
     ".RKR.",
@@ -341,6 +332,159 @@ CAPS9 = {
           ".##..##.",
           "..####.."],
 }
+
+
+# ---- the signs of the zodiac, set along the ecliptic in the window, Aries first (7 x 7) ----------------------
+ZODIAC = [
+    [".##.##.", "#..#..#", "#..#..#", "...#...", "...#...", "...#...", "...#..."],     # Aries
+    ["#.....#", ".#...#.", "..###..", ".#...#.", ".#...#.", ".#...#.", "..###.."],     # Taurus
+    ["#######", ".#...#.", ".#...#.", ".#...#.", ".#...#.", ".#...#.", "#######"],     # Gemini
+    [".#####.", "#.....#", "##.....", ".......", ".....##", "#.....#", ".#####."],     # Cancer
+    ["..###..", ".#...#.", ".#...#.", "##...#.", "#.#..#.", "##...#.", ".....##"],     # Leo
+    ["##.#...", "#.#.#..", "#.#.#.#", "#.#.###", "#.#.#.#", "#.#.##.", "....#.."],     # Virgo
+    ["..###..", ".#...#.", ".#...#.", "##...##", ".......", "#######", "......."],     # Libra
+    ["##.#...", "#.#.#..", "#.#.#..", "#.#.#..", "#.#.#.#", "....#.#", ".....##"],     # Scorpio
+    ["...####", ".....##", "..#.#.#", "...#...", "..#.#..", ".#.....", "#......"],     # Sagittarius
+    ["#...#..", ".#.#.#.", ".#.#..#", "..#..##", "..#.#.#", "..#.##.", "...#..."],     # Capricorn
+    [".......", "..#...#", ".#.#.#.", "#...#..", "..#...#", ".#.#.#.", "#...#.."],     # Aquarius
+    ["#.....#", ".#...#.", ".#...#.", "#######", ".#...#.", ".#...#.", "#.....#"],     # Pisces
+]
+
+# ---- the planet that rules each day of the week, as the almanacs mark the days, Monday first (7 x 7) ---------
+DAY_SIGNS = [
+    [".###...", "...##..", "....##.", "....##.", "....##.", "...##..", ".###..."],     # the Moon, Monday
+    ["...####", ".....##", ".###.#.", "#...#..", "#...#..", "#...#..", ".###..."],     # Mars, Tuesday
+    [".#...#.", "..###..", ".#...#.", "..###..", "...#...", ".#####.", "...#..."],     # Mercury, Wednesday
+    [".##..#.", "#..#.#.", "...#.#.", "..#..#.", ".#...#.", "#######", ".....#."],     # Jupiter, Thursday
+    ["..###..", ".#...#.", ".#...#.", "..###..", "...#...", ".#####.", "...#..."],     # Venus, Friday
+    [".#.....", "###....", ".#.##..", ".##..#.", ".#...#.", ".....#.", "....#.."],     # Saturn, Saturday
+    ["..###..", ".#...#.", "#.....#", "#..#..#", "#.....#", ".#...#.", "..###.."],     # the Sun, Sunday
+]
+
+
+def sign(rows):
+    return np.array([[c == "#" for c in r] for r in rows])
+
+
+# ---- small marks: the south point's star, the studs on the ring at every third hour, a meteor shower's radiant
+SOUTH_STAR = art([
+    "..R..",
+    "..R..",
+    "RR.RR",
+    "..R..",
+    "..R..",
+])
+ZENITH = art([                  # the point overhead: a small cross turned on its side, not to be taken for a star
+    "K...K",
+    ".K.K.",
+    ".....",
+    ".K.K.",
+    "K...K",
+])
+STUD = art([                    # set on the ring's inner rule, half in the band and half out, like a jewel
+    "..K..",
+    ".KKK.",
+    "KKRKK",
+    ".KKK.",
+    "..K..",
+])
+RADIANT = art([                 # where a shower's meteors seem to come from: a point, the streaks leaving it
+    "R...R...R",
+    ".R..R..R.",
+    ".........",
+    ".........",
+    "RR..R..RR",
+    ".........",
+    ".........",
+    ".R..R..R.",
+    "R...R...R",
+])
+
+
+def _diag(points, size=9):
+    """A drawing symmetric about a corner's diagonal: the points (row, col) and their mirrors."""
+    g = [["."] * size for _ in range(size)]
+    for r, c in points:
+        g[r][c] = "R"
+        g[c][r] = "R"
+    return ["".join(row) for row in g]
+
+
+# a leaf turning into the Time 2's top-left corner, its midrib left light, on a short forked stem; the other
+# corners have its mirror images
+CORNER_LEAF = art(_diag([(0, 0), (0, 1), (0, 2), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), (3, 5), (4, 5),
+                         (5, 5), (6, 6), (7, 7), (7, 8)]))
+
+
+# ---- an engraved glory round the Sun on the printed charts: fine rays beyond its own, one eighth drawn ----------
+_GLORY_LONG = [(0, y) for y in range(13, 21)] + [(k, k) for k in range(9, 15)] + \
+              [(5, 12), (5, 13), (6, 14), (6, 15), (7, 16), (7, 17), (7, 18)]                  # 0, 45, 22.5 degrees
+_GLORY_SHORT = [(3, 13), (3, 14), (3, 15), (3, 16), (3, 17)] + \
+               [(7, 11), (8, 12), (9, 13), (9, 14), (10, 15)]                                  # 11.25, 33.75 degrees
+
+
+def glory():
+    n, c = 41, 20
+    a = np.zeros((n, n), np.uint8)
+    for x, y in _eightfold(_GLORY_LONG + _GLORY_SHORT):
+        a[c - y, c + x] = ROLE["K"]
+    return a
+
+
+# ---- the southern horizon's skyline: hills, trees, a house, the church, a windmill, drawn as pieces and set on
+# hills of hand-chosen height; the faces bend it along the window's lower edge -----------------------------------
+_LAND_PIECES = {                # kept low: at the chart's scale a pixel is a degree and a half of sky
+    "church": [".#......",
+               "###.....",
+               ".#......",
+               ".#......",
+               "###.....",
+               "###.###.",
+               "########"],
+    "mill":   ["#...#",
+               ".#.#.",
+               "..#..",
+               ".###.",
+               ".###.",
+               "#####"],
+    "tree":   [".###.",
+               "#####",
+               ".###.",
+               "..#.."],
+    "mound":  [".##.",
+               "####"],
+    "poplar": [".#.",
+               "###",
+               "###",
+               "###",
+               ".#."],
+    "house":  ["..#..",
+               ".###.",
+               "##.##"],
+}
+_LAND_HILLS = [(0, 1), (8, 2), (16, 2), (24, 1), (32, 1), (40, 2), (48, 2), (56, 1), (64, 2), (72, 2), (80, 2),
+               (88, 1), (99, 1)]
+_LAND_PLACES = [("tree", 7), ("poplar", 14), ("house", 23), ("mound", 31), ("tree", 37), ("church", 46),
+                ("mound", 57), ("tree", 63), ("mill", 73), ("tree", 83), ("poplar", 91)]
+
+
+def landscape():
+    """The skyline as a mask, 100 wide; its bottom row stands on the horizon, its middle column at the south."""
+    W, H = 100, 9
+    g = np.zeros((H, W), bool)
+    xs, hs = zip(*_LAND_HILLS)
+    ground = np.round(np.interp(np.arange(W), xs, hs)).astype(int)
+    for x in range(W):
+        g[H - ground[x]:, x] = True
+    for name, x0 in _LAND_PLACES:
+        rows = _LAND_PIECES[name]
+        h, w = len(rows), len(rows[0])
+        base = H - ground[x0 + w // 2]
+        for j, r in enumerate(rows):
+            for i, ch in enumerate(r):
+                if ch == "#":
+                    g[base - h + j, x0 + i] = True
+    return g
 
 
 # the finished curved words, drawn by hand for each screen's ring: (word, screen width, height) ->
@@ -494,7 +638,7 @@ if __name__ == "__main__":
 
     rows = [
         [block(sun_of_may(), gold, cream), block(LITTLE_SUN, gold, cream), block(FLEUR, gold, cream),
-         block(LOZENGE, gold, cream), block(CORNER, gold, cream)]
+         block(LOZENGE, gold, cream)]
         + [mask_block(numerals(t), ink_, cream) for t in ("III", "VI", "IX")]
         + [mask_block(figures(t), ink_, cream) for t in ("3", "6", "9", "15", "18", "21")],
         [block(moon(n, w), {1: (85, 85, 85), 5: (255, 255, 170), 6: None}, sky)
@@ -502,11 +646,19 @@ if __name__ == "__main__":
         + [block(st, {5: (255, 255, 255)}, sky) for st in STAR]
         + [block(PLANET[k], {1: (170, 85, 0), 2: (255, 85, 0), 3: (255, 170, 0), 4: (170, 85, 0), 5: (255, 255, 170),
                              7: (170, 170, 170)}, sky) for k in ("saturn", "jupiter", "mars", "venus", "mercury")],
+        [mask_block(sign(z), (85, 85, 170), sky) for z in ZODIAC],
+        [mask_block(sign(d), red, cream) for d in DAY_SIGNS]
+        + [block(a, gold, cream) for a in (SOUTH_STAR, STUD, CORNER_LEAF)]
+        + [block(ZENITH, {1: (170, 170, 255)}, sky), block(RADIANT, {2: (255, 85, 85)}, sky)],
+        [block(glory(), {1: (170, 85, 85)}, (255, 255, 255)), mask_block(landscape(), (0, 0, 85), (85, 170, 255))],
         [mask_block(word_art(w, 200, 228)[0], red, cream) for w in ("MIDNIGHT", "NOON")],
         [mask_block(word_art(w, 260, 260)[0], red, cream) for w in ("MIDNIGHT", "NOON")],
     ]
-    labels = ["The Sun after the Sun of May, its pointer, the fleur-de-lis, lozenge, compass star, the ring's hours (12 and 24-hour)",
+    labels = ["The Sun after the Sun of May, its pointer, the fleur-de-lis, a lozenge, the ring's hours (12 and 24-hour)",
               "The Moon through a month, the stars by brightness, Saturn, Jupiter, Mars, Venus, Mercury",
+              "The signs of the zodiac, set along the ecliptic",
+              "The days' planets (Monday's Moon to Sunday's Sun), the south star, a stud, a corner leaf, the zenith, a radiant",
+              "The engraved glory round the Sun on the printed charts, and the village on the southern horizon",
               "MIDNIGHT and NOON along the Time 2's ring", "MIDNIGHT and NOON along the Round 2's ring"]
     tiles = []
     for r, label in zip(rows, labels):

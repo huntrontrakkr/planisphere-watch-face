@@ -35,6 +35,7 @@ from render import Dial, load_sky
 from render2 import (COOL, WARM, bn_tile, sky_scalar, banded, smooth, star_names, next_sun_event, wu_line, c8)
 from typeset import ink, astro_time
 from pixeltext import pixel_text, time_text, concat, stamp, box_of
+import events
 import frame
 import sprites
 
@@ -170,12 +171,35 @@ def ring_params(dial):
     where the words' centre line and the numerals' centres run, and the hour and half-hour ticks' lengths
     (standing out from the inner rule). Words and ticks are kept a clear pixel or more apart."""
     if getattr(dial, "rect", False):
-        return dict(out=1.5, **{"in": dial.band}, word=8.25, num=(2.5 + dial.band - 1) / 2, tick=2, tick2=1)
-    return dict(out=1.5, **{"in": 18.0}, word=8.75, num=(2.5 + 18.0 - 1) / 2, tick=2, tick2=1)
+        return dict(out=1.5, **{"in": dial.band}, word=8.25, num=(2.5 + dial.band - 1) / 2, tick=2, tick2=1, bead=3.5)
+    return dict(out=1.5, **{"in": 18.0}, word=8.75, num=(2.5 + 18.0 - 1) / 2, tick=2, tick2=1, bead=3.5)
 
 
 def word_inset(dial):
     return ring_params(dial)["word"]
+
+
+def eq_to_ecl(ra, dec, eps):
+    """Equatorial (ra, dec) to ecliptic (lon, lat), degrees."""
+    x = math.cos(math.radians(dec)) * math.cos(math.radians(ra))
+    y = math.cos(math.radians(dec)) * math.sin(math.radians(ra))
+    z = math.sin(math.radians(dec))
+    e = math.radians(eps)
+    yy, zz = y * math.cos(e) + z * math.sin(e), -y * math.sin(e) + z * math.cos(e)
+    return math.degrees(math.atan2(yy, x)) % 360, math.degrees(math.asin(max(-1, min(1, zz))))
+
+
+HATCH = (9, 7, 5, 4)                    # the night's hatching on the ring: every n-th diagonal, civil twilight to night
+
+
+def tint_of(P):
+    """A colour a step from the card's own, for the engraver's hatching on it."""
+    jacket = P["jacket"]
+    if jacket.sum() > 400:
+        return c8(2, 2, 1)
+    if P["window"] == "red":
+        return c8(1, 0, 0)
+    return c8(0, 0, 2) if jacket[2] > 0 else c8(1, 1, 1)
 
 
 def nearest(img):
@@ -190,15 +214,15 @@ def piece_colours(P):
     if red:
         sun = {1: c8(1, 0, 0), 2: c8(3, 0, 0), 3: c8(3, 0, 0), 4: c8(2, 0, 0), 5: c8(3, 1, 1)}
         planets = {1: c8(1, 0, 0), 2: c8(3, 0, 0), 3: c8(3, 0, 0), 4: c8(1, 0, 0), 5: c8(3, 0, 0), 7: c8(2, 0, 0)}
-        moon = {1: c8(1, 0, 0), 5: c8(3, 0, 0)}
+        moon = {1: c8(1, 0, 0), 5: c8(3, 0, 0), 7: c8(2, 0, 0)}
     elif light_paper:
         sun = {1: c8(1, 0, 0), 2: c8(2, 0, 0), 3: c8(3, 2, 0), 4: c8(2, 1, 0), 5: c8(3, 3, 1)}
         planets = {1: P["ink"], 2: c8(2, 0, 0), 3: c8(2, 1, 0), 4: c8(1, 0, 0), 5: c8(1, 1, 1), 7: c8(1, 1, 1)}
-        moon = {1: P["ink"], 5: c8(3, 3, 3)}
+        moon = {1: P["ink"], 5: c8(3, 3, 3), 7: c8(2, 2, 2)}
     else:
         sun = {1: c8(0, 0, 0), 2: c8(2, 0, 0), 3: c8(3, 2, 0), 4: c8(2, 1, 0), 5: c8(3, 3, 2)}
         planets = {1: c8(2, 2, 2), 2: c8(3, 1, 0), 3: c8(3, 2, 0), 4: c8(2, 1, 0), 5: c8(3, 3, 2), 7: c8(2, 2, 2)}
-        moon = {1: c8(1, 1, 1), 5: c8(3, 3, 2)}
+        moon = {1: c8(1, 1, 1), 5: c8(3, 3, 2), 7: c8(2, 2, 1)}
     return sun, planets, moon
 
 
@@ -239,6 +263,24 @@ def clear_distance(mask, most=6):
         g[1:, 1:] |= m[:-1, :-1]; g[1:, :-1] |= m[:-1, 1:]; g[:-1, 1:] |= m[1:, :-1]; g[:-1, :-1] |= m[1:, 1:]
         m = g
     return out
+
+
+def bead_pixels(dial, inset):
+    """Every third pixel along the ring's track `inset` in: the beads (the same for every frame, so kept)."""
+    cache = dial.__dict__.setdefault("_beads", {})
+    if inset not in cache:
+        H, W = dial.h, dial.w
+        trace = np.zeros((H, W), bool)
+        for t_ in np.arange(0, 360, 0.05):
+            a_ = math.radians(t_)
+            if getattr(dial, "rect", False):
+                bx_, by_ = track_point(dial, t_, inset)
+            else:
+                bx_, by_ = dial.cx + (dial.R - inset) * math.sin(a_), dial.cy + (dial.R - inset) * math.cos(a_)
+            trace[int(by_), int(bx_)] = True
+        trail = sorted(zip(*np.nonzero(trace)), key=lambda p: math.atan2(p[1] + 0.5 - dial.cx, p[0] + 0.5 - dial.cy))
+        cache[inset] = [p for k, p in enumerate(trail) if k % 3 == 0]
+    return cache[inset]
 
 
 def inner_region(dial):
@@ -357,6 +399,20 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             if 0 <= xi < W and 0 <= yi < H and inside[yi, xi] and dark:
                 img[yi, xi] = P["const"] if kind == "ecl" else P["line"]
 
+    # the things the labels keep clear of (their boxes), and the sky's other news
+    boxes = []
+    blocked = np.zeros((H, W), bool)
+    col = int(dial.cx)
+    eclipse = events.eclipse_at(when, dial.lat, dial.lon)
+    shower = events.shower_at(pos["sun_lon"])
+    # the meridian, dotted from the north point through the pole and the zenith to the south point; the zenith
+    # marked with a small cross turned on its side, so it is not taken for a star
+    zx, zy = col, int(math.floor(dial.cy + (90 - abs(dial.lat)) * dial.k))
+    if dark or paper:
+        for y in range(0, H, 3):
+            if inside[y, col] and abs(y - zy) > 3:
+                img[y, col] = P["line"]
+
     # figures, stopping short of their stars
     if figs:
         bright = {(round(ra, 2), round(de, 2)): mg for ra, de, mg, bv in stars}
@@ -376,6 +432,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
 
     # stars, as drawn on the old charts: eight points for the brightest, four, a cross, a point
     light_paper = paper and P["night"].sum() > 400
+    drawn = []                                           # each star's sprite: (x, y, half its size)
     for ra, de, mg, bv in sorted(stars, key=lambda s: -s[2]):
         if mg > faint:
             continue
@@ -384,10 +441,13 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         c = P["star"] if (paper or P["window"] == "red") else (c8(2, 2, 3) if bv < -0.1 else c8(3, 3, 3) if bv < 0.5 else
                                                               c8(3, 3, 2) if bv < 1.15 else c8(3, 2, 1) if bv < 1.6 else c8(3, 2, 0))
         dim = c8(1, 1, 1) if light_paper else c * 0.67 + P["night"] * 0.33
+        drawn.append((xi, yi, 3 if mg < 0.5 else 2 if mg < 1.4 else 1 if mg < 2.1 else 0))
         if mg < 0.5:
             sprites.paint(img, sprites.STAR[0], xi, yi, {5: c}, where=inside)
+            boxes.append((xi - 3, yi - 3, xi + 4, yi + 4))
         elif mg < 1.4:
             sprites.paint(img, sprites.STAR[1], xi, yi, {5: c}, where=inside)
+            boxes.append((xi - 2, yi - 2, xi + 3, yi + 3))
         elif mg < 2.1:
             sprites.paint(img, sprites.STAR[2], xi, yi, {5: c}, where=inside)
         elif mg < 3.4:
@@ -395,12 +455,50 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         else:
             sprites.paint(img, sprites.STAR[3], xi, yi, {5: dim if light_paper else c * 0.40 + P["night"] * 0.6}, where=inside)
 
-    # the planets, each its little picture
+    # the planets, each its little picture; beside Jupiter its four great moons where they are now, along its
+    # equator (near enough the ecliptic), magnified: at the chart's scale they would sit inside one pixel
+    reach = {}
     for pn in ("venus", "jupiter", "mars", "saturn", "mercury"):
         if not paper and sun_alt > -3:
             continue
         x, y = dial.project(*pos[pn], lst)
-        sprites.paint(img, sprites.PLANET[pn], int(math.floor(x)), int(math.floor(y)), planet_c, where=inside)
+        xi, yi = int(math.floor(x)), int(math.floor(y))
+        sprites.paint(img, sprites.PLANET[pn], xi, yi, planet_c, where=inside)
+        hw, hh = sprites.PLANET[pn].shape[1] // 2, sprites.PLANET[pn].shape[0] // 2
+        boxes.append((xi - hw - 1, yi - hh - 1, xi + hw + 2, yi + hh + 2))
+        reach[pn] = (-hw, hw)
+        if pn == "jupiter":
+            lon_j, lat_j = eq_to_ecl(*pos["jupiter"], pos["eps"])
+            e0 = dial.project(*astro.ecl_to_eq(lon_j - 0.5, lat_j, pos["eps"]), lst)
+            e1 = dial.project(*astro.ecl_to_eq(lon_j + 0.5, lat_j, pos["eps"]), lst)
+            ex, ey = e1[0] - e0[0], e1[1] - e0[1]
+            n_ = math.hypot(ex, ey) or 1
+            wx, wy = -ex / n_, -ey / n_                    # west on the screen, at Jupiter
+            # the moons fall along the ecliptic's dotted line and among faint stars: clear a narrow lane for them, so
+            # they read as Jupiter's (a star touching the lane goes whole, not cut)
+            lane = set()
+            for d_ in np.arange(-13, 13.5, 0.5):
+                for q_ in (-1, 0, 1):
+                    cxj, cyj = int(round(xi + d_ * wx - q_ * wy)), int(round(yi + d_ * wy + q_ * wx))
+                    if abs(d_) > 2.5 and 0 <= cxj < W and 0 <= cyj < H:
+                        lane.add((cxj, cyj))
+            for sx_, sy_, r_ in drawn:
+                if any((sx_ + i, sy_ + j) in lane for i in range(-r_, r_ + 1) for j in range(-r_, r_ + 1)):
+                    lane |= {(sx_ + i, sy_ + j) for i in range(-r_, r_ + 1) for j in range(-r_, r_ + 1)}
+            for cxj, cyj in lane:
+                if 0 <= cxj < W and 0 <= cyj < H and inside[cyj, cxj] and abs(cxj - xi) + abs(cyj - yi) > 3:
+                    img[cyj, cxj] = ground[cyj, cxj]
+            lo, hi = 0.0, 0.0
+            for name, X, Y, behind in events.galilean(when):
+                if behind or abs(X) < 1.0:
+                    continue
+                d_ = math.copysign(3.0 + 1.25 * math.sqrt(abs(X)), X)
+                mxj, myj = int(round(xi + d_ * wx)), int(round(yi + d_ * wy))
+                if 0 <= mxj < W and 0 <= myj < H and inside[myj, mxj]:
+                    img[myj, mxj] = planet_c[5]
+                    blocked[max(0, myj - 1): myj + 2, max(0, mxj - 1): mxj + 2] = True
+                    lo, hi = min(lo, mxj - xi), max(hi, mxj - xi)
+            reach["jupiter"] = (min(lo, -hw), max(hi, hw))
 
     # the Moon, drawn in its phase (lit side toward the Sun: right while it waxes); by day only its lit face
     mx, my = dial.project(*pos["moon"], lst)
@@ -408,8 +506,19 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     moon_cols = dict(moon_c)
     if not dark and not paper and f >= 0.04:
         moon_cols[1] = None
-    sprites.paint(img, sprites.moon_for(f, pos["moon_waxing"]), int(math.floor(mx)), int(math.floor(my)), moon_cols,
-                  where=inside)
+    mi, mj = int(math.floor(mx)), int(math.floor(my))
+    sprites.paint(img, sprites.moon_for(f, pos["moon_waxing"]), mi, mj, moon_cols, where=inside)
+    boxes.append((mi - 6, mj - 6, mi + 7, mj + 7))
+    if eclipse and eclipse[0] == "moon":                 # copper where the Earth's shadow lies on it
+        ax_, ay_ = dial.project(pos["sun"][0] + 180, -pos["sun"][1], lst)
+        ux_, uy_ = ax_ - mx, ay_ - my
+        n_ = math.hypot(ux_, uy_) or 1
+        for j in range(-5, 6):
+            for i in range(-5, 6):
+                X_, Y_ = mi + i, mj + j
+                if i * i + j * j <= 30 and 0 <= X_ < W and 0 <= Y_ < H and inside[Y_, X_]:
+                    if (i * ux_ + j * uy_) / n_ / 5.5 > 1 - 2 * eclipse[1]:
+                        img[Y_, X_] = c8(2, 1, 0) if P["window"] != "red" else c8(1, 0, 0)
 
     # the Sun, with its face (after the Sun of May), by day; on a printed chart always. In a live sky it stands
     # in its own light, as the first takes drew it: a pale disc and a glow stippled thinner outward, the sky
@@ -424,29 +533,82 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             light = c8(2, 0, 0) if red else c8(3, 3, 2) if sun_alt < 6 else c8(2, 3, 3)   # warm when the Sun is low
             img[(glow > tt) & inside & (dd > 4.0)] = light
             img[(dd <= 4.4) & inside] = c8(3, 0, 0) if red else c8(3, 3, 1)
+        if paper:                                        # on a printed chart, the engraver's glory round it
+            sprites.paint(img, sprites.glory(), si, sj, {1: P["line"]}, where=inside)
         sprites.paint(img, sprites.sun_of_may(), si, sj, sun_c, where=inside)
+        boxes.append((si - 12, sj - 12, si + 13, sj + 13))
+        if eclipse and eclipse[0] == "sun":              # the Moon across it, as seen from here
+            tm = astro.topocentric_moon(*pos["moon"], pos["moon_dist"], lst, dial.lat)
+            p0, p1 = dial.project(*pos["sun"], lst), dial.project(*tm, lst)
+            sc = 5.0 / events.SUN_RADIUS / dial.k
+            cx_, cy_ = si + (p1[0] - p0[0]) * sc, sj + (p1[1] - p0[1]) * sc
+            cover = (np.hypot(xx - cx_, yy - cy_) <= 5.3) & (np.hypot(xx - si, yy - sj) <= 6.0) & inside
+            img[cover] = P["night"] if P["window"] != "red" else c8(0, 0, 0)
+
+    # a meteor shower at its peak: its radiant, where the meteors seem to come from, and its name
+    radiant = None
+    if shower and (dark or paper) and astro.altitude(shower[1], shower[2], lst, dial.lat) > 0:
+        x, y = dial.project(shower[1], shower[2], lst)
+        ri, rj = int(math.floor(x)), int(math.floor(y))
+        if inside[rj, ri]:
+            sprites.paint(img, sprites.RADIANT, ri, rj, {2: P["accent"]}, where=inside)
+            boxes.append((ri - 5, rj - 5, ri + 6, rj + 6))
+            radiant = (ri, rj)
+
+    # the southern horizon's skyline: a village against the sky, bent along the window's lower edge
+    land = sprites.landscape()
+    lh, lw = land.shape
+    silhouette = P["line"] if paper else (c8(0, 0, 0) if (sun_alt < -6 or P["window"] == "red") else c8(0, 0, 1))
+    for i in range(lw):
+        x = col - lw // 2 + i
+        if not (0 <= x < W) or not inside[:, x].any():
+            continue
+        bottom = int(np.nonzero(inside[:, x])[0].max())
+        for j in range(lh):
+            y = bottom - (lh - 1 - j)
+            if land[j, i] and 0 <= y < H and inside[y, x]:
+                img[y, x] = silhouette
+                blocked[y, x] = True
+    blocked = grow(blocked, 1)
 
     # names in the sky, in pixel type
-    boxes = []
-    def place(mask, x, y, colour, centred=False):
-        for anchor, lx in ([("centre", x)] if centred else [("left", x + 5), ("right", x - 4)]):
+    def place(mask, x, y, colour, centred=False, clear=(0, 0), own=False):
+        """Set a name beside (x, y), right of it or else left, clear of the window's edge, of other names and of
+        what is drawn. A name of something drawn (`own`) is not kept off that drawing, and may go above or below
+        it when neither side has room."""
+        mine = [b for b in boxes if b[0] <= x < b[2] and b[1] <= y < b[3]][-1:] if own else []
+        h_ = mask.shape[0]
+        if centred:
+            spots = [("centre", x, y)]
+        else:
+            spots = [("left", x + 5 + clear[1], y), ("right", x - 4 + clear[0], y)]
+        if own:                                          # names of drawn things look harder for room
+            spots += [("left", x + 5 + clear[1], y - h_ + 2), ("right", x - 4 + clear[0], y - h_ + 2),
+                      ("left", x + 5 + clear[1], y + h_ - 2), ("right", x - 4 + clear[0], y + h_ - 2),
+                      ("centre", x, y - h_ - 3 + min(0, clear[0] + 3)), ("centre", x, y + h_ + 3 - min(0, clear[0] + 3))]
+        for anchor, lx, y in spots:
             bx = box_of(mask, lx, y, anchor)
             corners_ = [(bx[0], bx[1]), (bx[2] - 1, bx[1]), (bx[0], bx[3] - 1), (bx[2] - 1, bx[3] - 1)]
             if not all(0 <= cx_ < W and 0 <= cy_ < H and inside[cy_, cx_] for cx_, cy_ in corners_):
                 continue
-            if any(bx[0] < b[2] and b[0] < bx[2] and bx[1] < b[3] and b[1] < bx[3] for b in boxes):
+            if any(bx[0] < b[2] and b[0] < bx[2] and bx[1] < b[3] and b[1] < bx[3] for b in boxes if b not in mine):
+                continue
+            if blocked[max(0, bx[1]): bx[3], max(0, bx[0]): bx[2]].any():
                 continue
             boxes.append(bx)
             stamp(img, mask, lx, y, colour, halo=ground, where=inside, anchor=anchor)
             return True
         return False
     if astro.altitude(*pos["moon"], lst, dial.lat) > 0:
-        place(pixel_text("Moon"), mx + 3, my, P["planet"])
+        place(pixel_text("Moon"), mi, mj, P["planet"], clear=(-3, 3), own=True)
     for pn in ("venus", "jupiter", "mars", "saturn", "mercury"):
         if (not paper and sun_alt > -3) or astro.altitude(*pos[pn], lst, dial.lat) <= 2:
             continue
         x, y = dial.project(*pos[pn], lst)
-        place(pixel_text(pn.capitalize()), x + 2, y, P["planet"])
+        lo, hi = reach.get(pn, (-2, 2))
+        place(pixel_text(pn.capitalize()), int(math.floor(x)), int(math.floor(y)), P["planet"], clear=(lo + 1, hi - 2), own=True)
+    if radiant:
+        place(pixel_text(shower[0], oblique=True), radiant[0] + 3, radiant[1], P["accent"])
     if dark or paper:
         names = star_names()
         shown = 0
@@ -456,7 +618,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             if astro.altitude(ra, de, lst, dial.lat) < 8 or hip not in names:
                 continue
             x, y = dial.project(ra, de, lst)
-            if place(pixel_text(names[hip], oblique=True), x + 1, y, P["label"]):
+            if place(pixel_text(names[hip], oblique=True), int(math.floor(x)) + 1, int(math.floor(y)), P["label"], own=True):
                 shown += 1
         cshown = 0
         for name, rank, ra, de in sorted(constellations(), key=lambda c: c[1]):
@@ -465,6 +627,34 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             x, y = dial.project(ra, de, lst)
             if place(pixel_text(name.upper(), track=1), x, y, P["const"], centred=True):
                 cshown += 1
+
+    # the zenith's cross and the signs of the zodiac, drawn after the names, where no name or body is drawn: the
+    # names matter more than the ornaments
+    def free(bx):
+        return not any(bx[0] < q[2] and q[0] < bx[2] and bx[1] < q[3] and q[1] < bx[3] for q in boxes) and \
+            not blocked[max(0, bx[1]): bx[3], max(0, bx[0]): bx[2]].any()
+    if inside[zy, zx] and free((zx - 3, zy - 3, zx + 4, zy + 4)):
+        img[zy - 3: zy + 4, zx - 3: zx + 4] = ground[zy - 3: zy + 4, zx - 3: zx + 4]
+        sprites.paint(img, sprites.ZENITH, zx, zy, {1: P["const"]}, where=inside)
+    # each sign at its sign's middle on the ecliptic
+    if dark or paper:
+        near = [dial.project(*pos[b_], lst) for b_ in ("sun", "moon") + events.PLANETS]
+        near += [dial.project(ra, de, lst) for ra, de, mg, bv in stars if mg < 2.1]
+        for k_, glyph in enumerate(sprites.ZODIAC):
+            ra, de = astro.ecl_to_eq(30 * k_ + 15, 0, pos["eps"])
+            x, y = dial.project(ra, de, lst)
+            xi, yi = int(math.floor(x)), int(math.floor(y))
+            if not (4 <= xi < W - 4 and 4 <= yi < H - 4) or not inside[yi - 4: yi + 5, xi - 4: xi + 5].all():
+                continue
+            if any(abs(px - xi) < 7 and abs(py - yi) < 7 for px, py in near) or not free((xi - 4, yi - 4, xi + 5, yi + 5)):
+                continue
+            m = sprites.sign(glyph)
+            halo = np.zeros((H, W), bool)
+            halo[yi - 3: yi + 4, xi - 3: xi + 4] = m
+            ring_ = grow(halo, 1) & ~halo & inside
+            img[ring_] = ground[ring_]
+            img[halo] = P["const"]
+            boxes.append((xi - 4, yi - 4, xi + 5, yi + 5))
 
     # the window's edge: a clean rule round it and a second a little way out, as a printed neatline
     rim1 = outline(inside)
@@ -482,6 +672,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     ew_r = 90 * dial.k
     for sgn in (-1, 1):
         sprites.paint(img, sprites.LOZENGE, dial.cx - 0.5 + sgn * (ew_r + 1.5), dial.cy - 0.5, {2: P["accent"], 1: P["ink"]})
+    # and a star at the south, clasping the window's two rules
+    last = int(np.nonzero(inside[:, col])[0].max())
+    sprites.paint(img, sprites.SOUTH_STAR, col, last + 3, {2: P["accent"]})
 
     # the ring: the Sun's own time, fixed to the sky (noon under the south point, midnight above the pole),
     # between two rules; hour and half-hour ticks drawn for one side and mirrored
@@ -490,8 +683,20 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     inner, outer = inner_region(dial), ring_shape(dial, r_out)
     rule_in = outline(inner) & ~inside
     rule_out = outer & ~ring_shape(dial, r_out + 1)
+    # the night on the ring: where the pointer will stand while the Sun is down, the band is hatched, sparse in
+    # civil twilight, closer through nautical and astronomical twilight, closest in the night (today's Sun)
+    band = outer & ~inner & ~rule_out & ~rule_in & ~inside
+    ang = np.degrees(np.arctan2(xx + 0.5 - dial.cx, yy + 0.5 - dial.cy))
+    s_alt = np.degrees(np.arcsin(np.sin(lat) * np.sin(sdec) + np.cos(lat) * np.cos(sdec) * np.cos(np.radians(ang))))
+    step = np.select([s_alt > -0.833, s_alt > -6, s_alt > -12, s_alt > -18], [0] + list(HATCH[:3]), HATCH[3])
+    hatch = band & (step > 0) & ((xx + yy) % np.maximum(step, 1) == 0)
+    img[hatch] = tint_of(P)
     img[rule_in] = P["ink"]
     img[rule_out] = P["ink"]
+    # a beaded rule just inside the outer one, as on a clock's chapter ring
+    bead_px = bead_pixels(dial, rp["bead"])
+    for by_, bx_ in bead_px:
+        img[by_, bx_] = P["ink"]
     words = {0: "MIDNIGHT", 12: "NOON"}
     # the hours every three: on the 12-hour clock twelve and twelve (III, VI, IX each morning and evening, or
     # figures on the plain plates); on the 24-hour clock, figures running on through the day
@@ -515,6 +720,15 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         for xx_ in (x, W - 1 - x):                      # mirrored across the meridian: exactly symmetric
             if 0 <= xx_ < W and 0 <= y < H and not inside[y, xx_] and not inner[y, xx_]:
                 img[y, xx_] = P["ink"]
+    # studs on the inner rule at the numbered hours, half in the band and half out
+    studs = np.zeros((H, W), bool)
+    for hr in numerals:
+        ex_, ey_ = edge_point(dial, (hr - 12) * 15)
+        sx_, sy_ = int(math.floor(ex_)), int(math.floor(ey_))
+        sprites.paint(img, sprites.STUD, sx_, sy_, {1: P["ink"], 2: P["accent"]})
+        for j, i in zip(*np.nonzero(sprites.STUD)):
+            if 0 <= sy_ - 2 + j < H and 0 <= sx_ - 2 + i < W:
+                studs[sy_ - 2 + j, sx_ - 2 + i] = True
     # the Sun's pointer: a small rayed Sun on the ticks at the Sun's own hour, cleared round so it reads
     # over the rule and the ticks; drawn before the numerals and words, which stay whole over it
     sun_ang = lst - pos["sun"][0]
@@ -532,7 +746,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
 
     # the numerals, drawn as engraved roman capitals (or figures on the plain plates), upright, each set on
     # its hour's ray where it stands clearest of the rules and ticks (nearest the band's middle among equals)
-    held = rule_in | rule_out
+    held = rule_in | rule_out | studs
+    for by_, bx_ in bead_px:
+        held[by_, bx_] = True
     for x, y in ticks:
         for xx_ in (x, W - 1 - x):
             if 0 <= xx_ < W and 0 <= y < H:
@@ -573,7 +789,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         for sgn in (-1, 1):
             lx, ly, _ = curve(sgn * (half_w + 6))
             sprites.paint(img, sprites.LOZENGE, lx - 0.5, ly - 0.5, {2: P["accent"], 1: P["ink"]})
-    # the Time 2's corners, outside the ring: a compass star in each, where the corner has most room
+    # the Time 2's corners, outside the ring: a leaf turning into each, where the corner has most room
     if rect:
         spandrel = dial.outline.grid(W, H) < 0.5
         edge = np.zeros((H, W), bool)
@@ -584,25 +800,44 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             r = room[ys_, xs_]
             if r.max() >= 5:
                 j, i = np.unravel_index(np.argmax(r), r.shape)
-                sprites.paint(img, sprites.CORNER, xs_.start + i, ys_.start + j, {2: P["accent"], 1: P["ink"]})
+                leaf = sprites.CORNER_LEAF
+                if xs_.start > 0:
+                    leaf = leaf[:, ::-1]
+                if ys_.start > 0:
+                    leaf = leaf[::-1, :]
+                sprites.paint(img, leaf, xs_.start + i, ys_.start + j, {2: P["accent"], 1: P["ink"]})
     # the time, as an astronomer writes it, with the date and the Sun's next rising or setting
     ring_in = dial.cy - (dial.R - r_in) if not rect else r_in
     top_of_window = fy0 - 1                            # above the fleur-de-lis
     span = top_of_window - ring_in
     big = 30 if W >= 240 else 26
     hour = (lambda h: h if clock24 else (h % 12 or 12))
+    # on a day with news in the sky, the news takes the Sun's rising or setting line
+    news = events.news(when, tz, dial.lat, dial.lon)
+    rows_at = (0.345, 0.675, 0.915)
     ink(img, astro_time(str(hour(local.hour)), f"{local.minute:02d}", fn, big, fw, feats=("onum",)), dial.cx,
-        ring_in + span * 0.36, P["ink"])
+        ring_in + span * rows_at[0], P["ink"])
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+    # the date, after the sign of the planet that rules the day, as the almanacs mark their days
+    day_sign = sprites.sign(sprites.DAY_SIGNS[local.weekday()])
     date = pixel_text(f"{days[local.weekday()]} {local.day} {months[local.month - 1]}", oblique=True)
-    if date.shape[1] > (W - 2 * r_in) * 0.80:
+    if date.shape[1] + day_sign.shape[1] + 4 > (W - 2 * r_in) * 0.80:
         date = pixel_text(f"{days[local.weekday()][:3]} {local.day} {months[local.month - 1][:3]}", oblique=True)
-    stamp(img, date, dial.cx, ring_in + span * 0.70, P["ink"])
+    y_date = ring_in + span * rows_at[1]
+    total = day_sign.shape[1] + 4 + date.shape[1]
+    left = dial.cx - total / 2
+    db = box_of(date, left + day_sign.shape[1] + 4, y_date, "left")
+    stamp(img, day_sign, left + day_sign.shape[1] / 2, (db[1] + db[3]) / 2 - 1, P["accent"])
+    stamp(img, date, left + day_sign.shape[1] + 4, y_date, P["ink"], anchor="left")
     kind, at = next_sun_event(when, dial.lat, dial.lon)
-    if kind:
+    fits = [m for m in (pixel_text(w) for w in (news or ())) if m.shape[1] <= (W - 2 * r_in) * 0.84]
+    if fits:
+        stamp(img, fits[0], dial.cx, ring_in + span * rows_at[2], P["accent"])
+    elif kind:
         t_ = at.astimezone(tz)
-        stamp(img, concat(pixel_text(kind), time_text(hour(t_.hour), t_.minute), gap=3), dial.cx, ring_in + span * 0.90, P["accent"])
+        stamp(img, concat(pixel_text(kind), time_text(hour(t_.hour), t_.minute), gap=3), dial.cx, ring_in + span * rows_at[2],
+              P["accent"])
     if round_screen:
         img[np.hypot(xx + 0.5 - dial.cx, yy + 0.5 - dial.cy) > W / 2] = 0
     return nearest(img)

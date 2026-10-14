@@ -13,6 +13,7 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).parent))
 from render import Dial, load_sky
 from plates import render, PLATES, RectDial, RoundDial
+import astro
 
 ROOT = Path(__file__).resolve().parents[1]
 NY = ZoneInfo("America/New_York")
@@ -51,6 +52,25 @@ def main():
         sheet.paste(im.resize(size, Image.NEAREST), (x, 4))
         x += size[0] + 12
     sheet.save(ROOT / "docs" / "clock-12-24.png")
+    # the almanac's news on the Time 2: a meteor shower's peak, an eclipse of each kind, planets meeting, and
+    # Jupiter's moons and the skyline by day up close
+    shots = [datetime(2026, 10, 22, 2, 0, tzinfo=NY), datetime(2026, 3, 3, 5, 50, tzinfo=NY),
+             datetime(2024, 4, 8, 15, 20, tzinfo=NY), datetime(2026, 6, 8, 21, 40, tzinfo=NY)]
+    sheet = Image.new("RGB", (len(shots) * 412, 464 + 220), (24, 24, 26))
+    for i, t in enumerate(shots):
+        im = Image.fromarray(render(t.astimezone(timezone.utc), t2, sky, NY, "planisphere", False))
+        sheet.paste(im.resize((400, 456), Image.NEAREST), (i * 412 + 6, 4))
+    jup = datetime(2027, 2, 1, 22, 0, tzinfo=NY).astimezone(timezone.utc)
+    im = Image.fromarray(render(jup, t2, sky, NY, "planisphere", False))
+    p_ = astro.positions(jup)
+    x, y = t2.project(*p_["jupiter"], astro.sidereal(jup, t2.lon))
+    sheet.paste(im.crop((int(x) - 30, int(y) - 20, int(x) + 30, int(y) + 20)).resize((300, 200), Image.NEAREST), (6, 474))
+    day = Image.fromarray(render(datetime(2026, 10, 14, 12, 15, tzinfo=NY).astimezone(timezone.utc), t2, sky, NY, "planisphere", False))
+    sheet.paste(day.crop((40, 178, 160, 218)).resize((600, 200), Image.NEAREST), (318, 474))
+    fl = Image.fromarray(render(datetime(2026, 10, 14, 12, 15, tzinfo=NY).astimezone(timezone.utc), r2, sky, NY, "flamsteed", True))
+    p_ = astro.positions(datetime(2026, 10, 14, 16, 15, tzinfo=timezone.utc))
+    sheet.paste(fl.crop((95, 175, 165, 235)).resize((233, 200), Image.NEAREST), (930, 474))
+    sheet.save(ROOT / "docs" / "almanac.png")
     print(len(frames), "frames")
 
 

@@ -40,6 +40,35 @@ The ring counts the hours as old planispheres do, twelve and twelve: III, VI and
 
 ![9:30 pm on the 12-hour and the 24-hour clock, on the Time 2 and the Round 2](docs/clock-12-24.png)
 
+## The almanac
+
+The face carries what an almanac page would, each thing in its old form.
+
+- **Night on the ring.** Where the Sun's pointer will stand while the Sun is down, the band is hatched like an engraving. The hatching is sparse in civil twilight, closer through nautical and astronomical twilight, and closest in full night. You see the day's length at a glance, and the pointer walks into the hatching at sunset.
+- **The day's planet.** Before the date stands the sign of the planet that rules the day, as almanacs mark their days: ☽ Monday, ♂ Tuesday, ☿ Wednesday, ♃ Thursday, ♀ Friday, ♄ Saturday, ☉ Sunday.
+- **The zenith and the meridian.** A small cross marks the point straight overhead, turned on its side so it is not taken for a star. At night a dotted line runs north to south through the pole and the zenith, as on an astrolabe's plate.
+- **The zodiac.** At night the signs are set along the ecliptic, each at its sign's middle, wherever no name or bright star is drawn.
+- **The sky's news.** On a day with something to see, the line under the date says so in place of the sunrise or sunset:
+  - an eclipse of the Sun or the Moon, if it can be seen from here;
+  - two planets meeting;
+  - a meteor shower's peak;
+  - the Moon by a planet.
+
+  The eclipses and the planets come from the same ephemeris as the rest of the face; the showers from where the Earth is in its orbit. During an eclipse the Moon turns copper in the Earth's shadow, or the Moon's dark disc crosses the Sun's face. At a shower's peak its radiant is drawn in the sky, where the meteors seem to come from.
+- **Jupiter's moons.** Beside Jupiter its four great moons stand where they are tonight (Meeus's theory), magnified along its equator. At the chart's scale they would all fall inside one pixel.
+
+And the filigree, all drawn by hand:
+
+- a village on the southern horizon (hills, trees, a house, the church, a windmill), bent along the window's lower edge;
+- the engraver's glory of fine rays round the Sun on the printed charts;
+- a beaded rule inside the ring's outer rule, as on a clock's chapter ring;
+- studs on the inner rule at the numbered hours;
+- a star at the south point, clasping the window's two rules, to go with the fleur-de-lis at the north and the lozenges east and west;
+- a leaf turning into each of the Time 2's corners;
+- a face on the full Moon, as the almanacs give it.
+
+![At the Orionids' peak, at an eclipse of the Moon, at an eclipse of the Sun, and as Venus meets Jupiter; below, Jupiter's moons, the village by day, and the glory on Flamsteed's plate](docs/almanac.png)
+
 ## Experimental: the compass, on a flick
 
 Off unless you turn it on, as an experimental setting. The magnetometer costs battery while it runs, so it only runs when you ask. Flick your wrist and the compass turns on for half a minute. The face becomes a window onto the sky where the watch points: the horizon along the bottom, the compass points on it, and names on what is bright. Then the compass switches off and the planisphere comes back; a second flick ends it sooner.
@@ -96,7 +125,8 @@ The pieces are drawn by hand, pixel by pixel, not generated from shapes. Each is
 - **The Moon** goes through its phases across the month. The terminator curves as on the real Moon, so a crescent thins to points at its horns. The dark part carries the engraver's hatching.
 - **The stars** are drawn by brightness: eight points, four, a cross, a point.
 - **The planets** each have a little picture: Saturn's ring, Jupiter's bands.
-- **The ornaments** are the fleur-de-lis standing on the window at the north, the lozenges, and the compass stars.
+- **The ornaments** are the fleur-de-lis standing on the window at the north, the lozenges, the south star, the studs, the corner leaves, the engraved glory and the village on the horizon.
+- **The almanac's signs** are the zodiac and the planets that rule the days.
 - **The ring's hours** are hand-drawn too: roman numerals on the 12-hour clock, figures on the 24-hour clock.
 - **MIDNIGHT and NOON** are roman capitals with thick stems, thin hairlines and serifs. Each letter is drawn turned to its own place on each screen's ring, its stems stepping and its bars sloping as the curve turns.
 
@@ -105,6 +135,7 @@ The pieces are drawn by hand, pixel by pixel, not generated from shapes. Each is
 - `proto/astro.py`: sidereal time, the Sun, the Moon (with its main perturbations) and the planets, from Paul Schlyter's orbital elements. That is well under a pixel at this scale.
 - `proto/plates.py`: the plates (the current design): the projection, the window as the horizon for your latitude, the sky's colour bands, and the ring.
 - `proto/frame.py`: the Time 2's cushion, with exact distances to its edge, so the rules, ticks and lettering run along true parallels of it.
+- `proto/events.py`: Jupiter's moons, eclipses, planets meeting and the meteor showers, for the almanac.
 - `proto/sprites.py`: the hand-drawn pieces; `proto/letterer.py` and `proto/coverage.py`: the drafting table the curved words were drawn from; `proto/closeup.py`: close-ups of the faces, pixel by pixel, for checking.
 - `proto/typeset.py`: the large type, the astronomers' 21ʰ 30ᵐ; `proto/pixeltext.py`: the pixel type.
 - `proto/look.py`: the compass view.

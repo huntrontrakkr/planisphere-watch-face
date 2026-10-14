@@ -78,7 +78,8 @@ def orbit(body, d):
 
 def positions(t: datetime):
     """{body: (ra, dec)} for the Sun, Moon and the five bright planets; also the Moon's phase:
-    ('moon_phase': illuminated fraction 0..1, 'moon_waxing': bool) and the Sun's ecliptic longitude."""
+    ('moon_phase': illuminated fraction 0..1, 'moon_waxing': bool), its distance ('moon_dist', Earth radii) and the
+    Sun's ecliptic longitude."""
     d = julian(t) - 2451543.5
     eps = 23.4393 - 3.563e-7 * d
     out = {}
@@ -102,6 +103,7 @@ def positions(t: datetime):
     lat += (-0.173 * sind(F - 2 * D) - 0.055 * sind(Mm - F - 2 * D) - 0.046 * sind(Mm + F - 2 * D)
             + 0.033 * sind(F + 2 * D) + 0.017 * sind(2 * Mm + F))
     out["moon"] = ecl_to_eq(rev(lon), lat, eps)
+    out["moon_dist"] = math.sqrt(x * x + y * y + z * z) - 0.58 * cosd(Mm - 2 * D) - 0.46 * cosd(2 * D)   # Earth radii
     elong = math.acos(max(-1, min(1, cosd(lon - lon_sun) * cosd(lat)))) / D2R
     out["moon_phase"] = (1 - cosd(elong)) / 2
     out["moon_waxing"] = rev(lon - lon_sun) < 180
@@ -123,6 +125,23 @@ def positions(t: datetime):
         out[p] = ecl_to_eq(rev(atan2d(yg, xg)), atan2d(zg, math.hypot(xg, yg)), eps)
     out["eps"] = eps
     return out
+
+
+def topocentric_moon(ra, dec, dist, lst, lat):
+    """The Moon as seen from the ground rather than from the Earth's centre (its parallax is up to a degree)."""
+    mpar = asind(1 / dist)
+    gclat = lat - 0.1924 * sind(2 * lat)
+    rho = 0.99833 + 0.00167 * cosd(2 * lat)
+    ha = lst - ra
+    g = atan2d(math.tan(gclat * D2R), cosd(ha)) if abs(cosd(ha)) > 1e-9 else 90.0
+    tra = ra - mpar * rho * cosd(gclat) * sind(ha) / cosd(dec)
+    tdec = dec - mpar * rho * sind(gclat) * sind(g - dec) / sind(g) if abs(sind(g)) > 1e-9 else dec
+    return tra, tdec
+
+
+def separation(a, b):
+    """Angle between two (ra, dec) points, degrees."""
+    return math.acos(max(-1.0, min(1.0, sind(a[1]) * sind(b[1]) + cosd(a[1]) * cosd(b[1]) * cosd(a[0] - b[0])))) / D2R
 
 
 def altitude(ra, dec, lst, lat):
