@@ -57,6 +57,22 @@ The face carries what an almanac page would, each thing in its old form.
   The eclipses and the planets come from the same ephemeris as the rest of the face; the showers from where the Earth is in its orbit. During an eclipse the Moon turns copper in the Earth's shadow, or the Moon's dark disc crosses the Sun's face. At a shower's peak its radiant is drawn in the sky, where the meteors seem to come from.
 - **Jupiter's moons.** Beside Jupiter its four great moons stand where they are tonight (Meeus's theory), magnified along its equator. At the chart's scale they would all fall inside one pixel.
 
+### Eclipses
+
+An eclipse gets the sky it really has.
+
+As the Moon covers the Sun, the Sun's glow thins. Past about four fifths covered, the daylight drains toward twilight. In totality the sky is deep blue with a sunset all round the horizon. The bright planets and stars come out. The Sun is a black disc in a pearly corona, its streamers reaching out, with small red prominences at the Moon's edge. Just before and after totality the corona is fainter and the diamond ring flashes at the Moon's edge, the last point of sunlight. An annular eclipse leaves a ring of fire. The line under the date reads TOTALITY.
+
+A bright Moon at night pales the sky round it and hides the faint stars near it. In the Earth's shadow its light goes out and the stars come back round it. The Moon turns red: copper at the shadow's edge, deepest toward its middle.
+
+The eclipses are worked out for wherever the watch is, from Meeus's theories of the Sun and the Moon (`proto/lunar.py`, checked against his worked examples to every digit). They come out within a minute of the real ones:
+- Dallas on 8 April 2024: totality from 18:41 to 18:44 UTC (in fact 18:40:43 to 18:44:35).
+- New York the same day: partial.
+- Burgos on 12 August 2026: total at sunset.
+- New York on 14 March 2025: the Moon totally eclipsed from 06:27 to 07:32 UTC (06:26 to 07:31).
+
+![Dallas, 8 April 2024: the Sun nearly covered, the sky darkening, the diamond ring, totality; Burgos at sunset, 12 August 2026; the blood Moon over New York, 14 March 2025](docs/eclipses.png)
+
 And the filigree, all drawn by hand:
 
 - a village on the southern horizon (hills, trees, a house, the church, a windmill), bent along the window's lower edge;
@@ -132,7 +148,7 @@ The pieces are drawn by hand, pixel by pixel, not generated from shapes. Each is
 
 ![The hand-drawn pieces at six times and at their own size](docs/pieces.png)
 
-- `proto/astro.py`: sidereal time, the Sun, the Moon (with its main perturbations) and the planets, from Paul Schlyter's orbital elements. That is well under a pixel at this scale.
+- `proto/astro.py`: sidereal time and the planets, from Paul Schlyter's orbital elements (well under a pixel at this scale); `proto/lunar.py`: the Sun and the Moon from Meeus, closely enough for eclipses.
 - `proto/plates.py`: the plates (the current design): the projection, the window as the horizon for your latitude, the sky's colour bands, and the ring.
 - `proto/frame.py`: the Time 2's cushion, with exact distances to its edge, so the rules, ticks and lettering run along true parallels of it.
 - `proto/events.py`: Jupiter's moons, eclipses, planets meeting and the meteor showers, for the almanac.

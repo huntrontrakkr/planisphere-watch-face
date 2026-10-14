@@ -265,6 +265,63 @@ def clear_distance(mask, most=6):
     return out
 
 
+def sun_offset_px(dial, pos, lst, si, sj, sol):
+    """The Moon's centre on the drawn Sun (5 pixels to the Sun's radius), turned to the chart's east and north."""
+    ra, dec = pos["sun"]
+    e0, e1 = dial.project(ra - 0.5, dec, lst), dial.project(ra + 0.5, dec, lst)
+    n0, n1 = dial.project(ra, dec - 0.5, lst), dial.project(ra, dec + 0.5, lst)
+    ex, ey = e1[0] - e0[0], e1[1] - e0[1]
+    nx, ny = n1[0] - n0[0], n1[1] - n0[1]
+    le, ln = math.hypot(ex, ey) or 1, math.hypot(nx, ny) or 1
+    east, north = sol["offset"]
+    return si + 0.5 + 5.0 * (east * ex / le + north * nx / ln), sj + 0.5 + 5.0 * (east * ey / le + north * ny / ln)
+
+
+CORONA_STREAMERS = (12, 78, 148, 196, 262, 318)          # where the corona's long streamers reach out (degrees)
+PROMINENCES = {                                          # small red flames at the Moon's edge in totality, by hand
+    55: [(0, 0), (1, 0), (0, -1)],
+    170: [(0, 0), (0, -1), (1, -1), (1, -2)],
+    295: [(0, 0), (-1, 0)],
+}
+
+
+def draw_corona(img, si, sj, moon_at, sol, inside, tt, red):
+    """Totality: the black Moon, a pearly ring at its edge, the corona thinning outward in streamers, red
+    prominences; as totality comes or goes, the diamond ring, the Sun's last point of light at the Moon's edge."""
+    H, W = inside.shape
+    yy, xx = np.mgrid[0:H, 0:W]
+    cx, cy = si + 0.5, sj + 0.5
+    total = sol["kind"] == "total"
+    strength = 1.0 if total else max(0.0, (sol["obscuration"] - 0.97) / 0.03)
+    dd = np.hypot(xx + 0.5 - cx, yy + 0.5 - cy)
+    th = np.degrees(np.arctan2(xx + 0.5 - cx, -(yy + 0.5 - cy))) % 360
+    stream = np.zeros_like(dd)
+    for a in CORONA_STREAMERS:
+        d_ = np.abs((th - a + 180) % 360 - 180)
+        stream = np.maximum(stream, np.exp(-(d_ / 11.0) ** 2))
+    reach = 8.0 + 15.0 * stream
+    dens = np.clip(1 - (dd - 6.0) / reach, 0, 1) ** 1.5 * (0.35 + 0.65 * stream) * strength
+    pearl, mist = (c8(3, 1, 1), c8(2, 0, 0)) if red else (c8(3, 3, 3), c8(2, 3, 3))
+    img[(dens > tt) & inside & (dd > 6.0)] = np.where(((dens > 0.45) & (dd < 10))[(dens > tt) & inside & (dd > 6.0)][..., None],
+                                                    pearl, mist)
+    img[(dd > 5.4) & (dd <= 6.6) & inside] = pearl if total else mist   # the inner corona at the Moon's edge
+    mdd = np.hypot(xx + 0.5 - moon_at[0], yy + 0.5 - moon_at[1])
+    img[(mdd <= 5.4 * sol["ratio"]) & inside] = c8(0, 0, 0)   # the Moon, black
+    if total:
+        for a, pts in PROMINENCES.items():
+            bx = cx + 5.9 * math.sin(math.radians(a))
+            by = cy - 5.9 * math.cos(math.radians(a))
+            for px, py in pts:
+                X, Y = int(math.floor(bx)) + px, int(math.floor(by)) + py
+                if 0 <= X < W and 0 <= Y < H and inside[Y, X]:
+                    img[Y, X] = c8(3, 0, 0) if red else c8(3, 1, 1)
+    else:                                                # the diamond: the last of the Sun, opposite the Moon's middle
+        vx, vy = moon_at[0] - cx, moon_at[1] - cy
+        n_ = math.hypot(vx, vy) or 1
+        gx, gy = int(math.floor(cx - 5.6 * vx / n_)), int(math.floor(cy - 5.6 * vy / n_))
+        sprites.paint(img, sprites.DIAMOND, gx, gy, {5: c8(3, 3, 3) if not red else c8(3, 1, 1)}, where=inside)
+
+
 def bead_pixels(dial, inset):
     """Every third pixel along the ring's track `inset` in: the beads (the same for every frame, so kept)."""
     cache = dial.__dict__.setdefault("_beads", {})
@@ -326,6 +383,12 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     rect = getattr(dial, "rect", False)
     SS = 4
     sun_c, planet_c, moon_c = piece_colours(P)
+    # an eclipse under way here: the Sun behind the Moon (the sky dims toward twilight as the last of the Sun goes,
+    # deepest in totality), or the Moon in the Earth's shadow (its light gone, the stars come back round it)
+    sol = events.solar(when, dial.lat, dial.lon)
+    lun = events.lunar(when, dial.lat, dial.lon)
+    umbra = float(smooth(0.80, 1.0, sol["obscuration"])) ** 1.5 if sol else 0.0
+    s_eff = sun_alt + (-6.0 - sun_alt) * umbra if umbra > 0 else sun_alt
 
     # the window: the sky above the horizon (symmetric about the meridian by construction)
     ys, xs = np.mgrid[0:H * SS, 0:W * SS]
@@ -349,6 +412,11 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     paper = P["window"] == "paper"
     if P["window"] == "sky":
         bval, warm = sky_scalar(palt, gamma, sun_alt)
+        if umbra > 0:                                    # twilight from all round the horizon, and a sunset all round
+            b2, w2 = sky_scalar(palt, np.full_like(gamma, 90.0), -6.0)
+            bval = bval * (1 - umbra) + b2 * umbra
+            ring_glow = umbra * np.exp(-np.clip(palt, 0, 90) / 9.0) * (0.55 + 0.45 * (sol["kind"] == "total"))
+            warm = np.maximum(warm * (1 - umbra), ring_glow)
         ramp = [P["night"]] + [c for c in COOL if c.sum() > P["night"].sum()]
         skyq = banded(np.clip(bval, 0, len(ramp) - 1), ramp, tt)
         wv = warm * len(WARM) + 0.2
@@ -357,20 +425,31 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             wq = banded(np.clip(wv - 1, 0, len(WARM) - 1), WARM, tt)
             skyq = np.where((hot & (smooth(0, 0.5, wv - 1) > tt))[..., None], wq, skyq)
         img[inside] = skyq[inside]
-        dark = sun_alt < -12
+        dark = s_eff < -12
     elif P["window"] == "red":
-        bval, _ = sky_scalar(palt, gamma, sun_alt)
+        bval, _ = sky_scalar(palt, gamma, s_eff)
         skyq = banded(np.clip(bval * 0.5, 0, 2), [c8(0, 0, 0), c8(1, 0, 0), c8(2, 0, 0)], tt)
         img[inside] = skyq[inside]
-        dark = sun_alt < -12
+        dark = s_eff < -12
     else:
         img[inside] = P["night"]
         dark = True
     ground = img.copy()
-    faint = float(np.interp(sun_alt, [-16, -10, -5, -1.5], [4.6, 3.4, 2.0, 0.4])) if not paper else 4.6
-    if not paper and sun_alt > -1.5:
+    faint = float(np.interp(s_eff, [-16, -10, -5, -1.5], [4.6, 3.4, 2.0, 0.4])) if not paper else 4.6
+    if not paper and s_eff > -1.5:
         faint = -9
-    figs = paper or sun_alt < -10.5
+    figs = paper or s_eff < -10.5
+    # the Moon's light: a bright Moon up at night pales the sky round it and hides the faint stars there; in the
+    # Earth's shadow it has no light to give
+    mx, my = dial.project(*pos["moon"], lst)
+    f = pos["moon_phase"]
+    lit_moon = (not paper and P["window"] == "sky" and s_eff < -10 and f > 0.3 and
+                astro.altitude(*pos["moon"], lst, dial.lat) > 0 and not (lun and lun["magnitude"] > 0.5))
+    moon_reach = 7 + 12 * f
+    if lit_moon:
+        dd_m = np.hypot(xx + 0.5 - mx, yy + 0.5 - my)
+        mglow = np.clip(1 - (dd_m - 6) / moon_reach, 0, 1) ** 1.6 * 0.55 * f
+        img[(mglow > tt) & inside & (dd_m > 6)] = c8(0, 1, 2)
 
     # the Milky Way, stippled
     if paper or sun_alt < -15:
@@ -403,7 +482,6 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     boxes = []
     blocked = np.zeros((H, W), bool)
     col = int(dial.cx)
-    eclipse = events.eclipse_at(when, dial.lat, dial.lon)
     shower = events.shower_at(pos["sun_lon"])
     # the meridian, dotted from the north point through the pole and the zenith to the south point; the zenith
     # marked with a small cross turned on its side, so it is not taken for a star
@@ -438,6 +516,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             continue
         x, y = dial.project(ra, de, lst)
         xi, yi = int(math.floor(x)), int(math.floor(y))
+        if lit_moon and mg > 2.2 and math.hypot(x - mx, y - my) < 6 + moon_reach:
+            continue
         c = P["star"] if (paper or P["window"] == "red") else (c8(2, 2, 3) if bv < -0.1 else c8(3, 3, 3) if bv < 0.5 else
                                                               c8(3, 3, 2) if bv < 1.15 else c8(3, 2, 1) if bv < 1.6 else c8(3, 2, 0))
         dim = c8(1, 1, 1) if light_paper else c * 0.67 + P["night"] * 0.33
@@ -459,7 +539,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     # equator (near enough the ecliptic), magnified: at the chart's scale they would sit inside one pixel
     reach = {}
     for pn in ("venus", "jupiter", "mars", "saturn", "mercury"):
-        if not paper and sun_alt > -3:
+        if not paper and s_eff > -3:
             continue
         x, y = dial.project(*pos[pn], lst)
         xi, yi = int(math.floor(x)), int(math.floor(y))
@@ -501,24 +581,32 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             reach["jupiter"] = (min(lo, -hw), max(hi, hw))
 
     # the Moon, drawn in its phase (lit side toward the Sun: right while it waxes); by day only its lit face
-    mx, my = dial.project(*pos["moon"], lst)
-    f = pos["moon_phase"]
     moon_cols = dict(moon_c)
     if not dark and not paper and f >= 0.04:
         moon_cols[1] = None
     mi, mj = int(math.floor(mx)), int(math.floor(my))
-    sprites.paint(img, sprites.moon_for(f, pos["moon_waxing"]), mi, mj, moon_cols, where=inside)
-    boxes.append((mi - 6, mj - 6, mi + 7, mj + 7))
-    if eclipse and eclipse[0] == "moon":                 # copper where the Earth's shadow lies on it
+    if lun and lun["magnitude"] > 0:                      # in the Earth's shadow
+        drawing = sprites.moon("full")
         ax_, ay_ = dial.project(pos["sun"][0] + 180, -pos["sun"][1], lst)
         ux_, uy_ = ax_ - mx, ay_ - my
         n_ = math.hypot(ux_, uy_) or 1
-        for j in range(-5, 6):
-            for i in range(-5, 6):
-                X_, Y_ = mi + i, mj + j
-                if i * i + j * j <= 30 and 0 <= X_ < W and 0 <= Y_ < H and inside[Y_, X_]:
-                    if (i * ux_ + j * uy_) / n_ / 5.5 > 1 - 2 * eclipse[1]:
-                        img[Y_, X_] = c8(2, 1, 0) if P["window"] != "red" else c8(1, 0, 0)
+        ux_, uy_ = ux_ / n_, uy_ / n_
+        red = P["window"] == "red"
+        for j, i in zip(*np.nonzero(drawing)):
+            X_, Y_ = mi - 5 + i, mj - 5 + j
+            if not (0 <= X_ < W and 0 <= Y_ < H and inside[Y_, X_]):
+                continue
+            along = ((i - 5) * ux_ + (j - 5) * uy_) / 5.5    # +1 at the limb toward the shadow's middle
+            if lun["kind"] == "total":                       # the whole face red: deepest toward the middle
+                img[Y_, X_] = (c8(1, 0, 0) if red else c8(2, 0, 0)) if along > 0.15 else \
+                    (c8(2, 0, 0) if red else c8(3, 1, 0)) if along < -0.55 else (c8(1, 0, 0) if red else c8(2, 1, 0))
+            elif along > 1 - 2 * lun["magnitude"]:           # the shadow's bite, dark red
+                img[Y_, X_] = c8(1, 0, 0)
+            else:
+                img[Y_, X_] = moon_cols[5]
+    else:
+        sprites.paint(img, sprites.moon_for(f, pos["moon_waxing"]), mi, mj, moon_cols, where=inside)
+    boxes.append((mi - 6, mj - 6, mi + 7, mj + 7))
 
     # the Sun, with its face (after the Sun of May), by day; on a printed chart always. In a live sky it stands
     # in its own light, as the first takes drew it: a pale disc and a glow stippled thinner outward, the sky
@@ -526,24 +614,30 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     sx, sy = dial.project(*pos["sun"], lst)
     if sun_alt > -0.8 or paper:
         si, sj = int(math.floor(sx)), int(math.floor(sy))
-        if not paper:
+        cover = sol["obscuration"] if sol else 0.0
+        red = P["window"] == "red"
+        if not paper and cover < 0.97:
             dd = np.hypot(xx - si, yy - sj)
-            glow = np.clip(1 - (dd - 4.0) / 13.0, 0, 1) ** 1.5 * 0.85
-            red = P["window"] == "red"
+            glow = np.clip(1 - (dd - 4.0) / 13.0, 0, 1) ** 1.5 * 0.85 * (1 - cover) ** 0.5
             light = c8(2, 0, 0) if red else c8(3, 3, 2) if sun_alt < 6 else c8(2, 3, 3)   # warm when the Sun is low
             img[(glow > tt) & inside & (dd > 4.0)] = light
             img[(dd <= 4.4) & inside] = c8(3, 0, 0) if red else c8(3, 3, 1)
         if paper:                                        # on a printed chart, the engraver's glory round it
             sprites.paint(img, sprites.glory(), si, sj, {1: P["line"]}, where=inside)
-        sprites.paint(img, sprites.sun_of_may(), si, sj, sun_c, where=inside)
+        if sol:
+            ox_, oy_ = sun_offset_px(dial, pos, lst, si, sj, sol)
+        if sol and not paper and cover >= 0.97:          # the corona, the Moon black across the Sun
+            draw_corona(img, si, sj, (ox_, oy_), sol, inside, tt, red)
+        else:
+            sprites.paint(img, sprites.sun_of_may(), si, sj, sun_c, where=inside)
+            if sol:                                      # the Moon's disc across it, as seen from here
+                cover_px = (np.hypot(xx + 0.5 - ox_, yy + 0.5 - oy_) <= 5.3 * sol["ratio"]) & \
+                    (np.hypot(xx - si, yy - sj) <= 6.0) & inside
+                img[cover_px] = c8(0, 0, 0) if red else c8(0, 0, 1)
+                if sol["kind"] == "annular":             # the ring of fire
+                    ring_ = (np.abs(np.hypot(xx - si, yy - sj) - 5.0) < 0.6) & ~cover_px & inside
+                    img[ring_] = c8(3, 1, 0) if red else c8(3, 3, 1)
         boxes.append((si - 12, sj - 12, si + 13, sj + 13))
-        if eclipse and eclipse[0] == "sun":              # the Moon across it, as seen from here
-            tm = astro.topocentric_moon(*pos["moon"], pos["moon_dist"], lst, dial.lat)
-            p0, p1 = dial.project(*pos["sun"], lst), dial.project(*tm, lst)
-            sc = 5.0 / events.SUN_RADIUS / dial.k
-            cx_, cy_ = si + (p1[0] - p0[0]) * sc, sj + (p1[1] - p0[1]) * sc
-            cover = (np.hypot(xx - cx_, yy - cy_) <= 5.3) & (np.hypot(xx - si, yy - sj) <= 6.0) & inside
-            img[cover] = P["night"] if P["window"] != "red" else c8(0, 0, 0)
 
     # a meteor shower at its peak: its radiant, where the meteors seem to come from, and its name
     radiant = None
@@ -602,7 +696,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     if astro.altitude(*pos["moon"], lst, dial.lat) > 0:
         place(pixel_text("Moon"), mi, mj, P["planet"], clear=(-3, 3), own=True)
     for pn in ("venus", "jupiter", "mars", "saturn", "mercury"):
-        if (not paper and sun_alt > -3) or astro.altitude(*pos[pn], lst, dial.lat) <= 2:
+        if (not paper and s_eff > -3) or astro.altitude(*pos[pn], lst, dial.lat) <= 2:
             continue
         x, y = dial.project(*pos[pn], lst)
         lo, hi = reach.get(pn, (-2, 2))
@@ -814,6 +908,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     hour = (lambda h: h if clock24 else (h % 12 or 12))
     # on a day with news in the sky, the news takes the Sun's rising or setting line
     news = events.news(when, tz, dial.lat, dial.lon)
+    if (sol and sol["kind"] == "total") or (lun and lun["kind"] == "total"):
+        news = ("TOTALITY",)
     rows_at = (0.345, 0.675, 0.915)
     ink(img, astro_time(str(hour(local.hour)), f"{local.minute:02d}", fn, big, fw, feats=("onum",)), dial.cx,
         ring_in + span * rows_at[0], P["ink"])

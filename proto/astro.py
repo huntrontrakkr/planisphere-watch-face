@@ -1,10 +1,13 @@
 """Where things are in the sky, to the precision a 260-pixel dial needs
 (well under a pixel): the stars from the catalogue (J2000; precession over
-these decades moves them a third of a pixel), the Sun, Moon and planets
-from Paul Schlyter's orbital elements ("How to compute planetary
-positions") with the largest perturbations. Angles in degrees."""
+these decades moves them a third of a pixel); the planets from Paul
+Schlyter's orbital elements ("How to compute planetary positions") with
+the largest perturbations; the Sun and the Moon from Meeus (lunar.py),
+closely enough to find where an eclipse is total. Angles in degrees."""
 import math
 from datetime import datetime, timezone
+
+import lunar
 
 D2R = math.pi / 180
 
@@ -81,32 +84,29 @@ def positions(t: datetime):
     ('moon_phase': illuminated fraction 0..1, 'moon_waxing': bool), its distance ('moon_dist', Earth radii) and the
     Sun's ecliptic longitude."""
     d = julian(t) - 2451543.5
-    eps = 23.4393 - 3.563e-7 * d
     out = {}
-    # the Sun
+    # the Sun and the Moon to the precision eclipses need (lunar.py: Meeus), in dynamical time, apparent places
+    jde = julian(t) + lunar.delta_t(t.year) / 86400
+    dpsi, eps = lunar.nutation(jde)
+    lam_s, R = lunar.sun(jde)
+    lam_s = rev(lam_s + dpsi)
+    lam_m, beta_m, dist_km = lunar.moon(jde)
+    lam_m = rev(lam_m + dpsi)
+    out["sun"] = ecl_to_eq(lam_s, 0.0, eps)
+    out["sun_lon"] = lam_s
+    out["sun_dist"] = R
+    out["moon"] = ecl_to_eq(lam_m, beta_m, eps)
+    out["moon_dist"] = dist_km / 6378.14                     # Earth radii
+    elong = math.acos(max(-1, min(1, cosd(lam_m - lam_s) * cosd(beta_m)))) / D2R
+    out["moon_phase"] = (1 - cosd(elong)) / 2
+    out["moon_waxing"] = rev(lam_m - lam_s) < 180
+    # Schlyter's Sun, to carry the planets from the Sun's frame to ours
     _, _, ws, _, es, Ms = elements("sun", d)
     E = kepler(rev(Ms), es)
     xv, yv = cosd(E) - es, math.sqrt(1 - es * es) * sind(E)
     v, rs = atan2d(yv, xv), math.hypot(xv, yv)
     lon_sun = rev(v + ws)
     xs, ys = rs * cosd(lon_sun), rs * sind(lon_sun)
-    out["sun"] = ecl_to_eq(lon_sun, 0.0, eps)
-    out["sun_lon"] = lon_sun
-    # the Moon, with its largest perturbations
-    x, y, z, (Nm, im, wm, am, em, Mm) = orbit("moon", d)
-    lon, lat = atan2d(y, x), atan2d(z, math.hypot(x, y))
-    Ls, Lm = rev(Ms + ws), rev(Mm + wm + Nm)
-    D, F = rev(Lm - Ls), rev(Lm - Nm)
-    lon += (-1.274 * sind(Mm - 2 * D) + 0.658 * sind(2 * D) - 0.186 * sind(Ms) - 0.059 * sind(2 * Mm - 2 * D)
-            - 0.057 * sind(Mm - 2 * D + Ms) + 0.053 * sind(Mm + 2 * D) + 0.046 * sind(2 * D - Ms) + 0.041 * sind(Mm - Ms)
-            - 0.035 * sind(D) - 0.031 * sind(Mm + Ms) - 0.015 * sind(2 * F - 2 * D) + 0.011 * sind(Mm - 4 * D))
-    lat += (-0.173 * sind(F - 2 * D) - 0.055 * sind(Mm - F - 2 * D) - 0.046 * sind(Mm + F - 2 * D)
-            + 0.033 * sind(F + 2 * D) + 0.017 * sind(2 * Mm + F))
-    out["moon"] = ecl_to_eq(rev(lon), lat, eps)
-    out["moon_dist"] = math.sqrt(x * x + y * y + z * z) - 0.58 * cosd(Mm - 2 * D) - 0.46 * cosd(2 * D)   # Earth radii
-    elong = math.acos(max(-1, min(1, cosd(lon - lon_sun) * cosd(lat)))) / D2R
-    out["moon_phase"] = (1 - cosd(elong)) / 2
-    out["moon_waxing"] = rev(lon - lon_sun) < 180
     # the planets (geocentric), Jupiter and Saturn with their great inequality
     Mj, Msat = elements("jupiter", d)[5], elements("saturn", d)[5]
     for p in ("mercury", "venus", "mars", "jupiter", "saturn"):

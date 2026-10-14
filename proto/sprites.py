@@ -374,6 +374,17 @@ SOUTH_STAR = art([
     "..R..",
     "..R..",
 ])
+DIAMOND = art([                 # the diamond ring's diamond: the Sun's last light at the Moon's edge
+    "....W....",
+    "....W....",
+    "....W....",
+    "...WWW...",
+    "WWWWWWWWW",
+    "...WWW...",
+    "....W....",
+    "....W....",
+    "....W....",
+])
 ZENITH = art([                  # the point overhead: a small cross turned on its side, not to be taken for a star
     "K...K",
     ".K.K.",

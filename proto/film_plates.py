@@ -71,6 +71,18 @@ def main():
     p_ = astro.positions(datetime(2026, 10, 14, 16, 15, tzinfo=timezone.utc))
     sheet.paste(fl.crop((95, 175, 165, 235)).resize((233, 200), Image.NEAREST), (930, 474))
     sheet.save(ROOT / "docs" / "almanac.png")
+    # eclipses: Dallas on 8 April 2024 through totality on the Time 2; the Sun eclipsed at sunset in Burgos on
+    # 12 August 2026; the blood Moon over New York on 14 March 2025
+    CT, MAD = ZoneInfo("America/Chicago"), ZoneInfo("Europe/Madrid")
+    dal, bur = RectDial(200, 228, 32.7767, -96.797), RectDial(200, 228, 42.34, -3.70)
+    shots = [(dal, datetime(2024, 4, 8, 13, 20, tzinfo=CT), CT), (dal, datetime(2024, 4, 8, 13, 36, tzinfo=CT), CT),
+             (dal, datetime(2024, 4, 8, 13, 40, 25, tzinfo=CT), CT), (dal, datetime(2024, 4, 8, 13, 42, tzinfo=CT), CT),
+             (bur, datetime(2026, 8, 12, 20, 29, 30, tzinfo=MAD), MAD), (t2, datetime(2025, 3, 14, 2, 50, tzinfo=NY), NY)]
+    sheet = Image.new("RGB", (3 * 412, 2 * 464), (24, 24, 26))
+    for i, (dial, t, tz) in enumerate(shots):
+        im = Image.fromarray(render(t.astimezone(timezone.utc), dial, sky, tz, "planisphere", False))
+        sheet.paste(im.resize((400, 456), Image.NEAREST), ((i % 3) * 412 + 6, (i // 3) * 464 + 4))
+    sheet.save(ROOT / "docs" / "eclipses.png")
     print(len(frames), "frames")
 
 

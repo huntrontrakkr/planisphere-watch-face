@@ -78,28 +78,71 @@ def shower_at(sun_lon, within=1.0):
 
 
 # ---- eclipses, from the Sun's and the Moon's places ---------------------------------------------------------------
-SUN_RADIUS = 0.2666
+SUN_RADIUS = 0.2666                                      # degrees at 1 AU (959.6 arcseconds)
+
+
+def solar(t, lat, lon):
+    """The Sun and the Moon seen from here: None if the Moon is not across the Sun (or the Sun is down), else
+    {'kind': partial | annular | total, 'magnitude': fraction of the Sun's diameter covered, 'obscuration':
+    fraction of its disc covered, 'offset': the Moon's centre from the Sun's in Sun radii (east, north),
+    'ratio': the Moon's apparent radius over the Sun's}."""
+    pos = astro.positions(t)
+    lst = astro.sidereal(t, lon)
+    if astro.altitude(*pos["sun"], lst, lat) < -0.8:
+        return None
+    dist = pos["moon_dist"]
+    tm = astro.topocentric_moon(*pos["moon"], dist, lst, lat)
+    # the Moon's apparent size from here: nearer by about an Earth radius times the sine of its height
+    near = dist - math.sin(math.radians(max(0.0, astro.altitude(*tm, lst, lat))))
+    rm = math.degrees(math.asin(0.2725076 / near))
+    rs = SUN_RADIUS / pos["sun_dist"]
+    sep = astro.separation(tm, pos["sun"])
+    if sep >= rs + rm:
+        return None
+    if sep <= rm - rs:
+        kind, cover = "total", 1.0
+    elif sep <= rs - rm:
+        kind, cover = "annular", (rm / rs) ** 2
+    else:                                                # two circles overlapping: the lens's area
+        d, r1, r2 = sep, rs, rm
+        a1 = r1 * r1 * math.acos(max(-1, min(1, (d * d + r1 * r1 - r2 * r2) / (2 * d * r1))))
+        a2 = r2 * r2 * math.acos(max(-1, min(1, (d * d + r2 * r2 - r1 * r1) / (2 * d * r2))))
+        a3 = 0.5 * math.sqrt(max(0.0, (-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2)))
+        kind, cover = "partial", (a1 + a2 - a3) / (math.pi * r1 * r1)
+    east = (tm[0] - pos["sun"][0] + 180) % 360 - 180
+    off = (east * math.cos(math.radians(pos["sun"][1])) / rs, (tm[1] - pos["sun"][1]) / rs)
+    return {"kind": kind, "magnitude": (rs + rm - sep) / (2 * rs), "obscuration": min(1.0, cover), "offset": off,
+            "ratio": rm / rs}
+
+
+def lunar(t, lat, lon):
+    """The Moon in the Earth's shadow, if it is up: None, or {'kind': partial | total, 'magnitude': how far into
+    the umbra it reaches, in Moon diameters, 'toward': the shadow's centre from the Moon's, as (east, north)}."""
+    pos = astro.positions(t)
+    lst = astro.sidereal(t, lon)
+    if astro.altitude(*pos["moon"], lst, lat) < 0:
+        return None
+    dist = pos["moon_dist"]
+    rm = math.degrees(math.asin(0.2725076 / dist))
+    anti = (astro.rev(pos["sun"][0] + 180), -pos["sun"][1])
+    sep = astro.separation(pos["moon"], anti)
+    umbra = 1.02 * (0.998340 * math.degrees(math.asin(1 / dist)) + 0.00244 - SUN_RADIUS / pos["sun_dist"])
+    if sep >= umbra + rm:
+        return None
+    east = (anti[0] - pos["moon"][0] + 180) % 360 - 180
+    toward = (east * math.cos(math.radians(pos["moon"][1])), anti[1] - pos["moon"][1])
+    return {"kind": "total" if sep <= umbra - rm else "partial", "magnitude": (umbra + rm - sep) / (2 * rm),
+            "toward": toward}
 
 
 def eclipse_at(t, lat, lon):
-    """('sun' | 'moon', depth 0..1) if an eclipse is under way and the eclipsed body is up, else None. For the Sun,
-    depth is how far the Moon's disc has crossed it; for the Moon, how far into the Earth's shadow it is."""
-    pos = astro.positions(t)
-    lst = astro.sidereal(t, lon)
-    dist = pos["moon_dist"]
-    moon_r = asind(0.2725 / dist)
-    # the Moon in the Earth's shadow (seen alike from everywhere it is up)
-    anti = (rev(pos["sun"][0] + 180), -pos["sun"][1])
-    sep = astro.separation(pos["moon"], anti)
-    umbra = 1.02 * (0.99834 * asind(1 / dist) + 0.00244 - SUN_RADIUS)
-    if sep < umbra + moon_r and astro.altitude(*pos["moon"], lst, lat) > 0:
-        return "moon", min(1.0, (umbra + moon_r - sep) / (2 * moon_r))
-    # the Sun behind the Moon (seen from here: the Moon's place from the ground)
-    if astro.altitude(*pos["sun"], lst, lat) > -0.8:
-        tm = astro.topocentric_moon(*pos["moon"], dist, lst, lat)
-        sep = astro.separation(tm, pos["sun"])
-        if sep < SUN_RADIUS + moon_r:
-            return "sun", min(1.0, (SUN_RADIUS + moon_r - sep) / (2 * SUN_RADIUS))
+    """('sun' | 'moon', details) for an eclipse under way here, else None."""
+    m = lunar(t, lat, lon)
+    if m:
+        return "moon", m
+    s_ = solar(t, lat, lon)
+    if s_:
+        return "sun", s_
     return None
 
 
@@ -140,7 +183,11 @@ def news(t, tz, lat, lon):
         u = (start + timedelta(minutes=10 * k)).astimezone(timezone.utc)
         e = eclipse_at(u, lat, lon)
         if e:
-            found.setdefault("eclipse", e[0])
+            kind = e[1]["kind"]
+            prev = found.get("eclipse")
+            rank = {"partial": 0, "annular": 1, "total": 2}
+            if prev is None or rank[kind] > rank[prev[1]]:
+                found["eclipse"] = (e[0], kind)
         if k % 6 == 0:                                   # hourly: planets meeting in a dark sky
             pos = astro.positions(u)
             lst = astro.sidereal(u, lon)
@@ -151,8 +198,13 @@ def news(t, tz, lat, lon):
     sh = shower_at(astro.positions(midnight)["sun_lon"])
     line = None                                          # the news, longest wording first, then shorter ones
     if "eclipse" in found:
-        line = ("ECLIPSE OF THE SUN", "SUN ECLIPSED") if found["eclipse"] == "sun" else \
-            ("ECLIPSE OF THE MOON", "MOON ECLIPSED")
+        body, kind = found["eclipse"]
+        if body == "sun":
+            line = {"total": ("TOTAL ECLIPSE OF THE SUN", "TOTAL ECLIPSE"), "annular": ("ANNULAR ECLIPSE", "RING OF FIRE"),
+                    "partial": ("ECLIPSE OF THE SUN", "SUN ECLIPSED")}[kind]
+        else:
+            line = ("TOTAL ECLIPSE OF THE MOON", "BLOOD MOON") if kind == "total" else \
+                ("ECLIPSE OF THE MOON", "MOON ECLIPSED")
     elif "planets" in found:
         a, b = (n.upper() for n in found["planets"])
         line = (f"{a} MEETS {b}", f"{a} & {b}")
@@ -170,11 +222,21 @@ if __name__ == "__main__":
     NY = ZoneInfo("America/New_York")
     lat, lon = 40.71, -74.01
     # known events, to check the eclipses against
-    for when, what in ((datetime(2024, 4, 8, 15, 20, tzinfo=NY), "partial solar eclipse in New York, about 90%"),
-                       (datetime(2025, 3, 14, 2, 59, tzinfo=NY), "total lunar eclipse"),
-                       (datetime(2025, 9, 7, 14, 11, tzinfo=NY), "total lunar eclipse, Moon not up in New York"),
-                       (datetime(2026, 3, 3, 6, 33, tzinfo=NY), "total lunar eclipse at moonset in New York")):
-        print(when, what, "->", eclipse_at(when.astimezone(timezone.utc), lat, lon))
+    from datetime import timedelta
+    def scan(t0, minutes, lat_, lon_):
+        seen = {}
+        for k in range(minutes):
+            u = t0 + timedelta(minutes=k)
+            e = eclipse_at(u, lat_, lon_)
+            if e:
+                kind = e[1]["kind"]
+                seen.setdefault(kind, [u, u])[1] = u
+        return {k: (v[0].strftime("%H:%M"), v[1].strftime("%H:%M")) for k, v in seen.items()}
+    utc = timezone.utc
+    print("Dallas 2024-04-08 (total 18:41-18:44 UTC):", scan(datetime(2024, 4, 8, 17, 20, tzinfo=utc), 150, 32.7767, -96.797))
+    print("New York 2024-04-08 (partial, 0.90 at 19:25 UTC):", scan(datetime(2024, 4, 8, 18, 0, tzinfo=utc), 150, lat, lon))
+    print("Burgos 2026-08-12 (total about 18:28 UTC, Sun low):", scan(datetime(2026, 8, 12, 17, 20, tzinfo=utc), 100, 42.34, -3.70))
+    print("New York 2025-03-14 lunar (total 06:26-07:31 UTC):", scan(datetime(2025, 3, 14, 4, 0, tzinfo=utc), 240, lat, lon))
     t = datetime(2026, 10, 14, 21, 30, tzinfo=NY).astimezone(timezone.utc)
     for name, X, Y, behind in galilean(t):
         print(f"  {name:9s} X {X:+6.2f}  Y {Y:+5.2f}{'  behind' if behind else ''}")
