@@ -34,6 +34,9 @@ import astro
 from render import Dial, load_sky
 from render2 import (COOL, WARM, bn_tile, sky_scalar, banded, smooth, star_names, next_sun_event, wu_line, c8)
 from typeset import run_alpha, ink, astro_time, arc_text
+from pixeltext import pixel_text, time_text, concat, stamp, box_of, degrees_text, bounds
+import emblems
+import flair
 
 ROOT = Path(__file__).resolve().parents[1]
 NY = ZoneInfo("America/New_York")
@@ -80,8 +83,10 @@ def nearest(img):
     return (np.clip(np.floor(np.clip(img, 0, 255) / 85 + 0.5), 0, 3) * 85).astype(np.uint8)
 
 
-def render(when, dial, sky, tz, plate="planisphere", round_screen=True):
+def render(when, dial, sky, tz, plate="planisphere", round_screen=True, corners="glory"):
     P = PLATES[plate]
+    fn, fw = P["font"]
+    fi, fiw = P["italic"]
     stars, lines, mw, named = sky
     W, H = dial.w, dial.h
     lst = astro.sidereal(when, dial.lon)
@@ -130,6 +135,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True):
     else:
         img[inside] = P["night"]
         dark = True                                    # a printed chart shows its stars by day and night alike
+    ground = img.copy()
     faint = float(np.interp(sun_alt, [-16, -10, -5, -1.5], [4.6, 3.4, 2.0, 0.4])) if P["window"] != "paper" else 4.6
     if P["window"] != "paper" and sun_alt > -1.5:
         faint = -9
@@ -256,14 +262,14 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True):
             elif dark:
                 img[yi, xi] = c8(1, 1, 1) if P["window"] == "sky" else c8(1, 0, 0)
     if sun_alt > -0.8 or paper:
-        dd = np.hypot(xx + 0.5 - sx, yy + 0.5 - sy)
-        if paper:                                      # the Sun's own sign: a circle with a point
-            ringm = (np.abs(dd - 3.2) < 0.7) | (dd < 0.9)
-            img[ringm & inside] = P["accent"]
+        # the Sun with its face, its rays turning between straight and wavy (after the Sun of May)
+        if P["window"] == "red":
+            sc = {1: c8(1, 0, 0), 2: c8(3, 0, 0), 3: c8(3, 1, 1)}
+        elif paper and P["night"].sum() > 400:
+            sc = {1: P["ink"], 2: c8(3, 2, 0), 3: c8(3, 3, 1)}
         else:
-            glow = np.clip(1 - (dd - 3.6) / 9.0, 0, 1) ** 1.5 * 0.85
-            img[(glow > tt) & inside & (dd > 3.6)] = c8(2, 3, 3) if P["window"] == "sky" else c8(2, 0, 0)
-            img[(dd <= 4.0) & inside] = c8(3, 3, 1) if P["window"] == "sky" else c8(3, 0, 0)
+            sc = {1: c8(2, 1, 0), 2: c8(3, 2, 0), 3: c8(3, 3, 1)}
+        flair.paint(img, flair.sol(5), sx, sy, sc, where=inside)
 
     # the window's edge: a double rule, as a printed chart's neatline
     for off, wdt in ((0.0, 0.8), (2.4, 0.6)):
@@ -277,32 +283,27 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True):
         e = np.asarray(edge, np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3)) / 255
         img[(e > 0.45) & ~inside] = P["rule"]
 
-    # names in the sky
+    # names in the sky, in pixel type: stars leaning (oblique), planets in roman, constellations in capitals
     boxes = []
-    def place(alpha, x, y, colour, centred=False):
-        h, w = alpha.shape
-        for lx in ([x - w / 2] if centred else [x + 4, x - 4 - w]):
-            box = (lx - 1, y - h / 2 - 1, lx + w + 1, y + h / 2 + 1)
-            corners = [(int(bx), int(by)) for bx in (box[0], box[2]) for by in (box[1], box[3])]
+    def place(mask, x, y, colour, centred=False):
+        for anchor, lx in ([("centre", x)] if centred else [("left", x + 4), ("right", x - 3)]):
+            bx = box_of(mask, lx, y, anchor)
+            corners = [(bx[0], bx[1]), (bx[2] - 1, bx[1]), (bx[0], bx[3] - 1), (bx[2] - 1, bx[3] - 1)]
             if not all(0 <= cx_ < W and 0 <= cy_ < H and inside[cy_, cx_] for cx_, cy_ in corners):
                 continue
-            if any(box[0] < b[2] and b[0] < box[2] and box[1] < b[3] and b[1] < box[3] for b in boxes):
+            if any(bx[0] < b[2] and b[0] < bx[2] and bx[1] < b[3] and b[1] < bx[3] for b in boxes):
                 continue
-            boxes.append(box)
-            sub = img.copy()
-            ink(sub, alpha, lx + w / 2, y, colour)
-            img[inside] = sub[inside]
+            boxes.append(bx)
+            stamp(img, mask, lx, y, colour, halo=ground, where=inside, anchor=anchor)
             return True
         return False
-    fn, fw = P["font"]
-    fi, fiw = P["italic"]
     if astro.altitude(*pos["moon"], lst, dial.lat) > 0:
-        place(run_alpha([("Moon", fn, 10, fw, 0, ["smcp"])]), mx + 2, my, P["planet"])
+        place(pixel_text("Moon"), mx + 3, my, P["planet"])
     for pn in ("venus", "jupiter", "mars", "saturn", "mercury"):
         if (not paper and sun_alt > -3) or astro.altitude(*pos[pn], lst, dial.lat) <= 2:
             continue
         x, y = dial.project(*pos[pn], lst)
-        place(run_alpha([(pn.capitalize(), fn, 10, fw, 0, ["smcp"])]), x + 1, y, P["planet"])
+        place(pixel_text(pn.capitalize()), x + 1, y, P["planet"])
     if dark or paper:
         names = star_names()
         shown = 0
@@ -312,14 +313,14 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True):
             if astro.altitude(ra, de, lst, dial.lat) < 8 or hip not in names:
                 continue
             x, y = dial.project(ra, de, lst)
-            if place(run_alpha([(names[hip], fi, 11, fiw, 0, None)]), x, y, P["label"]):
+            if place(pixel_text(names[hip], oblique=True), x, y, P["label"]):
                 shown += 1
         cshown = 0
         for name, rank, ra, de in sorted(constellations(), key=lambda c: c[1]):
-            if cshown >= 4 or rank > 1 or astro.altitude(ra, de, lst, dial.lat) < 12:
+            if cshown >= 3 or rank > 1 or astro.altitude(ra, de, lst, dial.lat) < 12:
                 continue
             x, y = dial.project(ra, de, lst)
-            if place(run_alpha([(name.upper(), fn, 8, fw, 0, None)], track=0.30), x, y, P["const"], centred=True):
+            if place(pixel_text(name.upper(), track=1), x, y, P["const"], centred=True):
                 cshown += 1
 
     # the jacket: the 24-hour ring, set for civil time, read by the Sun's pointer
@@ -352,16 +353,19 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True):
         ang = ring(hr * 60)
         a = math.radians(ang)
         rr = R * 0.948
-        x, y = dial.cx + rr * math.sin(a), dial.cy + rr * math.cos(a)
-        if len(text) > 3:                              # words follow the ring, as engraved rings letter them
+        if len(text) > 3:                              # words follow the ring, each letter upright
             up = math.cos(a) < 0
-            al = arc_text((H, W), text, fn, 9, fw, dial.cx, dial.cy, rr, ang,
-                          outside_up=up, track=0.32)
-            sub = img.copy()
-            m = al[..., None] ** 0.85
-            img[:] = img * (1 - m) + P["accent"] * m
+            masks = [pixel_text(ch) for ch in text]
+            gap = 2
+            total = sum(m.shape[1] for m in masks) + gap * (len(masks) - 1)
+            s = -total / 2
+            for m in masks:
+                mid = s + m.shape[1] / 2
+                aa = math.radians(ang + (-1 if up else 1) * math.degrees(mid / rr))
+                stamp(img, m, dial.cx + rr * math.sin(aa), dial.cy + rr * math.cos(aa), P["accent"])
+                s += m.shape[1] + gap
         else:
-            ink(img, run_alpha([(text, fn, 10, fw, 0, None)], track=0.05), x, y, P["ink"])
+            stamp(img, pixel_text(text), dial.cx + rr * math.sin(a), dial.cy + rr * math.cos(a), P["ink"])
     # the Sun's pointer
     a = math.radians(sun_ang)
     s, c = math.sin(a), math.cos(a)
@@ -370,8 +374,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True):
     ImageDraw.Draw(pip).polygon([((dial.cx + tip * s) * SS, (dial.cy + tip * c) * SS),
                                  ((dial.cx + base_r * s - half * c) * SS, (dial.cy + base_r * c + half * s) * SS),
                                  ((dial.cx + base_r * s + half * c) * SS, (dial.cy + base_r * c - half * s) * SS)], fill=255)
-    pa = np.asarray(pip, np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3)) / 255
-    img[pa > 0.45] = P["accent"]
+    px_, py_ = dial.cx + R * 0.895 * s, dial.cy + R * 0.895 * c
+    flair.paint(img, flair.little_sun(), px_, py_, {1: P["accent"], 2: c8(3, 2, 0) if P["window"] != "red" else c8(3, 0, 0)})
 
     # the time, as an astronomer writes it, with the date and the Sun's next rising or setting
     top_of_window = dial.cy - abs(dial.lat) * dial.k
@@ -381,18 +385,17 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True):
     ink(img, astro_time(str(local.hour), f"{local.minute:02d}", fn, big, fw, feats=("onum", "lnum")[:1]), dial.cx, ring_in + span * 0.36, P["ink"])
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-    date = f"{days[local.weekday()]} {local.day} {months[local.month - 1]}"
-    al = run_alpha([(date, fi, 11, fiw, 0, ["onum"])])
-    if al.shape[1] > span * 2.2:
-        al = run_alpha([(f"{days[local.weekday()][:3]} {local.day} {months[local.month - 1]}", fi, 11, fiw, 0, ["onum"])])
-    ink(img, al, dial.cx, ring_in + span * 0.665, P["ink"])
+    date = pixel_text(f"{days[local.weekday()]} {local.day} {months[local.month - 1]}", oblique=True)
+    if date.shape[1] > span * 2.1:
+        date = pixel_text(f"{days[local.weekday()][:3]} {local.day} {months[local.month - 1][:3]}", oblique=True)
+    stamp(img, date, dial.cx, ring_in + span * 0.665, P["ink"])
     kind, at = next_sun_event(when, dial.lat, dial.lon)
     if kind:
-        t = at.astimezone(tz)
-        word = "sunrise" if kind == "SUNRISE" else "sunset"
-        al = run_alpha([(word, fn, 10, fw, 0, ["smcp"]), (" " + str(t.hour), fn, 10, fw, 0, ["onum"]), ("h", fn, 6, fw, 3.5, None),
-                        (f"{t.minute:02d}", fn, 10, fw, 0, ["onum"]), ("m", fn, 6, fw, 3.5, None)])
-        ink(img, al, dial.cx, ring_in + span * 0.84, P["accent"])
+        t_ = at.astimezone(tz)
+        stamp(img, concat(pixel_text(kind), time_text(t_.hour, t_.minute), gap=3), dial.cx, ring_in + span * 0.845, P["accent"])
+    # the Time 2's corners: a quiet woodcut texture on the card, nothing to read
+    if not round_screen and corners:
+        ornament(img, dial, P, corners)
     if round_screen:
         img[np.hypot(xx + 0.5 - dial.cx, yy + 0.5 - dial.cy) > W / 2] = 0
     return nearest(img)
@@ -408,9 +411,46 @@ if __name__ == "__main__":
     S = Image.new("RGB", (len(names) * 266, 266 * 2 + 236), (24, 24, 26))
     for i, pl in enumerate(names):
         for row, (t, dial, rnd) in enumerate(((when, r2, True), (noon, r2, True), (when, t2, False))):
-            im = Image.fromarray(render(t.astimezone(timezone.utc), dial, sky, NY, pl, rnd))
+            im = Image.fromarray(render(t.astimezone(timezone.utc), dial, sky, NY, pl, rnd, "glory"))
             im.save(out / f"plate-{pl}-{['night', 'noon', 'time2'][row]}.png")
             S.paste(im, (i * 266 + (3 if rnd else 33), row * 266 + 3))
     S.save(out / "plates.png")
     S.resize((S.width * 2, S.height * 2), Image.NEAREST).save(out / "plates-2x.png")
     print("ok")
+
+
+def ornament(img, dial, P, kind):
+    """Woodcut texture in the card's corners (outside the ring), in a tint a little away from the card's own:
+    'glory' fine rays from the instrument, as engraved frontispieces put rays behind their centrepiece;
+    'stars' a field of small engraved stars; 'hatch' an engraver's diagonal shading."""
+    H, W = img.shape[:2]
+    jacket = P["jacket"]
+    light = jacket.sum() > 400
+    tint = c8(3, 3, 1) if light else (c8(0, 0, 2) if jacket[2] > 0 else c8(1, 0, 0) if P["window"] == "red" else c8(1, 1, 1))
+    yy, xx = np.mgrid[0:H, 0:W]
+    dx, dy = xx + 0.5 - dial.cx, yy + 0.5 - dial.cy
+    r = np.hypot(dx, dy)
+    outside = r > dial.R + 1.5
+    if kind == "glory":
+        ang = np.degrees(np.arctan2(dy, dx)) % 360
+        step = 4.0
+        frac = (ang % step) / step
+        line = np.abs(frac - 0.5) * step * np.radians(1) * r < 0.55
+        long_ = (np.round(ang / step).astype(int) % 2 == 0) | (r < dial.R + 18)
+        img[outside & line & long_] = tint
+    elif kind == "hatch":
+        img[outside & ((xx + yy) % 3 == 0)] = tint
+    elif kind == "stars":
+        rng = np.random.default_rng(11)
+        pts = []
+        for _ in range(400):
+            x, y = rng.uniform(2, W - 3), rng.uniform(2, H - 3)
+            if math.hypot(x - dial.cx, y - dial.cy) < dial.R + 5 or any(math.hypot(x - a, y - b) < 9 for a, b in pts):
+                continue
+            pts.append((x, y))
+        for x, y in pts:
+            xi, yi = int(x), int(y)
+            big = (xi * 7 + yi * 13) % 3 == 0
+            for ox, oy in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)) + (((2, 0), (-2, 0), (0, 2), (0, -2)) if big else ()):
+                if 0 <= yi + oy < H and 0 <= xi + ox < W and outside[yi + oy, xi + ox]:
+                    img[yi + oy, xi + ox] = tint
