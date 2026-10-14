@@ -39,13 +39,19 @@ def load_sky(mag_limit=5.0):
     for f in json.load(open(DATA / "constellations.lines.json"))["features"]:
         for ls in f["geometry"]["coordinates"]:
             lines.append([(ra % 360, dec) for ra, dec in ls])
+    named = []
+    for f in json.load(open(DATA / "stars.6.json"))["features"]:
+        m = f["properties"]["mag"]
+        if m <= 2.0:
+            ra, dec = f["geometry"]["coordinates"]
+            named.append((ra % 360, dec, m, float(f["properties"].get("bv") or 0.6), int(f["id"])))
     mw = []
     for f in json.load(open(DATA / "mw.json"))["features"]:
         polys = []
         for poly in f["geometry"]["coordinates"]:
             polys.append([[(ra % 360, dec) for ra, dec in ring] for ring in poly])
         mw.append(polys)
-    return stars, lines, mw
+    return stars, lines, mw, named
 
 
 def star_colour(bv):
@@ -137,7 +143,7 @@ def quantize(img):
 
 def render(when, dial, sky, style=None):
     style = style or {}
-    stars, lines, mw = sky
+    stars, lines, mw = sky[:3]
     W, H = dial.w * SS, dial.h * SS
     lst = astro.sidereal(when, dial.lon)
     pos = astro.positions(when)

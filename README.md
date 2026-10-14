@@ -2,6 +2,20 @@
 
 A watch face prototype for the Pebble Round 2 and Time 2: the sky as it is right now, on a planisphere.
 
+## The readable version
+
+The time is large above the window, with the date and the Sun's next rising or setting. The sky names what is bright in it: the Moon, the planets, and the brightest stars in view.
+
+![A day on the Round 2, eight minutes a frame](docs/readable-day.gif)
+
+![9:30 pm in New York on 14 October 2026: Capella, Vega and Saturn named](docs/readable-evening.png)
+
+![The readable version at 9:30 pm, noon, dusk and before dawn, on the Round 2 and the Time 2](docs/readable-moods.png)
+
+## The instrument version
+
+The first take, before readability: no clock, only the planisphere. The Sun's golden pointer on the 24-hour ring is the only way to read the time.
+
 ![A day on the Round 2, eight minutes a frame: noon, sunset, the night turning, dawn](docs/a-day.gif)
 
 ![The evening sky over New York at 9:30 pm on 14 October 2026](docs/round2-evening.png)
@@ -24,7 +38,7 @@ Every image above is drawn at the watch's own size (260×260 round, 200×228) in
 
 - `proto/astro.py`: sidereal time, the Sun, the Moon (with its main perturbations) and the planets, from Paul Schlyter's orbital elements. That is well under a pixel at this scale.
 - `proto/render2.py`: the face. The projection is equidistant from the pole, the window is the horizon for your latitude, and the sky model works out its colour bands.
-- `proto/film.py`: the day film and the stills.
+- `proto/film.py`, `proto/film_readable.py`: the day films and the stills (`readable=True` in `render2.render` gives the readable version).
 
 ```
 uv run python proto/film.py      # writes out/

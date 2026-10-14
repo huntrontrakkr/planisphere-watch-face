@@ -177,8 +177,54 @@ def sky_state(sun_alt):
     return PAL["night"], faintest, figs
 
 
-def render(when, dial, sky, tz, fig_mag=3.8, show_ecliptic=True, round_screen=True):
-    stars, lines, mw = sky
+NAMES = None
+
+
+def star_names():
+    """HIP number -> proper name (d3-celestial's starnames.json)."""
+    global NAMES
+    if NAMES is None:
+        import json
+        NAMES = {int(k): v["name"] for k, v in json.load(open(ROOT / "data" / "starnames.json")).items() if v.get("name")}
+    return NAMES
+
+
+def next_sun_event(when, lat, lon):
+    """('SUNRISE' or 'SUNSET', the moment): the Sun's next crossing of the horizon (-0.833 degrees)."""
+    prev = None
+    for k in range(0, 27 * 60, 3):
+        t = when + timedelta(minutes=k)
+        lst = astro.sidereal(t, lon)
+        alt = astro.altitude(*astro.positions(t)["sun"], lst, lat) + 0.833
+        if prev is not None and (prev < 0) != (alt < 0):
+            f = prev / (prev - alt)
+            return ("SUNRISE" if alt > 0 else "SUNSET"), t - timedelta(minutes=3 * (1 - f))
+        prev = alt
+    return None, None
+
+
+def clock_text(t):
+    h = t.hour % 12 or 12
+    return f"{h}:{t.minute:02d}"
+
+
+def stamp_text(img, text, cx, cy, cap, colour, mask=None, align="centre"):
+    """Text in the stroke font, whole pixels in `colour`; returns its box (x0, y0, x1, y1)."""
+    al = glyph_alpha(text, cap)
+    h, w = al.shape
+    x0 = int(round(cx - w / 2)) if align == "centre" else int(round(cx)) if align == "left" else int(round(cx - w))
+    y0 = int(round(cy - h / 2))
+    H, W = img.shape[:2]
+    for j in range(h):
+        for i in range(w):
+            y, x = y0 + j, x0 + i
+            if al[j, i] > 0.45 and 0 <= y < H and 0 <= x < W and (mask is None or mask[y, x]):
+                img[y, x] = colour if al[j, i] > 0.7 or cap >= 14 else colour * 0.67
+    return x0, y0, x0 + w, y0 + h
+
+
+def render(when, dial, sky, tz, fig_mag=3.8, show_ecliptic=True, round_screen=True, readable=False):
+    stars, lines, mw = sky[:3]
     Wp, Hp = dial.w, dial.h
     lst = astro.sidereal(when, dial.lon)
     pos = astro.positions(when)
@@ -363,9 +409,10 @@ def render(when, dial, sky, tz, fig_mag=3.8, show_ecliptic=True, round_screen=Tr
     R = dial.R
     tick = Image.new("L", (Wp * SS, Hp * SS), 0)
     tickm = Image.new("L", (Wp * SS, Hp * SS), 0)
+    numbered = range(0, 24, 6) if readable else range(0, 24, 2)
     for hh in range(48):
-        if hh % 4 == 0:
-            continue                                          # even hours carry their numerals
+        if hh % 2 == 0 and hh // 2 in numbered:
+            continue                                          # these hours carry their numerals
         a = math.radians(ring(hh * 30))
         s, c = math.sin(a), math.cos(a)
         rr = R * 0.950
@@ -375,7 +422,7 @@ def render(when, dial, sky, tz, fig_mag=3.8, show_ecliptic=True, round_screen=Tr
     for lay, col in ((tick, PAL["tick"]), (tickm, PAL["num"])):
         a = np.asarray(lay, np.float64).reshape(Hp, SS, Wp, SS).mean(axis=(1, 3)) / 255
         img[(a > 0.4) & ~inside] = col
-    for hr in range(0, 24, 2):
+    for hr in numbered:
         a = math.radians(ring(hr * 60))
         rr = R * 0.950
         x, y = dial.cx + rr * math.sin(a), dial.cy + rr * math.cos(a)
@@ -401,8 +448,8 @@ def render(when, dial, sky, tz, fig_mag=3.8, show_ecliptic=True, round_screen=Tr
     for label, ang in (("N", 180), ("E", -90), ("S", 0), ("W", 90)):
         de = math.degrees(math.atan(-math.cos(math.radians(ang)) / math.tan(lat)))
         r = (90 - de) * dial.k + 6.5
-        if label == "S":
-            continue                                          # the south point meets the ring: the ring says it
+        if label == "S" or (label == "N" and readable):
+            continue                                          # the south point meets the ring; the north, the text above
         x, y = dial.cx + r * math.sin(math.radians(ang)), dial.cy + r * math.cos(math.radians(ang))
         al = glyph_alpha(label, 7)
         h, w = al.shape
@@ -413,7 +460,49 @@ def render(when, dial, sky, tz, fig_mag=3.8, show_ecliptic=True, round_screen=Tr
                     img[y0 + j, x0 + i] = PAL["card"]
     days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
     date = f"{days[local.weekday()]} {local.day}"
-    al = glyph_alpha(date, 8)
+    if readable:
+        # the time, large, above the window; the date and the Sun's next rising or setting beneath it
+        top_of_window = dial.cy - abs(dial.lat) * dial.k
+        ring_in = dial.cy - R * 0.90
+        span = top_of_window - ring_in
+        big = 24 if dial.w >= 240 else 19
+        stamp_text(img, clock_text(local), dial.cx, ring_in + span * 0.33, big, c8(3, 3, 3))
+        kind, at = next_sun_event(when, dial.lat, dial.lon)
+        stamp_text(img, date, dial.cx, ring_in + span * 0.635, 8, c8(2, 2, 2))
+        if kind:
+            stamp_text(img, f"{kind} {clock_text(at.astimezone(tz))}", dial.cx, ring_in + span * 0.80, 7, c8(2, 2, 1))
+        # names in the sky: the Moon, the planets, the brightest stars in view
+        boxes = []
+        def label(text, x, y, colour):
+            for side in (1, -1):
+                al = glyph_alpha(text, 7)
+                h, w = al.shape
+                lx = x + 4 if side > 0 else x - 4 - w
+                box = (lx - 1, y - h / 2 - 1, lx + w + 1, y + h / 2 + 1)
+                ok = all(0 <= int(bx) < Wp and 0 <= int(by) < Hp and inside[int(by), int(bx)] for bx in (box[0], box[2]) for by in (box[1], box[3]))
+                if ok and not any(box[0] < b[2] and b[0] < box[2] and box[1] < b[3] and b[1] < box[3] for b in boxes):
+                    boxes.append(box)
+                    stamp_text(img, text, lx, y, 7, colour, mask=inside, align="left")
+                    return
+        names = star_names()
+        moon_alt = astro.altitude(*pos["moon"], lst, dial.lat)
+        if moon_alt > 0:
+            label("MOON", *dial.project(*pos["moon"], lst), c8(3, 3, 2))
+        for pname in ("venus", "jupiter", "mars", "saturn", "mercury"):
+            if sun_alt > -3 or astro.altitude(*pos[pname], lst, dial.lat) <= 2:
+                continue
+            label(pname.upper(), *dial.project(*pos[pname], lst), c8(3, 2, 1))
+        if sun_alt < -9:
+            shown = 0
+            for ra, de, mg, bv, hip in sorted(sky[3], key=lambda st: st[2]):
+                if shown >= 4 or mg > 1.3:
+                    break
+                if astro.altitude(ra, de, lst, dial.lat) < 8 or hip not in names:
+                    continue
+                label(names[hip].upper(), *dial.project(ra, de, lst), c8(2, 2, 2))
+                shown += 1
+        date = None
+    al = glyph_alpha(date, 8) if date else np.zeros((1, 1))
     h, w = al.shape
     top_of_window = dial.cy - abs(dial.lat) * dial.k
     yc = (dial.cy - R * 0.80 + top_of_window) / 2

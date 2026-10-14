@@ -121,6 +121,39 @@ def glyph(ch):
         return W, [[(S, t), (S, b)], [(W - S, t), (S + 0.02, 0.6)], [(S + 0.16, 0.5), (W - S, b)]]
     if ch == "W":
         return 0.9, [[(S, t), (0.25, b), (0.45, t + 0.2), (0.65, b), (0.9 - S, t)]]
+    # the rest of the capitals, for names in the sky (planisphere)
+    if ch == "B":
+        r1, r2 = 0.235 - S / 2, 0.265 - S / 2
+        mid = t + 2 * r1
+        return W, [[(S, b), (S, t), (W - S - r1 - 0.04, t)] + arc(W - S - r1 - 0.04, t + r1, r1, r1, 270, 450) + [(S, mid)],
+                   [(S, mid), (W - S - r2, mid)] + arc(W - S - r2, mid + r2, r2, (b - mid) / 2, 270, 450) + [(S, b)]]
+    if ch == "C":
+        r = (b - t) / 2
+        return 0.86, [arc(0.47, 0.5, r * 0.92, r, 320, 40)]
+    if ch == "G":
+        r = (b - t) / 2
+        cx = 0.47
+        end = (cx + r * 0.92 * math.cos(math.radians(25)), 0.5 + r * math.sin(math.radians(25)))
+        return 0.88, [arc(cx, 0.5, r * 0.92, r, 320, 25) + [(end[0], 0.56), (cx + 0.06, 0.56)]]
+    if ch == "J":
+        r = (W - 2 * S) / 2 * 0.85
+        return W * 0.85, [[(W * 0.85 - S, t), (W * 0.85 - S, b - r)] + arc(W * 0.85 - S - r, b - r, r, r, 0, 180)]
+    if ch == "L":
+        return W * 0.82, [[(S, t), (S, b), (W * 0.82 - S, b)]]
+    if ch == "P":
+        r = 0.26 - S / 2
+        return W * 0.92, [[(S, b), (S, t), (W * 0.92 - S - r, t)] + arc(W * 0.92 - S - r, t + r, r, r, 270, 450) + [(S, t + 2 * r)]]
+    if ch == "Q":
+        r = (b - t) / 2
+        return 1.0, [arc(0.5, 0.5, r, r, 0, 360), [(0.6, 0.66), (0.86, b)]]
+    if ch == "Y":
+        return W, [[(S, t), (W / 2, 0.52)], [(W - S, t), (W / 2, 0.52), (W / 2, b)]]
+    if ch == "Z":
+        return W, [[(S, t), (W - S, t), (S, b), (W - S, b)]]
+    if ch == ":":
+        return 0.26, [[(0.13, 0.33), (0.13, 0.33)], [(0.13, 0.80), (0.13, 0.80)]]
+    if ch == "%":
+        return 0.8, [[(0.12, t + 0.06), (0.12, t + 0.06)], [(0.7, t), (0.1, b)], [(0.68, b - 0.06), (0.68, b - 0.06)]]
     raise KeyError(ch)
 
 
