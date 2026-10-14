@@ -365,6 +365,18 @@ def draw_corona(img, si, sj, moon_at, sol, inside, tt, red):
         sprites.paint(img, sprites.DIAMOND, gx, gy, {5: c8(3, 3, 3) if not red else c8(3, 1, 1)}, where=inside)
 
 
+def line_pixels(x0, y0, x1, y1):
+    """The pixels along a line, in order from (x0, y0), each once."""
+    n = int(max(abs(x1 - x0), abs(y1 - y0)) * 2) + 1
+    out = []
+    for k in range(n + 1):
+        t = k / n
+        p = (int(math.floor(x0 + (x1 - x0) * t)), int(math.floor(y0 + (y1 - y0) * t)))
+        if not out or out[-1] != p:
+            out.append(p)
+    return out
+
+
 def window_mask(dial, SS=4):
     """The window: the pixels showing the sky above the horizon (the same at every hour, so kept)."""
     if "_window" not in dial.__dict__:
@@ -886,21 +898,6 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         for j, i in zip(*np.nonzero(sprites.STUD)):
             if 0 <= sy_ - 2 + j < H and 0 <= sx_ - 2 + i < W:
                 studs[sy_ - 2 + j, sx_ - 2 + i] = True
-    # the Sun's pointer: a small rayed Sun on the ticks at the Sun's own hour, cleared round so it reads
-    # over the rule and the ticks; drawn before the numerals and words, which stay whole over it
-    sun_ang = lst - pos["sun"][0]
-    px_, py_ = edge_point(dial, sun_ang, 2.5)
-    ls = sprites.LITTLE_SUN
-    sx0, sy0 = int(round(px_ - ls.shape[1] / 2)), int(round(py_ - ls.shape[0] / 2))
-    knock = np.zeros((H, W), bool)
-    ys_, xs_ = np.nonzero(ls)
-    for j, i in zip(ys_, xs_):
-        if 0 <= sy0 + j < H and 0 <= sx0 + i < W:
-            knock[sy0 + j, sx0 + i] = True
-    knock = grow(knock, 1) & ~inside
-    img[knock] = P["jacket"]
-    sprites.paint(img, ls, sx0, sy0, sun_c, anchor="corner")
-
     # the numerals, drawn as engraved roman capitals (or figures on the plain plates), upright, each set on
     # its hour's ray where it stands clearest of the rules and ticks (nearest the band's middle among equals)
     held = rule_in | rule_out | studs
@@ -1009,6 +1006,29 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                 if ys_.start > 0:
                     leaf = leaf[::-1, :]
                 sprites.paint(img, leaf, xs_.start + i, ys_.start + j, {2: P["accent"], 1: P["ink"]})
+    # the Sun's hand: a gilded Sun riding the band at the Sun's own hour, as on the old astronomical clocks, an
+    # index from it to the scale on the inner rule; over everything, cleared round, as a hand covers what it passes
+    sun_ang = lst - pos["sun"][0]
+    (ex_, ey_), (ox_, oy_) = edge_point(dial, sun_ang), track_point(dial, sun_ang, r_out + 1)
+    hx, hy = (ex_ + ox_) / 2, (ey_ + oy_) / 2
+    hand = np.zeros((H, W), bool)
+    sh = sprites.SUN_HAND
+    hx0, hy0 = int(round(hx - sh.shape[1] / 2)), int(round(hy - sh.shape[0] / 2))
+    for j, i in zip(*np.nonzero(sh)):
+        if 0 <= hy0 + j < H and 0 <= hx0 + i < W:
+            hand[hy0 + j, hx0 + i] = True
+    index = [p_ for p_ in line_pixels(hx, hy, *edge_point(dial, sun_ang, 0.6))
+             if not hand[min(H - 1, max(0, p_[1])), min(W - 1, max(0, p_[0]))]]
+    for px_, py_ in index:
+        if 0 <= py_ < H and 0 <= px_ < W:
+            hand[py_, px_] = True
+    clear = grow(hand, 1) & ~inside
+    img[clear] = P["jacket"]
+    for px_, py_ in index:
+        if 0 <= py_ < H and 0 <= px_ < W:
+            img[py_, px_] = sun_c[4]
+    sprites.paint(img, sh, hx0, hy0, sun_c, anchor="corner")
+
     # the time, as an astronomer writes it, with the date and the Sun's next rising or setting
     ring_in = dial.cy - (dial.R - r_in) if not rect else r_in
     top_of_window = fy0 - 1                            # above the fleur-de-lis

@@ -73,14 +73,18 @@ def sun_of_may():
     return a
 
 
-LITTLE_SUN = art([               # the Sun's pointer on the ring: a disc and eight rays
-    "...Y...",
-    ".Y.Y.Y.",
-    "..OOO..",
-    "YYOYOYY",
-    "..OOO..",
-    ".Y.Y.Y.",
-    "...Y...",
+SUN_HAND = art([                 # the Sun's hand on the ring, gilded as on the old astronomical clocks
+    ".....Y.....",
+    "..Y..Y..Y..",
+    "...Y.Y.Y...",
+    "....OOO....",
+    "...OYYYO...",
+    "YYYOYWYOYYY",
+    "...OYYYO...",
+    "....OOO....",
+    "...Y.Y.Y...",
+    "..Y..Y..Y..",
+    ".....Y.....",
 ])
 
 # ---- the Moon in its phases, drawn waxing (lit on the right); waning is the mirror -----------------------
@@ -693,7 +697,7 @@ if __name__ == "__main__":
         return img
 
     rows = [
-        [block(sun_of_may(), gold, cream), block(LITTLE_SUN, gold, cream), block(FLEUR, gold, cream),
+        [block(sun_of_may(), gold, cream), block(SUN_HAND, gold, cream), block(FLEUR, gold, cream),
          block(LOZENGE, gold, cream)]
         + [mask_block(numerals(t), ink_, cream) for t in ("III", "VI", "IX")]
         + [mask_block(figures(t), ink_, cream) for t in ("3", "6", "9", "15", "18", "21")],
@@ -710,7 +714,7 @@ if __name__ == "__main__":
         [mask_block(word_art(w, 200, 228)[0], red, cream) for w in ("MIDNIGHT", "NOON")],
         [mask_block(word_art(w, 260, 260)[0], red, cream) for w in ("MIDNIGHT", "NOON")],
     ]
-    labels = ["The Sun after the Sun of May, its pointer, the fleur-de-lis, a lozenge, the ring's hours (12 and 24-hour)",
+    labels = ["The Sun after the Sun of May, its hand on the ring, the fleur-de-lis, a lozenge, the ring's hours (12 and 24-hour)",
               "The Moon through a month, the stars by brightness, Saturn, Jupiter, Mars, Venus, Mercury",
               "The signs of the zodiac, set along the ecliptic",
               "The days' planets (Monday's Moon to Sunday's Sun), the south star, a stud, a corner leaf, the zenith, a radiant",

@@ -32,7 +32,7 @@ The Time 2 comes first. Its ring is a cushion: arcs along the top and bottom, th
 
 ![Every plate on the Time 2 at 9:30 pm, then the paper planisphere at dusk and at noon](docs/time2-plates.png)
 
-By day the Sun in the window has a face and sixteen rays, straight and flaming in turn, after the Sun of May. It stands in its own light, as the first takes drew it: a glow stippled thinner outward, the sky brightest round the Sun, white by day and warm when the Sun is low. The glow shows between the rays and past them, and draws the eye to the Sun, the hour hand. A small rayed Sun points at the hour on the ring and passes behind the lettering, which stays whole.
+By day the Sun in the window has a face and sixteen rays, straight and flaming in turn, after the Sun of May. It stands in its own light, as the first takes drew it: a glow stippled thinner outward, the sky brightest round the Sun, white by day and warm when the Sun is low. The glow shows between the rays and past them, and draws the eye to the Sun, the hour hand. On the ring a gilded Sun hand rides the band at the Sun's own hour, as on the old astronomical clocks (Prague's Orloj, Strasbourg, Wells). A short index runs from it to the scale on the inner rule. It covers whatever it passes, as a clock's hand covers its numerals.
 
 ### The 12-hour or the 24-hour clock
 
@@ -146,7 +146,7 @@ The first take, before readability: no clock, only the planisphere. The Sun's go
 
 - **The star disc** is the whole sky as a planisphere draws it: the celestial pole at the centre, the stars round it, turning once a sidereal day as the real sky does.
 - **The window** is your horizon. The black jacket hides everything below it, so the oval shows exactly the sky above you now (here, New York; east is on the left, as when you look up).
-- **The Sun is the hour hand.** It rides the ecliptic through the sky, and the small rayed Sun on the ring follows it. The ring keeps the Sun's own time, as a sundial does: NOON under the window's south point and MIDNIGHT above the pole, fixed, so the pointer reaches NOON as the Sun crosses the south (12:42 by the clock in New York in October). The large numerals keep the clock's time.
+- **The Sun is the hour hand.** It rides the ecliptic through the sky, and the gilded Sun hand on the ring follows it. Paper planispheres had no moving marker: you turned the star disc until the date on its rim met the time. Astrolabes read the hour with a straight rule laid over the Sun's place. Astronomical clocks carried a gilded Sun round a 24-hour ring, which is what this ring is. The ring keeps the Sun's own time, as a sundial does: NOON under the window's south point and MIDNIGHT above the pole, fixed, so the pointer reaches NOON as the Sun crosses the south (12:42 by the clock in New York in October). The large numerals keep the clock's time.
 - **The sky's colour is the real sky's**, from the Sun's height and direction: flat night blue with the Milky Way, the blue hour with a warm glow on the Sun's side, day blue with the Sun in it. The colours come in clean bands along the sky's own contours, each edge softened by a fine dither.
 - About 1,000 stars, down to magnitude 4.6, in their own colours. The figures are drawn only between the brighter stars, and stop just short of them. The Moon shows its true phase, lit from the Sun's side, and the five bright planets are there too.
 
