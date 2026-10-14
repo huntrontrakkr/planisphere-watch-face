@@ -1,0 +1,9 @@
+[project]
+name = "planisphere"
+version = "0.1.0"
+description = "A planisphere watch face for Pebble: prototypes and tools"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.5.4",
+    "pillow>=12.3.0",
+]

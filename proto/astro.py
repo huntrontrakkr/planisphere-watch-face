@@ -1,0 +1,139 @@
+"""Where things are in the sky, to the precision a 260-pixel dial needs
+(well under a pixel): the stars from the catalogue (J2000; precession over
+these decades moves them a third of a pixel), the Sun, Moon and planets
+from Paul Schlyter's orbital elements ("How to compute planetary
+positions") with the largest perturbations. Angles in degrees."""
+import math
+from datetime import datetime, timezone
+
+D2R = math.pi / 180
+
+
+def sind(a): return math.sin(a * D2R)
+def cosd(a): return math.cos(a * D2R)
+def atan2d(y, x): return math.atan2(y, x) / D2R
+def asind(x): return math.asin(max(-1.0, min(1.0, x))) / D2R
+def rev(a): return a % 360.0
+
+
+def julian(t: datetime) -> float:
+    return t.timestamp() / 86400.0 + 2440587.5
+
+
+def sidereal(t: datetime, lon: float) -> float:
+    """Local sidereal time (degrees) at east longitude `lon`."""
+    d = julian(t) - 2451545.0
+    T = d / 36525
+    return rev(280.46061837 + 360.98564736629 * d + 0.000387933 * T * T - T ** 3 / 38710000 + lon)
+
+
+def ecl_to_eq(lon, lat, eps):
+    """Ecliptic (lon, lat) to equatorial (ra, dec), all degrees."""
+    x = cosd(lon) * cosd(lat)
+    y = sind(lon) * cosd(lat) * cosd(eps) - sind(lat) * sind(eps)
+    z = sind(lon) * cosd(lat) * sind(eps) + sind(lat) * cosd(eps)
+    return rev(atan2d(y, x)), asind(z)
+
+
+# Schlyter's elements: N, i, w, a, e, M as (value, rate per day) from 2000 Jan 0.0 UT
+ELEMENTS = {
+    "sun":     ((0, 0), (0, 0), (282.9404, 4.70935e-5), (1.0, 0), (0.016709, -1.151e-9), (356.0470, 0.9856002585)),
+    "moon":    ((125.1228, -0.0529538083), (5.1454, 0), (318.0634, 0.1643573223), (60.2666, 0), (0.054900, 0),
+                (115.3654, 13.0649929509)),
+    "mercury": ((48.3313, 3.24587e-5), (7.0047, 5.00e-8), (29.1241, 1.01444e-5), (0.387098, 0), (0.205635, 5.59e-10),
+                (168.6562, 4.0923344368)),
+    "venus":   ((76.6799, 2.46590e-5), (3.3946, 2.75e-8), (54.8910, 1.38374e-5), (0.723330, 0), (0.006773, -1.302e-9),
+                (48.0052, 1.6021302244)),
+    "mars":    ((49.5574, 2.11081e-5), (1.8497, -1.78e-8), (286.5016, 2.92961e-5), (1.523688, 0), (0.093405, 2.516e-9),
+                (18.6021, 0.5240207766)),
+    "jupiter": ((100.4542, 2.76854e-5), (1.3030, -1.557e-7), (273.8777, 1.64505e-5), (5.20256, 0), (0.048498, 4.469e-9),
+                (19.8950, 0.0830853001)),
+    "saturn":  ((113.6634, 2.38980e-5), (2.4886, -1.081e-7), (339.3939, 2.97661e-5), (9.55475, 0), (0.055546, -9.499e-9),
+                (316.9670, 0.0334442282)),
+}
+
+
+def elements(body, d):
+    return [v + r * d for v, r in ELEMENTS[body]]
+
+
+def kepler(M, e):
+    E = M + e / D2R * sind(M) * (1 + e * cosd(M))
+    for _ in range(8):
+        E = E - (E - e / D2R * sind(E) - M) / (1 - e * cosd(E))
+    return E
+
+
+def orbit(body, d):
+    """Position in the body's frame: ecliptic x, y, z (heliocentric; geocentric for the Moon), and the elements."""
+    N, i, w, a, e, M = elements(body, d)
+    E = kepler(rev(M), e)
+    xv, yv = a * (cosd(E) - e), a * math.sqrt(1 - e * e) * sind(E)
+    v, r = atan2d(yv, xv), math.hypot(xv, yv)
+    x = r * (cosd(N) * cosd(v + w) - sind(N) * sind(v + w) * cosd(i))
+    y = r * (sind(N) * cosd(v + w) + cosd(N) * sind(v + w) * cosd(i))
+    z = r * sind(v + w) * sind(i)
+    return x, y, z, (N, i, w, a, e, M)
+
+
+def positions(t: datetime):
+    """{body: (ra, dec)} for the Sun, Moon and the five bright planets; also the Moon's phase:
+    ('moon_phase': illuminated fraction 0..1, 'moon_waxing': bool) and the Sun's ecliptic longitude."""
+    d = julian(t) - 2451543.5
+    eps = 23.4393 - 3.563e-7 * d
+    out = {}
+    # the Sun
+    _, _, ws, _, es, Ms = elements("sun", d)
+    E = kepler(rev(Ms), es)
+    xv, yv = cosd(E) - es, math.sqrt(1 - es * es) * sind(E)
+    v, rs = atan2d(yv, xv), math.hypot(xv, yv)
+    lon_sun = rev(v + ws)
+    xs, ys = rs * cosd(lon_sun), rs * sind(lon_sun)
+    out["sun"] = ecl_to_eq(lon_sun, 0.0, eps)
+    out["sun_lon"] = lon_sun
+    # the Moon, with its largest perturbations
+    x, y, z, (Nm, im, wm, am, em, Mm) = orbit("moon", d)
+    lon, lat = atan2d(y, x), atan2d(z, math.hypot(x, y))
+    Ls, Lm = rev(Ms + ws), rev(Mm + wm + Nm)
+    D, F = rev(Lm - Ls), rev(Lm - Nm)
+    lon += (-1.274 * sind(Mm - 2 * D) + 0.658 * sind(2 * D) - 0.186 * sind(Ms) - 0.059 * sind(2 * Mm - 2 * D)
+            - 0.057 * sind(Mm - 2 * D + Ms) + 0.053 * sind(Mm + 2 * D) + 0.046 * sind(2 * D - Ms) + 0.041 * sind(Mm - Ms)
+            - 0.035 * sind(D) - 0.031 * sind(Mm + Ms) - 0.015 * sind(2 * F - 2 * D) + 0.011 * sind(Mm - 4 * D))
+    lat += (-0.173 * sind(F - 2 * D) - 0.055 * sind(Mm - F - 2 * D) - 0.046 * sind(Mm + F - 2 * D)
+            + 0.033 * sind(F + 2 * D) + 0.017 * sind(2 * Mm + F))
+    out["moon"] = ecl_to_eq(rev(lon), lat, eps)
+    elong = math.acos(max(-1, min(1, cosd(lon - lon_sun) * cosd(lat)))) / D2R
+    out["moon_phase"] = (1 - cosd(elong)) / 2
+    out["moon_waxing"] = rev(lon - lon_sun) < 180
+    # the planets (geocentric), Jupiter and Saturn with their great inequality
+    Mj, Msat = elements("jupiter", d)[5], elements("saturn", d)[5]
+    for p in ("mercury", "venus", "mars", "jupiter", "saturn"):
+        x, y, z, _ = orbit(p, d)
+        lon, lat, r = atan2d(y, x), atan2d(z, math.hypot(x, y)), math.sqrt(x * x + y * y + z * z)
+        if p == "jupiter":
+            lon += (-0.332 * sind(2 * Mj - 5 * Msat - 67.6) - 0.056 * sind(2 * Mj - 2 * Msat + 21) + 0.042 * sind(3 * Mj - 5 * Msat + 21)
+                    - 0.036 * sind(Mj - 2 * Msat) + 0.022 * cosd(Mj - Msat) + 0.023 * sind(2 * Mj - 3 * Msat + 52)
+                    - 0.016 * sind(Mj - 5 * Msat - 69))
+        if p == "saturn":
+            lon += (0.812 * sind(2 * Mj - 5 * Msat - 67.6) - 0.229 * cosd(2 * Mj - 4 * Msat - 2) + 0.119 * sind(Mj - 2 * Msat - 3)
+                    + 0.046 * sind(2 * Mj - 6 * Msat - 69) + 0.014 * sind(Mj - 3 * Msat + 32))
+            lat += -0.020 * cosd(2 * Mj - 4 * Msat - 2) + 0.018 * sind(2 * Mj - 6 * Msat - 49)
+        x, y, z = r * cosd(lon) * cosd(lat), r * sind(lon) * cosd(lat), r * sind(lat)
+        xg, yg, zg = x + xs, y + ys, z
+        out[p] = ecl_to_eq(rev(atan2d(yg, xg)), atan2d(zg, math.hypot(xg, yg)), eps)
+    out["eps"] = eps
+    return out
+
+
+def altitude(ra, dec, lst, lat):
+    h = lst - ra
+    return asind(sind(lat) * sind(dec) + cosd(lat) * cosd(dec) * cosd(h))
+
+
+if __name__ == "__main__":
+    t = datetime(2026, 10, 14, 16, 0, tzinfo=timezone.utc)
+    p = positions(t)
+    for k in ("sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn"):
+        print(f"{k:8s} RA {p[k][0] / 15:6.3f} h  Dec {p[k][1]:+7.2f}")
+    print("moon phase", round(p["moon_phase"], 3), "waxing" if p["moon_waxing"] else "waning")
+    print("LST NYC", sidereal(t, -74.006) / 15)
