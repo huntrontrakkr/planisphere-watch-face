@@ -609,13 +609,16 @@ SPARK_SETS = ["independence", "bonfire", "new year"]
 def feasts_blob(h):
     """The calendars' days (proto/feasts.py) for the watch: feasts.bin, a resource the watch reads once a day.
 
-    header   uint16 count, uint16 the words' offset
-    records  24 bytes each: uint8 calendar, kind, span, emblem (NW_*, 255 none), flags (FF_*), rank, zone, 0;
+    header   uint16 count, the words' offset, the emblems' offset, the table's size
+    records  24 bytes each: uint8 calendar, kind, span, emblem (255 none), flags (FF_*), rank, zone, 0;
              int16 a, b, c (the rule's numbers), 0; uint16 the words (long, short, south's long, south's short;
              65535 none) as offsets into the words
-    words    NUL-terminated"""
+    words    NUL-terminated
+    emblems  uint16 count, then each one's offset (from the emblems' start); each emblem uint8 width, height, then
+             its pixels row by row, a bit each (the low bit first)"""
     import feasts
-    needle = list(sprites.NEEDLEWORK)
+    import feast_emblems
+    names = [n for n in feast_emblems.EMBLEMS if any(f.get("emblem") == n for f in feasts.FEASTS)]
     words, at = bytearray(), {}
 
     def word(w):
@@ -649,15 +652,35 @@ def feasts_blob(h):
             flags |= 8
         wl = list(f["words"]) + [None] * (2 - len(f["words"]))
         sl = list(f.get("south", (None, None))) + [None] * 2
-        emblem = needle.index(f["emblem"]) if f.get("emblem") else 255
+        emblem = names.index(f["emblem"]) if f.get("emblem") else 255
+        if f["rank"] == 1:
+            flags |= 64                                     # a great feast: its date in red
+        if f.get("emblem") == "hanukkiah":
+            flags |= 128                                    # the emblem shows the night's lights
         recs += struct.pack("<8B3hH4H", feasts.CAL[f["cal"]], kind, span, emblem, flags, f["rank"], zone, 0, a, b, c, 0,
                             word(wl[0]), word(wl[1] or wl[0]), word(sl[0]), word(sl[1] or sl[0]) if sl[0] else 0xFFFF)
     n = len(feasts.FEASTS)
-    out = struct.pack("<HH", n, 4 + len(recs)) + recs + words
+    emb = bytearray(struct.pack("<H", len(names)))
+    offs, data = [], bytearray()
+    for name in names:
+        a = np.array([[c == "#" for c in r] for r in feast_emblems.EMBLEMS[name]])   # (the lamp's lights: the watch's)
+        h_, w_ = a.shape
+        assert w_ <= 16 and h_ + (2 if name == "hanukkiah" else 0) <= 16, name
+        offs.append(2 + 2 * len(names) + len(data))
+        bits = bytearray((w_ * h_ + 7) // 8)
+        for k, v in enumerate(a.ravel()):
+            if v:
+                bits[k >> 3] |= 1 << (k & 7)
+        data += bytes([w_, h_]) + bits
+    emb += b"".join(struct.pack("<H", o) for o in offs) + data
+    words_at = 8 + len(recs)
+    total = 8 + len(recs) + len(words) + len(emb)
+    out = struct.pack("<HHHH", n, words_at, words_at + len(words), total) + recs + words + emb
     h.append("enum { " + ", ".join(f"CAL_{k.upper()}" for k, _, _ in feasts.CALENDARS) + ", CAL_COUNT };")
     h.append("enum { " + ", ".join(f"FK_{k.upper()}" for k in FEAST_KINDS) + " };")
     h.append("enum { " + ", ".join(f"FZ_{k.upper()}" for k in FEAST_ZONES) + " };")
-    h.append("enum { FF_LIGHTS = 1, FF_BONFIRES = 2, FF_FIREWORKS = 4, FF_MIDNIGHT = 8 };   /* sparks: flags >> 4 */")
+    h.append("enum { FF_LIGHTS = 1, FF_BONFIRES = 2, FF_FIREWORKS = 4, FF_MIDNIGHT = 8, FF_RED = 64, FF_NIGHTS = 128 };"
+             "   /* sparks: flags >> 4 & 3 */")
     h.append("typedef struct { uint8_t cal, kind, span, emblem, flags, rank, zone, pad; int16_t a, b, c, pad2; "
              "uint16_t words[4]; } FeastRecord;")
     return out

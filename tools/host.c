@@ -97,7 +97,9 @@ int main(int argc, char **argv) {
   Target t = {row, NULL};
   struct timespec t0, t1;
   clock_gettime(CLOCK_MONOTONIC, &t0);
-  plan_feast(&p, &f, utc, offset, BLOB_FEASTS);
+  FeastReader rd;
+  plan_feast_memory(&rd, BLOB_FEASTS);
+  plan_feast(&p, &f, utc, offset, &rd);
   for (int i = 0; i < repeat; i++)
     if (!plan_render(&p, &f, utc, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
   if (mem) printf("peak %zu bytes in %zu blocks\n", mem_peak, mem_peak_blocks);

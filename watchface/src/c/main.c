@@ -145,26 +145,29 @@ static void face_of(Face *f) {
 
 static const void *load_blob(uint32_t resource, uint8_t **mem);
 
+/* the calendars' table read straight from the resources, a few bytes at a time */
+static void resource_read(void *ctx, uint32_t at, void *buf, uint32_t n) {
+  memset(buf, 0, n);
+  resource_load_byte_range(*(ResHandle *)ctx, at, buf, n);
+}
+
 /* the day's feast in the kept calendars, looked up once a day (when the day, the calendars or the hemisphere change):
- * the calendars' code and table loaded for that from the resources, and let go before the face is drawn */
+ * the calendars' code loaded for that from the resources, and let go before the face is drawn */
 static void feast_of_day(const Face *f, time_t now, int32_t offset, bool south) {
   int32_t day = (int32_t)((now + offset) / 86400) + 719163;     /* (32-bit arithmetic: the watch's clock is) */
   if (!f->calendars || (s_plan->feast_day == day && s_plan->feast_cal == f->calendars && s_plan->feast_south == south)) {
     if (!f->calendars) s_plan->feast = false;
     return;
   }
-  uint8_t *mem, *table = NULL;
+  uint8_t *mem;
   const FeastApi *api = load_blob(RESOURCE_ID_PLAN_FEAST_CODE, &mem);
   if (api && api->magic == FEAST_API_MAGIC && api->layout == PLAN_LAYOUT) {
     ResHandle h = resource_get_handle(RESOURCE_ID_PLAN_FEASTS);
-    size_t n = resource_size(h);
-    if ((table = malloc(n))) {
-      g_feast_heap = heap_bytes_free();
-      resource_load(h, table, n);
-      api->feast(s_plan, f, (int64_t)now, offset, table);
-    }
+    FeastReader rd = {resource_read, &h};
+    g_feast_heap = heap_bytes_free();
+    api->feast(s_plan, f, (int64_t)now, offset, &rd);
   }
-  free(table), free(mem);
+  free(mem);
 }
 
 /* the renderer's memory, and how little was left */

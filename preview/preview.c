@@ -65,7 +65,9 @@ EMSCRIPTEN_KEEPALIVE void pv_weather(int code, int temp10, int low, int mid, int
 
 /* The face at `utc` (seconds since 1970), the local clock `offset` minutes ahead: the screen, W x H bytes. */
 EMSCRIPTEN_KEEPALIVE uint8_t *pv_render(double utc, int offset) {
-  plan_feast(&P, &F, (int64_t)utc, offset * 60, BLOB_FEASTS);
+  FeastReader rd;
+  plan_feast_memory(&rd, BLOB_FEASTS);
+  plan_feast(&P, &F, (int64_t)utc, offset * 60, &rd);
   if (!plan_render(&P, &F, (int64_t)utc, offset * 60, &(Target){pv_row, NULL}, malloc, free)) return NULL;
   return fb;
 }
@@ -75,9 +77,11 @@ EMSCRIPTEN_KEEPALIVE uint8_t *pv_render(double utc, int offset) {
 static char feast_words[24];
 EMSCRIPTEN_KEEPALIVE int pv_next_feast(int mask, int from, int days, int offset) {
   for (int d = from; d < from + days; d++) {
-    int i = plan_feast_on(BLOB_FEASTS, d + 719163, (uint32_t)mask, offset / 60.0f);
+    FeastReader rd;
+    plan_feast_memory(&rd, BLOB_FEASTS);
+    int i = plan_feast_on(&rd, d + 719163, (uint32_t)mask, offset / 60.0f);
     if (i < 0) continue;
-    const FeastRecord *r = (const FeastRecord *)(const void *)(BLOB_FEASTS + 4) + i;
+    const FeastRecord *r = (const FeastRecord *)(const void *)(BLOB_FEASTS + 8) + i;
     const char *w = (const char *)BLOB_FEASTS + (BLOB_FEASTS[2] | BLOB_FEASTS[3] << 8) + r->words[0];
     strncpy(feast_words, w, sizeof feast_words - 1);
     return d;

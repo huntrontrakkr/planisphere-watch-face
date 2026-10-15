@@ -51,7 +51,9 @@ typedef struct {
   const uint8_t *bn;
   /* the window's ground: two values on a grid every 4 pixels over the window */
   int gx0, gy0, gnx, gny;
-  int16_t *ga, *gb;
+  int16_t *ga, *gb;                          /* each node row only as far as the window's cells need it: */
+  int16_t glo[MAX_H / 4 + 2], ghi[MAX_H / 4 + 2];   /* its first and last node, */
+  uint16_t goff[MAX_H / 4 + 2];              /* and where it starts in ga and gb */
   float ik, ssd, csd, csh, ssh, sl0, cl0;
   SkyK sk, sk6;                              /* the sky's Sun-dependent parts, now and (under an eclipse) at -6 */
   int16_t bright[96][2];                     /* the stars brighter than 2.1 on the screen, for the zodiac to avoid */
@@ -528,7 +530,16 @@ static void node_values(R *r, float x, float y, int16_t *va, int16_t *vb) {
 
 /* the grid cell holding a pixel: its corners' values, and where in it the pixel is (0..3 each way) */
 typedef struct { int v00, v10, v01, v11, dx, dy; } Cell;
-static void cell_at(R *r, const int16_t *g, int x, int y, Cell *c) {
+/* a node's value (plane 0 the ground, 1 the warmth). The grid keeps each node row only as far as the window's cells
+ * need it, and only window pixels are read, so every node asked for is kept; one outside (none is) takes its row's
+ * nearest kept node rather than reading beyond it. */
+static int grid_node(R *r, int plane, int i, int j) {
+  if (r->ghi[j] < r->glo[j]) return 0;
+  if (i < r->glo[j]) i = r->glo[j];
+  if (i > r->ghi[j]) i = r->ghi[j];
+  return (plane ? r->gb : r->ga)[r->goff[j] + i - r->glo[j]];
+}
+static void cell_at(R *r, int plane, int x, int y, Cell *c) {
   int gx = x - r->gx0, gy = y - r->gy0;
   int i = gx >> 2, j = gy >> 2;
   if (i < 0) i = 0;
@@ -536,8 +547,8 @@ static void cell_at(R *r, const int16_t *g, int x, int y, Cell *c) {
   if (i > r->gnx - 2) i = r->gnx - 2;
   if (j > r->gny - 2) j = r->gny - 2;
   c->dx = gx - 4 * i, c->dy = gy - 4 * j;
-  const int16_t *a = g + j * r->gnx + i;
-  c->v00 = a[0], c->v10 = a[1], c->v01 = a[r->gnx], c->v11 = a[r->gnx + 1];
+  c->v00 = grid_node(r, plane, i, j), c->v10 = grid_node(r, plane, i + 1, j);
+  c->v01 = grid_node(r, plane, i, j + 1), c->v11 = grid_node(r, plane, i + 1, j + 1);
 }
 static int cell_value(const Cell *c) {
   int l = c->v00 * (4 - c->dy) + c->v01 * c->dy, rr = c->v10 * (4 - c->dy) + c->v11 * c->dy;
@@ -598,14 +609,14 @@ static void warm_corners(Cell *w) {
 /* the woodcut's zodiac band at a pixel: 0 outside, 1 the band, 2 its edge (inked), 3 the ecliptic (red) */
 static int zodiac_at(R *r, int x, int y) {
   Cell c;
-  cell_at(r, r->ga, x, y, &c);
+  cell_at(r, 0, x, y, &c);
   int beta = cell_value(&c), g = cell_grad(&c);
   if (beta < 1536 && beta > -1536) return (g > 0 && (beta < 0 ? -beta : beta) * 100 < 57 * g) ? 3 : 1;
   static const int8_t N4[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
   for (int n = 0; n < 4; n++) {
     int X = x + N4[n][0], Y = y + N4[n][1];
     if (!inside(r, X, Y)) continue;
-    cell_at(r, r->ga, X, Y, &c);
+    cell_at(r, 0, X, Y, &c);
     int b2 = cell_value(&c);
     if (b2 < 1536 && b2 > -1536) return 2;
   }
@@ -619,7 +630,7 @@ static uint8_t sky_pixel(R *r, int x, int y, int wa, int wb, bool warm) {
   Cell c;
   switch (P->window) {
   case WIN_SKY: {
-    cell_at(r, r->ga, x, y, &c);
+    cell_at(r, 0, x, y, &c);
     if (r->closed_sky) {
       int i = band_q(&c, t, 4, wa);
       return i ? GREY[i] : P->night;
@@ -627,7 +638,7 @@ static uint8_t sky_pixel(R *r, int x, int y, int wa, int wb, bool warm) {
     uint8_t col = r->ramp[band_q(&c, t, r->nramp, wa)];
     if (warm) {
       Cell w;
-      cell_at(r, r->gb, x, y, &w);
+      cell_at(r, 1, x, y, &w);
       int wv = cell_value(&w) * 5 + 819;
       if (wv >= 4096) {
         int sm = (wv - 4096) * 2;                   /* smooth(0, 0.5, wv - 1) */
@@ -644,7 +655,7 @@ static uint8_t sky_pixel(R *r, int x, int y, int wa, int wb, bool warm) {
   case WIN_ORLOJ:
     return r->s_eff > -0.833f ? C8(1, 2, 3) : r->s_eff > -18 ? C8(2, 1, 0) : C8(0, 0, 0);
   case WIN_RED:
-    cell_at(r, r->ga, x, y, &c);
+    cell_at(r, 0, x, y, &c);
     return REDS[band_q(&c, t, 3, wa)];
   default:
     if (r->woodcut) {
@@ -694,13 +705,34 @@ static bool make_grid(R *r, void *(*alloc)(size_t)) {
   if (maxx < 0) return false;
   r->gx0 = minx, r->gy0 = p->win_top;
   r->gnx = (maxx - minx) / 4 + 2, r->gny = (p->win_bottom - p->win_top) / 4 + 2;
-  size_t n = (size_t)r->gnx * (size_t)r->gny;
-  r->ga = alloc(2 * n * sizeof(int16_t));
+  /* each node row as far as the cells either side of it hold window pixels (a cell's pixels need its four nodes) */
+  for (int j = 0; j < r->gny; j++) r->glo[j] = (int16_t)r->gnx, r->ghi[j] = -1;
+  for (int c = 0; c < r->gny - 1; c++) {
+    int lo = 1 << 20, hi = -1;
+    for (int y = r->gy0 + 4 * c; y < r->gy0 + 4 * c + 4 && y <= p->win_bottom; y++)
+      if (p->wx0[y] <= p->wx1[y]) {
+        if (p->wx0[y] < lo) lo = p->wx0[y];
+        if (p->wx1[y] > hi) hi = p->wx1[y];
+      }
+    if (hi < 0) continue;
+    int i0 = (lo - r->gx0) >> 2, i1 = ((hi - r->gx0) >> 2) + 1;
+    if (i1 > r->gnx - 1) i1 = r->gnx - 1;
+    for (int j = c; j <= c + 1; j++) {
+      if (i0 < r->glo[j]) r->glo[j] = (int16_t)i0;
+      if (i1 > r->ghi[j]) r->ghi[j] = (int16_t)i1;
+    }
+  }
+  size_t n = 0;
+  for (int j = 0; j < r->gny; j++) {
+    r->goff[j] = (uint16_t)n;
+    if (r->ghi[j] >= r->glo[j]) n += (size_t)(r->ghi[j] - r->glo[j] + 1);
+  }
+  r->ga = alloc(2 * (n ? n : 1) * sizeof(int16_t));
   if (!r->ga) return false;
   r->gb = r->ga + n;
   for (int j = 0; j < r->gny; j++)
-    for (int i = 0; i < r->gnx; i++) {
-      size_t k = (size_t)j * r->gnx + i;
+    for (int i = r->glo[j]; i <= r->ghi[j]; i++) {
+      size_t k = r->goff[j] + (size_t)(i - r->glo[j]);
       node_values(r, r->gx0 + 4 * i + 0.5f, r->gy0 + 4 * j + 0.5f, r->ga + k, r->gb + k);
     }
   return true;
@@ -713,13 +745,16 @@ static void window_ground(R *r) {
   for (int j = 0; j < r->gny - 1; j++)
     for (int i = 0; i < r->gnx - 1; i++) {
       int x0 = r->gx0 + 4 * i, y0 = r->gy0 + 4 * j, wa = 4096, wb = 4096;
-      bool warm = false;
+      bool warm = false, any = false;
+      for (int y = y0; y < y0 + 4 && y <= p->win_bottom && !any; y++) any = p->wx0[y] <= x0 + 3 && p->wx1[y] >= x0 &&
+                                                                              p->wx0[y] <= p->wx1[y];
+      if (!any) continue;
       if (banded) {
         Cell c;
-        cell_at(r, r->ga, x0, y0, &c);
+        cell_at(r, 0, x0, y0, &c);
         wa = cell_wmax(&c);
         if (r->P->window == WIN_SKY && !r->closed_sky) {
-          cell_at(r, r->gb, x0, y0, &c);
+          cell_at(r, 1, x0, y0, &c);
           warm = c.v00 >= 656 || c.v10 >= 656 || c.v01 >= 656 || c.v11 >= 656;
           if (warm) warm_corners(&c), wb = cell_wmax(&c);
         }
@@ -2730,7 +2765,6 @@ static __attribute__((noinline)) void time_block(R *r, int fy0, int season) {
   bool even = count % 2 == 0;
   uint8_t order[24];
   int no = 0;
-  if (p->feast && p->feast_day == r->local.ordinal && p->feast_emblem != 255) order[no++] = p->feast_emblem;
   for (int pass = 0; pass < 2; pass++) {
     const uint8_t *lst = (pass == 0) == even ? seasonal : general;
     int nl = (pass == 0) == even ? ns : ng;
@@ -2742,10 +2776,11 @@ static __attribute__((noinline)) void time_block(R *r, int fy0, int season) {
     }
   }
   const int16_t *inner = sec16(p->geom, GEO_INNER);
-  for (int i = 0; i < no; i++) {
-    int m = M_NEEDLE_LOZENGE + order[i];
-    const MaskIndex *mi = mask(r, m);
-    int h = mi->h, w = mi->w, lo = -1, hi = 1 << 20;
+  bool art = p->feast && p->feast_day == r->local.ordinal && p->feast_art_w;   /* the feast's emblem first */
+  for (int i = art ? -1 : 0; i < no; i++) {
+    int m = i < 0 ? 0 : M_NEEDLE_LOZENGE + order[i];
+    const MaskIndex *mi = i < 0 ? NULL : mask(r, m);
+    int h = mi ? mi->h : p->feast_art_h, w = mi ? mi->w : p->feast_art_w, lo = -1, hi = 1 << 20;
     bool ok = widest > 0;
     for (int y = yc - h / 2; y <= yc + h / 2 && ok; y++) {
       if (y < 0 || y >= r->H || inner[2 * y] > inner[2 * y + 1]) { ok = false; break; }
@@ -2756,8 +2791,16 @@ static __attribute__((noinline)) void time_block(R *r, int fy0, int season) {
     float lo_ = lo + 2, hi_ = r->cx - widest / 2.0f - 2;
     if (hi_ - lo_ < w + 2) continue;
     int x0 = pyf_round((lo_ + hi_) / 2 - (w - 1) / 2.0f), y0 = pyf_round(cy_ - (h - 1) / 2.0f);
-    mask_put(r, m, x0, y0, P->accent, false, false);
-    mask_put(r, m, r->W - x0 - w, y0, P->accent, false, true);
+    if (mi) {
+      mask_put(r, m, x0, y0, P->accent, false, false);
+      mask_put(r, m, r->W - x0 - w, y0, P->accent, false, true);
+    } else
+      for (int j = 0; j < h; j++)
+        for (int k = 0; k < w; k++)
+          if (p->feast_art[(j * w + k) >> 3] >> ((j * w + k) & 7) & 1) {
+            if (on_screen(r, x0 + k, y0 + j)) put(r, x0 + k, y0 + j, P->accent);
+            if (on_screen(r, r->W - x0 - w + (w - 1 - k), y0 + j)) put(r, r->W - x0 - w + (w - 1 - k), y0 + j, P->accent);
+          }
     break;
   }
   /* the date, after the sign of the planet that rules the day */
@@ -2784,7 +2827,8 @@ static __attribute__((noinline)) void time_block(R *r, int fy0, int season) {
   t_mask(&r->t2, r, M_DAY0 + r->local.wday, 0, 0);
   r->t2.w = ds->w;
   stamp(r, &r->t2, left + ds->w / 2.0f, (db[1] + db[3]) / 2.0f - 1, P->accent, false, false, 0);
-  stamp(r, &r->t1, left + ds->w + 4, y_date, P->ink, false, false, 1);
+  /* (a great feast's date in red, as the calendars rubricate their principal days: a red-letter day) */
+  stamp(r, &r->t1, left + ds->w + 4, y_date, feast_brings(r, FF_RED) ? P->accent : P->ink, false, false, 1);
   /* the almanac's line: the sky's news (its wordings, the longest first), or else the Sun's next rising or setting;
    * with the weather, each with the temperature after a lozenge, then each alone, then the temperature alone */
   r->totality = (r->have_sol && r->sol.kind == ECLIPSE_TOTAL) || (r->have_lun && r->lun.kind == ECLIPSE_TOTAL);

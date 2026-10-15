@@ -225,22 +225,32 @@ static int32_t diwali(int year) {
 
 /* ---- the feasts ---------------------------------------------------------------------------------------------- */
 
-static const FeastRecord *record(const uint8_t *table, int i) {
-  return (const FeastRecord *)(const void *)(table + 4) + i;
+/* the table, read a few bytes at a time */
+static void memory_read(void *ctx, uint32_t at, void *buf, uint32_t n) {
+  const uint8_t *t = ctx;
+  uint32_t size = (uint32_t)(t[6] | t[7] << 8);
+  for (uint32_t i = 0; i < n; i++) ((uint8_t *)buf)[i] = at + i < size ? t[at + i] : 0;
 }
-static int count_of(const uint8_t *table) { return table[0] | table[1] << 8; }
-static const char *words_of(const uint8_t *table, uint16_t at) {
-  return at == 0xFFFF ? NULL : (const char *)table + (table[2] | table[3] << 8) + at;
+void plan_feast_memory(FeastReader *rd, const uint8_t *table) { rd->read = memory_read, rd->ctx = (void *)table; }
+static int rd16(const FeastReader *rd, uint32_t at) {
+  uint8_t b[2];
+  rd->read(rd->ctx, at, b, 2);
+  return b[0] | b[1] << 8;
+}
+static void rd_record(const FeastReader *rd, int i, FeastRecord *f) {
+  rd->read(rd->ctx, 8 + 24 * (uint32_t)i, f, sizeof *f);
 }
 
 /* the converters' answers for a day, worked out only when a feast asks */
 typedef struct { int32_t o; int y, m, d; bool heb, cn, isl; int32_t hy; int cm, cd; bool cleap; int im, id; } Day;
 
-static bool matches(const FeastRecord *f, Day *day, float hours) {
+static bool matches(const FeastRecord *f, Day *day, float hours, int *nth) {
   int32_t o = day->o;
+  *nth = 0;
   switch (f->kind) {
   case FK_FIXED: {
     int32_t start = ordinal_of(day->y, f->a, f->b);
+    *nth = o - start;
     return o >= start && o - start < f->span;
   }
   case FK_EASTER: return o == easter(day->y) + f->a;
@@ -261,6 +271,7 @@ static bool matches(const FeastRecord *f, Day *day, float hours) {
     if (!day->heb) day->hy = hebrew_year_of(o), day->heb = true;
     int month = f->a ? f->a : hebrew_leap(day->hy) ? 13 : 12;     /* 0: Adar, the second in a leap year */
     int32_t start = hebrew_date(day->hy, month, f->b);
+    *nth = o - start;
     return o >= start && o - start < f->span;
   }
   case FK_CHINESE:
@@ -274,26 +285,63 @@ static bool matches(const FeastRecord *f, Day *day, float hours) {
   return false;
 }
 
-int plan_feast_on(const uint8_t *table, int32_t ordinal, uint32_t cal, float hours) {
+/* (the feast's index, and its day's place in its span in *nth) */
+/* (the feast's index, its record in *out, and its day's place in its span in *nth) */
+static int feast_on(const FeastReader *rd, int32_t ordinal, uint32_t cal, float hours, int *nth, FeastRecord *out) {
   Day day = {ordinal, 0, 0, 0, false, false, false, 0, 0, 0, false, 0, 0};
   civil_of(ordinal, &day.y, &day.m, &day.d);
-  int best = -1, n = count_of(table);
+  int best = -1, n = rd16(rd, 0), k;
   for (int i = 0; i < n; i++) {
-    const FeastRecord *f = record(table, i);
-    if (!(cal >> f->cal & 1) || (best >= 0 && f->rank >= record(table, best)->rank)) continue;
-    if (matches(f, &day, hours)) best = i;
+    FeastRecord f;
+    rd_record(rd, i, &f);
+    if (!(cal >> f.cal & 1) || (best >= 0 && f.rank >= out->rank)) continue;
+    if (matches(&f, &day, hours, &k)) best = i, *nth = k, *out = f;
   }
   return best;
 }
-
-static void copy_words(char *out, const char *w) {
-  int i = 0;
-  if (w)
-    for (; w[i] && i < 19; i++) out[i] = w[i];
-  out[i] = 0;
+int plan_feast_on(const FeastReader *rd, int32_t ordinal, uint32_t cal, float hours) {
+  int nth;
+  FeastRecord f;
+  return feast_on(rd, ordinal, cal, hours, &nth, &f);
 }
 
-bool plan_feast(Plan *p, const Face *f, int64_t utc, int32_t offset, const uint8_t *table) {
+/* the day's emblem into the Plan: its bits, and on a feast of lights counted by night (Hanukkah) the night's flames
+ * and the shammash's over it, the flames from the right as the candles are set (proto/feast_emblems.py) */
+static void copy_art(Plan *p, const FeastReader *rd, const FeastRecord *r, int night) {
+  p->feast_art_w = 0;
+  if (r->emblem == 255) return;
+  int emb = rd16(rd, 4);
+  if (r->emblem >= rd16(rd, (uint32_t)emb)) return;
+  uint8_t e[2 + 32];
+  rd->read(rd->ctx, (uint32_t)(emb + rd16(rd, (uint32_t)(emb + 2 + 2 * r->emblem))), e, sizeof e);
+  int w = e[0], h = e[1], top = (r->flags & FF_NIGHTS) ? 2 : 0;
+  if (w * (h + top) > 256) return;
+  for (int i = 0; i < 32; i++) p->feast_art[i] = 0;
+  for (int k = 0; k < w * h; k++)
+    if (e[2 + (k >> 3)] >> (k & 7) & 1) {
+      int bit = k + top * w;
+      p->feast_art[bit >> 3] |= (uint8_t)(1 << (bit & 7));
+    }
+  if (top) {
+    static const int8_t FROM_RIGHT[8] = {8, 7, 6, 5, 3, 2, 1, 0};
+    int mid = w / 2;
+    p->feast_art[mid >> 3] |= (uint8_t)(1 << (mid & 7));                                  /* the shammash's flame */
+    for (int i = -1; i < night && i < 8; i++) {
+      int x = i < 0 ? mid : FROM_RIGHT[i] * (w - 1) / 8, bit = w + x;                        /* and tonight's */
+      p->feast_art[bit >> 3] |= (uint8_t)(1 << (bit & 7));
+    }
+  }
+  p->feast_art_w = (uint8_t)w, p->feast_art_h = (uint8_t)(h + top);
+}
+
+static void copy_words(char *out, const FeastReader *rd, uint16_t at) {
+  out[0] = 0;
+  if (at == 0xFFFF) return;
+  rd->read(rd->ctx, (uint32_t)(rd16(rd, 2) + at), out, 20);
+  out[19] = 0;
+}
+
+bool plan_feast(Plan *p, const Face *f, int64_t utc, int32_t offset, const FeastReader *rd) {
   int32_t day = floor_div(utc + offset, 86400) + EPOCH_ORDINAL;
   bool south = f->lat < 0;
   if (p->feast_day == day && p->feast_cal == f->calendars && p->feast_south == south) return true;
@@ -301,14 +349,15 @@ bool plan_feast(Plan *p, const Face *f, int64_t utc, int32_t offset, const uint8
     p->feast_day = day, p->feast_cal = 0, p->feast_south = south, p->feast = false;
     return true;
   }
-  if (!table) return false;
+  if (!rd) return false;
   p->feast_day = day, p->feast_cal = f->calendars, p->feast_south = south, p->feast = false;
-  int i = plan_feast_on(table, day, f->calendars, (float)offset / 3600);
+  FeastRecord r;
+  int nth = 0, i = feast_on(rd, day, f->calendars, (float)offset / 3600, &nth, &r);
   if (i < 0) return true;
-  const FeastRecord *r = record(table, i);
-  bool alt = south && r->words[2] != 0xFFFF;
-  copy_words(p->feast_words[0], words_of(table, r->words[alt ? 2 : 0]));
-  copy_words(p->feast_words[1], words_of(table, r->words[alt ? 3 : 1]));
-  p->feast_emblem = r->emblem, p->feast_flags = r->flags, p->feast = true;
+  bool alt = south && r.words[2] != 0xFFFF;
+  copy_words(p->feast_words[0], rd, r.words[alt ? 2 : 0]);
+  copy_words(p->feast_words[1], rd, r.words[alt ? 3 : 1]);
+  copy_art(p, rd, &r, nth + 1);
+  p->feast_flags = r.flags, p->feast = true;
   return true;
 }

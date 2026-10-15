@@ -83,7 +83,8 @@ void plan_civil(int64_t local, Civil *c);
 /* The feast of a local date (a Gregorian ordinal) in the calendars `cal` (bit n for CAL_* n), from the calendars'
  * table (feasts.bin): its record's index, or -1. `hours` is the place's clock ahead of UTC (for the days set by
  * the Sun where it is). */
-int plan_feast_on(const uint8_t *table, int32_t ordinal, uint32_t cal, float hours);
+typedef struct FeastReader FeastReader;
+int plan_feast_on(const FeastReader *rd, int32_t ordinal, uint32_t cal, float hours);
 
 /* The face's state: its data, the screen, and the window for the latitude (kept from one drawing to the next). */
 typedef struct {
@@ -115,7 +116,9 @@ typedef struct {
   int32_t feast_day;                   /* the local date it is for (-1: not yet looked for) */
   uint32_t feast_cal;
   bool feast_south, feast;             /* (feast: there is one) */
-  uint8_t feast_emblem, feast_flags;   /* NW_* (255 none); FF_* */
+  uint8_t feast_flags;                 /* FF_* */
+  uint8_t feast_art_w, feast_art_h;    /* its emblem (0 wide: none): a bit a pixel, row by row, the low bit first */
+  uint8_t feast_art[32];
   char feast_words[2][20];             /* its long and short words for the almanac's line */
   /* while drawing */
   uint8_t *rows[MAX_H];
@@ -152,8 +155,12 @@ typedef struct {
  * the Plan keeps. True when the Plan's answer is for this day, these calendars and this hemisphere (so a NULL table
  * asks only whether a look is needed). */
 #define FEAST_API_MAGIC 0x54534546u          /* "FEST" */
+/* how the calendars' code reads the calendars' table (feasts.bin), a few bytes at a time: from the resources on the
+ * watch, so the whole table is never in memory; from memory elsewhere (plan_feast_memory) */
+struct FeastReader { void (*read)(void *ctx, uint32_t at, void *buf, uint32_t n); void *ctx; };
+void plan_feast_memory(FeastReader *rd, const uint8_t *table);
 typedef struct {
   uint32_t magic, layout;
-  bool (*feast)(Plan *p, const Face *f, int64_t utc, int32_t offset, const uint8_t *table);
+  bool (*feast)(Plan *p, const Face *f, int64_t utc, int32_t offset, const FeastReader *rd);
 } FeastApi;
-bool plan_feast(Plan *p, const Face *f, int64_t utc, int32_t offset, const uint8_t *table);
+bool plan_feast(Plan *p, const Face *f, int64_t utc, int32_t offset, const FeastReader *rd);

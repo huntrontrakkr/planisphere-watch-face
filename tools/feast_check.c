@@ -11,6 +11,8 @@ int main(int argc, char **argv) {
   int days = atoi(argv[2]);
   uint32_t mask = (uint32_t)strtoul(argv[3], NULL, 0);
   float hours = (float)atof(argv[4]);
-  for (int d = 0; d < days; d++) printf("%d\n", plan_feast_on(BLOB_FEASTS, first + d, mask, hours));
+  FeastReader rd;
+  plan_feast_memory(&rd, BLOB_FEASTS);
+  for (int d = 0; d < days; d++) printf("%d\n", plan_feast_on(&rd, first + d, mask, hours));
   return 0;
 }

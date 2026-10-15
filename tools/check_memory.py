@@ -58,10 +58,10 @@ def heap(screen):
 
 
 def lookup_need():
-    """The day's feast lookup: the calendars' code blob and table loaded together (main.c feast_of_day), with the
-    heap's headers and the code's alignment."""
+    """The day's feast lookup: the calendars' code blob loaded (main.c feast_of_day; it reads the table straight from
+    the resources), with the heap's header and the code's alignment."""
     code = struct.unpack("<5I", (DATA / "feast_code.bin").read_bytes()[:20])[1]
-    return (code + 4 + 4) + ((DATA / "feasts.bin").stat().st_size + 3) // 4 * 4 + 4
+    return code + 4 + 4
 
 
 def main():

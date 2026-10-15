@@ -413,119 +413,119 @@ CAL = {k: i for i, (k, _, _) in enumerate(CALENDARS)}
 FEASTS = [
     # the sky's year (named for the season where the watch is)
     dict(cal="sky", rule=("sun", 0, "local"), words=("VERNAL EQUINOX", "EQUINOX"), south=("AUTUMN EQUINOX", "EQUINOX"),
-         emblem="buds", rank=3),
+         emblem="sun wheel", rank=3),
     dict(cal="sky", rule=("sun", 90, "local"), words=("SUMMER SOLSTICE", "SOLSTICE"),
-         south=("WINTER SOLSTICE", "SOLSTICE"), emblem="rosette", rank=3),
+         south=("WINTER SOLSTICE", "SOLSTICE"), emblem="sun wheel", rank=3),
     dict(cal="sky", rule=("sun", 180, "local"), words=("AUTUMN EQUINOX", "EQUINOX"), south=("VERNAL EQUINOX", "EQUINOX"),
-         emblem="acorn", rank=3),
+         emblem="sun wheel", rank=3),
     dict(cal="sky", rule=("sun", 270, "local"), words=("WINTER SOLSTICE", "SOLSTICE"),
-         south=("SUMMER SOLSTICE", "SOLSTICE"), emblem="snowflake", rank=3),
+         south=("SUMMER SOLSTICE", "SOLSTICE"), emblem="sun wheel", rank=3),
     # the Christian year
-    dict(cal="christian", rule=("fixed", 1, 6), words=("EPIPHANY", "TWELFTH DAY"), emblem="star", rank=2),
-    dict(cal="christian", rule=("fixed", 2, 2), words=("CANDLEMAS",), emblem="lily", brings=("lights",), rank=2),
-    dict(cal="christian", rule=("easter", -47), words=("SHROVE TUESDAY", "SHROVETIDE"), emblem="quatrefoil", rank=2),
-    dict(cal="christian", rule=("easter", -46), words=("ASH WEDNESDAY",), emblem="lozenge", rank=2),
-    dict(cal="christian", rule=("fixed", 3, 25), words=("LADY DAY", "ANNUNCIATION"), emblem="lily", rank=2),
-    dict(cal="christian", rule=("easter", -7), words=("PALM SUNDAY",), emblem="bud sprig", rank=2),
-    dict(cal="christian", rule=("easter", -2), words=("GOOD FRIDAY",), emblem="lozenge", rank=1),
-    dict(cal="christian", rule=("easter", 0), words=("EASTER DAY", "EASTER"), emblem="lily", rank=1),
-    dict(cal="christian", rule=("easter", 39), words=("ASCENSION DAY", "ASCENSION"), emblem="star", rank=2),
-    dict(cal="christian", rule=("easter", 49), words=("WHITSUNDAY", "PENTECOST"), emblem="songbird", rank=2),
-    dict(cal="christian", rule=("fixed", 9, 29), words=("MICHAELMAS",), emblem="star13", rank=2),
-    dict(cal="christian", rule=("fixed", 11, 1), words=("ALL SAINTS",), emblem="star", rank=2),
-    dict(cal="christian", rule=("fixed", 11, 2), words=("ALL SOULS",), emblem="moon", rank=3),
-    dict(cal="christian", rule=("advent", 0), words=("ADVENT SUNDAY", "ADVENT"), emblem="fir", rank=2),
-    dict(cal="christian", rule=("fixed", 12, 24), words=("CHRISTMAS EVE",), emblem="fir", brings=("lights",), rank=1),
-    dict(cal="christian", rule=("fixed", 12, 25), words=("CHRISTMAS DAY", "CHRISTMAS"), emblem="star",
+    dict(cal="christian", rule=("fixed", 1, 6), words=("EPIPHANY", "TWELFTH DAY"), emblem="star6", rank=2),
+    dict(cal="christian", rule=("fixed", 2, 2), words=("CANDLEMAS",), emblem="candle", brings=("lights",), rank=2),
+    dict(cal="christian", rule=("easter", -47), words=("SHROVE TUESDAY", "SHROVETIDE"), emblem="pancake", rank=2),
+    dict(cal="christian", rule=("easter", -46), words=("ASH WEDNESDAY",), emblem=None, rank=2),
+    dict(cal="christian", rule=("fixed", 3, 25), words=("LADY DAY", "ANNUNCIATION"), emblem="heart", rank=2),
+    dict(cal="christian", rule=("easter", -7), words=("PALM SUNDAY",), emblem="willow", rank=2),
+    dict(cal="christian", rule=("easter", -2), words=("GOOD FRIDAY",), emblem="cross", rank=1),
+    dict(cal="christian", rule=("easter", 0), words=("EASTER DAY", "EASTER"), emblem="lamb", rank=1),
+    dict(cal="christian", rule=("easter", 39), words=("ASCENSION DAY", "ASCENSION"), emblem="cloud", rank=2),
+    dict(cal="christian", rule=("easter", 49), words=("WHITSUNDAY", "PENTECOST"), emblem="dove", rank=2),
+    dict(cal="christian", rule=("fixed", 9, 29), words=("MICHAELMAS",), emblem="scales", rank=2),
+    dict(cal="christian", rule=("fixed", 11, 1), words=("ALL SAINTS",), emblem="church", rank=2),
+    dict(cal="christian", rule=("fixed", 11, 2), words=("ALL SOULS",), emblem="candle", rank=3),
+    dict(cal="christian", rule=("advent", 0), words=("ADVENT SUNDAY", "ADVENT"), emblem="wreath", rank=2),
+    dict(cal="christian", rule=("fixed", 12, 24), words=("CHRISTMAS EVE",), emblem="holly", brings=("lights",), rank=1),
+    dict(cal="christian", rule=("fixed", 12, 25), words=("CHRISTMAS DAY", "CHRISTMAS"), emblem="horn",
          brings=("lights",), rank=1),
     # the Eastern churches (the Julian dates as they fall on the civil calendar this century)
-    dict(cal="eastern", rule=("fixed", 1, 7), words=("ORTHODOX CHRISTMAS", "CHRISTMAS"), emblem="star",
+    dict(cal="eastern", rule=("fixed", 1, 7), words=("ORTHODOX CHRISTMAS", "CHRISTMAS"), emblem="star6",
          brings=("lights",), rank=1),
-    dict(cal="eastern", rule=("fixed", 1, 19), words=("THEOPHANY",), emblem="star13", rank=2),
-    dict(cal="eastern", rule=("orthodox", -2), words=("GREAT FRIDAY",), emblem="lozenge", rank=1),
-    dict(cal="eastern", rule=("orthodox", 0), words=("PASCHA", "PASCHA"), emblem="lily", brings=("lights",), rank=1),
+    dict(cal="eastern", rule=("fixed", 1, 19), words=("THEOPHANY",), emblem="waves cross", rank=2),
+    dict(cal="eastern", rule=("orthodox", -2), words=("GREAT FRIDAY",), emblem="cross", rank=1),
+    dict(cal="eastern", rule=("orthodox", 0), words=("PASCHA", "PASCHA"), emblem="egg", brings=("lights",), rank=1),
     # old English customs, mostly let go
-    dict(cal="english", rule=("fixed", 1, 5), words=("TWELFTH NIGHT",), emblem="grapes", brings=("lights",), rank=2),
-    dict(cal="english", rule=("fixed", 1, 7), words=("ST DISTAFF'S DAY", "DISTAFF DAY"), emblem="checker", rank=3),
-    dict(cal="english", rule=("after", 1, 6, 0), words=("PLOUGH MONDAY",), emblem="little tree", rank=2),
-    dict(cal="english", rule=("easter", -48), words=("COLLOP MONDAY",), emblem="quatrefoil", rank=3),
-    dict(cal="english", rule=("easter", -21), words=("MOTHERING SUNDAY",), emblem="tulip", rank=2),
-    dict(cal="english", rule=("easter", 15), words=("HOCK MONDAY", "HOCKTIDE"), emblem="checker", rank=3),
-    dict(cal="english", rule=("easter", 16), words=("HOCK TUESDAY", "HOCKTIDE"), emblem="checker", rank=3),
-    dict(cal="english", rule=("easter", 36), words=("BEATING THE BOUNDS", "ROGATIONTIDE"), emblem="bud sprig",
+    dict(cal="english", rule=("fixed", 1, 5), words=("TWELFTH NIGHT",), emblem="wassail bowl", brings=("lights",), rank=2),
+    dict(cal="english", rule=("fixed", 1, 7), words=("ST DISTAFF'S DAY", "DISTAFF DAY"), emblem="distaff", rank=3),
+    dict(cal="english", rule=("after", 1, 6, 0), words=("PLOUGH MONDAY",), emblem="plough", rank=2),
+    dict(cal="english", rule=("easter", -48), words=("COLLOP MONDAY",), emblem="pancake", rank=3),
+    dict(cal="english", rule=("easter", -21), words=("MOTHERING SUNDAY",), emblem="rose", rank=2),
+    dict(cal="english", rule=("easter", 15), words=("HOCK MONDAY", "HOCKTIDE"), emblem=None, rank=3),
+    dict(cal="english", rule=("easter", 16), words=("HOCK TUESDAY", "HOCKTIDE"), emblem=None, rank=3),
+    dict(cal="english", rule=("easter", 36), words=("BEATING THE BOUNDS", "ROGATIONTIDE"), emblem="willow",
          rank=3),
-    dict(cal="english", rule=("fixed", 5, 1), words=("MAY DAY",), emblem="little tree", rank=2),
-    dict(cal="english", rule=("fixed", 5, 29), words=("OAK APPLE DAY",), emblem="oak leaf", rank=2),
-    dict(cal="english", rule=("fixed", 6, 23), words=("ST JOHN'S EVE", "MIDSUMMER EVE"), emblem="rosette",
+    dict(cal="english", rule=("fixed", 5, 1), words=("MAY DAY",), emblem="maypole", rank=2),
+    dict(cal="english", rule=("fixed", 5, 29), words=("OAK APPLE DAY",), emblem="oak apple", rank=2),
+    dict(cal="english", rule=("fixed", 6, 23), words=("ST JOHN'S EVE", "MIDSUMMER EVE"), emblem="fire wheel",
          brings=("bonfires",), rank=2),
-    dict(cal="english", rule=("fixed", 8, 1), words=("LAMMAS", "LOAF MASS"), emblem="strawberry", rank=2),
-    dict(cal="english", rule=("fixed", 11, 11), words=("MARTINMAS",), emblem="bird", rank=2),
-    dict(cal="english", rule=("fixed", 11, 25), words=("ST CATHERINE'S DAY", "CATTERN DAY"), emblem="rosette",
+    dict(cal="english", rule=("fixed", 8, 1), words=("LAMMAS", "LOAF MASS"), emblem="loaf", rank=2),
+    dict(cal="english", rule=("fixed", 11, 11), words=("MARTINMAS",), emblem="goose", rank=2),
+    dict(cal="english", rule=("fixed", 11, 25), words=("ST CATHERINE'S DAY", "CATTERN DAY"), emblem="wheel",
          rank=3),
-    dict(cal="english", rule=("fixed", 12, 28), words=("CHILDERMAS",), emblem="star", rank=3),
+    dict(cal="english", rule=("fixed", 12, 28), words=("CHILDERMAS",), emblem=None, rank=3),
     # the fire festivals
-    dict(cal="fire", rule=("fixed", 2, 1), words=("IMBOLC",), emblem="buds", brings=("lights",), rank=2),
-    dict(cal="fire", rule=("fixed", 4, 30), words=("BELTANE EVE", "BELTANE"), emblem="little tree",
+    dict(cal="fire", rule=("fixed", 2, 1), words=("IMBOLC",), emblem="brigid cross", brings=("lights",), rank=2),
+    dict(cal="fire", rule=("fixed", 4, 30), words=("BELTANE EVE", "BELTANE"), emblem="flames",
          brings=("bonfires",), rank=2),
-    dict(cal="fire", rule=("window", 6, 19, 4), words=("MIDSUMMER EVE", "MIDSOMMAR"), emblem="rosette",
+    dict(cal="fire", rule=("window", 6, 19, 4), words=("MIDSUMMER EVE", "MIDSOMMAR"), emblem="midsummer pole",
          brings=("bonfires",), rank=2),
-    dict(cal="fire", rule=("fixed", 8, 1), words=("LUGHNASADH",), emblem="strawberry", rank=2),
-    dict(cal="fire", rule=("fixed", 10, 31), words=("SAMHAIN",), emblem="moon", brings=("bonfires",), rank=2),
-    dict(cal="fire", rule=("sun", 270, "local"), words=("YULE",), emblem="fir", brings=("lights", "bonfires"), rank=2),
+    dict(cal="fire", rule=("fixed", 8, 1), words=("LUGHNASADH",), emblem="sheaf", rank=2),
+    dict(cal="fire", rule=("fixed", 10, 31), words=("SAMHAIN",), emblem="flames", brings=("bonfires",), rank=2),
+    dict(cal="fire", rule=("sun", 270, "local"), words=("YULE",), emblem="yule log", brings=("lights", "bonfires"), rank=2),
     # ancient Rome
-    dict(cal="rome", rule=("fixed", 1, 1), words=("KALENDS OF JANUARY", "KALENDS"), emblem="lozenge", rank=3),
-    dict(cal="rome", rule=("fixed", 2, 15), words=("LUPERCALIA",), emblem="anchor", rank=3),
-    dict(cal="rome", rule=("fixed", 4, 21), words=("PARILIA",), emblem="bud sprig", brings=("bonfires",), rank=3),
-    dict(cal="rome", rule=("fixed", 4, 28, 6), words=("FLORALIA",), emblem="tulip", rank=3),
-    dict(cal="rome", rule=("fixed", 12, 17, 7), words=("SATURNALIA",), emblem="globe", brings=("lights",), rank=3),
+    dict(cal="rome", rule=("fixed", 1, 1), words=("KALENDS OF JANUARY", "KALENDS"), emblem="laurel", rank=3),
+    dict(cal="rome", rule=("fixed", 2, 15), words=("LUPERCALIA",), emblem="wolf", rank=3),
+    dict(cal="rome", rule=("fixed", 4, 21), words=("PARILIA",), emblem="flames", brings=("bonfires",), rank=3),
+    dict(cal="rome", rule=("fixed", 4, 28, 6), words=("FLORALIA",), emblem="rose", rank=3),
+    dict(cal="rome", rule=("fixed", 12, 17, 7), words=("SATURNALIA",), emblem="pileus", brings=("lights",), rank=3),
     # the United States
-    dict(cal="us", rule=("fixed", 1, 1), words=("NEW YEAR'S DAY", "NEW YEAR"), emblem="star", rank=2),
-    dict(cal="us", rule=("fixed", 2, 14), words=("ST VALENTINE'S DAY", "VALENTINE'S DAY"), emblem="songbird", rank=2),
-    dict(cal="us", rule=("fixed", 7, 4), words=("INDEPENDENCE DAY", "JULY FOURTH"), emblem="star",
+    dict(cal="us", rule=("fixed", 1, 1), words=("NEW YEAR'S DAY", "NEW YEAR"), emblem="hourglass", rank=2),
+    dict(cal="us", rule=("fixed", 2, 14), words=("ST VALENTINE'S DAY", "VALENTINE'S DAY"), emblem="two birds", rank=2),
+    dict(cal="us", rule=("fixed", 7, 4), words=("INDEPENDENCE DAY", "JULY FOURTH"), emblem="rocket",
          fireworks="independence", rank=1),
-    dict(cal="us", rule=("fixed", 10, 31), words=("HALLOWEEN",), emblem="moon", brings=("lights",), rank=2),
-    dict(cal="us", rule=("nth", 11, 3, 4), words=("THANKSGIVING",), emblem="acorn", rank=1),
-    dict(cal="us", rule=("fixed", 12, 31), words=("NEW YEAR'S EVE",), emblem="star", fireworks="new year",
+    dict(cal="us", rule=("fixed", 10, 31), words=("HALLOWEEN",), emblem="turnip lantern", brings=("lights",), rank=2),
+    dict(cal="us", rule=("nth", 11, 3, 4), words=("THANKSGIVING",), emblem="sheaf", rank=1),
+    dict(cal="us", rule=("fixed", 12, 31), words=("NEW YEAR'S EVE",), emblem="rocket", fireworks="new year",
          midnight=True, rank=2),
     # Britain and Ireland
-    dict(cal="britain", rule=("fixed", 1, 25), words=("BURNS NIGHT",), emblem="quatrefoil", rank=3),
-    dict(cal="britain", rule=("fixed", 3, 1), words=("ST DAVID'S DAY",), emblem="tulip", rank=3),
-    dict(cal="britain", rule=("fixed", 3, 17), words=("ST PATRICK'S DAY",), emblem="quatrefoil", rank=2),
-    dict(cal="britain", rule=("fixed", 4, 23), words=("ST GEORGE'S DAY",), emblem="rosette", rank=3),
-    dict(cal="britain", rule=("fixed", 11, 5), words=("BONFIRE NIGHT", "GUY FAWKES"), emblem="star",
+    dict(cal="britain", rule=("fixed", 1, 25), words=("BURNS NIGHT",), emblem="thistle", rank=3),
+    dict(cal="britain", rule=("fixed", 3, 1), words=("ST DAVID'S DAY",), emblem="leek", rank=3),
+    dict(cal="britain", rule=("fixed", 3, 17), words=("ST PATRICK'S DAY",), emblem="shamrock", rank=2),
+    dict(cal="britain", rule=("fixed", 4, 23), words=("ST GEORGE'S DAY",), emblem="rose", rank=3),
+    dict(cal="britain", rule=("fixed", 11, 5), words=("BONFIRE NIGHT", "GUY FAWKES"), emblem="flames",
          brings=("bonfires",), fireworks="bonfire", rank=1),
-    dict(cal="britain", rule=("fixed", 11, 30), words=("ST ANDREW'S DAY",), emblem="checker", rank=3),
-    dict(cal="britain", rule=("fixed", 12, 31), words=("HOGMANAY",), emblem="star", fireworks="new year",
+    dict(cal="britain", rule=("fixed", 11, 30), words=("ST ANDREW'S DAY",), emblem="saltire", rank=3),
+    dict(cal="britain", rule=("fixed", 12, 31), words=("HOGMANAY",), emblem="rocket", fireworks="new year",
          midnight=True, rank=2),
     # the Hebrew calendar
-    dict(cal="hebrew", rule=("hebrew", 7, 1, 2), words=("ROSH HASHANAH",), emblem="globe", rank=1),
-    dict(cal="hebrew", rule=("hebrew", 7, 10), words=("YOM KIPPUR",), emblem="star13", rank=1),
-    dict(cal="hebrew", rule=("hebrew", 7, 15, 7), words=("SUKKOT",), emblem="grapes", rank=2),
-    dict(cal="hebrew", rule=("hebrew", 9, 25, 8), words=("HANUKKAH",), emblem="star", brings=("lights",), rank=1),
-    dict(cal="hebrew", rule=("hebrew", 0, 14), words=("PURIM",), emblem="rosette", rank=2),
-    dict(cal="hebrew", rule=("hebrew", 1, 15, 7), words=("PASSOVER", "PESACH"), emblem="buds", rank=1),
-    dict(cal="hebrew", rule=("hebrew", 3, 6, 2), words=("SHAVUOT",), emblem="lily", rank=2),
+    dict(cal="hebrew", rule=("hebrew", 7, 1, 2), words=("ROSH HASHANAH",), emblem="shofar", rank=1),
+    dict(cal="hebrew", rule=("hebrew", 7, 10), words=("YOM KIPPUR",), emblem=None, rank=1),
+    dict(cal="hebrew", rule=("hebrew", 7, 15, 7), words=("SUKKOT",), emblem="booth", rank=2),
+    dict(cal="hebrew", rule=("hebrew", 9, 25, 8), words=("HANUKKAH",), emblem="hanukkiah", brings=("lights",), rank=1),
+    dict(cal="hebrew", rule=("hebrew", 0, 14), words=("PURIM",), emblem="crown", rank=2),
+    dict(cal="hebrew", rule=("hebrew", 1, 15, 7), words=("PASSOVER", "PESACH"), emblem="matzah", rank=1),
+    dict(cal="hebrew", rule=("hebrew", 3, 6, 2), words=("SHAVUOT",), emblem="sheaf", rank=2),
     # the Chinese calendar
-    dict(cal="chinese", rule=("chinese", 1, 1), words=("SPRING FESTIVAL", "NEW YEAR"), emblem="globe",
+    dict(cal="chinese", rule=("chinese", 1, 1), words=("SPRING FESTIVAL", "NEW YEAR"), emblem="lantern",
          fireworks="new year", midnight=True, rank=1),
-    dict(cal="chinese", rule=("chinese", 1, 15), words=("LANTERN FESTIVAL", "LANTERNS"), emblem="globe",
+    dict(cal="chinese", rule=("chinese", 1, 15), words=("LANTERN FESTIVAL", "LANTERNS"), emblem="lantern",
          brings=("lights",), rank=1),
-    dict(cal="chinese", rule=("sun", 15, "bj"), words=("QINGMING",), emblem="bud sprig", rank=2),
-    dict(cal="chinese", rule=("chinese", 5, 5), words=("DRAGON BOAT",), emblem="pennant", rank=2),
-    dict(cal="chinese", rule=("chinese", 7, 7), words=("QIXI",), emblem="songbird", rank=2),
-    dict(cal="chinese", rule=("chinese", 8, 15), words=("MID-AUTUMN",), emblem="moon", brings=("lights",), rank=1),
-    dict(cal="chinese", rule=("chinese", 9, 9), words=("DOUBLE NINTH",), emblem="tulip", rank=3),
-    dict(cal="chinese", rule=("sun", 270, "bj"), words=("DONGZHI",), emblem="snowflake", rank=3),
+    dict(cal="chinese", rule=("sun", 15, "bj"), words=("QINGMING",), emblem="willow", rank=2),
+    dict(cal="chinese", rule=("chinese", 5, 5), words=("DRAGON BOAT",), emblem="dragon boat", rank=2),
+    dict(cal="chinese", rule=("chinese", 7, 7), words=("QIXI",), emblem="magpie", rank=2),
+    dict(cal="chinese", rule=("chinese", 8, 15), words=("MID-AUTUMN",), emblem="rabbit moon", brings=("lights",), rank=1),
+    dict(cal="chinese", rule=("chinese", 9, 9), words=("DOUBLE NINTH",), emblem="chrysanthemum", rank=3),
+    dict(cal="chinese", rule=("sun", 270, "bj"), words=("DONGZHI",), emblem="sun wheel", rank=3),
     # the Islamic calendar (tabular)
-    dict(cal="islamic", rule=("islamic", 1, 1), words=("ISLAMIC NEW YEAR", "HIJRI NEW YEAR"), emblem="moon", rank=2),
-    dict(cal="islamic", rule=("islamic", 3, 12), words=("MAWLID",), emblem="star13", brings=("lights",), rank=2),
-    dict(cal="islamic", rule=("islamic", 9, 1), words=("RAMADAN BEGINS", "RAMADAN"), emblem="moon", rank=2),
-    dict(cal="islamic", rule=("islamic", 10, 1), words=("EID AL-FITR",), emblem="moon", brings=("lights",), rank=1),
-    dict(cal="islamic", rule=("islamic", 12, 10), words=("EID AL-ADHA",), emblem="moon", rank=1),
+    dict(cal="islamic", rule=("islamic", 1, 1), words=("ISLAMIC NEW YEAR", "HIJRI NEW YEAR"), emblem="crescent", rank=2),
+    dict(cal="islamic", rule=("islamic", 3, 12), words=("MAWLID",), emblem="lantern", brings=("lights",), rank=2),
+    dict(cal="islamic", rule=("islamic", 9, 1), words=("RAMADAN BEGINS", "RAMADAN"), emblem="crescent", rank=2),
+    dict(cal="islamic", rule=("islamic", 10, 1), words=("EID AL-FITR",), emblem="crescent star", brings=("lights",), rank=1),
+    dict(cal="islamic", rule=("islamic", 12, 10), words=("EID AL-ADHA",), emblem="crescent star", rank=1),
     # the Hindu calendar
-    dict(cal="hindu", rule=("sidereal", 270, "ist"), words=("MAKAR SANKRANTI", "SANKRANTI"), emblem="rosette",
+    dict(cal="hindu", rule=("sidereal", 270, "ist"), words=("MAKAR SANKRANTI", "SANKRANTI"), emblem="kite",
          rank=2),
-    dict(cal="hindu", rule=("diwali",), words=("DIWALI",), emblem="star", brings=("lights",), fireworks="bonfire",
+    dict(cal="hindu", rule=("diwali",), words=("DIWALI",), emblem="diya", brings=("lights",), fireworks="bonfire",
          rank=1),
 ]
 
@@ -542,53 +542,62 @@ def sun_day(year, lon, hours, sidereal=False):
 
 
 def matches(rule, o, local_hours):
-    """Whether a local date (ordinal) is the day a rule names; the day's place in a span counts from 0."""
+    """Whether a local date (ordinal) is the day a rule names."""
+    return day_in(rule, o, local_hours) is not None
+
+
+def day_in(rule, o, local_hours):
+    """The day's place (0 the first) in the days a rule names, or None if it names another day."""
     kind = rule[0]
     d = date.fromordinal(o)
     if kind == "fixed":
         start = date(d.year, rule[1], rule[2]).toordinal()
         span = rule[3] if len(rule) > 3 else 1
-        return 0 <= o - start < span
+        return o - start if 0 <= o - start < span else None
+    def one(day):
+        return 0 if o == day else None
     if kind in ("easter", "orthodox"):
-        return o == (easter if kind == "easter" else julian_easter)(d.year) + rule[1]
+        return one((easter if kind == "easter" else julian_easter)(d.year) + rule[1])
     if kind == "nth":
-        return o == nth_weekday(d.year, rule[1], rule[2], rule[3])
+        return one(nth_weekday(d.year, rule[1], rule[2], rule[3]))
     if kind == "after":
-        return o == weekday_after(date(d.year, rule[1], rule[2]).toordinal(), rule[3])
+        return one(weekday_after(date(d.year, rule[1], rule[2]).toordinal(), rule[3]))
     if kind == "window":
         start = date(d.year, rule[1], rule[2]).toordinal()
-        return o == start + (rule[3] - date.fromordinal(start).weekday()) % 7
+        return one(start + (rule[3] - date.fromordinal(start).weekday()) % 7)
     if kind == "advent":
-        return o == advent_sunday(d.year) + rule[1]
+        return one(advent_sunday(d.year) + rule[1])
     if kind in ("sun", "sidereal"):
-        return o == sun_day(d.year, rule[1], _zone_hours(rule[2], local_hours), kind == "sidereal")
+        return one(sun_day(d.year, rule[1], _zone_hours(rule[2], local_hours), kind == "sidereal"))
     if kind == "hebrew":
         y, m, _ = hebrew_from_ordinal(o)
         month = rule[1] or (13 if hebrew_leap(y) else 12)          # month 0: Adar, the second in a leap year
         span = rule[3] if len(rule) > 3 else 1
-        return 0 <= o - hebrew_date(y, month, rule[2]) < span
+        k = o - hebrew_date(y, month, rule[2])
+        return k if 0 <= k < span else None
     if kind == "chinese":
         m, leap, day = chinese_from_ordinal(o)
-        return not leap and (m, day) == (rule[1], rule[2])
+        return 0 if not leap and (m, day) == (rule[1], rule[2]) else None
     if kind == "islamic":
-        return islamic_from_ordinal(o)[1:] == (rule[1], rule[2])
+        return 0 if islamic_from_ordinal(o)[1:] == (rule[1], rule[2]) else None
     if kind == "diwali":
-        return o == diwali(d.year)
+        return one(diwali(d.year))
     raise ValueError(kind)
 
 
 def feast_of(o, calendars, lat=40.0, local_hours=0.0):
     """The day's feast among the kept calendars (bit n of `calendars` for CALENDARS[n]): the greatest that falls on
     it, the first in the table among equals, with its words for the hemisphere; or None."""
-    best = None
+    best, night = None, None
     for f in FEASTS:
-        if not calendars >> CAL[f["cal"]] & 1:
+        if not calendars >> CAL[f["cal"]] & 1 or (best is not None and f["rank"] >= best["rank"]):
             continue
-        if (best is None or f["rank"] < best["rank"]) and matches(f["rule"], o, local_hours):
-            best = f
+        k = day_in(f["rule"], o, local_hours)
+        if k is not None:
+            best, night = f, k + 1
     if best is None:
         return None
-    out = dict(best)
+    out = dict(best, night=night)
     if lat < 0 and "south" in best:
         out["words"] = best["south"]
     return out

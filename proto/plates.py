@@ -48,6 +48,7 @@ from typeset import ink, astro_time
 from pixeltext import pixel_text, time_text, temp_text, ornament, concat, stamp, box_of
 import events
 import feast_draw
+import feast_emblems
 import feasts
 import figures
 import frame
@@ -1570,11 +1571,11 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         if wsky is not None:                             # the weather's piece, the most telling first
             kind_ = "thunder" if wsky.thunder else "snow" if (wsky.snow_lying or wsky.frost or wsky.falls == "snow") \
                 else "rain" if wsky.falls else "fog" if wsky.fog else "wind" if wsky.wind >= 30 else None
-        flank_ = sprites.flank_pieces(season, local.toordinal() * 24 + local.hour, s_eff < -6, kind_)
+        flank_ = [sprites.needlework(n) for n in sprites.flank_pieces(season, local.toordinal() * 24 + local.hour,
+                                                                      s_eff < -6, kind_)]
         if feast and feast.get("emblem"):              # the feast's own emblem either side of the time
-            flank_ = [feast["emblem"]] + list(flank_)
-        for name in flank_:
-            a_ = sprites.needlework(name)
+            flank_ = [feast_emblems.emblem(feast["emblem"], feast.get("night"))] + flank_
+        for a_ in flank_:
             h_, w_ = a_.shape
             rows_ = np.nonzero(inner[yc_ - h_ // 2: yc_ + h_ // 2 + 1].all(axis=0))[0]
             if not len(rows_) or not widest:
@@ -1604,7 +1605,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     left = dial.cx - total / 2
     db = box_of(date, left + day_sign.shape[1] + 4, y_date, "left")
     stamp(img, day_sign, left + day_sign.shape[1] / 2, (db[1] + db[3]) / 2 - 1, P["accent"])
-    stamp(img, date, left + day_sign.shape[1] + 4, y_date, P["ink"], anchor="left")
+    # (a great feast's date in red, as the calendars rubricate their principal days: a red-letter day)
+    stamp(img, date, left + day_sign.shape[1] + 4, y_date, P["accent"] if feast and feast["rank"] == 1 else P["ink"],
+          anchor="left")
     # the almanac's line: the sky's news, or else the Sun's next rising or setting; with the weather, the
     # temperature after it, set off by a lozenge (the news alone when the two will not fit together)
     kind, at = next_sun_event(clock_when, dial.lat, dial.lon)
