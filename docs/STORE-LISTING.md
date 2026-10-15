@@ -14,12 +14,10 @@ Gallery: `docs/screenshots/store/`, made by `tools/store_gallery.py` with the wa
 
 ## Description
 
-Planisphere is the sky over where you are, right now, on an old star chart. The stars turn behind the card's oval window as the hours go by, with the Moon in its phase, the planets, the Milky Way and the constellations' figures, and the Sun rides the ring as the hour hand.
+Planisphere is a star chart and an almanac: the two ways people have kept the sky and the year for two thousand years.
 
-The window follows the Sun: day blue, the warm glow of dusk, the blue hour, the night. The weather comes from Open-Meteo for where your phone is: clouds drifting downwind, rain, snow, fog and thunder over the village at the foot of the window, and the temperature on the almanac's line under the date. That line gives the next sunrise or sunset, or the sky's news: an eclipse (drawn as it happens, totality and all), two planets meeting, the Moon passing one, a meteor shower's peak.
+The chart is a planisphere, Ptolemy's heavens laid flat on a disc, the turning rete of a medieval astrolabe, the paper star wheel of the 1900s. Your own sky turns behind the card's oval window, with the Moon in its phase, the planets and the Milky Way, and the Sun rides the ring as the hour hand. The weather, from Open-Meteo, drifts over the village below. Eclipses are drawn as they happen.
 
-Ten plates, each after a real tradition of sky charts and set in the type of its time: the paper planisphere, Burritt's Geography of the Heavens, Flamsteed's copper engraving, a brass astrolabe, a Book of Hours, Prague's astronomical clock, a cyanotype, Apian's hand-coloured woodcut, a red plate for dark-adapted eyes, and a plain night. Every piece is hand-drawn pixel art.
+The almanac is after the shepherds' calendars of the 1490s. Its line gives the next sunrise or sunset and the sky's news: planets meeting, a meteor shower. Keep any of twelve calendars and their days are named there, the great ones in red as in the Books of Hours: the Christian and Eastern years, old English customs, the fire festivals, ancient Rome, the United States, Britain and Ireland, and the Hebrew, Chinese, Islamic and Hindu calendars. Each has its emblem, after the old carved calendar sticks; some light every window or fires on the hills, some bring fireworks each evening hour. Christmas Eve names its first star; at Qixi the magpies bridge the Weaver and the Cowherd; a rabbit sits in the Mid-Autumn moon. The Labours of the Months may show faint in the card.
 
-Set it up on a page that shows the face live as you choose: the plate, a 12- or 24-hour clock, names in the sky, the weather and its units, your phone's place or one you choose, and the labours of the months after the old calendars' woodcuts, faint in the card.
-
-For Pebble Time 2 and Pebble Round 2.
+Ten plates after real charts and instruments: a paper planisphere, Burritt's atlas (1835), Flamsteed's (1729), an astrolabe, a Book of Hours, Prague's clock (1410), a cyanotype, Apian's woodcut (1540), a red night-vision plate, a plain night. A settings page shows the face live as you choose.

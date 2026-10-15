@@ -33,7 +33,7 @@ NAME = "planisphere.pbw"
 LISTING = ROOT / "docs/STORE-LISTING.md"
 GALLERY = ROOT / "docs/screenshots/store"
 STORE_ENV = "PLANISPHERE_STORE_APP_ID"
-SOURCE = ""                      # the repository is private
+SOURCE = "https://github.com/huntrontrakkr/planisphere-watch-face"
 PLATFORMS = ["emery", "gabbro"]
 # The store takes at most 256 KB of resources an app; an app's code and static
 # data are capped at 64 KB (PebbleOS #1873): the renderer is a resource
