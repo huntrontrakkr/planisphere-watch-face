@@ -464,6 +464,93 @@ def flank_pieces(season, hour_count, night=False, snow=False):
     return list(dict.fromkeys(order))
 
 
+# ---- the astrolabe's pieces: the throne and ring it hangs by, standing at the north; the rete's flame pointers, the
+# tip at the star (drawn pointing down and along the diagonal; the other six turned from these); figures as the
+# fifteenth century cut them on astrolabes (after Hill's tables, 1915): the 3 a yogh, the 6 a sigma, the 9 tailed
+THRONE = art([".....KKK.....",
+              "....K...K....",
+              "....K...K....",
+              ".....KKK.....",
+              "......K......",
+              ".....KKK.....",
+              "....K.K.K....",
+              "...K..K..K...",
+              "..K.KKKKK.K..",
+              ".K.K.....K.K.",
+              "KKKKKKKKKKKKK"])
+FLAME = art(["..Y..",               # pointing down: the tip (the star) at the bottom
+             ".Y.Y.",
+             ".YYY.",
+             ".YYY.",
+             "..Y..",
+             "..Y..",
+             "..Y.."])
+FLAME_DIAG = art(["YY...",          # pointing down and to the right
+                  "YYY..",
+                  ".YYY.",
+                  "..YY.",
+                  "...Y.",
+                  "....Y"])
+
+
+def flame(dx, dy):
+    """The pointer for a star lying along (dx, dy) from the pole: (drawing, its tip's row and column)."""
+    a = math.degrees(math.atan2(dy, dx)) % 360          # 0 right, 90 down (screen)
+    k = int(((a + 22.5) % 360) // 45)                   # 0 right, 1 down-right, 2 down, ... 7 up-right
+    if k % 2 == 0:
+        base = FLAME                                    # down
+        d = {2: base, 6: base[::-1, :], 0: base.T[:, ::-1][::-1, :] if False else np.rot90(base, 1), 4: np.rot90(base, -1)}[k]
+    else:
+        base = FLAME_DIAG                               # down-right
+        d = {1: base, 3: base[:, ::-1], 5: base[::-1, ::-1], 7: base[::-1, :]}[k]
+    tips = np.argwhere(d)
+    ux, uy = math.cos(math.radians(k * 45)), math.sin(math.radians(k * 45))
+    j, i = max(tips, key=lambda t: t[1] * ux + t[0] * uy)   # the pixel farthest along the pointing direction
+    return d, int(j), int(i)
+
+
+GOTHIC = {
+    "1": [".#.", ".#.", ".#.", ".#.", ".#.", ".#.", "##."],
+    "2": ["#####", "....#", "...#.", "..#..", ".#...", "#....", "#####"],
+    "3": ["#####", "...#.", "..#..", ".###.", "....#", "#...#", ".###."],
+    "6": ["..###", ".#...", "#....", "#.##.", "##..#", "#...#", ".###."],
+    "8": [".###.", "#...#", "#...#", ".###.", "#...#", "#...#", ".###."],
+    "9": [".###.", "#...#", "#...#", ".####", "....#", "...#.", "..#.."],
+}
+
+
+def gothic(text, gap=1):
+    glyphs = [np.array([[c == "#" for c in r] for r in GOTHIC[ch]]) for ch in text]
+    W = sum(g.shape[1] for g in glyphs) + gap * (len(glyphs) - 1)
+    out = np.zeros((7, W), bool)
+    x = 0
+    for g in glyphs:
+        out[:, x: x + g.shape[1]] = g
+        x += g.shape[1] + gap
+    return out
+
+
+# ---- the Hours' pieces: the ring's hours in the small roman of the Books of Hours, the last i written j (iij, vj,
+# ix); its ivy for the corners is with the other corner pieces
+MINUSCULE = {
+    "i": ["#", ".", "#", "#", "#", "#", "#"],
+    "j": [".#", "..", ".#", ".#", ".#", ".#", "#."],
+    "v": ["...", "...", "#.#", "#.#", "#.#", ".#.", ".#."],
+    "x": ["...", "...", "#.#", "#.#", ".#.", "#.#", "#.#"],
+}
+
+
+def minuscule(text, gap=1):
+    glyphs = [np.array([[c == "#" for c in r] for r in MINUSCULE[ch]]) for ch in text]
+    W = sum(g.shape[1] for g in glyphs) + gap * (len(glyphs) - 1)
+    out = np.zeros((7, W), bool)
+    x = 0
+    for g in glyphs:
+        out[:, x: x + g.shape[1]] = g
+        x += g.shape[1] + gap
+    return out
+
+
 # ---- small marks: the south point's star, the studs on the ring at every third hour, a meteor shower's radiant
 SOUTH_STAR = art([
     "..R..",
@@ -650,6 +737,26 @@ CORNER_SEASONS = {
 }
 CORNER_OF_SEASON = {"bare": "bare", "blossom": "blossom", "leaf": "leaf", "harvest": "leaf", "turning": "autumn",
                     "autumn": "autumn"}
+# the Cyanotype's corners: a seaweed frond in white, after Anna Atkins's British Algae (1843)
+CORNER_FROND = art(_diag_rows(["K..K.....",
+                               ".K.K..K..",
+                               "..KK.K...",
+                               "...K.K...",
+                               "....KK.K.",
+                               ".....K.K.",
+                               "......K..",
+                               ".......KK",
+                               "........."]))
+# the Hours plate's corners: an ivy sprig in gold all the year, after the borders of the Books of Hours
+CORNER_IVY = art(_diag_rows(["Y..YY....",
+                             "..YYY....",
+                             "..K.Y....",
+                             "...K..YY.",
+                             "....K.YY.",
+                             ".....K...",
+                             "......K..",
+                             ".......KK",
+                             "........."]))
 
 
 # ---- an engraved glory round the Sun on the printed charts: fine rays beyond its own, one eighth drawn ----------

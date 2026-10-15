@@ -19,8 +19,18 @@ Like Groundtrack's plates, each plate follows a real tradition of sky charts, se
 | **Flamsteed** | Flamsteed's *Atlas Coelestis* (London, 1729): engraved rayed stars and figures, ink on paper, the Moon hatched | Libre Caslon: Caslon cut his type in London in the same decade |
 | **Observatory** | Red light, for eyes adapted to the dark | Old Standard |
 | **Night** | The first take: a black card, white type | Old Standard |
+| **Astrolabe** | A brass astrolabe, after the Sloane astrolabe (c. 1300) and Arsenius's gilt instruments: the rete's flame pointers marking the bright stars over the plate's engraved circles (the equator, the tropics, the almucantars), the ecliptic a solid ring, the throne and ring at the north, Gothic figures on the ring, beads at the unequal hours | Libre Caslon's old-style figures |
+| **Hours** | A Book of Hours, after the *Très Riches Heures* (c. 1412–1416): gold stars in an ultramarine sky on vellum, vermilion and gold, the hours in the small roman of the manuscripts (iij, vj, ix), ivy in the corners | Libre Caslon's old-style figures |
+| **Orloj** | Prague's astronomical clock (1410): gold on black, the sky and the ring in the clock's three flat zones, blue for the day, red-brown for the twilight, black for the night | Old Standard |
+| **Cyanotype** | A cyanotype, Herschel's blueprint (1842) as Anna Atkins used it for her *British Algae* (1843): white on cobalt, a seaweed frond in each corner | Old Standard |
 
-The planisphere, observatory and night plates show the live sky in their window: night blue, the blue hour with its warm glow, day blue with the Sun in it. Burritt and Flamsteed are printed atlases, so their windows keep the stars by day as a chart would, with the Sun drawn among them.
+The planisphere, observatory and night plates show the live sky in their window: night blue, the blue hour with its warm glow, day blue with the Sun in it. Burritt, Flamsteed, the Hours and the Cyanotype are printed or painted, so their windows keep the stars by day as a chart would, with the Sun drawn among them. The Astrolabe keeps its rete up by day as the instrument does. The Orloj's window takes the clock's zones: blue while the Sun is up, red-brown through the twilight, black at night.
+
+Each new plate brings its own pieces:
+- **The Astrolabe** has its throne and ring at the north in place of the fleur-de-lis, and flame pointers for the stars, after the Gothic retes. Its ring has Gothic figures (the 3 a yogh, the 6 a sigma, the 9 tailed, after Hill's tables of 1915) and beads at the unequal hours: the day from sunrise to sunset in twelve and the night in twelve, crowding and spreading with the seasons, as the plates engrave them.
+- **The Hours** has its hours in small roman, the last i written j, and gold ivy in the corners.
+- **The Orloj** fills its ring with the clock's zones in place of the engraver's hatching, so the gilded Sun travels through blue, brown and black.
+- **The Cyanotype** has white seaweed fronds in its corners.
 
 ![The paper planisphere at 9:30 pm](docs/plate-planisphere.png)
 

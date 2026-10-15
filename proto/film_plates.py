@@ -37,10 +37,11 @@ def main():
     # every plate on the Time 2 at 9:30 pm, then the paper planisphere at dusk and at noon
     night, dusk, noon = (datetime(2026, 10, 14, h, m, tzinfo=NY) for h, m in ((21, 30), (18, 40), (12, 15)))
     shots = [(night, pl) for pl in PLATES] + [(dusk, "planisphere"), (noon, "planisphere")]
-    sheet = Image.new("RGB", (len(shots) * 412, 464), (24, 24, 26))
+    per_row = 6
+    sheet = Image.new("RGB", (per_row * 412, ((len(shots) + per_row - 1) // per_row) * 464), (24, 24, 26))
     for i, (t, pl) in enumerate(shots):
         im = Image.fromarray(render(t.astimezone(timezone.utc), t2, sky, NY, pl, False)).resize((400, 456), Image.NEAREST)
-        sheet.paste(im, (i * 412 + 6, 4))
+        sheet.paste(im, ((i % per_row) * 412 + 6, (i // per_row) * 464 + 4))
     sheet.save(ROOT / "docs" / "time2-plates.png")
     # the 12-hour and 24-hour clocks side by side at 9:30 pm, on the Time 2 and the Round 2
     shots = [(t2, False, False), (t2, False, True), (r2, True, False), (r2, True, True)]

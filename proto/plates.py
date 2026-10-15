@@ -10,6 +10,14 @@ the type of its time, the way Groundtrack's plates follow real charts:
                 figures, ink on paper (Libre Caslon: Caslon cut his type in
                 London in the same decade)
   observatory   red light for eyes adapted to the dark (Old Standard)
+  astrolabe     a brass astrolabe, after the Sloane astrolabe (c. 1300) and Arsenius's gilt instruments: the
+                rete's flame pointers over the plate's engraved circles, Gothic figures, the throne and ring
+  hours         a Book of Hours, after the Tres Riches Heures (c. 1412-1416): gold stars in an ultramarine sky on
+                vellum, vermilion and gold, the hours in small roman (iij, vj, ix), ivy in the corners
+  orloj         Prague's astronomical clock (1410): gold on black, the sky and the ring in the clock's three flat
+                zones, blue for the day, red-brown for the twilight, black for the night
+  cyanotype     a cyanotype, Herschel's blueprint as Anna Atkins used it for her algae (1843): white on cobalt,
+                a seaweed frond in the corners
   night         the first take: a black jacket, white type
 
 Each shows the time as almanacs and astronomers write it, 9ʰ 30ᵐ (21ʰ 30ᵐ on
@@ -64,6 +72,22 @@ PLATES = {
                         star=c8(3, 0, 0), glyph="cross", line=c8(1, 0, 0), milky=c8(1, 0, 0), label=c8(2, 0, 0),
                         const=c8(1, 0, 0), planet=c8(3, 1, 0), rule=c8(1, 0, 0), font=(OLD, None), italic=(OLD_I, None),
                         ring="hours", figures="modern"),
+    "astrolabe": dict(jacket=c8(2, 2, 1), ink=c8(0, 0, 0), accent=c8(3, 3, 2), window="paper", night=c8(1, 1, 0),
+                      star=c8(3, 3, 2), glyph="pointer", line=c8(0, 0, 0), milky=c8(1, 1, 0), label=c8(3, 3, 2),
+                      const=c8(3, 3, 2), planet=c8(3, 2, 0), rule=c8(0, 0, 0), font=(OLD, None), italic=(OLD_I, None),
+                      ring="gothic", figures="caslon", north="throne", rete=True, beads="unequal"),
+    "hours": dict(jacket=c8(3, 3, 2), ink=c8(0, 0, 0), accent=c8(3, 1, 0), window="paper", night=c8(0, 0, 2),
+                  star=c8(3, 2, 0), glyph="rays", line=c8(1, 1, 3), milky=c8(0, 1, 2), label=c8(3, 2, 0),
+                  const=c8(3, 2, 0), planet=c8(3, 3, 1), rule=c8(3, 2, 0), font=(OLD, None), italic=(OLD_I, None),
+                  ring="minuscule", figures="caslon", corner="ivy"),
+    "orloj": dict(jacket=c8(0, 0, 0), ink=c8(3, 2, 0), accent=c8(3, 1, 0), window="orloj", night=c8(0, 0, 0),
+                  star=c8(3, 2, 0), glyph="rays", line=c8(2, 1, 0), milky=c8(1, 1, 0), label=c8(3, 2, 0),
+                  const=c8(3, 2, 0), planet=c8(3, 3, 1), rule=c8(3, 2, 0), font=(OLD, None), italic=(OLD_I, None),
+                  ring="roman", figures="modern", ringfill="zones"),
+    "cyanotype": dict(jacket=c8(0, 1, 2), ink=c8(3, 3, 3), accent=c8(2, 3, 3), window="paper", night=c8(0, 0, 1),
+                      star=c8(3, 3, 3), glyph="cross", line=c8(1, 2, 3), milky=c8(0, 1, 2), label=c8(3, 3, 3),
+                      const=c8(2, 3, 3), planet=c8(3, 3, 3), rule=c8(3, 3, 3), font=(OLD, None), italic=(OLD_I, None),
+                      ring="roman", figures="modern", corner="frond"),
     "night": dict(jacket=c8(0, 0, 0), ink=c8(3, 3, 3), accent=c8(3, 2, 0), window="sky", night=c8(0, 0, 1),
                   star=c8(3, 3, 3), glyph="cross", line=c8(0, 1, 2), milky=c8(1, 1, 2), label=c8(2, 2, 2),
                   const=c8(1, 1, 2), planet=c8(3, 2, 1), rule=c8(1, 1, 1), font=(OLD, None), italic=(OLD_I, None),
@@ -242,6 +266,8 @@ HATCH = (9, 7, 5, 4)                    # the night's hatching on the ring: ever
 def tint_of(P):
     """A colour a step from the card's own, for the engraver's hatching on it."""
     jacket = P["jacket"]
+    if (jacket == c8(2, 2, 1)).all():
+        return c8(1, 1, 0)                              # on brass, the engraver's darker line
     if jacket.sum() > 400:
         return c8(2, 2, 1)
     if P["window"] == "red":
@@ -585,6 +611,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             closed_sky = True
         img[inside] = skyq[inside]
         dark = s_eff < -12
+    elif P["window"] == "orloj":                         # the clock's zones: day blue, twilight red-brown, night black
+        img[inside] = c8(1, 2, 3) if s_eff > -0.833 else c8(2, 1, 0) if s_eff > -18 else c8(0, 0, 0)
+        dark = s_eff < -12
     elif P["window"] == "red":
         bval, _ = sky_scalar(palt, gamma, s_eff)
         skyq = banded(np.clip(bval * 0.5, 0, 2), [c8(0, 0, 0), c8(1, 0, 0), c8(2, 0, 0)], tt)
@@ -614,7 +643,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         img[(mglow > tt) & inside & (dd_m > 6)] = c8(0, 1, 2)
 
     # the Milky Way, stippled (the first thing haze and cloud take away)
-    if paper or (sun_alt < -15 and not (wsky is not None and live and (wsky.haze > 1.0 or wsky.stratus + wsky.cumulus > 0.45))):
+    rete = P.get("rete", False)
+    if not rete and (paper or (sun_alt < -15 and not (wsky is not None and live and (wsky.haze > 1.0 or wsky.stratus + wsky.cumulus > 0.45)))):
         acc_all = np.zeros((H * SS, W * SS))
         for level, polys in enumerate(mw):
             acc = np.zeros((H * SS, W * SS), bool)
@@ -630,8 +660,26 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         dens = np.clip(m * (0.30 if paper else 0.42), 0, 1) ** 1.2
         img[(dens > tt) & inside & ~hidden & ~lay.band] = P["milky"]
 
+    # on an astrolabe: the plate's engraved circles under the rete (the equator, the tropics, the almucantars at 30
+    # and 60 degrees), and the rete's own ecliptic, a solid ring
+    if rete:
+        def stroke(points, width):
+            m_ = Image.new("L", (W * SS, H * SS), 0)
+            ImageDraw.Draw(m_).line([(x * SS, y * SS) for x, y in points], fill=255, width=width)
+            return (np.asarray(m_, np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3)) > 110) & inside
+        engraved = np.zeros((H, W), bool)
+        for dec_ in (0.0, 23.44, -23.44):
+            engraved |= stroke([dial.project(ra_, dec_, lst) for ra_ in np.arange(0, 361, 2)], 3)
+        for alt_ in (30.0, 60.0):
+            pts_ = []
+            for az_ in np.arange(0, 361, 2):
+                d_, h_ = altaz_to_eq(alt_, az_, abs(dial.lat))
+                pts_.append(dial.project(lst - h_, d_, lst))
+            engraved |= stroke(pts_, 3)
+        img[engraved] = P["line"]
+        img[stroke([dial.project(*astro.ecl_to_eq(l_, 0, pos["eps"]), lst) for l_ in np.arange(0, 361, 1)], 7)] = P["const"]
     # the equator and the ecliptic, dotted
-    for lam in range(0, 360, 3):
+    for lam in range(0, 360, 3) if not rete else ():
         for kind, (ra, de) in (("ecl", astro.ecl_to_eq(lam, 0, pos["eps"])), ("eq", (lam, 0.0))):
             if kind == "eq" and lam % 6:
                 continue
@@ -653,8 +701,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             if inside[y, col] and abs(y - zy) > 3 and not hidden[y, col]:
                 img[y, col] = P["line"]
 
-    # figures, stopping short of their stars
-    if figs:
+    # figures, stopping short of their stars (an astrolabe has none: its rete carries only pointers)
+    if figs and not rete:
         bright = {(round(ra, 2), round(de, 2)): mg for ra, de, mg, bv in stars}
         cov = np.zeros((H, W))
         for ls in lines:
@@ -685,6 +733,14 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         c = P["star"] if (paper or P["window"] == "red") else (c8(2, 2, 3) if bv < -0.1 else c8(3, 3, 3) if bv < 0.5 else
                                                               c8(3, 3, 2) if bv < 1.15 else c8(3, 2, 1) if bv < 1.6 else c8(3, 2, 0))
         dim = c8(1, 1, 1) if light_paper else c * 0.67 + P["night"] * 0.33
+        if rete:                                         # the rete's flame pointers, only for the bright stars
+            if mg >= 2.0:
+                continue
+            d_, tj_, ti_ = sprites.flame(xi - dial.cx, yi - dial.cy)
+            sprites.paint(img, d_, xi - ti_, yi - tj_, {3: P["star"]}, anchor="corner", where=inside)
+            drawn.append((xi, yi, 2))
+            boxes.append((xi - ti_ - 1, yi - tj_ - 1, xi - ti_ + d_.shape[1] + 1, yi - tj_ + d_.shape[0] + 1))
+            continue
         drawn.append((xi, yi, 3 if mg < 0.5 else 2 if mg < 1.4 else 1 if mg < 2.1 else 0))
         if mg < 0.5:
             sprites.paint(img, sprites.STAR[0], xi, yi, {5: c}, where=inside)
@@ -1031,7 +1087,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     # ornaments on it: a fleur-de-lis at the north, standing on the outer rule like a finial, lozenges at
     # the east and west
     top_y = dial.cy - abs(dial.lat) * dial.k
-    fl = sprites.FLEUR
+    fl = sprites.THRONE if P.get("north") == "throne" else sprites.FLEUR   # an astrolabe hangs by its throne and ring
     col = int(dial.cx)
     first = int(np.argmax(inside[:, col])) if inside[:, col].any() else int(top_y)
     fx0, fy0 = int(round(dial.cx - fl.shape[1] / 2)), first - 4 - (fl.shape[0] - 1)
@@ -1056,20 +1112,47 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     ang = np.degrees(np.arctan2(xx + 0.5 - dial.cx, yy + 0.5 - dial.cy))
     s_alt = np.degrees(np.arcsin(np.sin(lat) * np.sin(sdec) + np.cos(lat) * np.cos(sdec) * np.cos(np.radians(ang))))
     step = np.select([s_alt > -0.833, s_alt > -6, s_alt > -12, s_alt > -18], [0] + list(HATCH[:3]), HATCH[3])
-    hatch = band & (step > 0) & ((xx + yy) % np.maximum(step, 1) == 0)
-    img[hatch] = tint_of(P)
+    if P.get("ringfill") == "zones":                     # the clock's zones round the Sun's path instead
+        img[band & (s_alt > -0.833)] = c8(1, 2, 3)
+        img[band & (s_alt <= -0.833) & (s_alt > -18)] = c8(2, 1, 0)
+    else:
+        hatch = band & (step > 0) & ((xx + yy) % np.maximum(step, 1) == 0)
+        img[hatch] = tint_of(P)
     img[rule_in] = P["ink"]
     img[rule_out] = P["ink"]
-    # a beaded rule just inside the outer one, as on a clock's chapter ring
-    bead_px = bead_pixels(dial, rp["bead"])
-    for by_, bx_ in bead_px:
-        img[by_, bx_] = P["ink"]
+    # a beaded rule just inside the outer one, as on a clock's chapter ring; on an astrolabe, beads at the unequal
+    # hours instead: the day from sunrise to sunset in twelve and the night in twelve, crowding and spreading
+    # with the seasons (equal at the equinoxes), as an astrolabe's plate engraves them
+    if P.get("beads") == "unequal":
+        bead_px = []
+        cos_h0 = -math.tan(lat) * math.tan(math.radians(pos["sun"][1]))
+        h0 = math.degrees(math.acos(max(-1.0, min(1.0, cos_h0))))
+        if 0 < h0 < 180:
+            angles = [-h0 + k * 2 * h0 / 12 for k in range(12)] + [h0 + k * (360 - 2 * h0) / 12 for k in range(12)]
+        else:
+            angles = [k * 15.0 for k in range(24)]
+        for a_ in angles:
+            bx_, by_ = track_point(dial, a_, rp["bead"])
+            for oy_ in (0, 1):
+                for ox_ in (0, 1):
+                    X_, Y_ = int(math.floor(bx_ - 0.5)) + ox_, int(math.floor(by_ - 0.5)) + oy_
+                    if 0 <= X_ < W and 0 <= Y_ < H:
+                        img[Y_, X_] = P["ink"]
+                        bead_px.append((Y_, X_))
+    else:
+        bead_px = bead_pixels(dial, rp["bead"])
+        for by_, bx_ in bead_px:
+            img[by_, bx_] = P["ink"]
     words = {0: "MIDNIGHT", 12: "NOON"}
     # the hours every three: on the 12-hour clock twelve and twelve (III, VI, IX each morning and evening, or
     # figures on the plain plates); on the 24-hour clock, figures running on through the day
     roman = P["ring"] == "roman" and not clock24
+    gothic_ = P["ring"] == "gothic" and not clock24
+    small_ = P["ring"] == "minuscule" and not clock24
     if roman:
         numerals = {3: "III", 6: "VI", 9: "IX", 15: "III", 18: "VI", 21: "IX"}
+    elif small_:
+        numerals = {3: "iij", 6: "vj", 9: "ix", 15: "iij", 18: "vj", 21: "ix"}
     else:
         numerals = {h: str(h if clock24 else h % 12) for h in (3, 6, 9, 15, 18, 21)}
     ticks = set()
@@ -1109,7 +1192,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     numeral_px = np.zeros((H, W), bool)
     for hr, text in numerals.items():
         a = (hr - 12) * 15
-        m = sprites.numerals(text) if roman else sprites.figures(text)
+        m = sprites.numerals(text) if roman else sprites.gothic(text) if gothic_ else \
+            sprites.minuscule(text) if small_ else sprites.figures(text)
         x0_, y0_ = edge_point(dial, a)
         x1_, y1_ = track_point(dial, a, r_out + 1)
         best = None
@@ -1199,7 +1283,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             r = room[ys_, xs_]
             if r.max() >= 5:
                 j, i = np.unravel_index(np.argmax(r), r.shape)
-                leaf = sprites.CORNER_SEASONS[sprites.CORNER_OF_SEASON[season]]
+                leaf = {"ivy": sprites.CORNER_IVY, "frond": sprites.CORNER_FROND}.get(
+                    P.get("corner"), sprites.CORNER_SEASONS[sprites.CORNER_OF_SEASON[season]])
                 if xs_.start > 0:
                     leaf = leaf[:, ::-1]
                 if ys_.start > 0:
@@ -1315,12 +1400,15 @@ if __name__ == "__main__":
     noon = datetime(2026, 10, 14, 12, 15, tzinfo=NY)
     r2, t2 = RoundDial(260, 260, 40.71, -74.01), RectDial(200, 228, 40.71, -74.01)
     names = list(PLATES)
-    S = Image.new("RGB", (len(names) * 266, 266 * 2 + 236), (24, 24, 26))
+    per_row, block = 5, 266 * 2 + 236 + 12              # five plates to a row, each a column of three faces
+    rows_ = (len(names) + per_row - 1) // per_row
+    S = Image.new("RGB", (per_row * 266, rows_ * block), (24, 24, 26))
     for i, pl in enumerate(names):
+        bx, by = (i % per_row) * 266, (i // per_row) * block
         for row, (t, dial, rnd) in enumerate(((when, r2, True), (noon, r2, True), (when, t2, False))):
             im = Image.fromarray(render(t.astimezone(timezone.utc), dial, sky, NY, pl, rnd))
             im.save(out / f"plate-{pl}-{['night', 'noon', 'time2'][row]}.png")
-            S.paste(im, (i * 266 + (3 if rnd else 33), row * 266 + 3))
+            S.paste(im, (bx + (3 if rnd else 33), by + row * 266 + 3))
     S.save(out / "plates.png")
     S.resize((S.width * 2, S.height * 2), Image.NEAREST).save(out / "plates-2x.png")
     print("ok")
