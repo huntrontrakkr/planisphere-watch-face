@@ -439,12 +439,29 @@ NEEDLEWORK = {      # name: (rows, the library's slug)
             "petit1819-snowflake-7"),                                                       # Paris, 1819
     "snowflake": (["....#....", "..#.#.#..", ".#######.", "###.#.###", ".#######.", "..#.#.#..", "....#...."],
                   "quentel1532-snowflake-9x7"),                                             # Cologne 1532
+    "bud sprig": ([".......##.......", "......####......", "......####......", ".......##.......", "###....##....###",
+                   ".###...##...###.", "..###..##..###..", ".....#.##.#.....", "......####......", ".......##.......",
+                   ".......##.......", "........##......", ".........##....."], "album1596-bud-sprig"),  # c. 1596
+    "berries": ([".##...##.", "####.####", "####.####", ".##...##.", "....#....", "...###...", "...###...",
+                 "....#...."], "album1596-berry-cluster"),
+    "pennant": (["......#..", "..#####..", ".######..", ".######..", "#######..", "##....#..", "#...#####"],
+                "bk-1980-63-pennant"),          # a Dutch sampler, 1857: drawn blowing outward (away from the time)
+    # no period chart of rain, thunder or fog is known: these three are drawn here in the samplers' solid stitch,
+    # after Mignerak's lacis squares of the elements (Paris, 1605; research/needlework/motifs/mignerak1605-*)
+    "rain": (["...##.##...", "..#######..", ".#########.", "###########", ".#########.", "...........", "..#..#..#..",
+              ".#..#..#...", "...........", ".#..#..#...", "#..#..#...."], "after mignerak1605-four-elements"),
+    "thunder": (["...##.##...", "..#######..", ".#########.", "###########", ".###.#####.", "....##.....", "...##......",
+                 "..#######..", ".....##....", "....##.....", "...##......", "...#......."],
+                "after mignerak1605-four-elements"),
+    "fog": (["##...##...#", "..###..###.", "...........", "#...##...##", ".###..###..", "...........", "##...##...#",
+             "..###..###."], "after mignerak1605-four-elements"),
 }
 ANY_TIME = ["lozenge", "star", "checker", "globe", "quatrefoil", "bird", "star13", "anchor", "songbird", "little tree"]
-OF_SEASON = {"blossom": ["rosette", "tulip", "lily", "buds"], "leaf": ["tulip", "strawberry", "lily", "rosette"],
+OF_SEASON = {"blossom": ["rosette", "tulip", "bud sprig", "lily", "buds"], "leaf": ["tulip", "strawberry", "lily", "rosette"],
              "harvest": ["strawberry", "grapes", "tulip"], "turning": ["grapes", "acorn", "oak leaf"],
-             "autumn": ["acorn", "oak leaf", "grapes"], "bare": ["fir", "snowflake", "ice", "star"]}
-OF_SNOW = ["ice", "snowflake", "star"]
+             "autumn": ["acorn", "oak leaf", "grapes"], "bare": ["fir", "berries", "snowflake", "ice", "star"]}
+OF_WEATHER = {"thunder": ["thunder"], "snow": ["ice", "snowflake", "star"], "rain": ["rain"], "fog": ["fog"],
+              "wind": ["pennant"]}
 
 
 def needlework(name):
@@ -452,10 +469,11 @@ def needlework(name):
     return np.array([[c == "#" for c in r] for r in rows])
 
 
-def flank_pieces(season, hour_count, night=False, snow=False):
+def flank_pieces(season, hour_count, night=False, weather=None):
     """The hour's piece for beside the time, then the rest of its cycle (to take the next that fits): even hours
-    the season's (or the snow's), odd hours one for any time, the night's Moon among them after dark."""
-    seasonal = OF_SNOW if snow else OF_SEASON.get(season, ANY_TIME)
+    the season's (or the weather's: thunder, snow, rain, fog or wind), odd hours one for any time, the night's Moon
+    among them after dark."""
+    seasonal = OF_WEATHER.get(weather) or OF_SEASON.get(season, ANY_TIME)
     general = ANY_TIME + (["moon"] if night else [])
     k = hour_count // 2
     first, second = (seasonal, general) if hour_count % 2 == 0 else (general, seasonal)

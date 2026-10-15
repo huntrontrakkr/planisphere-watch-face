@@ -1340,8 +1340,11 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         # hour's piece will not fit (the Round 2 is narrow there), the next of the cycle that will
         widest = widest_time(P.get("figures", "modern"), "time2" if rect else "round2", clock24)
         yc_ = int(round(cy_))
-        snow_now = wsky is not None and (wsky.snow_lying or wsky.frost)
-        for name in sprites.flank_pieces(season, local.toordinal() * 24 + local.hour, s_eff < -6, snow_now):
+        kind_ = None
+        if wsky is not None:                             # the weather's piece, the most telling first
+            kind_ = "thunder" if wsky.thunder else "snow" if (wsky.snow_lying or wsky.frost or wsky.falls == "snow") \
+                else "rain" if wsky.falls else "fog" if wsky.fog else "wind" if wsky.wind >= 30 else None
+        for name in sprites.flank_pieces(season, local.toordinal() * 24 + local.hour, s_eff < -6, kind_):
             a_ = sprites.needlework(name)
             h_, w_ = a_.shape
             rows_ = np.nonzero(inner[yc_ - h_ // 2: yc_ + h_ // 2 + 1].all(axis=0))[0]

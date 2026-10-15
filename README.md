@@ -144,7 +144,8 @@ And the filigree, all drawn by hand:
 - a star at the south point, clasping the window's two rules, to go with the fleur-de-lis at the north and the lozenges east and west;
 - a sprig turning into each of the Time 2's corners, in the season's dress;
 - a printer's flower either side of the time, as a title is set off, changing on the hour. The flowers are charted needlework, the period's own pixel art, copied stitch for stitch from the pattern books and samplers in `research/needlework/`.
-  - Half the hours bring a piece for the season: a rosette, tulip, lily or buds in spring; a strawberry in summer; grapes, an acorn or an oak leaf in autumn; a fir or snowflakes in winter. In snow or frost it is an ice crystal or a snowflake.
+  - Half the hours bring a piece for the season: a rosette, tulip, bud sprig, lily or buds in spring; a strawberry in summer; grapes, an acorn or an oak leaf in autumn; a fir, berries or snowflakes in winter.
+  - The weather takes those hours when it has something to say: a thundercloud in a storm, an ice crystal or a snowflake in snow or frost, a rain cloud in rain, fog lines in fog, and in a gale a pair of pennants (from a Dutch sampler of 1857) blowing outward. No period chart of rain, thunder or fog is known, so those three are drawn here in the samplers' solid stitch, after Mignerak's lacis squares of the elements (Paris, 1605).
   - The other hours bring a piece for any time of year: Quentel's broken lozenge (Cologne, 1529), stars from an Italian sampler of 1802, a chequered lozenge, a ship's globe, a quatrefoil, small birds, an anchor, a little tree. After dark the man in the Moon joins them, from Dillmont's DMC album.
   - Each flower stands midway between the ring and the widest the time can be, so it stays put as the minutes change. Where the hour's piece will not fit (the Round 2 is narrow there), the next of the cycle that will takes its place;
 - a face on the full Moon, as the almanacs give it.
