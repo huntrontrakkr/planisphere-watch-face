@@ -87,6 +87,30 @@ def degrees_text(d, hemi):
     return out
 
 
+def temp_text(n):
+    """61° in pixels: the figures (a minus before frost on the Celsius scale), then a raised degree ring."""
+    a = _glyph_run(str(abs(n)))
+    dg = sup("deg")
+    minus = n < 0
+    W = (4 if minus else 0) + a.shape[1] + 1 + dg.shape[1]
+    out = np.zeros((14, W), bool)
+    x = 0
+    if minus:
+        out[ASC - 4, 0:3] = True                      # a minus at the middle of the old-style figures
+        x = 4
+    out[:, x: x + a.shape[1]] = a
+    x += a.shape[1] + 1
+    out[1: 1 + dg.shape[0], x: x + dg.shape[1]] = dg
+    return out
+
+
+def ornament(m, top=2):
+    """A small drawing set among the letters (a lozenge between two facts), `top` rows down from the caps' top."""
+    out = np.zeros((14, m.shape[1]), bool)
+    out[top: top + m.shape[0]] = m
+    return out
+
+
 def concat(*masks, gap=4):
     h = max(m.shape[0] for m in masks)
     W = sum(m.shape[1] for m in masks) + gap * (len(masks) - 1)

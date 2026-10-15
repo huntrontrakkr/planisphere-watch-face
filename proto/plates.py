@@ -34,11 +34,13 @@ import astro
 from render import Dial, load_sky
 from render2 import (COOL, WARM, bn_tile, sky_scalar, banded, smooth, star_names, next_sun_event, wu_line, c8)
 from typeset import ink, astro_time
-from pixeltext import pixel_text, time_text, concat, stamp, box_of
+from pixeltext import pixel_text, time_text, temp_text, ornament, concat, stamp, box_of
 import events
 import figures
 import frame
+import skies
 import sprites
+import weather as meteo
 
 ROOT = Path(__file__).resolve().parents[1]
 NY = ZoneInfo("America/New_York")
@@ -440,10 +442,30 @@ def tick_pixels(dial, a_deg, length):
     return pts
 
 
+_WIDEST = {}
+
+
+def widest_time(style, screen, clock24):
+    """The widest the large time can be in these figures (every hour, the widest minutes), kept."""
+    key = (style, screen, clock24)
+    if key not in _WIDEST:
+        best = 0
+        for h in (range(24) if clock24 else range(1, 13)):
+            for mm in ("00", "08", "44", "48", "58"):
+                comp = figures.compose(style, screen, str(h), mm)
+                if comp is not None:
+                    best = max(best, comp[0].shape[1])
+        _WIDEST[key] = best
+    return _WIDEST[key]
+
+
 def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=False, sky_offset=None, extras=None,
-           names=True):
+           names=True, weather=None, fahrenheit=False, weather_clock=None):
     """The face at `when`. Its sky may be drawn at another time (`sky_offset`, for the hourly turn) while the clock
-    keeps `when`; `extras(img, ctx)` draws passing things (meteors, birds) into the sky, under the names."""
+    keeps `when`; `extras(img, ctx)` draws passing things (meteors, birds) into the sky, under the names. With
+    `weather` (weather.Weather) the window shows the place's clouds, rain or snow, the village its weather, and
+    the almanac line the temperature (in degrees Fahrenheit with `fahrenheit`). A film may set `weather_clock`,
+    (seconds for the clouds, seconds for everything else), to hurry the clouds past."""
     clock_when = when
     if sky_offset is not None:
         when = when + sky_offset
@@ -470,6 +492,16 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     # the window: the sky above the horizon (symmetric about the meridian by construction)
     inside = window_mask(dial)
     img = np.zeros((H, W, 3)) + P["jacket"]
+    # the weather: the place's clouds drifting over the chart, what falls from them (a live sky only: a printed
+    # chart keeps its stars, and only its village feels the weather)
+    wsky = meteo.sky_of(weather) if weather is not None else None
+    live = P["window"] in ("sky", "red")
+    local_t = clock_when.astimezone(tz)
+    secs = local_t.hour * 3600 + local_t.minute * 60 + local_t.second + local_t.microsecond / 1e6
+    cloud_secs = secs
+    if weather_clock is not None:
+        cloud_secs, secs = weather_clock
+    lay = skies.layer(inside, wsky if live else None, cloud_secs, local_t.toordinal(), dial.lat, dial.lon, t_falls=secs)
 
     # the window's ground: the live sky, red light, or the paper of a printed chart
     yy, xx = np.mgrid[0:H, 0:W]
@@ -481,6 +513,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     gamma = np.degrees(np.arccos(np.clip(np.sin(pdec) * np.sin(sdec) + np.cos(pdec) * np.cos(sdec) * np.cos(pha - sha), -1, 1)))
     tt = bn_tile(H, W)
     paper = P["window"] == "paper"
+    closed_sky = False
     if P["window"] == "sky":
         bval, warm = sky_scalar(palt, gamma, sun_alt)
         if umbra > 0:                                    # twilight from all round the horizon, and a sunset all round
@@ -495,6 +528,14 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         if hot.any():
             wq = banded(np.clip(wv - 1, 0, len(WARM) - 1), WARM, tt)
             skyq = np.where((hot & (smooth(0, 0.5, wv - 1) > tt))[..., None], wq, skyq)
+        if wsky is not None and (wsky.stratus >= 0.6 or wsky.fog or wsky.falls):
+            # under a closed sky the day goes an even grey (a shade paler overhead), whiter in fog, darker under rain
+            # and thunder; by night it stays dark
+            grey = [P["night"], c8(1, 1, 1), c8(2, 2, 2), c8(3, 3, 3)]
+            lift = 0.75 if wsky.fog else -1.0 if (wsky.thunder or wsky.falls in ("rain", "hail")) else 0.0
+            gv = (2.0 + 0.45 * np.sin(np.radians(np.clip(palt, 0, 90))) + lift) * smooth(-9, 5, s_eff)
+            skyq = banded(np.clip(gv, 0, 3), grey, tt)
+            closed_sky = True
         img[inside] = skyq[inside]
         dark = s_eff < -12
     elif P["window"] == "red":
@@ -509,6 +550,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     faint = float(np.interp(s_eff, [-16, -10, -5, -1.5], [4.6, 3.4, 2.0, 0.4])) if not paper else 4.6
     if not paper and s_eff > -1.5:
         faint = -9
+    hidden = lay.body                                    # behind the cumulus: nothing; under the stratus: the brightest
+    if wsky is not None and live:
+        faint -= wsky.haze
     figs = paper or s_eff < -10.5
     # the Moon's light: a bright Moon up at night pales the sky round it and hides the faint stars there; in the
     # Earth's shadow it has no light to give
@@ -522,8 +566,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         mglow = np.clip(1 - (dd_m - 6) / moon_reach, 0, 1) ** 1.6 * 0.55 * f
         img[(mglow > tt) & inside & (dd_m > 6)] = c8(0, 1, 2)
 
-    # the Milky Way, stippled
-    if paper or sun_alt < -15:
+    # the Milky Way, stippled (the first thing haze and cloud take away)
+    if paper or (sun_alt < -15 and not (wsky is not None and live and (wsky.haze > 1.0 or wsky.stratus + wsky.cumulus > 0.45))):
         acc_all = np.zeros((H * SS, W * SS))
         for level, polys in enumerate(mw):
             acc = np.zeros((H * SS, W * SS), bool)
@@ -537,7 +581,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             acc_all = np.maximum(acc_all, acc * (level + 1) / len(mw))
         m = acc_all.reshape(H, SS, W, SS).mean(axis=(1, 3))
         dens = np.clip(m * (0.30 if paper else 0.42), 0, 1) ** 1.2
-        img[(dens > tt) & inside] = P["milky"]
+        img[(dens > tt) & inside & ~hidden & ~lay.band] = P["milky"]
 
     # the equator and the ecliptic, dotted
     for lam in range(0, 360, 3):
@@ -546,7 +590,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                 continue
             x, y = dial.project(ra, de, lst)
             xi, yi = int(x), int(y)
-            if 0 <= xi < W and 0 <= yi < H and inside[yi, xi] and dark:
+            if 0 <= xi < W and 0 <= yi < H and inside[yi, xi] and dark and not hidden[yi, xi]:
                 img[yi, xi] = P["const"] if kind == "ecl" else P["line"]
 
     # the things the labels keep clear of (their boxes), and the sky's other news
@@ -559,7 +603,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     zx, zy = col, int(math.floor(dial.cy + (90 - abs(dial.lat)) * dial.k))
     if dark or paper:
         for y in range(0, H, 3):
-            if inside[y, col] and abs(y - zy) > 3:
+            if inside[y, col] and abs(y - zy) > 3 and not hidden[y, col]:
                 img[y, col] = P["line"]
 
     # figures, stopping short of their stars
@@ -577,7 +621,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                     continue
                 g = 2.6 / L
                 wu_line(cov, x0 + (x1 - x0) * g, y0 + (y1 - y0) * g, x1 - (x1 - x0) * g, y1 - (y1 - y0) * g)
-        img[(cov > 0.55) & inside] = P["line"]
+        img[(cov > 0.55) & inside & ~hidden & ~lay.band] = P["line"]
 
     # stars, as drawn on the old charts: eight points for the brightest, four, a cross, a point
     light_paper = paper and P["night"].sum() > 400
@@ -588,6 +632,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         x, y = dial.project(ra, de, lst)
         xi, yi = int(math.floor(x)), int(math.floor(y))
         if lit_moon and mg > 2.2 and math.hypot(x - mx, y - my) < 6 + moon_reach:
+            continue
+        if 0 <= yi < H and 0 <= xi < W and (hidden[yi, xi] or (lay.band[yi, xi] and mg > 1.6)):
             continue
         c = P["star"] if (paper or P["window"] == "red") else (c8(2, 2, 3) if bv < -0.1 else c8(3, 3, 3) if bv < 0.5 else
                                                               c8(3, 3, 2) if bv < 1.15 else c8(3, 2, 1) if bv < 1.6 else c8(3, 2, 0))
@@ -605,6 +651,23 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             sprites.paint(img, sprites.STAR[3], xi, yi, {5: c}, where=inside)
         else:
             sprites.paint(img, sprites.STAR[3], xi, yi, {5: dim if light_paper else c * 0.40 + P["night"] * 0.6}, where=inside)
+
+    # the clouds over the stars (the Moon and planets, drawn next, shine through them), kept off the bright stars a
+    # stratus line passes; thin high cloud rings the Moon (or by day the Sun) with a halo at 22 degrees
+    moon_up = astro.altitude(*pos["moon"], lst, dial.lat) > 0
+    ccol = skies.colours(s_eff, P["window"] == "red", wsky is not None and (wsky.stratus > 0.5 or bool(wsky.falls)),
+                         f > 0.4 and moon_up)
+    if lay.cumulus or lay.stratus or lay.cirrus:
+        keep = np.zeros((H, W), bool)
+        for sx_, sy_, r_ in drawn:
+            if r_ >= 1:
+                keep[max(0, sy_ - r_ - 1): sy_ + r_ + 2, max(0, sx_ - r_ - 1): sx_ + r_ + 2] = True
+        skies.paint_clouds(img, ground, inside, lay, ccol, keep)
+    if wsky is not None and live and wsky.halo:
+        body_ = pos["moon"] if (s_eff < -6 and f > 0.3 and moon_up) else pos["sun"] if sun_alt > 0 else None
+        if body_ is not None:
+            ring_ = skies.halo_ring(pdec, pha, body_[1], lst - body_[0], dial.k) & inside & (tt < 0.7)
+            img[ring_] = c8(1, 0, 0) if P["window"] == "red" else c8(1, 1, 2) if s_eff < -6 else c8(3, 3, 3)
 
     # the planets, each its little picture; beside Jupiter its four great moons where they are now, along its
     # equator (near enough the ecliptic), magnified: at the chart's scale they would sit inside one pixel
@@ -689,7 +752,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         red = P["window"] == "red"
         if not paper and cover < 0.97:
             dd = np.hypot(xx - si, yy - sj)
-            glow = np.clip(1 - (dd - 4.0) / 13.0, 0, 1) ** 1.5 * 0.85 * (1 - cover) ** 0.5
+            glow = np.clip(1 - (dd - 4.0) / 13.0, 0, 1) ** 1.5 * 0.85 * (1 - cover) ** 0.5 * (0.0 if closed_sky else 1.0)
             light = c8(2, 0, 0) if red else c8(3, 3, 2) if sun_alt < 6 else c8(2, 3, 3)   # warm when the Sun is low
             img[(glow > tt) & inside & (dd > 4.0)] = light
             img[(dd <= 4.4) & inside] = c8(3, 0, 0) if red else c8(3, 3, 1)
@@ -720,20 +783,67 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             boxes.append((ri - 5, rj - 5, ri + 6, rj + 6))
             radiant = (ri, rj)
 
-    # the southern horizon's skyline: a village against the sky, bent along the window's lower edge
-    land = sprites.landscape()
+    # rain or snow falling past everything in the sky
+    if lay.falls:
+        skies.paint_falls(img, inside, lay, ccol)
+
+    # the southern horizon's skyline: a village against the sky, bent along the window's lower edge. It keeps the
+    # season (its trees in blossom, leaf, turning or bare, stooks at harvest) and the weather: the church's vane
+    # turned into the wind, the mill's sails turning in a working wind (stopped in a calm or a gale), snow on its
+    # tops, smoke from the chimney on a cold day, a window lit of an evening
+    season = sprites.season_of(pos["sun_lon"], dial.lat)
+    vane, sails, snow_ = "end", "x", False
+    if wsky is not None:
+        e_ = math.sin(math.radians(wsky.wind_from))      # the wind's source east (+) or west (-) of the meridian
+        vane = "end" if wsky.wind < 2 or abs(e_) < 0.38 else ("left" if e_ > 0 else "right")
+        if 8 <= wsky.wind <= 60 and int(secs * wsky.wind / 12.0) % 2:
+            sails = "+"
+        snow_ = wsky.snow_lying
+    lit_ = sun_alt < -4 and (17 <= local.hour <= 22 or 5 <= local.hour <= 7)
+    land = sprites.landscape(season, snow_, vane, sails, lit_)
     lh, lw = land.shape
-    silhouette = P["line"] if paper else (c8(0, 0, 0) if (sun_alt < -6 or P["window"] == "red") else c8(0, 0, 1))
+    night_land = sun_alt < -6 or P["window"] == "red"
+    silhouette = P["line"] if paper else (c8(0, 0, 0) if night_land else c8(0, 0, 1))
+    if wsky is not None and wsky.fog and live and not night_land:
+        silhouette = c8(1, 1, 1)                         # in fog by day the village is a ghost of itself
+    foggy = wsky is not None and wsky.fog and live
+    leaf = silhouette if (paper or night_land or foggy) else (c8(3, 2, 3) if season == "blossom" else c8(3, 1, 0))
+    snow_c = (P["night"] if light_paper else c8(3, 3, 3)) if (paper or not night_land) else c8(2, 2, 2)
+    land_c = {1: silhouette, 2: leaf, 3: c8(3, 3, 1), 5: snow_c}
+    bottoms = {}
     for i in range(lw):
         x = col - lw // 2 + i
         if not (0 <= x < W) or not inside[:, x].any():
             continue
         bottom = int(np.nonzero(inside[:, x])[0].max())
+        bottoms[i] = bottom
         for j in range(lh):
             y = bottom - (lh - 1 - j)
             if land[j, i] and 0 <= y < H and inside[y, x]:
-                img[y, x] = silhouette
+                img[y, x] = land_c[int(land[j, i])]
                 blocked[y, x] = True
+    if wsky is not None and wsky.smoke and sprites.CHIMNEY in bottoms:
+        i0 = sprites.CHIMNEY
+        j0 = int(np.nonzero(land[:, i0])[0].min())
+        x_c, y_c = col - lw // 2 + i0, bottoms[i0] - (lh - 1 - j0)
+        lean_ = math.sin(math.radians(wsky.wind_from)) * min(1.6, wsky.wind / 12.0)
+        smoke_c = (P["line"] if paper else c8(1, 1, 1) if night_land else c8(2, 2, 2))
+        for h_ in range(1, 8):
+            if (h_ + int(secs * 2)) % 4 == 0:
+                continue                                 # the puffs, rising
+            wob = 0.6 * math.sin(h_ * 1.3 + secs * 1.5) * (1 - min(1, wsky.wind / 20))
+            X_, Y_ = int(math.floor(x_c + 0.5 - lean_ * h_ ** 1.15 + wob)), y_c - h_
+            if 0 <= Y_ < H and 0 <= X_ < W and inside[Y_, X_]:
+                img[Y_, X_] = smoke_c
+    if wsky is not None and wsky.fog:                    # fog lying over the hills in three ruled lines, behind the roofs
+        fog_c = c8(1, 0, 0) if P["window"] == "red" else (P["line"] if paper else c8(1, 1, 1) if night_land else c8(2, 2, 2))
+        for l_, frac in enumerate((0.46, 0.4, 0.3)):
+            for i in bottoms:
+                if abs(i - lw / 2) <= frac * lw:
+                    y = bottoms[i] - 2 - 2 * l_
+                    x = col - lw // 2 + i
+                    if 0 <= y < H and inside[y, x] and not land[lh - 1 - (bottoms[i] - y), i]:
+                        img[y, x] = fog_c
     blocked = grow(blocked, 1)
 
     # names in the sky, in pixel type
@@ -824,7 +934,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     # passing things in the sky (meteors, birds): a flash across everything in the window, names too
     if extras is not None:
         extras(img, dict(inside=inside, ground=ground, dial=dial, lst=lst, pos=pos, sun_alt=sun_alt, dark=dark,
-                         paper=paper, P=P, shower=shower, blocked=blocked))
+                         paper=paper, P=P, shower=shower, blocked=blocked, land=land, land_x0=col - lw // 2,
+                         bottoms=bottoms, season=season, wsky=wsky, secs=secs, local=local, night_land=night_land,
+                         silhouette=silhouette))
 
     # the window's edge: a clean rule round it and a second a little way out, as a printed neatline
     rim1 = outline(inside)
@@ -990,7 +1102,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                 if 0 <= y0_ + j < H and 0 <= x0_ + i < W:
                     img[y0_ + j, x0_ + i] = P["ink"]
             gx += g.shape[1] + track
-    # the Time 2's corners, outside the ring: a leaf turning into each, where the corner has most room
+    # the Time 2's corners, outside the ring: a sprig turning into each, where the corner has most room, in the
+    # season's dress (blossom, leaf, gold leaf, bare twig)
     if rect:
         spandrel = dial.outline.grid(W, H) < 0.5
         edge = np.zeros((H, W), bool)
@@ -1001,12 +1114,12 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             r = room[ys_, xs_]
             if r.max() >= 5:
                 j, i = np.unravel_index(np.argmax(r), r.shape)
-                leaf = sprites.CORNER_LEAF
+                leaf = sprites.CORNER_SEASONS[sprites.CORNER_OF_SEASON[season]]
                 if xs_.start > 0:
                     leaf = leaf[:, ::-1]
                 if ys_.start > 0:
                     leaf = leaf[::-1, :]
-                sprites.paint(img, leaf, xs_.start + i, ys_.start + j, {2: P["accent"], 1: P["ink"]})
+                sprites.paint(img, leaf, xs_.start + i, ys_.start + j, {2: P["accent"], 1: P["ink"], 3: sun_c[3]})
     # the Sun's hand: a gilded Sun riding the band at the Sun's own hour, as on the old astronomical clocks, an
     # index from it to the scale on the inner rule; over everything, cleared round, as a hand covers what it passes
     sun_ang = lst - pos["sun"][0]
@@ -1051,6 +1164,18 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         for j, i in zip(*np.nonzero(m)):
             if 0 <= y0_ + j < H and 0 <= x0_ + i < W:
                 img[y0_ + j, x0_ + i] = P["ink"]
+        # a printer's flower either side, as a title is set off: each midway between the ring and the widest the time
+        # can be, so they stay put as the minutes change
+        widest = widest_time(P.get("figures", "modern"), "time2" if rect else "round2", clock24)
+        fl_ = sprites.QUENTEL_FLOWER
+        yc_ = int(round(cy_))
+        row_ = np.nonzero(inner[yc_ - fl_.shape[0] // 2: yc_ + fl_.shape[0] // 2 + 1].all(axis=0))[0]
+        if len(row_) and widest:
+            room_l = (dial.cx - widest / 2 - 2) - (row_.min() + 2)
+            if room_l >= fl_.shape[1] + 2:
+                for sgn in (-1, 1):
+                    fx = dial.cx + sgn * (dial.cx - (row_.min() + 2) + widest / 2 + 2) / 2
+                    sprites.paint(img, fl_, fx - 0.5, cy_ - 0.5, {2: P["accent"]})
     else:
         ink(img, astro_time(str(hour(local.hour)), f"{local.minute:02d}", fn, big, fw, feats=("onum",)), dial.cx,
             ring_in + span * rows_at[0], P["ink"])
@@ -1067,14 +1192,20 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     db = box_of(date, left + day_sign.shape[1] + 4, y_date, "left")
     stamp(img, day_sign, left + day_sign.shape[1] / 2, (db[1] + db[3]) / 2 - 1, P["accent"])
     stamp(img, date, left + day_sign.shape[1] + 4, y_date, P["ink"], anchor="left")
+    # the almanac's line: the sky's news, or else the Sun's next rising or setting; with the weather, the
+    # temperature after it, set off by a lozenge (the news alone when the two will not fit together)
     kind, at = next_sun_event(clock_when, dial.lat, dial.lon)
-    fits = [m for m in (pixel_text(w) for w in (news or ())) if m.shape[1] <= (W - 2 * r_in) * 0.84]
+    room_ = (W - 2 * r_in) * 0.84
+    lines_ = [pixel_text(w) for w in (news or ())]
+    if not lines_ and kind:
+        t_ = at.astimezone(tz)
+        lines_ = [concat(pixel_text(kind), time_text(hour(t_.hour), t_.minute), gap=3)]
+    if weather is not None:
+        temp_ = temp_text(meteo.degrees(weather, fahrenheit))
+        lines_ = [concat(m, ornament(sprites.LOZENGE > 0), temp_, gap=3) for m in lines_] + lines_ + [temp_]
+    fits = [m for m in lines_ if m.shape[1] <= room_]
     if fits:
         stamp(img, fits[0], dial.cx, ring_in + span * rows_at[2], P["accent"])
-    elif kind:
-        t_ = at.astimezone(tz)
-        stamp(img, concat(pixel_text(kind), time_text(hour(t_.hour), t_.minute), gap=3), dial.cx, ring_in + span * rows_at[2],
-              P["accent"])
     if round_screen:
         img[np.hypot(xx + 0.5 - dial.cx, yy + 0.5 - dial.cy) > W / 2] = 0
     return nearest(img)

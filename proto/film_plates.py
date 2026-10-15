@@ -83,6 +83,36 @@ def main():
         im = Image.fromarray(render(t.astimezone(timezone.utc), dial, sky, tz, "planisphere", False))
         sheet.paste(im.resize((400, 456), Image.NEAREST), ((i % 3) * 412 + 6, (i // 3) * 464 + 4))
     sheet.save(ROOT / "docs" / "eclipses.png")
+    # the weather on the Time 2: fair, broken cloud at dusk, overcast, rain; snow, fog, the Moon's halo in thin high
+    # cloud, and a frosty night with snow lying
+    import weather as wx
+    shots = [(datetime(2026, 10, 14, 12, 15, tzinfo=NY), "fair"), (datetime(2026, 10, 14, 18, 25, tzinfo=NY), "cloudy"),
+             (datetime(2026, 10, 14, 12, 15, tzinfo=NY), "overcast"), (datetime(2026, 10, 14, 12, 15, tzinfo=NY), "rain"),
+             (datetime(2027, 1, 20, 11, 0, tzinfo=NY), "snow"), (datetime(2026, 10, 14, 8, 0, tzinfo=NY), "fog"),
+             (datetime(2026, 10, 26, 21, 30, tzinfo=NY), "cirrus"), (datetime(2027, 1, 20, 22, 0, tzinfo=NY), "frost")]
+    sheet = Image.new("RGB", (4 * 412, 2 * 464), (24, 24, 26))
+    for i, (t, w) in enumerate(shots):
+        im = Image.fromarray(render(t.astimezone(timezone.utc), t2, sky, NY, "planisphere", False, weather=wx.SAMPLES[w],
+                                    fahrenheit=True))
+        sheet.paste(im.resize((400, 456), Image.NEAREST), ((i % 4) * 412 + 6, (i // 4) * 464 + 4))
+    sheet.save(ROOT / "docs" / "weather.png")
+    # the year on the Time 2 at eleven in the morning: blossom in April, leaf in July, gold in October, bare twigs
+    # and snow in January; below, the village through the year up close
+    shots = [(datetime(2026, 4, 22, 11, 0, tzinfo=NY), "fair"), (datetime(2026, 7, 4, 11, 0, tzinfo=NY), "cloudy"),
+             (datetime(2026, 10, 14, 11, 0, tzinfo=NY), "fair"), (datetime(2027, 1, 20, 11, 0, tzinfo=NY), "snow")]
+    sheet = Image.new("RGB", (4 * 412, 464 + 2 * 172 + 8), (24, 24, 26))
+    for i, (t, w) in enumerate(shots):
+        im = render(t.astimezone(timezone.utc), t2, sky, NY, "planisphere", False, weather=wx.SAMPLES[w], fahrenheit=True)
+        sheet.paste(Image.fromarray(im).resize((400, 456), Image.NEAREST), (i * 412 + 6, 4))
+    village = [(datetime(2026, 4, 22, 12, 0, tzinfo=NY), "fair"), (datetime(2026, 8, 20, 12, 0, tzinfo=NY), "cloudy"),
+               (datetime(2026, 10, 24, 12, 0, tzinfo=NY), "fair"), (datetime(2027, 1, 20, 12, 0, tzinfo=NY), "frost"),
+               (datetime(2026, 10, 14, 19, 40, tzinfo=NY), "frost"), (datetime(2026, 10, 14, 7, 30, tzinfo=NY), "fog"),
+               (datetime(2026, 6, 20, 12, 0, tzinfo=NY), "gale"), (datetime(2027, 1, 20, 22, 0, tzinfo=NY), "frost")]
+    for i, (t, w) in enumerate(village):
+        im = render(t.astimezone(timezone.utc), t2, sky, NY, "planisphere", False, weather=wx.SAMPLES[w], fahrenheit=True)
+        crop = Image.fromarray(im[168:210, 50:150]).resize((400, 168), Image.NEAREST)
+        sheet.paste(crop, ((i % 4) * 412 + 6, 464 + 4 + (i // 4) * 172))
+    sheet.save(ROOT / "docs" / "seasons.png")
     print(len(frames), "frames")
 
 

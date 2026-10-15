@@ -370,6 +370,21 @@ def sign(rows):
     return np.array([[c == "#" for c in r] for r in rows])
 
 
+# a printer's flower for either side of the time: the small broken lozenge from Peter Quentel's pattern book (Eyn
+# New Kunstlich Boich, Cologne 1529, after its alphabet), stitch for stitch, as a sampler would work it
+QUENTEL_FLOWER = art([
+    "...R..R...",
+    ".RRR..RRR.",
+    ".RRR..RRR.",
+    "RRR....RRR",
+    "....RR....",
+    "....RR....",
+    "RRR....RRR",
+    ".RRR..RRR.",
+    ".RRR..RRR.",
+    "...R..R...",
+])
+
 # ---- small marks: the south point's star, the studs on the ring at every third hour, a meteor shower's radiant
 SOUTH_STAR = art([
     "..R..",
@@ -384,6 +399,36 @@ BIRD = [art(["W...W",           # a bird crossing the day sky, its wings up
         art([".WWW.",           # and down
               "W...W",
               "....."])]
+SWALLOW = [art(["K...K",        # a swallow over the fields at dawn, its forked tail below: wings up
+                 ".K.K.",
+                 "..K..",
+                 ".K.K."]),
+           art([".KKK.",        # and down
+                "K.K.K",
+                ".K.K.",
+                "....."])]
+BAT = [art(["K.....K",          # a bat at dusk: wings up
+            ".KK.KK.",
+            "..KKK.."]),
+       art([".......",          # and down, their scalloped edges hanging
+            ".KKKKK.",
+            "K.KKK.K"])]
+OWL = [art(["K.K",              # the owl on the church roof by night, its ears up and its eyes gold
+            "YKY",
+            "KKK",
+            "KKK"]),
+       art(["K.K",              # blinking
+            "KKK",
+            "KKK",
+            "KKK"])]
+FALLING_LEAF = [art(["R.",      # a leaf coming down, tumbling a quarter turn a frame
+                     ".R"]),
+                art(["RR",
+                     ".."]),
+                art([".R",
+                     "R."]),
+                art(["R.",
+                     "R."])]
 DIAMOND = art([                 # the diamond ring's diamond: the Sun's last light at the Moon's edge
     "....W....",
     "....W....",
@@ -437,6 +482,45 @@ CORNER_LEAF = art(_diag([(0, 0), (0, 1), (0, 2), (1, 2), (1, 3), (1, 4), (2, 3),
                          (5, 5), (6, 6), (7, 7), (7, 8)]))
 
 
+def _diag_rows(rows):
+    """A drawing symmetric about a corner's diagonal, from its upper half (columns at or right of the diagonal)."""
+    n = len(rows)
+    g = [["."] * n for _ in range(n)]
+    for r in range(n):
+        for c in range(r, n):
+            if rows[r][c] != ".":
+                g[r][c] = g[c][r] = rows[r][c]
+    return ["".join(x) for x in g]
+
+
+# the corner's sprig through the year: blossom in spring (two flowers on side stems), the leaf in summer, the
+# leaf turned gold in autumn, a bare forked twig in winter
+CORNER_SEASONS = {
+    "blossom": art(_diag_rows([".R...R...",
+                               ".YR.RYR..",
+                               "..R.KR...",
+                               "...K.....",
+                               "....K....",
+                               ".....K...",
+                               "......K..",
+                               ".......KK",
+                               "........."])),
+    "leaf": CORNER_LEAF,
+    "autumn": np.where(CORNER_LEAF == ROLE["R"], ROLE["Y"], CORNER_LEAF).astype(np.uint8),
+    "bare": art(_diag_rows(["K..K.....",
+                            ".K.K.....",
+                            "..KK.K...",
+                            "...K.K...",
+                            "....KK...",
+                            ".....K...",
+                            "......K..",
+                            ".......KK",
+                            "........."])),
+}
+CORNER_OF_SEASON = {"bare": "bare", "blossom": "blossom", "leaf": "leaf", "harvest": "leaf", "turning": "autumn",
+                    "autumn": "autumn"}
+
+
 # ---- an engraved glory round the Sun on the printed charts: fine rays beyond its own, one eighth drawn ----------
 _GLORY_LONG = [(0, y) for y in range(13, 21)] + [(k, k) for k in range(9, 15)] + \
               [(5, 12), (5, 13), (6, 14), (6, 15), (7, 16), (7, 17), (7, 18)]                  # 0, 45, 22.5 degrees
@@ -453,18 +537,24 @@ def glory():
 
 
 # ---- the southern horizon's skyline: hills, trees, a house, the church, a windmill, drawn as pieces and set on
-# hills of hand-chosen height; the faces bend it along the window's lower edge -----------------------------------
+# hills of hand-chosen height; the faces bend it along the window's lower edge. The village keeps the year and
+# reports the weather, as an almanac's cuts of the months do: its trees in bud, blossom, leaf, turning or bare,
+# stooks in the fields at harvest, the church's vane turned into the wind, the mill's sails, a lit window at
+# night. Roles: K the silhouette, R blossom or turning leaves (coloured by day), Y a window lit at night ----------
 _LAND_PIECES = {                # kept low: at the chart's scale a pixel is a degree and a half of sky
-    "church": [".#......",
-               "###.....",
-               ".#......",
-               ".#......",
+    "church": [".#......",      # the tower and nave; the vane (below) stands on the tower's mast
                "###.....",
                "###.###.",
                "########"],
-    "mill":   ["#...#",
+    "mill":   ["#...#",         # its sails at rest, in a saltire, as millers leave them for a long stop
                ".#.#.",
                "..#..",
+               ".###.",
+               ".###.",
+               "#####"],
+    "mill+":  ["..#..",         # and upright, a quarter turn on: the two together turn the sails
+               "..#..",
+               "#####",
                ".###.",
                ".###.",
                "#####"],
@@ -472,40 +562,197 @@ _LAND_PIECES = {                # kept low: at the chart's scale a pixel is a de
                "#####",
                ".###.",
                "..#.."],
+    "tree:blossom": [".R#R.",
+                     "#R#R#",
+                     ".#R#.",
+                     "..#.."],
+    "tree:turning": [".#R#.",
+                     "R###R",
+                     ".#R#.",
+                     "..#.."],
+    "tree:autumn": [".#.R.",
+                    "R#.##",
+                    ".#R#.",
+                    "..#.."],
+    "tree:bare": ["#.#.#",
+                  ".#.#.",
+                  "..#..",
+                  "..#.."],
     "mound":  [".##.",
                "####"],
+    "stook":  [".#.",           # sheaves stood together to dry in the field at harvest
+               "###",
+               "#.#"],
     "poplar": [".#.",
                "###",
                "###",
                "###",
                ".#."],
-    "house":  ["..#..",
+    "poplar:turning": [".#.",
+                       "#R#",
+                       "###",
+                       "R##",
+                       ".#."],
+    "poplar:autumn": [".#.",
+                      "#R.",
+                      ".##",
+                      "R#.",
+                      ".#."],
+    "poplar:bare": [".#.",
+                    "#.#",
+                    ".#.",
+                    "#.#",
+                    ".#."],
+    "house":  ["...#.",         # a chimney on the roof, the door below, lit of an evening
+               "..##.",
                ".###.",
-               "##.##"],
+               "##Y##"],
+}
+VANE = {                        # the church's weather vane on its mast, the arrow pointing where the wind comes from
+    "left": [".#..#",           # (seen from the north, looking south: east is to the left), its barb and its tail
+             "#####",           # standing up; end on, a cross
+             "..#.."],
+    "right": ["#..#.",
+              "#####",
+              "..#.."],
+    "end": ["..#..",
+            ".###.",
+            "..#.."],
 }
 _LAND_HILLS = [(0, 1), (8, 2), (16, 2), (24, 1), (32, 1), (40, 2), (48, 2), (56, 1), (64, 2), (72, 2), (80, 2),
                (88, 1), (99, 1)]
 _LAND_PLACES = [("tree", 7), ("poplar", 14), ("house", 23), ("mound", 31), ("tree", 37), ("church", 46),
                 ("mound", 57), ("tree", 63), ("mill", 73), ("tree", 83), ("poplar", 91)]
+_STOOKS = [2, 19, 69, 79]      # where the stooks stand at harvest, in the open fields between the pieces
+CHIMNEY = 26                    # the house's chimney, its column in the skyline
 
 
-def landscape():
-    """The skyline as a mask, 100 wide; its bottom row stands on the horizon, its middle column at the south."""
-    W, H = 100, 9
-    g = np.zeros((H, W), bool)
+def season_of(sun_lon, lat):
+    """The village's season from the Sun's place in the zodiac (spring's equinox at 0 degrees), turned half a
+    year for the southern hemisphere: bare, bud, blossom, leaf, harvest (leaf with stooks), turning, autumn."""
+    lam = (sun_lon + (180.0 if lat < 0 else 0.0)) % 360
+    for upto, name in ((15, "bare"), (45, "blossom"), (120, "leaf"), (165, "harvest"), (195, "turning"),
+                       (240, "autumn"), (360, "bare")):
+        if lam < upto:
+            return name
+    return "bare"
+
+
+def landscape(season="leaf", snow=False, vane="end", sails="x", lit=False):
+    """The skyline as roles, 100 wide; its bottom row stands on the horizon, its middle column at the south.
+    `vane` is "left", "right" or "end"; `sails` "x" or "+"; snow lies on every top."""
+    W, H = 100, 10
+    g = np.zeros((H, W), np.uint8)
     xs, hs = zip(*_LAND_HILLS)
     ground = np.round(np.interp(np.arange(W), xs, hs)).astype(int)
     for x in range(W):
-        g[H - ground[x]:, x] = True
-    for name, x0 in _LAND_PLACES:
-        rows = _LAND_PIECES[name]
+        g[H - ground[x]:, x] = ROLE["K"]
+    leaves = {"blossom": ":blossom", "turning": ":turning", "autumn": ":autumn", "bare": ":bare"}.get(season, "")
+    places = list(_LAND_PLACES) + ([("stook", x) for x in _STOOKS] if season == "harvest" else [])
+    tops = []
+    for name, x0 in places:
+        key = name + leaves if name + leaves in _LAND_PIECES else name
+        if name == "mill" and sails == "+":
+            key = "mill+"
+        rows = _LAND_PIECES[key]
         h, w = len(rows), len(rows[0])
         base = H - ground[x0 + w // 2]
         for j, r in enumerate(rows):
             for i, ch in enumerate(r):
+                if ch != ".":
+                    g[base - h + j, x0 + i] = ROLE["K" if ch == "#" else ch] if ch != "Y" else (ROLE["Y"] if lit else 0)
+        if name == "church":
+            tops.append((x0 + 1, base - h))
+    vane_px = np.zeros_like(g, bool)
+    for mx, top in tops:                           # the vane on the mast, its pivot over the mast
+        rows = VANE[vane]
+        for j, r in enumerate(rows):
+            for i, ch in enumerate(r):
                 if ch == "#":
-                    g[base - h + j, x0 + i] = True
+                    g[top - 3 + j, mx - 2 + i] = ROLE["K"]
+                    vane_px[top - 3 + j, mx - 2 + i] = True
+    snowy = np.zeros_like(g, bool)
+    if snow:                                       # snow on every top: the first ink down each column (not the vane)
+        for x in range(W):
+            col = np.nonzero(g[:, x] == ROLE["K"])[0]
+            if len(col) and not vane_px[col[0], x]:
+                snowy[col[0], x] = True
+    g[snowy] = ROLE["W"]
     return g
+
+
+# ---- the weather's clouds, after Howard (1803): cumulus, "convex or conical heaps, increasing upward from a
+# horizontal base", drawn as silhouettes by hand; the faces light their tops and shade their bases for the hour
+# (roles from the silhouette: K the top edge, W the body, S the base). Cirrus, "a wisp of hair", in single strokes
+CUMULUS = [
+    ["..........####...........",
+     ".......##########........",
+     "......############..###..",
+     "...#####################.",
+     "..#######################",
+     ".########################",
+     "#########################",
+     ".#######################."],
+    ["....####.......",
+     "..########.##..",
+     ".#############.",
+     "###############",
+     "###############",
+     ".#############."],
+    ["...###...",
+     ".#######.",
+     "#########",
+     ".#######."],
+]
+STRATUS = [                     # "a widely extended, continuous, horizontal sheet": long low banks, a little heaped
+    ["...........#####...............######.......",
+     "......###############.....##############....",
+     "..########################################..",
+     "############################################"],
+    ["........#######................",
+     "...######################......",
+     "#############################..",
+     "..#############################"],
+    ["......#####............",
+     "..###################..",
+     "#######################"],
+]
+CIRRUS = [
+    [".............#",
+     "...........##.",
+     "......#####...",
+     "######........"],
+    ["......######",
+     "#####.......",
+     "............"],
+    ["..........##",
+     "........##..",
+     "#######.....",
+     "............"],
+]
+
+
+def cloud(rows):
+    """A cloud's silhouette as roles: K where nothing lies above it (the lit top), S along its base, W within."""
+    m = np.array([[c == "#" for c in r] for r in rows])
+    a = np.where(m, ROLE["W"], 0).astype(np.uint8)
+    above = np.zeros_like(m)
+    above[1:] = m[:-1]
+    a[m & ~above] = ROLE["K"]
+    below = np.zeros_like(m)
+    below[:-1] = m[1:]
+    a[m & ~below & above] = ROLE["S"]
+    return a
+
+
+def stroke(rows):
+    return np.array([[ROLE["K"] if c == "#" else 0 for c in r] for r in rows], np.uint8)
+
+
+SNOWFLAKE = art([               # a flake as the woodcut pecks it: a soft square, never a star's cross
+    "WW",
+    "WW",
+])
 
 
 # ---- small capitals five pixels tall, for the place's inscription on the ring (A to Z, figures, degree, minute)
@@ -708,22 +955,38 @@ if __name__ == "__main__":
                              7: (170, 170, 170)}, sky) for k in ("saturn", "jupiter", "mars", "venus", "mercury")],
         [mask_block(sign(z), (85, 85, 170), sky) for z in ZODIAC],
         [mask_block(sign(d), red, cream) for d in DAY_SIGNS]
-        + [block(a, gold, cream) for a in (SOUTH_STAR, STUD, CORNER_LEAF)]
+        + [block(a, gold, cream) for a in (SOUTH_STAR, STUD, CORNER_LEAF, QUENTEL_FLOWER)]
         + [block(ZENITH, {1: (170, 170, 255)}, sky), block(RADIANT, {2: (255, 85, 85)}, sky)],
-        [block(glory(), {1: (170, 85, 85)}, (255, 255, 255)), mask_block(landscape(), (0, 0, 85), (85, 170, 255))],
+        [block(glory(), {1: (170, 85, 85)}, (255, 255, 255)), mask_block(landscape() > 0, (0, 0, 85), (85, 170, 255))],
+        [block(landscape(*args), {1: (0, 0, 85), 2: (255, 85, 0) if args[0] != "blossom" else (255, 170, 255),
+                                  3: (255, 255, 85), 5: (255, 255, 255)}, (85, 170, 255))
+         for args in (("blossom", False, "left", "x", False), ("harvest", False, "end", "+", False),
+                      ("autumn", False, "right", "x", False), ("bare", True, "end", "x", True))],
+        [block(CORNER_SEASONS[k], gold, cream) for k in ("blossom", "leaf", "autumn", "bare")]
+        + [block(cloud(c), {1: (255, 255, 255), 5: (255, 255, 255), 7: (170, 170, 255)}, (85, 170, 255))
+           for c in CUMULUS + STRATUS]
+        + [block(stroke(c), {1: (255, 255, 255)}, (85, 170, 255)) for c in CIRRUS],
+        [block(f, {1: (0, 0, 85)}, (85, 170, 255)) for f in SWALLOW + BAT]
+        + [block(f, {1: (0, 0, 0), 3: (255, 255, 85)}, (0, 0, 85)) for f in OWL]
+        + [block(f, {2: (255, 85, 0)}, (85, 170, 255)) for f in FALLING_LEAF]
+        + [block(SNOWFLAKE, {5: (255, 255, 255)}, (170, 170, 170))],
         [mask_block(word_art(w, 200, 228)[0], red, cream) for w in ("MIDNIGHT", "NOON")],
         [mask_block(word_art(w, 260, 260)[0], red, cream) for w in ("MIDNIGHT", "NOON")],
     ]
     labels = ["The Sun after the Sun of May, its hand on the ring, the fleur-de-lis, a lozenge, the ring's hours (12 and 24-hour)",
               "The Moon through a month, the stars by brightness, Saturn, Jupiter, Mars, Venus, Mercury",
               "The signs of the zodiac, set along the ecliptic",
-              "The days' planets (Monday's Moon to Sunday's Sun), the south star, a stud, a corner leaf, the zenith, a radiant",
+              "The days' planets (Monday's Moon to Sunday's Sun), the south star, a stud, a corner leaf, Quentel's flower (1529), the zenith, a radiant",
               "The engraved glory round the Sun on the printed charts, and the village on the southern horizon",
+              "The village through the year: blossom (the vane to the east), harvest (the sails turning), gold, bare in the snow with a lit window",
+              "The corner sprigs through the year, Howard's cumulus heaps and banks (lit tops, shaded bases), cirrus",
+              "The passers-by: a swallow and a bat (wings up and down), the owl (and blinking), a falling leaf tumbling, a snowflake",
               "MIDNIGHT and NOON along the Time 2's ring", "MIDNIGHT and NOON along the Round 2's ring"]
     tiles = []
     for r, label in zip(rows, labels):
         h = max(t.shape[0] for t in r)
-        big = Image.new("RGB", (sum(t.shape[1] * S + 12 for t in r), h * S + h + 34), (40, 40, 44))
+        big = Image.new("RGB", (max(sum(t.shape[1] * S + 12 for t in r), int(ImageDraw.Draw(Image.new("RGB", (1, 1))).textlength(label)) + 8),
+                                h * S + h + 34), (40, 40, 44))
         x = 0
         for t in r:
             im = Image.fromarray(t.astype(np.uint8))

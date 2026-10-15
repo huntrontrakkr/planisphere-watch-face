@@ -4,7 +4,7 @@ A watch face prototype for the Pebble Round 2 and Time 2: the sky as it is right
 
 ## Plates
 
-Like Groundtrack's plates, each plate follows a real tradition of sky charts, set in the type of its time. Every plate sets the time in hours and minutes the way almanacs and astronomers write it, **9ʰ 30ᵐ**, large in the card above the window (or **21ʰ 30ᵐ** on the 24-hour clock, below). The small type is pixel type, every letter in whole pixels: Not Jam Old Style (CC0), a pixel serif after the old Garalde faces, with star names leaning in an oblique cut from it a pixel at a time. Under it are the date in italic and the Sun's next rising or setting in small capitals. The sky carries names the way the old atlases letter them: constellations in spaced capitals, stars in italic, planets in small capitals.
+Like Groundtrack's plates, each plate follows a real tradition of sky charts, set in the type of its time. Every plate sets the time in hours and minutes the way almanacs and astronomers write it, **9ʰ 30ᵐ**, large in the card above the window (or **21ʰ 30ᵐ** on the 24-hour clock, below). Its figures are drawn by hand, pixel by pixel, after each plate's type and for each watch. The small type is pixel type, every letter in whole pixels: Not Jam Old Style (CC0), a pixel serif after the old Garalde faces, with star names leaning in an oblique cut from it a pixel at a time. Under it are the date in italic and the Sun's next rising or setting in small capitals, with the temperature after it when the weather is known. The sky carries names the way the old atlases letter them: constellations in spaced capitals, stars in italic, planets in small capitals.
 
 ![A day on the Time 2, the paper planisphere plate, eight minutes a frame](docs/plate-planisphere-day-time2.gif)
 
@@ -28,7 +28,7 @@ The planisphere, observatory and night plates show the live sky in their window:
 
 ## On the Time 2, and the Round 2
 
-The Time 2 comes first. Its ring is a cushion: arcs along the top and bottom, the sides gently bowed, the corners rounded. It fills the screen, so the window stays as large as the card allows, and MIDNIGHT and NOON still curve along it as they do round a planisphere's ring. The band is wider in the corners, its inner edge rounder than its outer, which leaves room for the hours that fall there. Each hour's tick stands where that hour's ray from the pole meets the ring, so the ticks fall unevenly round the cushion, as hour lines do on a sundial plate. Each numeral sits on its own ray, wherever it stands clearest of the rules and ticks. The four corners outside the ring each carry a small compass star, the way a printer finishes a border. On the Round 2 the ring is a circle.
+The Time 2 comes first. Its ring is a cushion: arcs along the top and bottom, the sides gently bowed, the corners rounded. It fills the screen, so the window stays as large as the card allows, and MIDNIGHT and NOON still curve along it as they do round a planisphere's ring. The band is wider in the corners, its inner edge rounder than its outer, which leaves room for the hours that fall there. Each hour's tick stands where that hour's ray from the pole meets the ring, so the ticks fall unevenly round the cushion, as hour lines do on a sundial plate. Each numeral sits on its own ray, wherever it stands clearest of the rules and ticks. The four corners outside the ring each carry a sprig turning into the corner, in the season's dress: two blossoms in spring, a leaf in summer, the leaf turned gold in autumn, a bare twig in winter. On the Round 2 the ring is a circle.
 
 ![Every plate on the Time 2 at 9:30 pm, then the paper planisphere at dusk and at noon](docs/time2-plates.png)
 
@@ -74,14 +74,48 @@ The eclipses are worked out for wherever the watch is, from Meeus's theories of 
 
 ![Dallas, 8 April 2024: the Sun nearly covered, the sky darkening, the diamond ring, totality; Burgos at sunset, 12 August 2026; the blood Moon over New York, 14 March 2025](docs/eclipses.png)
 
+### The weather
+
+With the weather, the face shows the place's own sky, drawn as an engraver would draw it. On the watch the phone fetches it from Open-Meteo, which needs no key.
+
+- **The temperature** follows the Sun's rising or setting, set off by a lozenge: 61°, its degree sign raised like the ʰ and ᵐ. The sign came into thermometry in the 1770s. Fahrenheit or Celsius, as the phone is set.
+- **Clouds** drift across the window downwind while the stars turn beneath them. They take Luke Howard's three forms (1803):
+  - cumulus heaps, flattening into banks as they thicken;
+  - the stratus sheet in ruled lines, as the engravers drew it;
+  - cirrus in single hair strokes.
+
+  By day the clouds are white with grey bases. At sunset their undersides light rose and gold. At night they are dark, edged with silver, brighter under the Moon.
+- **Weather by subtraction.** Haze and cloud take the faintest stars first, then the Milky Way. Behind a heap nothing shows; through the stratus only the brightest stars. Under a closed sky the day goes an even grey, whiter in fog and darker under rain.
+- **Rain** falls in fine lines of two tones, leaning with the wind, as Hiroshige cut it. **Snow** falls in soft pecked flakes, never a star's cross.
+- **The halo.** Thin high cloud rings the Moon (by day the Sun) at 22 degrees. The ring is drawn in the chart's own projection, so it stretches as the chart does.
+- **Fog** lies over the hills in three ruled lines, and the village fades to a ghost of itself.
+- **The village reports the weather too:**
+  - the church's vane points into the wind;
+  - the mill's sails turn in a working wind, and rest in a calm or a gale;
+  - smoke rises from the chimney on a cold day and leans downwind;
+  - snow lies on every roof and hilltop.
+
+![Fair at noon, broken cloud at dusk, overcast, rain; snow, fog, the Moon's halo in thin high cloud, and a frosty night with snow lying](docs/weather.png)
+
+### The year
+
+The village keeps the year, as an almanac's cuts of the months do. The season comes from the Sun's place in the zodiac, turned half a year for the southern hemisphere.
+- The trees come into blossom in April, stand in full leaf through the summer, turn gold in October and stand bare through the winter.
+- Stooks stand in the fields at harvest.
+- A window is lit of an evening.
+- The Time 2's corner sprigs follow the season.
+
+![The year at eleven in the morning: blossom in April, leaf in July, gold in October, snow in January; below, the village up close: blossom, harvest, autumn leaves, frost and snow; a frosty evening with chimney smoke and a lit window, fog, a summer gale, a snowy night](docs/seasons.png)
+
 And the filigree, all drawn by hand:
 
-- a village on the southern horizon (hills, trees, a house, the church, a windmill), bent along the window's lower edge;
+- a village on the southern horizon (hills, trees, a house, the church, a windmill), bent along the window's lower edge, keeping the season and the weather;
 - the engraver's glory of fine rays round the Sun on the printed charts;
 - a beaded rule inside the ring's outer rule, as on a clock's chapter ring;
 - studs on the inner rule at the numbered hours;
 - a star at the south point, clasping the window's two rules, to go with the fleur-de-lis at the north and the lozenges east and west;
-- a leaf turning into each of the Time 2's corners;
+- a sprig turning into each of the Time 2's corners, in the season's dress;
+- a printer's flower either side of the time, as a title is set off: the small broken lozenge from Peter Quentel's pattern book (*Eyn New Kunstlich Boich*, Cologne, 1529), stitch for stitch. Charted needlework is the period's own pixel art. Each flower stands midway between the ring and the widest the time can be, so it stays put as the minutes change;
 - a face on the full Moon, as the almanacs give it.
 
 ![At the Orionids' peak, at an eclipse of the Moon, at an eclipse of the Sun, and as Venus meets Jupiter; below, Jupiter's moons, the village by day, and the glory on Flamsteed's plate](docs/almanac.png)
@@ -92,6 +126,12 @@ Each plays for a moment, then the face is still again: a watch has no battery fo
 
 - **Falling stars.** Now and then at night a meteor streaks across the window, its head a small cross of white, its trail fading through cream and grey into the sky. On a shower's peak night they come often, and all streak out from the shower's radiant.
 - **Birds.** Now and then by day a little flock crosses the sky in a loose V, wings beating, in the village's dark ink.
+- **The village.** The hour and the season bring their own passers-by:
+  - swallows hawking low over the fields on summer mornings;
+  - a bat jinking above the roofs on a mild evening;
+  - by night the owl on the church roof, blinking its gold eyes, with fireflies over the fields on warm summer nights;
+  - in autumn, leaves loosed from the trees and geese going south in a long V.
+- **The weather.** Rain and snow fall, the clouds drift downwind, the mill's sails turn and the chimney smoke rises.
 - **The hour.** At the top of each hour, one of two animations, as you choose:
   - **The constellations** (the default). The figures in the window are traced one by one, without their names, each over a second. A cream line runs star to star like an engraver's pen, with its tip white, and each star flashes as the line reaches it. The figure holds a moment, then fades back as the next begins. Those that came into the window during the hour go first, east to west, then the highest in the sky; five at most. By day the figures that are up behind the blue are sketched faintly in white, then fade.
   - **The turn.** The star disc spins through a whole day in a few seconds, then settles back to now, as a planisphere turns in the hand. The window races from night through dawn, the day and dusk, while the Sun's pointer sweeps round the ring. The clock keeps its time throughout.
@@ -99,6 +139,10 @@ Each plays for a moment, then the face is still again: a watch has no battery fo
 ![Falling stars from the Orionids' radiant on their peak night, at the watch's own frame rate](docs/anim-meteors.gif)
 
 ![A flock crossing the morning sky](docs/anim-birds.gif)
+
+![Swallows on a June morning, a bat on an August evening, the owl on an October night, fireflies on a July night, leaves and geese on an October afternoon](docs/anim-village.gif)
+
+![Rain at noon, snow falling at dusk with smoke from the chimney, and broken cloud hurried across an evening sky](docs/anim-weather.gif)
 
 ![The hour's constellations at 9 pm: Taurus and Auriga just risen, then Grus, Cygnus and Cepheus](docs/anim-constellations-night.gif)
 
@@ -164,9 +208,29 @@ The pieces are drawn by hand, pixel by pixel, not generated from shapes. Each is
 - **The Moon** goes through its phases across the month. The terminator curves as on the real Moon, so a crescent thins to points at its horns. The dark part carries the engraver's hatching.
 - **The stars** are drawn by brightness: eight points, four, a cross, a point.
 - **The planets** each have a little picture: Saturn's ring, Jupiter's bands.
-- **The ornaments** are the fleur-de-lis standing on the window at the north, the lozenges, the south star, the studs, the corner leaves, the engraved glory and the village on the horizon.
+- **The ornaments** are:
+  - the fleur-de-lis standing on the window at the north, the lozenges and the south star;
+  - the studs;
+  - the corner sprigs through the year;
+  - Quentel's flowers beside the time;
+  - the engraved glory;
+  - the village on the horizon.
+- **The village** is drawn in pieces for each state:
+  - trees in leaf, blossom, turning, gold and bare;
+  - stooks for the harvest;
+  - the church's vane three ways;
+  - the mill's sails two ways.
+
+  Its passers-by are drawn too: a swallow, a bat, an owl and a falling leaf.
+- **The clouds** are Howard's: cumulus heaps and banks drawn as silhouettes, whose tops and bases the face lights for the hour, and cirrus in hair strokes.
 - **The almanac's signs** are the zodiac and the planets that rule the days.
 - **The ring's hours** are hand-drawn too: roman numerals on the 12-hour clock, figures on the 24-hour clock.
+- **The large time** is drawn by hand for each plate's type and each watch:
+  - modern scientific figures after Old Standard, with ball terminals and a flagged 1;
+  - an engraver's copperplate Didone for Burritt;
+  - Caslon's old-style figures for Flamsteed, with 3 4 5 7 9 below the line.
+
+  The Round 2's figures are the Time 2's, grown along their straight runs.
 - **MIDNIGHT and NOON** are roman capitals with thick stems, thin hairlines and serifs. Each letter is drawn turned to its own place on each screen's ring, its stems stepping and its bars sloping as the curve turns.
 
 ![The hand-drawn pieces at six times and at their own size](docs/pieces.png)
@@ -176,7 +240,8 @@ The pieces are drawn by hand, pixel by pixel, not generated from shapes. Each is
 - `proto/frame.py`: the Time 2's cushion, with exact distances to its edge, so the rules, ticks and lettering run along true parallels of it.
 - `proto/events.py`: Jupiter's moons, eclipses, planets meeting and the meteor showers, for the almanac.
 - `proto/sprites.py`: the hand-drawn pieces; `proto/letterer.py` and `proto/coverage.py`: the drafting table the curved words were drawn from; `proto/closeup.py`: close-ups of the faces, pixel by pixel, for checking.
-- `proto/typeset.py`: the large type, the astronomers' 21ʰ 30ᵐ; `proto/pixeltext.py`: the pixel type.
+- `proto/figures.py`: the large time's hand-drawn figures; `proto/foundry.py`: the drafting table they were drawn from; `proto/typeset.py`: the typefaces they follow (and the large time where no figures are drawn); `proto/pixeltext.py`: the pixel type.
+- `proto/weather.py`: the weather as the phone would fetch it, Howard's sky from it, and the barometer's and thermometer's words; `proto/skies.py`: the clouds, rain, snow and halo drawn into the window.
 - `proto/look.py`: the compass view; `proto/animate.py`: the animations and their films.
 - `proto/film_plates.py`: the plates' films and stills; `proto/film.py`, `proto/film_readable.py`: the earlier takes' (`proto/render2.py` draws those).
 
@@ -189,5 +254,7 @@ Next: the same drawing in C for the watch, with the pieces and the stars as smal
 ## Credits
 
 Star positions and colours, constellation lines and the Milky Way's outline come from [d3-celestial](https://github.com/ofrohn/d3-celestial), © 2015 Olaf Frohn, BSD 3-Clause (`data/`). The numerals use the monoline stroke font made for Morphogen 9.
+
+Quentel's flower is transcribed from *Eyn New Kunstlich Boich* (Peter Quentel, Cologne, 1529) in the Metropolitan Museum of Art's Open Access collection (CC0, 20.50.2).
 
 Pixel type: Not Jam Old Style 11 by Not Jam (CC0, `fonts/pixel/`). Type: Old Standard TT (Alexey Kryukov), Libre Caslon Text, Playfair Display, with IM Fell, EB Garamond and Cinzel tried in [the type specimen](docs/type-specimen.png). All are SIL Open Font License 1.1, and the licences are in `fonts/`.
