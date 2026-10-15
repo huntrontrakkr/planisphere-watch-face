@@ -879,7 +879,6 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     # stars, as drawn on the old charts: eight points for the brightest, four, a cross, a point
     light_paper = paper and P["night"].sum() > 400
     drawn = []                                           # each star's sprite: (x, y, half its size)
-    stars_from = len(boxes)                              # (the stars' boxes: fireworks may burst over them)
     for ra, de, mg, bv in sorted(stars, key=lambda s: -s[2]):
         if mg > faint:
             continue
@@ -947,7 +946,6 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             ring_ = skies.halo_ring(pdec, pha, flip * body_[1], flip * (lst - body_[0]), dial.k) & inside & (tt < 0.7)
             img[ring_] = c8(1, 0, 0) if P["window"] == "red" else c8(1, 1, 2) if s_eff < -6 else c8(3, 3, 3)
 
-    stars_to = len(boxes)
     # the planets, each its little picture; beside Jupiter its four great moons where they are now, along its
     # equator (near enough the ecliptic), magnified: at the chart's scale they would sit inside one pixel
     reach = {}
@@ -1225,15 +1223,6 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             x, y = dial.project(ra, de, lst)
             if place(pixel_text(name.upper().replace("Ö", "O"), track=1), x, y, P["const"], centred=True):
                 cshown += 1
-
-    # fireworks over the village on the feast's evening, in the sky the names and bodies leave clear
-    if feast and feast.get("fireworks") and sun_alt < -4 and (local.hour >= 18 or local.hour < 1) and \
-            not (wsky is not None and (wsky.stratus >= 0.6 or wsky.falls)):
-        avoid = blocked.copy()                           # the land, the names, the planets, the Moon: not the stars
-        for q in boxes[:stars_from] + boxes[stars_to:]:
-            avoid[max(0, q[1]): q[3], max(0, q[0]): q[2]] = True
-        feast_draw.fireworks(img, inside, avoid, edge_, col, feast_draw.SPARKS[feast["fireworks"]],
-                             local.toordinal() * 1440 + local.hour * 60 + local.minute, ink=P["accent"] if paper else None)
 
     # the zenith's cross and the signs of the zodiac, drawn after the names, where no name or body is drawn: the
     # names matter more than the ornaments
