@@ -1112,8 +1112,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     ang = np.degrees(np.arctan2(xx + 0.5 - dial.cx, yy + 0.5 - dial.cy))
     s_alt = np.degrees(np.arcsin(np.sin(lat) * np.sin(sdec) + np.cos(lat) * np.cos(sdec) * np.cos(np.radians(ang))))
     step = np.select([s_alt > -0.833, s_alt > -6, s_alt > -12, s_alt > -18], [0] + list(HATCH[:3]), HATCH[3])
-    if P.get("ringfill") == "zones":                     # the clock's zones round the Sun's path instead
-        img[band & (s_alt > -0.833)] = c8(1, 2, 3)
+    if P.get("ringfill") == "zones":                     # the clock's zones round the Sun's path instead, the day
+        img[band & (s_alt > -0.833)] = c8(0, 1, 2)       # a deep blue, as on the clock, so the gold reads on it
         img[band & (s_alt <= -0.833) & (s_alt > -18)] = c8(2, 1, 0)
     else:
         hatch = band & (step > 0) & ((xx + yy) % np.maximum(step, 1) == 0)
