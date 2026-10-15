@@ -11,7 +11,8 @@ shots    boots with the RTC at --time, installs watchface/build/watchface.pbw
          instead of as fast as the PC can, for a real watch's pace.
          The watch's own log (system and app) goes to <out>/<platform>-serial.log.
 profile  counts the Thumb instructions executed by one call of each named
-         app function (QEMU block traces; instructions, not cycles).
+         app function (QEMU block traces; instructions, not cycles), by
+         function: fw: the firmware, app: main.c, plan: the renderer's code.
 
 Needs the SDL/pulse libraries staged in /tmp/dymaxion-runtime (Radiant notes).
 """
@@ -227,12 +228,15 @@ def blocks(path):
                 yield "exec", int(m.group(1), 16), None
 
 
-def symbols(plat, base):
-    """Sorted (address, name) for the firmware and the app loaded at `base`."""
-    import bisect
+def symbols(plat, base, code=None):
+    """Sorted (address, name) for the firmware, the app loaded at `base` and the renderer's code (the resource
+    tools/build_blob.py builds) loaded at `code`."""
     out = []
-    for elf, off, tag in [(SDK / f"sdk-core/pebble/{plat}/qemu/{plat}_sdk_debug.elf", 0, "fw"),
-                          (APP / f"build/{plat}/pebble-app.elf", base, "app")]:
+    elves = [(SDK / f"sdk-core/pebble/{plat}/qemu/{plat}_sdk_debug.elf", 0, "fw"),
+             (APP / f"build/{plat}/pebble-app.elf", base, "app")]
+    if code:
+        elves.append((ROOT / "build/blob/plan_code.elf", code, "plan"))
+    for elf, off, tag in elves:
         for line in subprocess.check_output([str(TOOLS / "arm-none-eabi-nm"), "-n", str(elf)], text=True).splitlines():
             p = line.split()
             if len(p) == 3 and p[1] in "tTwW":
@@ -401,7 +405,8 @@ def main():
             e.settings(dict(kv.split("=") for kv in a.set))
             time.sleep(1.0)
         base = e.gdb_setup()
-        syms = symbols(plat, base)
+        code = next((int(l.split("=")[1]) for l in e.gdb(["g_code"]) if "=" in l), 0)
+        syms = symbols(plat, base, code)
         for fn in a.fn:
             tr = out / f"{plat}-{fn}.trace"
             after = out / f"{plat}-after-{fn}.trace"

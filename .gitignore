@@ -5,3 +5,4 @@ __pycache__/
 /build/
 watchface/build/
 watchface/.lock-waf*
+watchface/resources/data/plan_code.bin

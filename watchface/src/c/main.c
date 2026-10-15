@@ -1,5 +1,6 @@
 /* Planisphere: the sky over where you are, turning with the hours under the card's oval window, the Sun riding
- * the ring as the hour hand. The face is drawn by plan_render.c, the same C the settings page's preview runs.
+ * the ring as the hour hand. The face is drawn by plan_render.c, the same C the settings page's preview runs; on
+ * the watch it is not linked in here but kept among the app's resources as code, loaded at start (load_code).
  *
  * The phone sends where it is (and the weather there, from Open-Meteo) and the owner's settings; the watch keeps
  * them, and draws the face every minute.
@@ -7,7 +8,7 @@
 #include <pebble.h>
 #include "plan.h"
 
-/* Nothing here is in a hot loop: built for size (the app's code and data must stay under 64 KB). */
+/* Nothing here is in a hot loop: built for size. */
 #pragma GCC optimize("Os")
 
 #define SETTINGS_VERSION 1
@@ -33,13 +34,16 @@ typedef struct {                        /* where the phone last was */
 
 typedef struct { Weather w; uint32_t time; } Stored;
 
-/* diagnostics, readable over GDB in the emulator */
-volatile uint32_t g_render_ms = 0, g_render_max = 0, g_heap_free = 0, g_heap_low = 0;
+/* diagnostics, readable over GDB in the emulator (g_code: where the renderer's code was loaded; g_utc, g_offset:
+ * the moment last drawn, for tools/host to draw again) */
+volatile uint32_t g_render_ms = 0, g_render_max = 0, g_heap_free = 0, g_heap_low = 0, g_code = 0, g_utc = 0;
+volatile int32_t g_offset = 0;
 
 static Window *s_window;
 static Layer *s_layer;
 static Plan *s_plan;
-static uint8_t *s_data, *s_geom;
+static const PlanApi *s_api;
+static uint8_t *s_code, *s_data, *s_geom;
 static Settings s_settings;
 static Place s_place;
 static Stored s_weather;
@@ -114,6 +118,13 @@ static void face_of(Face *f) {
   if (s_settings.weather && s_weather.time && now - s_weather.time < WEATHER_FRESH) f->weather = &s_weather.w;
 }
 
+/* the renderer's memory, and how little was left */
+static void *alloc(size_t n) {
+  void *p = malloc(n);
+  if (heap_bytes_free() < g_heap_low) g_heap_low = heap_bytes_free();
+  return p;
+}
+
 static void update(Layer *layer, GContext *ctx) {
   time_t now = time(NULL);
   if (!s_plan) {                                 /* no memory for the face's data: the time alone */
@@ -134,7 +145,8 @@ static void update(Layer *layer, GContext *ctx) {
   face_of(&f);
   Target tg = {fb_row, fb};
   if (heap_bytes_free() < g_heap_low || !g_heap_low) g_heap_low = heap_bytes_free();
-  plan_render(s_plan, &f, (int64_t)now, utc_offset(now), &tg, malloc, free);
+  g_utc = (uint32_t)now, g_offset = utc_offset(now);
+  s_api->render(s_plan, &f, (int64_t)now, g_offset, &tg, alloc, free);
   graphics_release_frame_buffer(ctx, fb);
   g_render_ms = now_ms() - t0;
   if (g_render_ms > g_render_max) g_render_max = g_render_ms;
@@ -147,67 +159,96 @@ static void tick(struct tm *t, TimeUnits changed) {
 
 /* ---- messages from the phone ---- */
 
-static int tuple_int(const Tuple *t) {
-  return t->type == TUPLE_CSTRING ? atoi(t->value->cstring) : (int)t->value->int32;
-}
-static void tuple_text(const Tuple *t, char *out, size_t n) {
-  if (t->type == TUPLE_CSTRING) strncpy(out, t->value->cstring, n - 1), out[n - 1] = 0;
-  else out[0] = 0;
-}
+/* what each message key sets: a byte, a 16-bit or 32-bit number, or text, at an offset in one of the three records */
+enum { IN_SETTINGS, IN_PLACE, IN_WEATHER };
+enum { IN_U8, IN_I16, IN_I32, IN_TEXT };
+#define IN(key, rec, type, s, f) {&MESSAGE_KEY_##key, rec, type, (uint8_t)offsetof(s, f), (uint8_t)sizeof(((s *)0)->f)}
+static const struct { const uint32_t *key; uint8_t rec, type, off, size; } KEYS[] = {
+  IN(PLATE, IN_SETTINGS, IN_U8, Settings, plate), IN(CLOCK, IN_SETTINGS, IN_U8, Settings, clock),
+  IN(NAMES, IN_SETTINGS, IN_U8, Settings, names), IN(WEATHER, IN_SETTINGS, IN_U8, Settings, weather),
+  IN(UNITS, IN_SETTINGS, IN_U8, Settings, units), IN(PLACE, IN_SETTINGS, IN_U8, Settings, place),
+  IN(LABOURS, IN_SETTINGS, IN_U8, Settings, labours), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
+  IN(PLACE_LON, IN_SETTINGS, IN_I32, Settings, lon_e4), IN(PLACE_CITY, IN_SETTINGS, IN_TEXT, Settings, city),
+  IN(PLACE_COUNTRY, IN_SETTINGS, IN_TEXT, Settings, country),
+  IN(LAT, IN_PLACE, IN_I32, Place, lat_e4), IN(LON, IN_PLACE, IN_I32, Place, lon_e4),
+  IN(CITY, IN_PLACE, IN_TEXT, Place, city), IN(COUNTRY, IN_PLACE, IN_TEXT, Place, country),
+  IN(WX_TEMP, IN_WEATHER, IN_I16, Stored, w.temp10), IN(WX_CODE, IN_WEATHER, IN_U8, Stored, w.code),
+  IN(WX_LOW, IN_WEATHER, IN_U8, Stored, w.low), IN(WX_MID, IN_WEATHER, IN_U8, Stored, w.mid),
+  IN(WX_HIGH, IN_WEATHER, IN_U8, Stored, w.high), IN(WX_WIND, IN_WEATHER, IN_U8, Stored, w.wind),
+  IN(WX_FROM, IN_WEATHER, IN_I16, Stored, w.wind_from), IN(WX_PRESSURE, IN_WEATHER, IN_I16, Stored, w.pressure),
+  IN(WX_SNOW, IN_WEATHER, IN_I16, Stored, w.snow_mm), IN(WX_VIS, IN_WEATHER, IN_I16, Stored, w.vis_dam),
+};
 
 static void inbox(DictionaryIterator *it, void *context) {
-  bool settings = false, place = false, weather = false;
-  for (Tuple *t = dict_read_first(it); t; t = dict_read_next(it)) {
-    uint32_t k = t->key;
-    int v = tuple_int(t);
-    if (k == MESSAGE_KEY_PLATE) s_settings.plate = (uint8_t)v, settings = true;
-    else if (k == MESSAGE_KEY_CLOCK) s_settings.clock = (uint8_t)v, settings = true;
-    else if (k == MESSAGE_KEY_NAMES) s_settings.names = (uint8_t)v, settings = true;
-    else if (k == MESSAGE_KEY_WEATHER) s_settings.weather = (uint8_t)v, settings = true;
-    else if (k == MESSAGE_KEY_UNITS) s_settings.units = (uint8_t)v, settings = true;
-    else if (k == MESSAGE_KEY_PLACE) s_settings.place = (uint8_t)v, settings = true;
-    else if (k == MESSAGE_KEY_LABOURS) s_settings.labours = (uint8_t)v, settings = true;
-    else if (k == MESSAGE_KEY_PLACE_LAT) s_settings.lat_e4 = v, settings = true;
-    else if (k == MESSAGE_KEY_PLACE_LON) s_settings.lon_e4 = v, settings = true;
-    else if (k == MESSAGE_KEY_PLACE_CITY) tuple_text(t, s_settings.city, sizeof s_settings.city), settings = true;
-    else if (k == MESSAGE_KEY_PLACE_COUNTRY) tuple_text(t, s_settings.country, sizeof s_settings.country), settings = true;
-    else if (k == MESSAGE_KEY_LAT) s_place.lat_e4 = v, place = true;
-    else if (k == MESSAGE_KEY_LON) s_place.lon_e4 = v, place = true;
-    else if (k == MESSAGE_KEY_CITY) tuple_text(t, s_place.city, sizeof s_place.city), place = true;
-    else if (k == MESSAGE_KEY_COUNTRY) tuple_text(t, s_place.country, sizeof s_place.country), place = true;
-    else if (k == MESSAGE_KEY_WX_TEMP) s_weather.w.temp10 = (int16_t)v, weather = true;
-    else if (k == MESSAGE_KEY_WX_CODE) s_weather.w.code = (uint8_t)v, weather = true;
-    else if (k == MESSAGE_KEY_WX_LOW) s_weather.w.low = (uint8_t)v, weather = true;
-    else if (k == MESSAGE_KEY_WX_MID) s_weather.w.mid = (uint8_t)v, weather = true;
-    else if (k == MESSAGE_KEY_WX_HIGH) s_weather.w.high = (uint8_t)v, weather = true;
-    else if (k == MESSAGE_KEY_WX_WIND) s_weather.w.wind = (uint8_t)v, weather = true;
-    else if (k == MESSAGE_KEY_WX_FROM) s_weather.w.wind_from = (uint16_t)v, weather = true;
-    else if (k == MESSAGE_KEY_WX_PRESSURE) s_weather.w.pressure = (uint16_t)v, weather = true;
-    else if (k == MESSAGE_KEY_WX_SNOW) s_weather.w.snow_mm = (uint16_t)v, weather = true;
-    else if (k == MESSAGE_KEY_WX_VIS) s_weather.w.vis_dam = (uint16_t)v, weather = true;
-  }
+  uint8_t *rec[3] = {(uint8_t *)&s_settings, (uint8_t *)&s_place, (uint8_t *)&s_weather};
+  bool got[3] = {false, false, false};
+  for (Tuple *t = dict_read_first(it); t; t = dict_read_next(it))
+    for (unsigned i = 0; i < sizeof KEYS / sizeof KEYS[0]; i++) {
+      if (t->key != *KEYS[i].key) continue;
+      uint8_t *at = rec[KEYS[i].rec] + KEYS[i].off;
+      int32_t v = t->type == TUPLE_CSTRING ? atoi(t->value->cstring) : t->value->int32;
+      if (KEYS[i].type == IN_TEXT) {
+        at[0] = 0;
+        if (t->type == TUPLE_CSTRING) strncpy((char *)at, t->value->cstring, KEYS[i].size - 1), at[KEYS[i].size - 1] = 0;
+      } else memcpy(at, &v, KEYS[i].type == IN_U8 ? 1 : KEYS[i].type == IN_I16 ? 2 : 4);   /* (little-endian) */
+      got[KEYS[i].rec] = true;
+      break;
+    }
   uint32_t now = (uint32_t)time(NULL);
-  if (settings) persist_write_data(KEY_SETTINGS, &s_settings, sizeof s_settings);
-  if (place) s_place.time = now, persist_write_data(KEY_PLACE, &s_place, sizeof s_place);
-  if (weather) s_weather.time = now, persist_write_data(KEY_WEATHER, &s_weather, sizeof s_weather);
+  if (got[IN_SETTINGS]) persist_write_data(KEY_SETTINGS, &s_settings, sizeof s_settings);
+  if (got[IN_PLACE]) s_place.time = now, persist_write_data(KEY_PLACE, &s_place, sizeof s_place);
+  if (got[IN_WEATHER]) s_weather.time = now, persist_write_data(KEY_WEATHER, &s_weather, sizeof s_weather);
   if (s_layer) layer_mark_dirty(s_layer);
 }
 
 /* ---- life cycle ---- */
 
+/* The renderer, from the app's resources (tools/build_blob.py): its code linked at address 0, then a list of the
+ * words in it that hold absolute addresses, to which we add where it landed. PebbleOS lets an app run code in its
+ * own memory; memory_cache_flush is the SDK's call for code it has loaded. */
+typedef struct { uint32_t magic, image, bss, nrel, api; } CodeHeader;
+#define CODE_MAGIC 0x434E4C50u           /* "PLNC" */
+
+static bool load_code(void) {
+  ResHandle h = resource_get_handle(RESOURCE_ID_PLAN_CODE);
+  CodeHeader hd;
+  if (resource_load_byte_range(h, 0, (uint8_t *)&hd, sizeof hd) != sizeof hd || hd.magic != CODE_MAGIC) return false;
+  uint32_t n = hd.image + hd.bss;
+  s_code = malloc(n + 4);                        /* the heap gives 4-byte alignment; the code was linked for 8 */
+  if (!s_code) return false;
+  uint8_t *code = (uint8_t *)(((uintptr_t)s_code + 7) & ~(uintptr_t)7);
+  if (resource_load_byte_range(h, sizeof hd, code, hd.image) != hd.image) goto fail;
+  memset(code + hd.image, 0, hd.bss);
+  uint16_t at[32];                               /* the relocations, a few at a time: the stack is small */
+  for (uint32_t i = 0; i < hd.nrel; i += 32) {
+    uint32_t k = hd.nrel - i < 32 ? hd.nrel - i : 32;
+    if (resource_load_byte_range(h, sizeof hd + hd.image + 2 * i, (uint8_t *)at, 2 * k) != 2 * k) goto fail;
+    for (uint32_t j = 0; j < k; j++) ((uint32_t *)code)[at[j]] += (uint32_t)(uintptr_t)code;
+  }
+  memory_cache_flush(code, n);
+  s_api = (const PlanApi *)(code + hd.api);
+  if (s_api->magic != PLAN_API_MAGIC || s_api->layout != PLAN_LAYOUT) goto fail;
+  g_code = (uint32_t)(uintptr_t)code;
+  return true;
+fail:
+  free(s_code), s_code = NULL, s_api = NULL;
+  return false;
+}
+
 /* the face's data from the app's resources: the pieces, the stars, the type (shared) and this watch's ring */
 static bool load_data(void) {
+  if (!load_code()) return false;
   ResHandle d = resource_get_handle(RESOURCE_ID_PLAN_DATA), g = resource_get_handle(RESOURCE_ID_PLAN_GEOM);
   size_t nd = resource_size(d), ng = resource_size(g);
   s_data = malloc(nd), s_geom = malloc(ng), s_plan = malloc(sizeof(Plan));
   if (!s_data || !s_geom || !s_plan) {
-    free(s_data), free(s_geom), free(s_plan);
-    s_data = s_geom = NULL, s_plan = NULL;
+    free(s_data), free(s_geom), free(s_plan), free(s_code);
+    s_data = s_geom = s_code = NULL, s_plan = NULL, s_api = NULL;
     return false;
   }
   resource_load(d, s_data, nd);
   resource_load(g, s_geom, ng);
-  plan_init(s_plan, PBL_DISPLAY_WIDTH, PBL_DISPLAY_HEIGHT, s_data, s_geom);
+  s_api->init(s_plan, PBL_DISPLAY_WIDTH, PBL_DISPLAY_HEIGHT, s_data, s_geom);
   return true;
 }
 
@@ -241,7 +282,7 @@ static void init(void) {
 static void deinit(void) {
   tick_timer_service_unsubscribe();
   window_destroy(s_window);
-  free(s_plan), free(s_data), free(s_geom);
+  free(s_plan), free(s_data), free(s_geom), free(s_code);
 }
 
 int main(void) {

@@ -110,7 +110,7 @@ static void moon(int32_t tt, float *lam, float *beta, float *dist) {
   uint32_t D = angle(A_MOON_D, tt, -0.0018819f * T2 + T3 / 545868 - T4 / 113065000);
   uint32_t M = angle(A_MOON_M, tt, -0.0001536f * T2 + T3 / 24490000);
   uint32_t Mp = angle(A_MOON_MP, tt, 0.0087414f * T2 + T3 / 69699 - T4 / 14712000);
-  uint32_t F = angle(A_MOON_F, tt, -0.0036539f * T2 - T3 / 3526000 + T4 / 863310000);
+  uint32_t F = angle(A_MOON_F, tt, -0.0036539f * T2 - T3 / 3526000 + T4 / 863310000.0f);
   uint32_t A1 = angle(A_MOON_A1, tt, 0), A2 = angle(A_MOON_A2, tt, 0), A3 = angle(A_MOON_A3, tt, 0);
   float E = 1 - 0.002516f * T - 0.0000074f * T2, EE[3] = {1, E, E * E};
   float sl = 0, sr = 0, sb = 0;
@@ -128,13 +128,17 @@ static void moon(int32_t tt, float *lam, float *beta, float *dist) {
   *dist = 385000.56f + sr / 1000;
 }
 
-/* the Sun's apparent ecliptic longitude of date (with the aberration, without nutation) */
-static uint32_t sun(int32_t tt) {
+/* the Sun's apparent ecliptic longitude of date (with the aberration, without nutation), and its distance (AU) */
+static uint32_t sun(int32_t tt, float *dist) {
   float T = (float)tt / CENTURY;
   uint32_t L0 = angle(A_SUN_L0, tt, 0.0003032f * T * T);
   float M = deg(angle(A_SUN_M, tt, -0.0001537f * T * T));
   float C = (1.914602f - 0.004817f * T - 0.000014f * T * T) * f_sind(M) + (0.019993f - 0.000101f * T) * f_sind(2 * M) +
             0.000289f * f_sind(3 * M);
+  if (dist) {
+    float e = 0.016708634f - 0.000042037f * T - 0.0000001267f * T * T;
+    *dist = 1.000001018f * (1 - e * e) / (1 + e * f_cosd(M + C));
+  }
   return L0 + bam(C - 0.00569f);
 }
 
@@ -205,15 +209,15 @@ static float great(uint32_t Mj, uint32_t Msat, int a, int b, float c, bool cosin
   return cosine ? f_cosd(x) : f_sind(x);
 }
 
-void plan_sky(Sky *s, int64_t utc, float lon) {
+/* the Sun and the Moon alone (for the eclipses' search through a day) */
+void plan_sun_moon(Sky *s, int64_t utc, float lon) {
   int32_t t = (int32_t)(utc - J2000), tt = tt_of(t);
   s->utc = utc;
   s->lst = sidereal(t, lon);
-  float d = ((float)t + 1.5f * 86400) / 86400;       /* days from 2000 Jan 0.0 UT */
   float dpsi, eps;
   nutation(tt, &dpsi, &eps);
   s->eps = eps;
-  float lam_s = deg(sun(tt) + bam(dpsi));
+  float lam_s = deg(sun(tt, &s->sun_dist) + bam(dpsi));
   float lam_m, beta_m, dist_km;
   moon(tt, &lam_m, &beta_m, &dist_km);
   lam_m = rev(lam_m + dpsi);
@@ -223,6 +227,12 @@ void plan_sky(Sky *s, int64_t utc, float lon) {
   s->moon_dist = dist_km / 6378.14f;
   s->moon_phase = (1 - f_cosd(lam_m - lam_s) * f_cosd(beta_m)) / 2;   /* (1 - cos elongation) / 2 */
   s->moon_waxing = rev(lam_m - lam_s) < 180;
+}
+
+void plan_sky(Sky *s, int64_t utc, float lon) {
+  plan_sun_moon(s, utc, lon);
+  int32_t t = (int32_t)(utc - J2000);
+  float d = ((float)t + 1.5f * 86400) / 86400, eps = s->eps;      /* days from 2000 Jan 0.0 UT */
   /* Schlyter's Sun, to carry the planets from the Sun's frame to ours */
   float ws = element(E_SUN, 2, d), es = element(E_SUN, 4, d);
   float E = kepler(deg(angle(A_M_SUN, t, 0)), es);
@@ -256,7 +266,7 @@ static float sun_height(int32_t t, float lat, float lon) {
   int32_t tt = tt_of(t);
   float dpsi, eps, ra, dec;
   nutation(tt, &dpsi, &eps);
-  plan_ecl_to_eq(deg(sun(tt) + bam(dpsi)), 0.0f, eps, &ra, &dec);
+  plan_ecl_to_eq(deg(sun(tt, NULL) + bam(dpsi)), 0.0f, eps, &ra, &dec);
   return plan_altitude(ra, dec, sidereal(t, lon), lat) + 0.833f;
 }
 
@@ -291,4 +301,117 @@ void plan_civil(int64_t local, Civil *c) {
   int32_t d = doy - (153 * mp + 2) / 5 + 1, m = mp < 10 ? mp + 3 : mp - 9;
   c->year = (int)(y + (m <= 2)), c->month = (int)m, c->day = (int)d;
   c->ordinal = days + 719163;                            /* date(1970, 1, 1).toordinal() */
+}
+
+/* ---- the sky's events (proto/events.py) ------------------------------------------------------------------------ */
+#define SUN_RADIUS 0.2666f                     /* degrees at 1 AU */
+
+/* the angle between two places, by the haversine (exact for the small ones eclipses turn on) */
+float plan_separation(float ra1, float dec1, float ra2, float dec2) {
+  float a = f_sind((dec2 - dec1) / 2), b = f_sind((ra2 - ra1) / 2);
+  float h = a * a + f_cosd(dec1) * f_cosd(dec2) * b * b;
+  return 2 * f_asind(f_sqrt(h < 1 ? h : 1));
+}
+
+/* the Moon as seen from the ground rather than from the Earth's centre (its parallax is up to a degree) */
+static void topocentric_moon(const Sky *s, float lat, float *ra, float *dec) {
+  float mpar = f_asind(1 / s->moon_dist), gclat = lat - 0.1924f * f_sind(2 * lat);
+  float rho = 0.99833f + 0.00167f * f_cosd(2 * lat), ha = s->lst - s->moon_ra, ch = f_cosd(ha);
+  float g = f_abs(ch) > 1e-9f ? f_atan2d(f_sind(gclat) / f_cosd(gclat), ch) : 90.0f;
+  *ra = s->moon_ra - mpar * rho * f_cosd(gclat) * f_sind(ha) / f_cosd(s->moon_dec);
+  *dec = f_abs(f_sind(g)) > 1e-9f ? s->moon_dec - mpar * rho * f_sind(gclat) * f_sind(g - s->moon_dec) / f_sind(g) : s->moon_dec;
+}
+
+static float lens_cover(float d, float r1, float r2) {
+  float a1 = r1 * r1 * f_acosd(f_clamp((d * d + r1 * r1 - r2 * r2) / (2 * d * r1), -1, 1)) * 0.0174532925f;
+  float a2 = r2 * r2 * f_acosd(f_clamp((d * d + r2 * r2 - r1 * r1) / (2 * d * r2), -1, 1)) * 0.0174532925f;
+  float q = (-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2);
+  return (a1 + a2 - 0.5f * f_sqrt(q > 0 ? q : 0)) / (3.14159265f * r1 * r1);
+}
+
+bool plan_solar(const Sky *s, float lat, Eclipse *e) {
+  if (plan_altitude(s->sun_ra, s->sun_dec, s->lst, lat) < -0.8f) return false;
+  float tra, tdec;
+  topocentric_moon(s, lat, &tra, &tdec);
+  float h = plan_altitude(tra, tdec, s->lst, lat);
+  float near = s->moon_dist - f_sind(h > 0 ? h : 0);         /* nearer by about an Earth radius times its height's sine */
+  float rm = f_asind(0.2725076f / near), rs = SUN_RADIUS / s->sun_dist;
+  float sep = plan_separation(tra, tdec, s->sun_ra, s->sun_dec);
+  if (sep >= rs + rm) return false;
+  if (sep <= rm - rs) e->kind = ECLIPSE_TOTAL, e->cover = 1;
+  else if (sep <= rs - rm) e->kind = ECLIPSE_ANNULAR, e->cover = (rm / rs) * (rm / rs);
+  else e->kind = ECLIPSE_PARTIAL, e->cover = lens_cover(sep, rs, rm);
+  e->cover = e->cover < 1 ? e->cover : 1;
+  e->magnitude = (rs + rm - sep) / (2 * rs);
+  e->east = (pyf_mod(tra - s->sun_ra + 180, 360) - 180) * f_cosd(s->sun_dec) / rs, e->north = (tdec - s->sun_dec) / rs;
+  e->ratio = rm / rs;
+  return true;
+}
+
+bool plan_lunar(const Sky *s, float lat, Eclipse *e) {
+  if (plan_altitude(s->moon_ra, s->moon_dec, s->lst, lat) < 0) return false;
+  float rm = f_asind(0.2725076f / s->moon_dist), ara = rev(s->sun_ra + 180), adec = -s->sun_dec;
+  float sep = plan_separation(s->moon_ra, s->moon_dec, ara, adec);
+  float umbra = 1.02f * (0.998340f * f_asind(1 / s->moon_dist) + 0.00244f - SUN_RADIUS / s->sun_dist);
+  if (sep >= umbra + rm) return false;
+  e->kind = sep <= umbra - rm ? ECLIPSE_TOTAL : ECLIPSE_PARTIAL;
+  e->magnitude = (umbra + rm - sep) / (2 * rm);
+  e->east = (pyf_mod(ara - s->moon_ra + 180, 360) - 180) * f_cosd(s->moon_dec), e->north = adec - s->moon_dec;
+  e->cover = 0, e->ratio = 0;
+  return true;
+}
+
+/* Jupiter's four great moons: Meeus ch. 44, the lower-accuracy theory; X (west) and Y (north) in Jupiter's radii */
+static const struct { uint32_t a0; int64_t rate; } JOVIAN[11] = {
+  {0x7ad65b7au, 661791177LL},        /* V: 172.74 + 0.00111588 d */
+  {0xfe3e2b0eu, 584526636223LL},     /* M: 357.529 + 0.9856003 d */
+  {0x0e3c87a0u, 49275117843LL},      /* N: 20.020 + 0.0830853 d */
+  {0x2f03de52u, 535253238273LL},     /* J: 66.115 + 0.9025179 d */
+  {0x186d3a07u, 49278498323LL},      /* lambda: 34.35 + 0.083091 d */
+  {0x747c22d8u, 120633228117535LL},  /* u1: 163.8069 + 203.4058646 d */
+  {0xfedf470bu, 60072686470630LL},   /* u2: 358.4140 + 101.2916335 d */
+  {0x0410db79u, 29792415676831LL},   /* u3: 5.7176 + 50.2345180 d */
+  {0x9fdd4413u, 12743803617573LL},   /* u4: 224.8092 + 21.4879800 d */
+  {0xeb817aa7u, 29837467389370LL},   /* G: 331.18 + 50.310482 d */
+  {0x3e2fc963u, 12791990873319LL},   /* H: 87.45 + 21.569231 d */
+};
+static float jovian(int i, int32_t t) {
+  uint64_t q = (uint64_t)JOVIAN[i].rate * (uint64_t)(int64_t)t;
+  return deg(JOVIAN[i].a0 + (uint32_t)(q >> 32));
+}
+void plan_galilean(int64_t utc, float X[4], float Y[4], bool behind[4]) {
+  int32_t t = (int32_t)(utc - J2000);
+  float V = jovian(0, t), M = jovian(1, t), N = jovian(2, t) + 0.329f * f_sind(V), J = jovian(3, t) - 0.329f * f_sind(V);
+  float A = 1.915f * f_sind(M) + 0.020f * f_sind(2 * M), B = 5.555f * f_sind(N) + 0.168f * f_sind(2 * N);
+  float K = J + A - B;
+  float R = 1.00014f - 0.01671f * f_cosd(M) - 0.00014f * f_cosd(2 * M);
+  float r = 5.20872f - 0.25208f * f_cosd(N) - 0.00611f * f_cosd(2 * N);
+  float delta = f_sqrt(r * r + R * R - 2 * r * R * f_cosd(K)), psi = f_asind(R / delta * f_sind(K));
+  float lam = jovian(4, t) + 0.329f * f_sind(V) + B, Ds = 3.12f * f_sind(lam + 42.8f);
+  float De = Ds - 2.22f * f_sind(psi) * f_cosd(lam + 22) - 1.30f * (r - delta) / delta * f_sind(lam - 100.5f);
+  int32_t tl = t - (int32_t)(delta / 173 * 86400);       /* the light's time from Jupiter */
+  float u[4], G = jovian(9, tl), H = jovian(10, tl);
+  for (int i = 0; i < 4; i++) u[i] = jovian(5 + i, tl) + psi - B;
+  float u1 = u[0], u2 = u[1], u3 = u[2];
+  u[0] += 0.473f * f_sind(2 * (u1 - u2)), u[1] += 1.065f * f_sind(2 * (u2 - u3));
+  u[2] += 0.165f * f_sind(G), u[3] += 0.843f * f_sind(H);
+  float rr[4] = {5.9057f - 0.0244f * f_cosd(2 * (u1 - u2)), 9.3966f - 0.0882f * f_cosd(2 * (u2 - u3)),
+                 14.9883f - 0.0216f * f_cosd(G), 26.3627f - 0.1939f * f_cosd(H)};
+  for (int i = 0; i < 4; i++) {
+    X[i] = rr[i] * f_sind(u[i]), Y[i] = -rr[i] * f_cosd(u[i]) * f_sind(De);
+    behind[i] = f_cosd(u[i]) > 0 && f_abs(X[i]) < 1.0f;  /* beyond Jupiter and within its disc */
+  }
+}
+
+/* the meteor showers: their peaks by the Sun's ecliptic longitude, and their radiants (the IMO's working list) */
+const Shower SHOWERS[SHOWER_COUNT] = {
+  {"Quadrantids", 283.15f, 230.0f, 49.0f}, {"Lyrids", 32.32f, 271.0f, 34.0f}, {"Eta Aquariids", 45.5f, 338.0f, -1.0f},
+  {"Delta Aquariids", 127.0f, 340.0f, -16.0f}, {"Perseids", 140.0f, 48.0f, 58.0f}, {"Draconids", 195.4f, 262.0f, 54.0f},
+  {"Orionids", 208.0f, 95.0f, 16.0f}, {"Leonids", 235.27f, 152.0f, 22.0f}, {"Geminids", 262.2f, 112.0f, 33.0f},
+  {"Ursids", 270.7f, 217.0f, 76.0f}};
+/* the shower at or near its peak (the Sun within a degree, about a day, of its peak): its number, or -1 */
+int plan_shower(float sun_lon) {
+  for (int i = 0; i < SHOWER_COUNT; i++)
+    if (f_abs(pyf_mod(sun_lon - SHOWERS[i].peak + 180, 360) - 180) <= 1.0f) return i;
+  return -1;
 }

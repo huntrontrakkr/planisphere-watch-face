@@ -58,6 +58,11 @@
           "type": "raw",
           "name": "PLAN_GEOM",
           "file": "data/geom.bin"
+        },
+        {
+          "type": "raw",
+          "name": "PLAN_CODE",
+          "file": "data/plan_code.bin"
         }
       ]
     },

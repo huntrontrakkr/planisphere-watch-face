@@ -49,6 +49,15 @@ CASES = {
     "overcast-obs-t2": ("emery", "observatory", datetime(2026, 10, 15, 3, 0, tzinfo=timezone.utc), NY, {"weather": "overcast"}),
     "gale-t2": ("emery", "planisphere", datetime(2026, 10, 14, 17, 0, tzinfo=timezone.utc), NY, {"weather": "gale"}),
     "frost-apian-t2": ("emery", "apian", datetime(2026, 10, 15, 11, 0, tzinfo=timezone.utc), NY, {"weather": "frost"}),
+    "dallas-total-t2": ("emery", "planisphere", datetime(2024, 4, 8, 18, 42, tzinfo=timezone.utc), (32.7767, -96.797, -300), {}),
+    "dallas-diamond-r2": ("gabbro", "planisphere", datetime(2024, 4, 8, 18, 40, tzinfo=timezone.utc), (32.7767, -96.797, -300), {}),
+    "ny-partial-t2": ("emery", "planisphere", datetime(2024, 4, 8, 19, 25, tzinfo=timezone.utc), NY, {}),
+    "burgos-total-t2": ("emery", "observatory", datetime(2026, 8, 12, 18, 29, 30, tzinfo=timezone.utc), (42.3439, -3.6969, 120), {}),
+    "annular-t2": ("emery", "planisphere", datetime(2023, 10, 14, 16, 35, tzinfo=timezone.utc), (35.0844, -106.6504, -360), {}),
+    "lunar-total-t2": ("emery", "planisphere", datetime(2025, 3, 14, 6, 50, tzinfo=timezone.utc), NY, {}),
+    "lunar-partial-r2": ("gabbro", "night", datetime(2025, 3, 14, 5, 40, tzinfo=timezone.utc), NY, {}),
+    "orionids-t2": ("emery", "planisphere", datetime(2026, 10, 22, 6, 0, tzinfo=timezone.utc), NY, {}),
+    "conjunction-t2": ("emery", "planisphere", datetime(2023, 3, 2, 0, 20, tzinfo=timezone.utc), NY, {}),
     "weather-t2": ("emery", "planisphere", datetime(2026, 10, 14, 20, 10, tzinfo=timezone.utc), NY, {"weather": "cloudy"}),
 }
 

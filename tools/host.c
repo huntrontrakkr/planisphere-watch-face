@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
   for (int i = 8; i < argc; i++) {
     if (!strcmp(argv[i], "--24")) f.clock24 = true;
     else if (!strcmp(argv[i], "--no-names")) f.names = false;
+    else if (!strcmp(argv[i], "--no-coords")) f.coords = false;
     else if (!strcmp(argv[i], "--fahrenheit")) f.fahrenheit = true;
     else if (!strcmp(argv[i], "--city") && i + 1 < argc) f.city = argv[++i];
     else if (!strcmp(argv[i], "--country") && i + 1 < argc) f.country = argv[++i];

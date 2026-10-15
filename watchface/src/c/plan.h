@@ -45,13 +45,28 @@ typedef struct {
   int64_t utc;                 /* the moment, seconds since 1970 */
   float lst;                   /* local sidereal time */
   float eps;                   /* the true obliquity */
-  float sun_ra, sun_dec, sun_lon;
+  float sun_ra, sun_dec, sun_lon, sun_dist;          /* sun_dist in AU */
   float moon_ra, moon_dec, moon_dist, moon_phase;    /* moon_dist in Earth radii, moon_phase the lit fraction */
   bool moon_waxing;
   float pl_ra[PLANETS], pl_dec[PLANETS];
 } Sky;
 
 void plan_sky(Sky *s, int64_t utc, float lon);
+void plan_sun_moon(Sky *s, int64_t utc, float lon);    /* the Sun and the Moon alone */
+float plan_separation(float ra1, float dec1, float ra2, float dec2);
+/* An eclipse seen from here: of the Sun (cover the fraction of its disc covered, east and north the Moon's centre
+ * from the Sun's in Sun radii, ratio the Moon's radius over the Sun's) or of the Moon (east and north the shadow's
+ * centre from the Moon's, degrees); magnitude how deep. */
+enum { ECLIPSE_PARTIAL, ECLIPSE_ANNULAR, ECLIPSE_TOTAL };
+typedef struct { uint8_t kind; float magnitude, cover, east, north, ratio; } Eclipse;
+bool plan_solar(const Sky *s, float lat, Eclipse *e);
+bool plan_lunar(const Sky *s, float lat, Eclipse *e);
+/* Jupiter's moons: X (west) and Y (north) in Jupiter's radii, and whether each is behind Jupiter */
+void plan_galilean(int64_t utc, float X[4], float Y[4], bool behind[4]);
+#define SHOWER_COUNT 10
+typedef struct { const char *name; float peak, ra, dec; } Shower;
+extern const Shower SHOWERS[SHOWER_COUNT];
+int plan_shower(float sun_lon);
 float plan_altitude(float ra, float dec, float lst, float lat);
 void plan_ecl_to_eq(float lon, float lat, float eps, float *ra, float *dec);
 float plan_moon_node(int64_t utc);
@@ -82,6 +97,10 @@ typedef struct {
   int64_t ev_from, ev_at;
   int ev_kind;                         /* 1 rising, 2 setting, 0 none within a day; -1 not yet worked out */
   float ev_lat, ev_lon;
+  /* the sky's news for the day (noon to noon), kept: what (NEWS_*), and its particulars */
+  int32_t news_day;
+  float news_lat, news_lon;
+  uint8_t news, news_a, news_b;
   /* while drawing */
   uint8_t *rows[MAX_H];
   int16_t rx0[MAX_H], rx1[MAX_H];
@@ -95,3 +114,20 @@ void plan_window(Plan *p, float lat);
  * (a few kilobytes, freed before returning) comes from `alloc`; false if there was none. */
 bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Target *t, void *(*alloc)(size_t),
                  void (*release)(void *));
+
+/* ---- the renderer as the watch loads it ---------------------------------------------------------------------------
+ * On the watch the renderer (plan_render.c, plan_astro.c, plan_math.c, plan_blob.c) is not linked into the app: it is
+ * a code blob among the app's resources (tools/build_blob.py), which main.c loads into memory at start, relocates,
+ * hands to memory_cache_flush() (the SDK's call for code an app loads to run) and calls through this table. So the
+ * app's own binary stays small (PebbleOS caps it at 64 KB) and the renderer has the rest of the app's memory. The
+ * layout number keeps a blob from one build from running with another's structures. */
+#define PLAN_API_MAGIC 0x4e414c50u           /* "PLAN" */
+#define PLAN_API_VERSION 1u
+#define PLAN_LAYOUT ((PLAN_API_VERSION << 28) ^ ((uint32_t)sizeof(Plan) << 12) ^ ((uint32_t)sizeof(Face) << 4) ^ \
+                     (uint32_t)sizeof(Weather))
+typedef struct {
+  uint32_t magic, layout;
+  void (*init)(Plan *p, int w, int h, const uint8_t *data, const uint8_t *geom);
+  bool (*render)(Plan *p, const Face *f, int64_t utc, int32_t offset, const Target *t, void *(*alloc)(size_t),
+                 void (*release)(void *));
+} PlanApi;

@@ -16,6 +16,7 @@
 #define VILLAGE_DX 72                    /* the village and hills reach this far either side of the south point */
 #define NONE16 0x7fff
 enum { FALL_NONE, FALL_DRIZZLE, FALL_RAIN, FALL_SNOW, FALL_HAIL };
+enum { NEWS_NONE, NEWS_SUN, NEWS_MOON, NEWS_PLANETS, NEWS_SHOWER, NEWS_MOON_BY };
 
 /* ---- the blobs ------------------------------------------------------------------------------------------------ */
 static const uint8_t *sec(const uint8_t *blob, int i) { return blob + ((const uint32_t *)(const void *)blob)[i]; }
@@ -28,6 +29,8 @@ typedef struct { uint32_t bit; uint8_t w, h, base, pad; } FigureIndex;
 
 /* ---- a line of type: 14 rows, up to 256 pixels ---------------------------------------------------------------- */
 typedef struct { int w; uint32_t bits[FONT_ROWS][8]; } Text;
+
+typedef struct { float day, lift, twf, warm; } SkyK;
 
 /* ---- the drawing's state -------------------------------------------------------------------------------------- */
 typedef struct {
@@ -50,7 +53,8 @@ typedef struct {
   /* the window's ground: two values on a grid every 4 pixels over the window */
   int gx0, gy0, gnx, gny;
   int16_t *ga, *gb, *gra, *gdec;
-  float ik, sk_day, sk_lift, sk_twf, sk_warm, ssd, csd, csh, ssh, sl0, cl0;
+  float ik, ssd, csd, csh, ssh, sl0, cl0;
+  SkyK sk, sk6;                              /* the sky's Sun-dependent parts, now and (under an eclipse) at -6 */
   int16_t bright[96][2];                     /* the stars brighter than 2.1 on the screen, for the zodiac to avoid */
   int nbright;
   /* what names keep clear of */
@@ -77,6 +81,13 @@ typedef struct {
   uint32_t vmask[2 * VILLAGE_DX + 1];         /* the village's pixels in each column, a bit a row up from its edge */
   int16_t chimney_x, chimney_y;
   bool chimney, night_land;
+  /* the sky's events: an eclipse under way here, the umbra's dimming, Jupiter's moons' reach, a shower */
+  bool have_sol, have_lun, totality;
+  Eclipse sol, lun;
+  float umbra;
+  int jlo, jhi, nmoons, shower;
+  int16_t moonbox[4][2];                     /* Jupiter's moons, where names keep off */
+  uint64_t lane[40];                         /* the lane cleared for them, round Jupiter (bit x of row y) */
   Text t1, t2, t3, t4;
 } R;
 
@@ -396,6 +407,7 @@ void plan_init(Plan *p, int w, int h, const uint8_t *data, const uint8_t *geom) 
   p->rect = w != h;
   p->lat_key = 1e9f;
   p->ev_kind = -1;
+  p->news_day = -1;
 }
 
 void plan_window(Plan *p, float lat) {
@@ -445,23 +457,23 @@ static const uint8_t REDS[3] = {C8(0, 0, 0), C8(1, 0, 0), C8(2, 0, 0)};
 
 /* the sky's brightness on the COOL ramp (0 night .. 5 palest) and a warm glow 0..1 (proto/render2.py sky_scalar), the
  * Sun's part worked out once a drawing (sky_constants) */
-static void sky_constants(R *r, float s) {
-  r->sk_day = f_smooth(-3, 7, s), r->sk_lift = f_smooth(-18, -1, s);
-  r->sk_twf = 0.6f + 0.4f * r->sk_lift;
-  r->sk_warm = f_smooth(-11, -1, s) * (1 - f_smooth(-1, 5, s)) * 1.25f;
+static void sky_constants(SkyK *k, float s) {
+  k->day = f_smooth(-3, 7, s), k->lift = f_smooth(-18, -1, s);
+  k->twf = 0.6f + 0.4f * k->lift;
+  k->warm = f_smooth(-11, -1, s) * (1 - f_smooth(-1, 5, s)) * 1.25f;
 }
-static void sky_scalar(R *r, float alt, float gamma, float *b, float *warm) {
+static void sky_scalar(const SkyK *k, float alt, float gamma, float *b, float *warm) {
   float a = f_clamp(alt, 0, 90), b_tw = 0, b_day = 0;
-  if (r->sk_day < 1 && r->sk_lift > 0) {
+  if (k->day < 1 && k->lift > 0) {
     float horizon = f_exp(-a * (1.0f / 32)), sunside = f_exp(-gamma * (1.0f / 80));
-    b_tw = r->sk_lift * (0.8f + 3.0f * horizon * (0.25f + 0.75f * sunside) * r->sk_twf);
+    b_tw = k->lift * (0.8f + 3.0f * horizon * (0.25f + 0.75f * sunside) * k->twf);
   }
-  if (r->sk_day > 0) {
+  if (k->day > 0) {
     float q = 1 - a * (1.0f / 90);
     b_day = 2.3f + 2.1f * q * q * q + 1.4f * f_exp(-gamma * (1.0f / 11));
   }
-  *b = f_clamp(b_tw * (1 - r->sk_day) + b_day * r->sk_day, 0, 5);
-  *warm = r->sk_warm > 0 ? f_clamp(r->sk_warm * f_exp(-a * (1.0f / 15) - gamma * (1.0f / 42)), 0, 1) : 0;
+  *b = f_clamp(b_tw * (1 - k->day) + b_day * k->day, 0, 5);
+  *warm = k->warm > 0 ? f_clamp(k->warm * f_exp(-a * (1.0f / 15) - gamma * (1.0f / 42)), 0, 1) : 0;
 }
 
 static int q12(float v) { return (int)(v * 4096 + (v < 0 ? -0.5f : 0.5f)); }
@@ -491,12 +503,19 @@ static void node_values(R *r, float x, float y, int16_t *va, int16_t *vb, int16_
     *va = (int16_t)q12(f_clamp((2.0f + 0.45f * f_sind(f_clamp(palt, 0, 90)) + lift) * k, 0, 3));
     return;
   }
-  if (r->sk_lift <= 0 && r->sk_day <= 0 && r->sk_warm <= 0) return;   /* night: the sky's darkest everywhere */
+  if (r->sk.lift <= 0 && r->sk.day <= 0 && r->sk.warm <= 0) return;   /* night: the sky's darkest everywhere */
   float sd = f_sind(dec), cd = f_cosd(dec);
   float palt = f_asind(r->sl * sd + r->cl * cd * ch);
   float gamma = f_acosd(sd * r->ssd + cd * r->csd * (ch * r->csh + sh * r->ssh));
   float b, w;
-  sky_scalar(r, palt, gamma, &b, &w);
+  sky_scalar(&r->sk, palt, gamma, &b, &w);
+  if (r->umbra > 0 && r->P->window == WIN_SKY) {  /* twilight from all round the horizon, a sunset all round */
+    float b2, w2;
+    sky_scalar(&r->sk6, palt, 90, &b2, &w2);
+    b = b * (1 - r->umbra) + b2 * r->umbra;
+    float glow = r->umbra * f_exp(-f_clamp(palt, 0, 90) * (1.0f / 9)) * (r->sol.kind == ECLIPSE_TOTAL ? 1.0f : 0.55f);
+    w = w * (1 - r->umbra) > glow ? w * (1 - r->umbra) : glow;
+  }
   if (r->P->window == WIN_RED) *va = (int16_t)q12(f_clamp(b * 0.5f, 0, 2));
   else *va = (int16_t)q12(f_clamp(b, 0, (float)(r->nramp - 1))), *vb = (int16_t)q12(w);
 }
@@ -831,8 +850,14 @@ static void add_box(R *r, int x0, int y0, int x1, int y1) {
   int16_t *b = r->box[r->nbox++];
   b[0] = (int16_t)x0, b[1] = (int16_t)y0, b[2] = (int16_t)x1, b[3] = (int16_t)y1;
 }
-/* anything of the land (grown a pixel) in the box */
+/* anything of the land (grown a pixel), or one of Jupiter's moons, in the box */
 static bool blocked(R *r, const int16_t b[4]) {
+  for (int i = 0; i < r->nmoons; i++) {
+    int mx = r->moonbox[i][0], my = r->moonbox[i][1];
+    if ((b[0] <= mx + 2 && mx - 2 < b[2] && b[1] <= my + 1 && my - 1 < b[3]) ||
+        (b[0] <= mx + 1 && mx - 1 < b[2] && b[1] <= my + 2 && my - 2 < b[3]))
+      return true;
+  }
   for (int x = b[0] - 1; x <= b[2]; x++) {
     if (x < 0 || x >= r->W) continue;
     int top = r->btop[x];
@@ -1529,6 +1554,170 @@ static void village_weather(R *r) {
   }
 }
 
+/* the inverse of the ecliptic's tilt: a place's ecliptic longitude and latitude */
+static void eq_to_ecl(float ra, float dec, float eps, float *lon, float *lat) {
+  float x = f_cosd(dec) * f_cosd(ra), y = f_cosd(dec) * f_sind(ra), z = f_sind(dec);
+  *lon = pyf_mod(f_atan2d(y * f_cosd(eps) + z * f_sind(eps), x), 360);
+  *lat = f_asind(-y * f_sind(eps) + z * f_cosd(eps));
+}
+
+static bool in_lane(R *r, int x, int y, int x0, int y0) {
+  int i = x - x0, j = y - y0;
+  return (unsigned)i < 64 && (unsigned)j < 40 && ((r->lane[j] >> i) & 1);
+}
+static void to_lane(R *r, int x, int y, int x0, int y0) {
+  int i = x - x0, j = y - y0;
+  if ((unsigned)i < 64 && (unsigned)j < 40) r->lane[j] |= 1ull << i;
+}
+/* beside Jupiter its four great moons where they are now, along its equator (near enough the ecliptic), magnified
+ * (at the chart's scale they would sit inside a pixel), in a narrow lane cleared for them so they read as Jupiter's
+ * (a star touching the lane goes whole, not cut) */
+static void jupiter_moons(R *r, int xi, int yi, int hw) {
+  Sky *k = &r->sky;
+  float lon, lat, ra, dec, x0, y0, x1, y1;
+  eq_to_ecl(k->pl_ra[JUPITER], k->pl_dec[JUPITER], k->eps, &lon, &lat);
+  plan_ecl_to_eq(lon - 0.5f, lat, k->eps, &ra, &dec), project(r, ra, dec, &x0, &y0);
+  plan_ecl_to_eq(lon + 0.5f, lat, k->eps, &ra, &dec), project(r, ra, dec, &x1, &y1);
+  float ex = x1 - x0, ey = y1 - y0, n = f_sqrt(ex * ex + ey * ey);
+  if (n <= 0) n = 1;
+  float wx = -ex / n, wy = -ey / n;                 /* west on the screen, at Jupiter */
+  int lx = xi - 32, ly = yi - 20;
+  memset(r->lane, 0, sizeof r->lane);
+  for (int s2 = -26; s2 <= 26; s2++) {
+    float d = s2 * 0.5f;
+    if (d <= 2.5f && d >= -2.5f) continue;
+    for (int q = -1; q <= 1; q++) {
+      int cx = pyf_round(xi + d * wx - q * wy), cy = pyf_round(yi + d * wy + q * wx);
+      if (on_screen(r, cx, cy)) to_lane(r, cx, cy, lx, ly);
+    }
+  }
+  for (int i = 0; i < r->ndrawn; i++) {
+    int sx = r->drawn[i][0], sy = r->drawn[i][1], h = r->drawn[i][2];
+    bool touch = false;
+    for (int dy = -h; dy <= h && !touch; dy++)
+      for (int dx = -h; dx <= h && !touch; dx++) touch = in_lane(r, sx + dx, sy + dy, lx, ly);
+    if (touch)
+      for (int dy = -h; dy <= h; dy++)
+        for (int dx = -h; dx <= h; dx++) to_lane(r, sx + dx, sy + dy, lx, ly);
+  }
+  for (int j = 0; j < 40; j++)
+    for (int i = 0; i < 64; i++) {
+      int x = lx + i, y = ly + j;
+      if (((r->lane[j] >> i) & 1) && inside(r, x, y) && (x - xi < 0 ? xi - x : x - xi) + (y - yi < 0 ? yi - y : y - yi) > 3)
+        put(r, x, y, ground_at(r, x, y));
+    }
+  float X[4], Y[4];
+  bool behind[4];
+  plan_galilean(r->utc, X, Y, behind);
+  int lo = 0, hi = 0;
+  for (int m = 0; m < 4; m++) {
+    if (behind[m] || f_abs(X[m]) < 1.0f) continue;
+    float d = 3.0f + 1.25f * f_sqrt(f_abs(X[m]));
+    if (X[m] < 0) d = -d;
+    int mx = pyf_round(xi + d * wx), my = pyf_round(yi + d * wy);
+    if (inside(r, mx, my)) {
+      put(r, mx, my, r->planet_c[5]);
+      if (r->nmoons < 4) r->moonbox[r->nmoons][0] = (int16_t)mx, r->moonbox[r->nmoons][1] = (int16_t)my, r->nmoons++;
+      lo = mx - xi < lo ? mx - xi : lo, hi = mx - xi > hi ? mx - xi : hi;
+    }
+  }
+  r->jlo = lo < -hw ? lo : -hw, r->jhi = hi > hw ? hi : hw;
+}
+
+/* the Moon in the Earth's shadow: its face red in totality, deepest toward the shadow's middle; or the shadow's bite */
+static void moon_in_shadow(R *r, int mi, int mj, float mx, float my, uint8_t lit) {
+  float ax, ay;
+  project(r, r->sky.sun_ra + 180, -r->sky.sun_dec, &ax, &ay);
+  float ux = ax - mx, uy = ay - my, n = f_sqrt(ux * ux + uy * uy);
+  if (n <= 0) n = 1;
+  ux /= n, uy /= n;
+  const DrawIndex *di = drawing(r, D_MOON_FULL);
+  bool red = r->red;
+  for (int j = 0; j < di->h; j++)
+    for (int i = 0; i < di->w; i++) {
+      int X = mi - 5 + i, Y = mj - 5 + j;
+      if (!role_at(r, di, i, j) || !inside(r, X, Y)) continue;
+      float along = ((i - 5) * ux + (j - 5) * uy) / 5.5f;   /* +1 at the limb toward the shadow's middle */
+      uint8_t c;
+      if (r->lun.kind == ECLIPSE_TOTAL)
+        c = along > 0.15f ? (red ? C8(1, 0, 0) : C8(2, 0, 0)) : along < -0.55f ? (red ? C8(2, 0, 0) : C8(3, 1, 0))
+                                                                               : (red ? C8(1, 0, 0) : C8(2, 1, 0));
+      else c = along > 1 - 2 * r->lun.magnitude ? C8(1, 0, 0) : lit;
+      put(r, X, Y, c);
+    }
+}
+
+/* the Moon's centre on the drawn Sun (5 pixels to the Sun's radius), turned to the chart's east and north */
+static void sun_offset(R *r, int si, int sj, float *ox, float *oy) {
+  float ra = r->sky.sun_ra, dec = r->sky.sun_dec, e0x, e0y, e1x, e1y, n0x, n0y, n1x, n1y;
+  project(r, ra - 0.5f, dec, &e0x, &e0y), project(r, ra + 0.5f, dec, &e1x, &e1y);
+  project(r, ra, dec - 0.5f, &n0x, &n0y), project(r, ra, dec + 0.5f, &n1x, &n1y);
+  float ex = e1x - e0x, ey = e1y - e0y, nx = n1x - n0x, ny = n1y - n0y;
+  float le = f_sqrt(ex * ex + ey * ey), ln = f_sqrt(nx * nx + ny * ny);
+  le = le > 0 ? le : 1, ln = ln > 0 ? ln : 1;
+  *ox = si + 0.5f + 5.0f * (r->sol.east * ex / le + r->sol.north * nx / ln);
+  *oy = sj + 0.5f + 5.0f * (r->sol.east * ey / le + r->sol.north * ny / ln);
+}
+
+/* the Moon's disc across the Sun, as seen from here; the ring of fire in an annular eclipse */
+static void moon_across(R *r, int si, int sj, float ox, float oy) {
+  float rr = 5.3f * r->sol.ratio;
+  for (int y = sj - 7; y <= sj + 7; y++)
+    for (int x = si - 7; x <= si + 7; x++) {
+      if (!inside(r, x, y)) continue;
+      float dx = x + 0.5f - ox, dy = y + 0.5f - oy, sx = (float)(x - si), sy = (float)(y - sj);
+      bool covered = dx * dx + dy * dy <= rr * rr && sx * sx + sy * sy <= 36;
+      if (covered) put(r, x, y, r->red ? C8(0, 0, 0) : C8(0, 0, 1));
+      else if (r->sol.kind == ECLIPSE_ANNULAR && f_abs(f_sqrt(sx * sx + sy * sy) - 5.0f) < 0.6f)
+        put(r, x, y, r->red ? C8(3, 1, 0) : C8(3, 3, 1));
+    }
+}
+
+/* totality: the black Moon, a pearly ring at its edge, the corona thinning outward in streamers, red prominences;
+ * as totality comes or goes, the diamond ring, the Sun's last point of light at the Moon's edge */
+static void corona(R *r, int si, int sj, float ox, float oy) {
+  static const int16_t STREAMERS[6] = {12, 78, 148, 196, 262, 318};
+  static const int8_t PROM[3][5][2] = {{{0, 0}, {1, 0}, {0, -1}, {9, 9}, {9, 9}}, {{0, 0}, {0, -1}, {1, -1}, {1, -2}, {9, 9}},
+                                       {{0, 0}, {-1, 0}, {9, 9}, {9, 9}, {9, 9}}};
+  static const int16_t PROM_AT[3] = {55, 170, 295};
+  bool total = r->sol.kind == ECLIPSE_TOTAL, red = r->red;
+  float strength = total ? 1.0f : f_clamp((r->sol.cover - 0.97f) / 0.03f, 0, 1);
+  float cx = si + 0.5f, cy = sj + 0.5f;
+  uint8_t pearl = red ? C8(3, 1, 1) : C8(3, 3, 3), mist = red ? C8(2, 0, 0) : C8(2, 3, 3);
+  for (int y = sj - 30; y <= sj + 30; y++)
+    for (int x = si - 30; x <= si + 30; x++) {
+      if (!inside(r, x, y)) continue;
+      float dx = x + 0.5f - cx, dy = y + 0.5f - cy, dd = f_sqrt(dx * dx + dy * dy);
+      if (dd > 5.4f && dd <= 6.6f) { put(r, x, y, total ? pearl : mist); continue; }
+      if (dd <= 6.0f || dd > 29) continue;
+      float th = pyf_mod(f_atan2d(dx, -dy), 360), stream = 0;
+      for (int i = 0; i < 6; i++) {
+        float d = f_abs(pyf_mod(th - STREAMERS[i] + 180, 360) - 180) / 11, e = f_exp(-d * d);
+        stream = e > stream ? e : stream;
+      }
+      float g = f_clamp(1 - (dd - 6.0f) / (8.0f + 15.0f * stream), 0, 1), dens = g * f_sqrt(g) * (0.35f + 0.65f * stream) * strength;
+      if (dens > tt(r, x, y)) put(r, x, y, dens > 0.45f && dd < 10 ? pearl : mist);
+    }
+  float mr = 5.4f * r->sol.ratio;
+  for (int y = sj - 8; y <= sj + 8; y++)
+    for (int x = si - 8; x <= si + 8; x++) {
+      float dx = x + 0.5f - ox, dy = y + 0.5f - oy;
+      if (dx * dx + dy * dy <= mr * mr && inside(r, x, y)) put(r, x, y, C8(0, 0, 0));
+    }
+  if (total)
+    for (int k = 0; k < 3; k++) {
+      int bx = pyf_floor(cx + 5.9f * f_sind(PROM_AT[k])), by = pyf_floor(cy - 5.9f * f_cosd(PROM_AT[k]));
+      for (int i = 0; i < 5 && PROM[k][i][0] != 9; i++)
+        if (inside(r, bx + PROM[k][i][0], by + PROM[k][i][1])) put(r, bx + PROM[k][i][0], by + PROM[k][i][1], red ? C8(3, 0, 0) : C8(3, 1, 1));
+    }
+  else {                                             /* the diamond: the last of the Sun, opposite the Moon's middle */
+    float vx = ox - cx, vy = oy - cy, n = f_sqrt(vx * vx + vy * vy);
+    if (n <= 0) n = 1;
+    uint8_t col[8] = {0, 0, 0, 0, 0, red ? C8(3, 1, 1) : C8(3, 3, 3)};
+    paint(r, D_DIAMOND, pyf_floor(cx - 5.6f * vx / n), pyf_floor(cy - 5.6f * vy / n), col, true);
+  }
+}
+
 static void names(R *r, float mx, float my) {
   const Plate *P = r->P;
   Sky *k = &r->sky;
@@ -1540,9 +1729,10 @@ static void names(R *r, float mx, float my) {
     if ((!r->paper && r->s_eff > -3) || altitude(r, k->pl_ra[pn], k->pl_dec[pn]) <= 2) continue;
     float x, y;
     project(r, k->pl_ra[pn], k->pl_dec[pn], &x, &y);
-    int hw = drawing(r, PLANET_DRAWINGS[pn])->w / 2;
+    int hw = drawing(r, PLANET_DRAWINGS[pn])->w / 2, lo = -hw, hi = hw;
+    if (pn == JUPITER) lo = r->jlo, hi = r->jhi;
     pixel_text(&r->t1, r, PLANET_NAMES[pn], false, 0);
-    place(r, &r->t1, pyf_floor(x), pyf_floor(y), P->planet, false, -hw + 1, hw - 2, true);
+    place(r, &r->t1, pyf_floor(x), pyf_floor(y), P->planet, false, lo + 1, hi - 2, true);
   }
   if (!(r->dark || r->paper)) return;
   const uint8_t *sn = sec(r->p->data, SEC_STAR_NAMES);
@@ -2128,6 +2318,95 @@ static void ring(R *r, int season) {
   }
 }
 
+/* ---- the sky's news (proto/events.py news) ----------------------------------------------------------------- */
+/* the day's news (the night that belongs to this day, noon to noon): an eclipse first, then planets meeting, then a
+ * meteor shower's peak, then the Moon by a planet; kept until the day or the place changes */
+static void day_news(R *r) {
+  Plan *p = r->p;
+  int32_t day = r->local.ordinal - (r->local.hour < 12 ? 1 : 0);
+  if (p->news_day == day && p->news_lat == r->f->lat && p->news_lon == r->f->lon) return;
+  p->news_day = day, p->news_lat = r->f->lat, p->news_lon = r->f->lon, p->news = NEWS_NONE;
+  int64_t start = (int64_t)(day - 719163) * 86400 + 12 * 3600 - r->offset;     /* the day's local noon */
+  float lat = r->f->lat, lon = r->f->lon;
+  Sky s;
+  /* an eclipse needs the Moon near the Sun or opposite it: look through the day only then */
+  plan_sun_moon(&s, start + 12 * 3600, lon);
+  float el = plan_separation(s.moon_ra, s.moon_dec, s.sun_ra, s.sun_dec);
+  bool scan = el < 30 || el > 150;
+  int found = -1, body = 0, pa = -1, pb = -1, ma = -1;
+  static const uint8_t ORDER[PLANETS] = {MERCURY, VENUS, MARS, JUPITER, SATURN};   /* the prototype's order */
+  for (int k = 0; k < 24 * 6; k++) {
+    int64_t u = start + (int64_t)k * 600;
+    if (scan) {
+      Eclipse e;
+      plan_sun_moon(&s, u, lon);
+      int b = plan_lunar(&s, lat, &e) ? 2 : plan_solar(&s, lat, &e) ? 1 : 0;
+      if (b && (found < 0 || e.kind > found)) found = e.kind, body = b;
+    }
+    if (k % 6 == 0) {                            /* hourly: planets meeting in a dark sky, the nearest pair first */
+      plan_sky(&s, u, lon);
+      if (plan_altitude(s.sun_ra, s.sun_dec, s.lst, lat) >= -6) continue;
+      float best_p = 99, best_m = 99;
+      int bp_a = -1, bp_b = -1, bm = -1;
+      for (int i = -1; i < PLANETS; i++)
+        for (int j = i + 1; j < PLANETS; j++) {
+          float ra1 = i < 0 ? s.moon_ra : s.pl_ra[ORDER[i]], de1 = i < 0 ? s.moon_dec : s.pl_dec[ORDER[i]];
+          float ra2 = s.pl_ra[ORDER[j]], de2 = s.pl_dec[ORDER[j]], sep = plan_separation(ra1, de1, ra2, de2);
+          if (sep >= (i < 0 ? 1.6f : 2.0f) || plan_altitude(ra1, de1, s.lst, lat) <= 3 || plan_altitude(ra2, de2, s.lst, lat) <= 3)
+            continue;
+          if (i < 0 && sep < best_m) best_m = sep, bm = ORDER[j];
+          if (i >= 0 && sep < best_p) best_p = sep, bp_a = ORDER[i], bp_b = ORDER[j];
+        }
+      if (pa < 0 && bp_a >= 0) pa = bp_a, pb = bp_b;
+      if (ma < 0 && bm >= 0) ma = bm;
+    }
+  }
+  plan_sun_moon(&s, start + 12 * 3600, lon);
+  int sh = plan_shower(s.sun_lon);
+  if (found >= 0) p->news = body == 1 ? NEWS_SUN : NEWS_MOON, p->news_a = (uint8_t)found;
+  else if (pa >= 0) p->news = NEWS_PLANETS, p->news_a = (uint8_t)pa, p->news_b = (uint8_t)pb;
+  else if (sh >= 0) p->news = NEWS_SHOWER, p->news_a = (uint8_t)sh;
+  else if (ma >= 0) p->news = NEWS_MOON_BY, p->news_a = (uint8_t)ma;
+}
+
+static void upper(char *d, const char *s) {
+  for (; *s; s++) *d++ = (char)(*s >= 'a' && *s <= 'z' ? *s - 32 : *s);
+  *d = 0;
+}
+/* the news's wordings, the longest first: wording `w` (0, 1) into `out`; false past the last */
+static bool news_wording(R *r, int w, char *out) {
+  Plan *p = r->p;
+  static const char *const SUN[3][2] = {{"ECLIPSE OF THE SUN", "SUN ECLIPSED"}, {"ANNULAR ECLIPSE", "RING OF FIRE"},
+                                        {"TOTAL ECLIPSE OF THE SUN", "TOTAL ECLIPSE"}};
+  static const char *const MOON[3][2] = {{"ECLIPSE OF THE MOON", "MOON ECLIPSED"}, {"ECLIPSE OF THE MOON", "MOON ECLIPSED"},
+                                         {"TOTAL ECLIPSE OF THE MOON", "BLOOD MOON"}};
+  char a[16], b[16];
+  out[0] = 0;
+  if (r->totality) {
+    if (w) return false;
+    strcpy(out, "TOTALITY");
+    return true;
+  }
+  if (w > 1) return false;
+  switch (p->news) {
+  case NEWS_SUN: strcpy(out, SUN[p->news_a][w]); return true;
+  case NEWS_MOON: strcpy(out, MOON[p->news_a][w]); return true;
+  case NEWS_PLANETS:
+    upper(a, PLANET_NAMES[p->news_a]), upper(b, PLANET_NAMES[p->news_b]);
+    strcpy(out, a), strcat(out, w ? " & " : " MEETS "), strcat(out, b);
+    return true;
+  case NEWS_SHOWER:
+    upper(out, SHOWERS[p->news_a].name);
+    if (!w) strcat(out, " PEAK");
+    return true;
+  case NEWS_MOON_BY:
+    upper(b, PLANET_NAMES[p->news_a]);
+    strcpy(out, w ? "MOON BY " : "THE MOON BY "), strcat(out, b);
+    return true;
+  }
+  return false;
+}
+
 /* the large time in the plate's own figures, its top-left at (x0, y0) (only measured unless `draw`): its width */
 static int compose(R *r, int style, int screen, int hour, int minute, int *asc_out, int *small_out, bool draw, int x0, int y0) {
   const FigureIndex *fi = (const FigureIndex *)(const void *)sec(r->p->data, SEC_FIGURE_INDEX) + (style * 2 + screen) * 12;
@@ -2250,29 +2529,39 @@ static void time_block(R *r, int fy0, int season) {
   r->t2.w = ds->w;
   stamp(r, &r->t2, left + ds->w / 2.0f, (db[1] + db[3]) / 2.0f - 1, P->accent, false, false, 0);
   stamp(r, &r->t1, left + ds->w + 4, y_date, P->ink, false, false, 1);
-  /* the almanac's line: the Sun's next rising or setting; with the weather, the temperature after a lozenge (the
-   * line alone when the two will not fit together, the temperature alone when neither does) */
+  /* the almanac's line: the sky's news (its wordings, the longest first), or else the Sun's next rising or setting;
+   * with the weather, each with the temperature after a lozenge, then each alone, then the temperature alone */
   if (p->ev_kind < 0 || r->utc < p->ev_from || r->utc >= p->ev_at || p->ev_lat != r->f->lat || p->ev_lon != r->f->lon) {
     p->ev_kind = plan_sun_event(r->utc, r->f->lat, r->f->lon, &p->ev_at);
     if (!p->ev_kind) p->ev_at = r->utc + 3600;     /* the Sun neither rises nor sets today: look again in an hour */
     p->ev_from = r->utc, p->ev_lat = r->f->lat, p->ev_lon = r->f->lon;
   }
-  int64_t at = p->ev_at;
-  int ev = p->ev_kind;
+  day_news(r);
+  r->totality = (r->have_sol && r->sol.kind == ECLIPSE_TOTAL) || (r->have_lun && r->lun.kind == ECLIPSE_TOTAL);
   float room = (r->W - 2 * ring_in) * 0.84f;
   Text *line = &r->t1, *both = &r->t2, *temp = &r->t3, *tmp = &r->t4;
-  if (ev) {
-    Civil c;
-    plan_civil(at + r->offset, &c);
-    pixel_text(line, r, ev == 1 ? "SUNRISE" : "SUNSET", false, 0);
-    time_text(tmp, r, hour_of(c.hour, r->clock24), c.minute);
-    t_append(line, tmp, 3);
-  }
-  const Text *fits = NULL;
-  if (r->f->weather) {
+  char words[2][40];
+  int nw = 0;
+  while (nw < 2 && news_wording(r, nw, words[nw])) nw++;
+  bool weather = r->f->weather != NULL;
+  if (weather) {
     float cel = r->f->weather->temp10 / 10.0f;
     temp_text(temp, r, pyf_round(r->f->fahrenheit ? cel * 9 / 5 + 32 : cel));
-    if (ev) {
+  }
+  int lines = nw ? nw : p->ev_kind ? 1 : 0, ncand = lines * (weather ? 2 : 1) + (weather ? 1 : 0);
+  const Text *fits = NULL;
+  for (int c = 0; c < ncand && !fits; c++) {
+    if (weather && c == ncand - 1) { if (temp->w <= room) fits = temp; break; }
+    int which = c % lines;
+    if (nw) pixel_text(line, r, words[which], false, 0);
+    else {
+      Civil ev;
+      plan_civil(p->ev_at + r->offset, &ev);
+      pixel_text(line, r, p->ev_kind == 1 ? "SUNRISE" : "SUNSET", false, 0);
+      time_text(tmp, r, hour_of(ev.hour, r->clock24), ev.minute);
+      t_append(line, tmp, 3);
+    }
+    if (weather && c < lines) {
       *both = *line;
       t_clear(tmp);
       t_mask(tmp, r, M_LOZENGE_MASK, 0, 2);
@@ -2280,11 +2569,9 @@ static void time_block(R *r, int fy0, int season) {
       t_append(both, tmp, 3);
       t_append(both, temp, 3);
       if (both->w <= room) fits = both;
-      else if (line->w <= room) fits = line;
-    }
-    if (!fits && temp->w <= room) fits = temp;
-  } else if (ev && line->w <= room)
-    fits = line;
+    } else if (line->w <= room)
+      fits = line;
+  }
   if (fits) stamp(r, fits, r->cx, ring_in + span * 0.915f, P->accent, false, false, 0);
 }
 
@@ -2320,7 +2607,15 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   r->light_paper = r->paper && level_sum(P->night) * 85 > 400;
   r->rete = P->rete, r->woodcut = P->woodcut;
   r->sun_alt = plan_altitude(r->sky.sun_ra, r->sky.sun_dec, r->sky.lst, (float)f->lat);
-  r->s_eff = r->sun_alt;
+  /* an eclipse under way here: the sky dims toward twilight as the last of the Sun goes, deepest in totality; or
+   * the Moon is in the Earth's shadow */
+  r->have_sol = plan_solar(&r->sky, f->lat, &r->sol);
+  r->have_lun = plan_lunar(&r->sky, f->lat, &r->lun);
+  if (r->have_sol) {
+    float u = f_smooth(0.80f, 1.0f, r->sol.cover);
+    r->umbra = u * f_sqrt(u);
+  }
+  r->s_eff = r->umbra > 0 ? r->sun_alt + (-6 - r->sun_alt) * r->umbra : r->sun_alt;
   r->sdec = (float)(r->south ? -r->sky.sun_dec : r->sky.sun_dec);
   r->sha = (float)pyf_mod(r->south ? -(r->sky.lst - r->sky.sun_ra) : r->sky.lst - r->sky.sun_ra, 360.0f);
   r->mphase = (float)r->sky.moon_phase;
@@ -2339,7 +2634,8 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   for (int y = 0; y < r->H; y++)
     for (int x = p->rx0[y]; x <= p->rx1[y]; x++) p->rows[y][x] = card_at(r, x, y);
   r->ik = 1 / r->k;
-  sky_constants(r, P->window == WIN_RED ? r->s_eff : r->sun_alt);
+  sky_constants(&r->sk, P->window == WIN_RED ? r->s_eff : r->sun_alt);
+  sky_constants(&r->sk6, -6);
   r->ssd = f_sind(r->sdec), r->csd = f_cosd(r->sdec), r->csh = f_cosd(r->sha), r->ssh = f_sind(r->sha);
   bool milky = !r->rete && (r->paper || (r->sun_alt < -15 &&
                !(r->wx && r->live && (r->haze > 1.0f || r->stratus + r->cumulus > 0.45f))));
@@ -2359,7 +2655,8 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   float mx, my;
   project(r, r->sky.moon_ra, r->sky.moon_dec, &mx, &my);
   bool moon_up = altitude(r, r->sky.moon_ra, r->sky.moon_dec) > 0;
-  r->lit_moon = !r->paper && P->window == WIN_SKY && r->s_eff < -10 && r->mphase > 0.3f && moon_up;
+  r->lit_moon = !r->paper && P->window == WIN_SKY && r->s_eff < -10 && r->mphase > 0.3f && moon_up &&
+                !(r->have_lun && r->lun.magnitude > 0.5f);
   float moon_reach = 7 + 12 * r->mphase;
   if (r->lit_moon)
     for (int y = pyf_floor(my - 6 - moon_reach - 1); y <= pyf_floor(my + 6 + moon_reach + 1); y++)
@@ -2444,6 +2741,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
     paint(r, PLANET_DRAWINGS[pn], xi, yi, r->planet_c, true);
     const DrawIndex *di = drawing(r, PLANET_DRAWINGS[pn]);
     add_box(r, xi - di->w / 2 - 1, yi - di->h / 2 - 1, xi + di->w / 2 + 2, yi + di->h / 2 + 2);
+    if (pn == JUPITER) jupiter_moons(r, xi, yi, di->w / 2);
   }
   /* the Moon in its phase; by day only its lit face */
   {
@@ -2453,7 +2751,8 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
     int phase = 0;
     while (phase < MOON_PHASES - 1 && !(r->mphase < MOON_BY_LIGHT[phase])) phase++;
     int mi = pyf_floor(mx), mj = pyf_floor(my);
-    paint(r, D_MOON_NEW + 2 * phase + (r->sky.moon_waxing ? 0 : 1), mi, mj, mc, true);
+    if (r->have_lun && r->lun.magnitude > 0) moon_in_shadow(r, mi, mj, mx, my, mc[5]);
+    else paint(r, D_MOON_NEW + 2 * phase + (r->sky.moon_waxing ? 0 : 1), mi, mj, mc, true);
     add_box(r, mi - 6, mj - 6, mi + 7, mj + 7);
   }
   /* the Sun: in a live sky in its own light, a pale disc and a glow stippled thinner outward; on a printed chart
@@ -2463,26 +2762,47 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
     project(r, r->sky.sun_ra, r->sky.sun_dec, &sx, &sy);
     if (r->sun_alt > -0.8f || r->paper) {
       int si = pyf_floor(sx), sj = pyf_floor(sy);
-      if (!r->paper) {
+      float cover = r->have_sol ? r->sol.cover : 0, dim = f_sqrt(1 - cover);
+      if (!r->paper && cover < 0.97f) {
         uint8_t light = r->red ? C8(2, 0, 0) : r->sun_alt < 6 ? C8(3, 3, 2) : C8(2, 3, 3);
         for (int y = sj - 18; y <= sj + 18; y++)
           for (int x = si - 18; x <= si + 18; x++) {
             if (!inside(r, x, y)) continue;
             float ddx = (float)(x - si), ddy = (float)(y - sj), dd = f_sqrt(ddx * ddx + ddy * ddy);
             float g = f_clamp(1 - (dd - 4.0f) / 13.0f, 0, 1);
-            float glow = g * f_sqrt(g) * 0.85f * (r->closed_sky ? 0.0f : 1.0f);
+            float glow = g * f_sqrt(g) * 0.85f * dim * (r->closed_sky ? 0.0f : 1.0f);
             if (dd > 4.0f && glow > tt(r, x, y)) put(r, x, y, light);
             if (dd <= 4.4f) put(r, x, y, r->red ? C8(3, 0, 0) : C8(3, 3, 1));
           }
-      } else {
+      } else if (r->paper) {
         const MaskIndex *gl = mask(r, M_GLORY);
         int x0 = pyf_round(si - (gl->w - 1) / 2.0f), y0 = pyf_round(sj - (gl->h - 1) / 2.0f);
         for (int j = 0; j < gl->h; j++)
           for (int i = 0; i < gl->w; i++)
             if (mask_at(r, gl, i, j) && inside(r, x0 + i, y0 + j)) put(r, x0 + i, y0 + j, P->line);
       }
-      paint(r, D_SUN, si, sj, r->sun_c, true);
+      float ox = 0, oy = 0;
+      if (r->have_sol) sun_offset(r, si, sj, &ox, &oy);
+      if (r->have_sol && !r->paper && cover >= 0.97f) corona(r, si, sj, ox, oy);
+      else {
+        paint(r, D_SUN, si, sj, r->sun_c, true);
+        if (r->have_sol) moon_across(r, si, sj, ox, oy);
+      }
       add_box(r, si - 12, sj - 12, si + 13, sj + 13);
+    }
+  }
+  /* a meteor shower at its peak: its radiant, where the meteors seem to come from */
+  r->shower = -1;
+  int sh = plan_shower(r->sky.sun_lon), rad_x = 0, rad_y = 0;
+  if (sh >= 0 && (r->dark || r->paper) && altitude(r, SHOWERS[sh].ra, SHOWERS[sh].dec) > 0) {
+    float x, y;
+    project(r, SHOWERS[sh].ra, SHOWERS[sh].dec, &x, &y);
+    rad_x = pyf_floor(x), rad_y = pyf_floor(y);
+    if (inside(r, rad_x, rad_y)) {
+      uint8_t col[8] = {0, 0, P->accent};
+      paint(r, D_RADIANT, rad_x, rad_y, col, true);
+      add_box(r, rad_x - 5, rad_y - 5, rad_x + 6, rad_y + 6);
+      r->shower = sh;
     }
   }
   /* rain or snow falling past everything in the sky */
@@ -2495,6 +2815,10 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   village_weather(r);
   /* names in the sky; the ornaments where no name is */
   if (f->names) names(r, mx, my);
+  if (f->names && r->shower >= 0) {
+    pixel_text(&r->t1, r, SHOWERS[r->shower].name, true, 0);
+    place(r, &r->t1, rad_x + 3, rad_y, P->accent, false, 0, 0, false);
+  }
   ornaments(r);
   /* the window's edge, the ring, the time */
   int fy0 = rims(r);
