@@ -1,12 +1,15 @@
 """Render the store gallery with the watch's own C (build/host), at the screens' own sizes, named <platform>_<n>_...
-as the store expects (docs/screenshots/store). For each watch:
+as the store expects (docs/screenshots/store), and the same reels for the README with both watches side by side
+(docs/gallery-*.gif). For each watch:
 
   1  a day: the planisphere over New York from noon to noon, twenty minutes a frame
   2  the almanac's days: feasts of the twelve calendars, each on its own plate, with the labours of the months
-  3  the ten plates at half past nine in the evening
-  4  a fireworks display at the top of an evening hour, as the watch plays it: Independence Day in New York
-  5  the sky's news and the weather: a total eclipse of the Sun, the Moon eclipsed, Venus meeting Jupiter, a snowy
-     morning, a thunderstorm by night
+  3  the variations: the options together, each frame another plate, clock, names, labours, place and sky
+  4  anywhere: the place moving north to the Arctic and back, then south, the window cut again for each latitude
+  5  the weather: fair, cirrus, cloudy, overcast, rain, snow, fog, frost, a gale, thunder
+  6  a fireworks display at the top of an evening hour, as the watch plays it: Independence Day in New York
+  7  the ten plates at half past nine in the evening
+  8  the sky's news: a total eclipse of the Sun, the Moon eclipsed, Venus meeting Jupiter, a meteor shower's peak
 
     tools/build-host.sh && cd proto && uv run python ../tools/store_gallery.py
 """
@@ -30,16 +33,25 @@ NY = (40.71, -74.01)
 DALLAS = (32.7767, -96.797)
 
 
-def frame(platform, plate, when, place, offset, labours=False, weather=None, calendars=0, show=None):
+def frame(platform, plate, when, place, offset, labours=False, weather=None, calendars=0, show=None, clock24=False,
+          names=True, fahrenheit=False, city=None):
     """One face, as the watch draws it: when (aware datetime), place (lat, lon), offset (minutes ahead of UTC); the
-    calendars kept (bit n for feasts.CALENDARS[n]), and the frame of the fireworks display due then, if any."""
+    calendars kept (bit n for feasts.CALENDARS[n]), the frame of the fireworks display due then, if any; the clock,
+    the names in the sky, the temperature's scale, and the place's name on the ring ((city, country); else the
+    prototype's name for it, if it has one)."""
     lat, lon = place
     path = TMP / f"{platform}.ppm"
     args = [str(HOST), platform, str(PLATE[plate]), str(int(when.timestamp())), str(lat), str(lon), str(offset),
             str(path)]
-    city, country = plates.place_name(lat, lon)
+    city, country = city or plates.place_name(lat, lon)
     if city:
         args += ["--city", city, "--country", country]
+    if clock24:
+        args.append("--24")
+    if not names:
+        args.append("--no-names")
+    if fahrenheit:
+        args.append("--fahrenheit")
     if labours:
         args.append("--labours")
     if calendars:
@@ -90,32 +102,80 @@ FEASTS = [
 ]
 
 
+# the variations: (plate, local moment, place, offset, city and country, options)
+VARIATIONS = [
+    ("planisphere", local(2026, 10, 15, 21, 30, -240), NY, -240, None, dict(weather="fair")),
+    ("burritt", local(2026, 12, 10, 20, 0, 0), LONDON, 0, None, dict(clock24=True, weather="cloudy")),
+    ("flamsteed", local(2026, 10, 15, 21, 0, 660), (-33.87, 151.21), 660, None, dict(labours=True)),
+    ("observatory", local(2026, 11, 20, 22, 0, 0), (64.15, -21.94), 0, ("REYKJAVIK", "ICELAND"),
+     dict(clock24=True, weather="frost")),
+    ("astrolabe", local(2026, 10, 15, 21, 0, 180), (30.04, 31.24), 180, ("CAIRO", "EGYPT"),
+     dict(clock24=True, labours=True)),
+    ("hours", local(2026, 12, 20, 18, 0, 60), (48.86, 2.35), 60, None, dict(labours=True, weather="snow")),
+    ("orloj", local(2026, 10, 15, 22, 0, 120), (50.09, 14.42), 120, ("PRAGUE", "CZECHIA"), dict(clock24=True)),
+    ("cyanotype", local(2026, 7, 15, 20, 0, 120), (-33.92, 18.42), 120, ("CAPE TOWN", "SOUTH AFRICA"),
+     dict(weather="rain")),
+    ("apian", local(2026, 10, 15, 21, 30, 120), (48.77, 11.43), 120, ("INGOLSTADT", "GERMANY"),
+     dict(labours=True, weather="fair", fahrenheit=True)),
+    ("night", local(2026, 10, 15, 23, 0, 540), (35.68, 139.69), 540, None, dict(clock24=True, names=False,
+                                                                                weather="cirrus")),
+]
+
+
+def side_by_side(a, b):
+    """The Time 2's frame beside the Round 2's, for the README."""
+    out = Image.new("RGB", (a.width + 16 + b.width, max(a.height, b.height)), (255, 255, 255))
+    out.paste(a, (0, (out.height - a.height) // 2))
+    out.paste(b, (a.width + 16, (out.height - b.height) // 2))
+    return out
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     TMP.mkdir(parents=True, exist_ok=True)
     for old in OUT.glob("*_*"):
         old.unlink()
+    reels = {}                                      # (name, platform): (frames, ms a frame)
     for p in ("emery", "gabbro"):
         noon = datetime(2026, 10, 15, 16, 0, tzinfo=timezone.utc)        # noon in New York (four hours behind)
-        day = [frame(p, "planisphere", noon + timedelta(minutes=20 * k), NY, -240) for k in range(72)]
-        save_gif(day, OUT / f"{p}_1_a_day.gif", 140)
-        save_gif([frame(p, plate, when, place, off, labours=True, calendars=ALL) for plate, when, place, off in FEASTS],
-                 OUT / f"{p}_2_almanac.gif", 2000)
-        evening = datetime(2026, 10, 16, 1, 30, tzinfo=timezone.utc)
-        save_gif([frame(p, name, evening, NY, -240) for name in plates.PLATES], OUT / f"{p}_3_plates.gif", 1600)
+        reels["a_day", p] = ([frame(p, "planisphere", noon + timedelta(minutes=20 * k), NY, -240) for k in range(72)],
+                             140)
+        reels["almanac", p] = ([frame(p, plate, when, place, off, labours=True, calendars=ALL)
+                                for plate, when, place, off in FEASTS], 2000)
+        reels["variations", p] = ([frame(p, plate, when, place, off, city=city, **opts)
+                                   for plate, when, place, off, city, opts in VARIATIONS], 1800)
+        # anywhere: north from 10 degrees to 68 and back, then south to 56; held a little at the ends
+        night = datetime(2026, 10, 15, 22, 0, tzinfo=timezone.utc)
+        lats = list(range(10, 69, 2)) + [68] * 6 + list(range(66, 9, -2)) + [10] * 4
+        lats += list(range(-10, -57, -2)) + [-56] * 6 + list(range(-54, -9, 2)) + [-10] * 4
+        reels["anywhere", p] = ([frame(p, "planisphere", night, (lat, 0.0), 0) for lat in lats], 110)
+        dusk = local(2026, 10, 15, 18, 40, -240)
+        reels["weather", p] = ([frame(p, "planisphere", dusk, NY, -240, weather=w) for w in
+                                ("fair", "cirrus", "cloudy", "overcast", "rain", "snow", "fog", "frost", "gale",
+                                 "thunder")], 1600)
         # the display at ten on Independence Day, a second of the face before it and after
         july4 = local(2026, 7, 4, 22, 0, -240)
         lead = frame(p, "planisphere", july4, NY, -240, calendars=64)
         shows = [frame(p, "planisphere", july4, NY, -240, calendars=64, show=k)
                  for k in range(display_frames(p, july4, NY, -240, 64) + 1)]
-        save_gif([lead] * 12 + shows + [lead] * 12, OUT / f"{p}_4_fireworks.gif", 83)
-        news = [frame(p, "planisphere", datetime(2024, 4, 8, 18, 42, tzinfo=timezone.utc), DALLAS, -300),
-                frame(p, "planisphere", datetime(2025, 3, 14, 6, 50, tzinfo=timezone.utc), NY, -240),
-                frame(p, "planisphere", datetime(2023, 3, 2, 0, 20, tzinfo=timezone.utc), NY, -300),
-                frame(p, "planisphere", datetime(2026, 1, 15, 16, 30, tzinfo=timezone.utc), NY, -300, weather="snow"),
-                frame(p, "night", datetime(2026, 10, 15, 0, 40, tzinfo=timezone.utc), NY, -240, weather="thunder")]
-        save_gif(news, OUT / f"{p}_5_news.gif", 2000)
+        reels["fireworks", p] = ([lead] * 12 + shows + [lead] * 12, 83)
+        evening = datetime(2026, 10, 16, 1, 30, tzinfo=timezone.utc)
+        reels["plates", p] = ([frame(p, name, evening, NY, -240) for name in plates.PLATES], 1600)
+        reels["news", p] = ([frame(p, "planisphere", datetime(2024, 4, 8, 18, 42, tzinfo=timezone.utc), DALLAS, -300),
+                             frame(p, "planisphere", datetime(2025, 3, 14, 6, 50, tzinfo=timezone.utc), NY, -240),
+                             frame(p, "planisphere", datetime(2023, 3, 2, 0, 20, tzinfo=timezone.utc), NY, -300),
+                             frame(p, "planisphere", datetime(2026, 10, 22, 6, 0, tzinfo=timezone.utc), NY, -240)],
+                            2000)
+    order = ["a_day", "almanac", "variations", "anywhere", "weather", "fireworks", "plates", "news"]
+    for n, name in enumerate(order, 1):
+        for p in ("emery", "gabbro"):
+            save_gif(*reels[name, p][:1], OUT / f"{p}_{n}_{name}.gif", reels[name, p][1])
+        if name in ("variations", "anywhere", "weather", "fireworks", "almanac"):
+            (a, ms), (b, _) = reels[name, "emery"], reels[name, "gabbro"]
+            save_gif([side_by_side(x, y) for x, y in zip(a, b)], ROOT / "docs" / f"gallery-{name}.gif", ms)
     for f in sorted(OUT.iterdir()):
+        print(f"{f.stat().st_size:>9,}  {f.relative_to(ROOT)}")
+    for f in sorted((ROOT / "docs").glob("gallery-*.gif")):
         print(f"{f.stat().st_size:>9,}  {f.relative_to(ROOT)}")
 
 

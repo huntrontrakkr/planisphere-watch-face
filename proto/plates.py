@@ -200,12 +200,16 @@ class RectDial(Dial):
 
 class RoundDial(Dial):
     """The Round 2's layout: the ring round the screen's edge, the window inside it, clear of its inner rule
-    by the window's own two rims."""
+    by the window's own two rims. The scale grows with the latitude, the window's southern edge on the ring's, until
+    CAP degrees; nearer a pole it is held there and the window shrinks instead, toward a round one about the pole,
+    so it never rises into the almanac above it (its type keeps the room it has at CAP)."""
+    CAP = 56.0
 
     def __init__(self, w, h, lat, lon):
         super().__init__(w, h, lat, lon)
-        self.r_disc = self.R - ring_params(self)["in"] - 6
-        self.k = self.r_disc / self.reach
+        r = self.R - ring_params(self)["in"] - 6
+        self.k = r / max(self.reach, (180 - self.CAP) * abs(lat) / self.CAP)
+        self.r_disc = self.reach * self.k
 
 
 def ring_params(dial):

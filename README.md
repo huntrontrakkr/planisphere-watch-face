@@ -6,6 +6,30 @@ planisphere and the year's days after the old calendars. **[Planisphere on the P
 The Python prototype (`proto/`) is where it is designed; the watch runs the same drawing in C (`watchface/`), and its
 settings page shows the face live, the same C built to WebAssembly. See [On the watch](#on-the-watch).
 
+## Gallery
+
+Drawn by the watch's own C (`tools/store_gallery.py`, which also makes the store's gallery), the Time 2 beside the
+Round 2.
+
+The variations: each frame another plate, clock, place, sky and the labours or none.
+
+![The variations](docs/gallery-variations.gif)
+
+Anywhere: the window is cut for the latitude, from the tropics to the Arctic and the far south (on the Round 2 it
+shrinks nearer the poles than 56 degrees, keeping the almanac's room).
+
+![The sky anywhere](docs/gallery-anywhere.gif)
+
+The almanac's days, and the weather.
+
+![The almanac's days](docs/gallery-almanac.gif)
+
+![The weather](docs/gallery-weather.gif)
+
+A fireworks display at the top of an evening hour, as the watch plays it.
+
+![Independence Day](docs/gallery-fireworks.gif)
+
 ## Plates
 
 Like Groundtrack's plates, each plate follows a real tradition of sky charts, set in the type of its time. Every plate sets the time in hours and minutes the way almanacs and astronomers write it, **9ʰ 30ᵐ**, large in the card above the window (or **21ʰ 30ᵐ** on the 24-hour clock, below). Its figures are drawn by hand, pixel by pixel, after each plate's type and for each watch. The small type is pixel type, every letter in whole pixels: Not Jam Old Style (CC0), a pixel serif after the old Garalde faces, with star names leaning in an oblique cut from it a pixel at a time. Under it are the date in italic and the Sun's next rising or setting in small capitals, with the temperature after it when the weather is known. The sky carries names the way the old atlases letter them: constellations in spaced capitals, stars in italic, planets in small capitals.

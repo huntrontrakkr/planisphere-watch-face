@@ -100,6 +100,9 @@ CASES = {
                     {"calendars": 4095}),
     "sky-mid-autumn-t2": ("emery", "night", datetime(2026, 9, 25, 13, 0, tzinfo=timezone.utc), (39.90, 116.40, 480),
                           {"calendars": 4095}),
+    # the Round 2 near a pole, where its window shrinks rather than rising into the almanac
+    "arctic-r2": ("gabbro", "planisphere", datetime(2026, 10, 15, 20, 0, tzinfo=timezone.utc), (69.65, 18.96, 120), {}),
+    "antarctic-r2": ("gabbro", "burritt", datetime(2026, 7, 15, 20, 0, tzinfo=timezone.utc), (-77.85, 166.67, 720), {}),
     # frames of the fireworks displays at the top of an evening hour (and New Year's midnight), as the watch plays them
     "show-july4-t2": ("emery", "planisphere", datetime(2026, 7, 5, 1, 0, tzinfo=timezone.utc), NY,
                       {"calendars": 64, "show": 20}),
