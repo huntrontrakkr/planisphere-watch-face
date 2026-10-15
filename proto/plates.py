@@ -523,7 +523,7 @@ def real_range(dial, edge_, sky, most=2.0, room=12.0, least=3.0):
         return None
     return {dx: int(round(v * mag)) for dx, v in true.items()}
 
-LABOUR_TONE = "pale"                                     # "pale" (barely there) or "hatch" (the ring hatching's tone)
+LABOUR_TONE = "hatch"                                    # "hatch" (the ring hatching's khaki) or "pale" (barely there)
 
 
 def faint_tone(P, how=None):
@@ -541,8 +541,9 @@ def faint_tone(P, how=None):
 
 def labour_scene(img, dial, inside, inner, P, month):
     """The month's labour, faint in the card between the window and the ring: its field runs on behind the window
-    (furrows from a point hidden behind the oval's top, a far line of hills), the labourer standing in the left of it,
-    the month's creatures in the right. Drawn only on the card, so the window covers what lies behind it."""
+    (from a point hidden behind the oval's top: furrows, rows of vines, stubble, grass or snow, and a far line of
+    hills), the labourer standing in the left of it, the month's thing in the right. Drawn only on the card, so the
+    window covers what lies behind it."""
     scene = LABOURS_OF.get(month)
     if scene is None:
         return
@@ -553,19 +554,45 @@ def labour_scene(img, dial, inside, inner, P, month):
     top = int(np.argmax(inside[:, col]))
     vx, vy = dial.cx, top + 6
     mask = np.zeros((H, W), bool)
-    # the far hills, a gentle line across behind the window's top
-    for x in range(W):
+    rng = np.random.default_rng(month)
+    for x in range(W):                                   # the far hills, a gentle line across behind the window's top
         y = int(round(vy - 3 + 1.5 * math.sin(x / 7.0) + math.sin(x / 3.1)))
         if 0 <= y < H:
             mask[y, x] = True
-    # the furrows, drawn every other pixel, running out from behind the window
-    if scene["ground"] == "furrows":
+    ground = scene["ground"]
+
+    def rays(step, every, mark):
+        """Marks along lines running out from the hidden point, spaced wider as they come nearer."""
+        for a in np.arange(-84, 85, step):
+            sa, ca = math.sin(math.radians(a)), math.cos(math.radians(a))
+            d = 6.0
+            while d < 260:
+                mark(int(round(vx + d * sa)), int(round(vy + d * ca)), d)
+                d += every * (1 + d / 60)
+    if ground == "furrows":                              # the sown field: dotted furrows
         for a in np.arange(-84, 85, 7):
             ex, ey = vx + 260 * math.sin(math.radians(a)), vy + 260 * math.cos(math.radians(a))
             for k, (px, py) in enumerate(line_pixels(vx, vy, ex, ey)):
                 if k % 2 == 0 and 0 <= px < W and 0 <= py < H:
                     mask[py, px] = True
-    # the labourer and the creatures, in the widest room either side
+    elif ground in ("vines", "stubble"):                 # rows of vine stakes, or of stubble, standing up
+        def stake(x, y, d):
+            h = (1 + int(d / 30)) if ground == "vines" else (1 if d < 60 else 2)
+            for k in range(h):
+                if 0 <= y - k < H and 0 <= x < W:
+                    mask[y - k, x] = True
+        rays(12 if ground == "vines" else 6, 6 if ground == "vines" else 3, stake)
+    elif ground in ("grass", "snow"):                    # tufts of grass, or the pecked dots of snow
+        for gy in range(vy + 4, H, 5):
+            for gx in range(int(rng.integers(0, 6)), W, 7):
+                x, y = gx + int(rng.integers(-2, 3)), gy + int(rng.integers(-1, 2))
+                if not (1 <= x < W - 1 and 1 <= y < H):
+                    continue
+                if ground == "grass":
+                    mask[y - 1, x - 1] = mask[y, x] = mask[y - 1, x + 1] = True
+                else:
+                    mask[y, x] = True
+    # the labourer and the month's thing, in the widest room either side, standing clear of the field round them
     room = clear_distance(~(card & (yy_grid(H, W) > vy + 2)), most=14)
     for side in ("left", "right"):
         name = scene.get(side)
@@ -581,18 +608,17 @@ def labour_scene(img, dial, inside, inner, P, month):
         if side == "right":
             fig = fig[:, ::-1]
         h, w = fig.shape
-        copies = [(0, 0)] if name != "crow" else [(0, 0), (-7, 5), (6, 8)]
+        copies = {"crow": [(0, 0), (-7, 5), (6, 8)], "pig": [(-4, -3), (5, 4)]}.get(name, [(0, 0)])
         for dx, dy in copies:
             y0, x0 = j - h // 2 + dy, i - w // 2 + dx
-            for jj, ii in zip(*np.nonzero(fig)):
-                if 0 <= y0 + jj < H and 0 <= x0 + ii < W:
-                    mask[y0 + jj, x0 + ii] = True
-            # the figure stands clear of the furrows round it
-            clear = grow(np.pad(fig, 1), 0)
-            for jj, ii in zip(*np.nonzero(~np.pad(fig, 1) & grow(np.pad(fig, 1), 1))):
+            padded = np.pad(fig, 1)
+            for jj, ii in zip(*np.nonzero(grow(padded, 1) & ~padded)):
                 Y, X = y0 - 1 + jj, x0 - 1 + ii
                 if 0 <= Y < H and 0 <= X < W:
                     mask[Y, X] = False
+            for jj, ii in zip(*np.nonzero(fig)):
+                if 0 <= y0 + jj < H and 0 <= x0 + ii < W:
+                    mask[y0 + jj, x0 + ii] = True
     img[mask & card] = tone
 
 
@@ -720,7 +746,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                                                                        for l_ in np.arange(0, 361, 1))], fill=255, width=4)
             img[(np.asarray(line_, np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3)) > 110) & zband] = P["accent"]
     ground = img.copy()
-    labour_scene(img, dial, inside, inner_region(dial), P, local.month)   # the month's labour, faint behind the window
+    labour_scene(img, dial, inside, inner_region(dial), P,                  # the month's labour, faint behind the
+                 (local.month - 1 + (6 if dial.lat < 0 else 0)) % 12 + 1)    # window (half a year round in the south)
     faint = float(np.interp(s_eff, [-16, -10, -5, -1.5], [4.6, 3.4, 2.0, 0.4])) if not paper else 4.6
     if not paper and s_eff > -1.5:
         faint = -9

@@ -134,7 +134,24 @@ The village keeps the year, as an almanac's cuts of the months do. The season co
 - The house's windows are lit of an evening.
 - The Time 2's corner sprigs follow the season.
 - The flowers beside the time keep the season too (below).
-- The month's labour, as the calendars of the Books of Hours show the year's work, is drawn faint in the card behind the window, a single step from the card's own colour, so it is felt more than seen. Its field runs on behind the oval: the furrows come out from a point hidden behind the window's top, and a far line of hills crosses behind it. The labourer stands in the cream on the left, the month's creatures on the right. So far only October is drawn, the sower with crows following, as a trial.
+- The month's labour, as the calendars' woodcuts show the year's work, is drawn faint in the card behind the window, in the ring hatching's khaki, so it is felt more than seen. Its field runs on behind the oval: furrows, rows of vines, stubble, grass or snow come out from a point hidden behind the window's top, and a far line of hills crosses behind it. The labourer stands in the cream on the left and the month's thing on the right. The figures follow the cuts' own way of being known at a glance, chiefly the *Kalender of Shepherdes* (Paris, 1493): the labourer's wide straw hat, one pose and one tool drawn large.
+
+| Month | The labour | Beside it | The field |
+| --- | --- | --- | --- |
+| January | feasting, seated in his hood, the cup raised | the laid table | snow |
+| February | warming at the fire, hands held out | the fire | snow |
+| March | pruning the vines with a billhook | the vine stakes | vines |
+| April | the youth in a plumed hat with a flowering branch | a tree in blossom | grass |
+| May | riding out, a hawk on the fist | a heron put up | grass |
+| June | mowing, the scythe swept low | a haycock | grass |
+| July | reaping, bent double with the sickle | a sheaf | stubble |
+| August | threshing, the flail over his head | a stook | stubble |
+| September | treading the grapes in the vat | a barrel | vines |
+| October | sowing, the seed bag at his front | crows after the seed | furrows |
+| November | knocking down acorns for the pigs | the pigs | grass |
+| December | baking, the peel at the oven's mouth | the oven | snow |
+
+  South of the equator the labours turn half a year, as the seasons do.
 
 ![The year at eleven in the morning: blossom in April, leaf in July, gold in October, snow in January; below, the village up close: blossom, high summer, autumn leaves, frost and snow; a frosty evening with chimney smoke and lit windows, fog, a summer gale, a snowy night](docs/seasons.png)
 
