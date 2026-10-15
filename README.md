@@ -96,27 +96,24 @@ With the weather, the face shows the place's own sky, drawn as an engraver would
 
 ![Fair at noon, broken cloud at dusk, overcast, rain; snow, fog, the Moon's halo in thin high cloud, and a frosty night with snow lying](docs/weather.png)
 
-### The mountains
+### The distant hills
 
-Behind the village a distant range stands along the horizon and catches the light.
-- **By day** it is pale with the haze.
-- **As the Sun goes down,** the faces toward it light gold, then rose, then the pink of the afterglow, while the far faces stay in shadow. In the morning it is the eastern faces that light.
-- **By night** it is a dark cutout where the stars stop, its ridge faintly silvered (brighter under the Moon).
-- **Snow** lies on its peaks in winter.
-- **In fog or falling rain and snow** it is lost; under a closed sky it goes grey.
-- **On the printed charts** it is engraved: the ridge drawn and its shadowed faces hatched.
+Behind the village, low distant hills stand along the horizon in one quiet tone that takes the hour's light:
+- pale with the haze by day;
+- gold, then rose, then the mauve of the afterglow as the Sun goes down;
+- by night a dark cutout where the stars stop, its ridge faintly silvered.
 
-The mountains can be the place's own. From the terrain (Open-Meteo's elevation service, the Copernicus 90 m model, no key), the skyline is worked out once for the place, every two degrees across the window's southern edge:
+They are lost in fog and falling rain or snow, and go grey under a closed sky. On the printed charts only their ridge is drawn, engraved.
+
+The hills can be the place's own. From the terrain (Open-Meteo's elevation service, the Copernicus 90 m model, no key), the skyline is worked out once for the place, every two degrees across the window's southern edge:
 - Along each bearing the ground is sampled from 5 to 140 km out. The nearer ground is skipped, because the model includes buildings and woods.
 - The skyline's height is the steepest angle up to any of that ground, with the Earth's curve taken off and the air's refraction put back.
-- Where the mountains are big they stand at their true height, hiding exactly the stars they hide.
-- Gentler ranges are magnified up to four times, as the old panoramas exaggerated relief.
-- Snow lies on them above the season's snowline, so the high peaks keep it all year.
-- Where the land is flat, as round New York, the drawn range stands in.
+- It is kept as quiet as the drawn hills: gentle country is magnified at most twice, and big mountains are brought down to the same low band.
+- Where the land is flat, as round New York, the drawn hills stand in.
 
 On the watch the phone would do the survey once for each new place and keep the result.
 
-![New York's drawn range at noon, at sunset, in the afterglow and at night; Chamonix's own skyline (the Mont Blanc massif) at noon, lit by the setting Sun, in the afterglow, and snowy on a winter's noon](docs/mountains.png)
+![New York's drawn hills at noon, at sunset, in the afterglow and at night; Chamonix's own skyline (the Mont Blanc massif) at noon, at sunset, in the afterglow, and on a winter's night](docs/mountains.png)
 
 ### The year
 
@@ -129,7 +126,7 @@ The village keeps the year, as an almanac's cuts of the months do. The season co
 
 And the filigree, all drawn by hand:
 
-- on the southern horizon, a church and a house among trees, after the cuts of a village on an almanac's page. The church stands at the south point, its spire on the meridian and a weather vane on its mast. Each piece is drawn whole and stood on the ground along the window's lower edge: a tree where its trunk meets the ground, a building as low as the ground under it goes. Behind them a distant range catches the light (below). They keep the season and the weather;
+- on the southern horizon, a church and a house among trees, after the cuts of a village on an almanac's page. The church stands at the south point, its spire on the meridian and a weather vane on its mast. Each piece is drawn whole and stood on the ground along the window's lower edge: a tree where its trunk meets the ground, a building as low as the ground under it goes. Behind them low distant hills catch the light (below). They keep the season and the weather;
 - the engraver's glory of fine rays round the Sun on the printed charts;
 - a beaded rule inside the ring's outer rule, as on a clock's chapter ring;
 - studs on the inner rule at the numbered hours;
@@ -236,7 +233,7 @@ The pieces are drawn by hand, pixel by pixel, not generated from shapes. Each is
   - Quentel's flowers beside the time;
   - the engraved glory;
   - the village on the horizon.
-- **The distant range** is drawn as straight ridges between hand-placed peaks and saddles: two massifs with low hills between them, so the steeple stands against the sky.
+- **The distant hills** are drawn as straight ridges between hand-placed points: a long ridge rising to a summit on either side, with the steeple against the sky between.
 - **The village** is a church (tower, pinnacles, tall spire, nave with lancet windows), a two-storey house with a chimney, and trees: a broad tree, a poplar and a small tree, each in leaf, blossom, turning, gold and bare, and a fir. The church's vane is drawn three ways. Its passers-by are drawn too: a swallow, a bat and a jackdaw on the wing, the owl blinking and looking about, a tumbling leaf, a firefly's flash.
 - **The clouds** are Howard's: cumulus heaps and banks drawn as silhouettes, whose tops and bases the face lights for the hour, and cirrus in hair strokes.
 - **The almanac's signs** are the zodiac and the planets that rule the days.

@@ -657,29 +657,23 @@ VILLAGE_PIECES = {
 }
 VILLAGE_TREES = ("tree", "poplar", "fir", "small")
 # where each piece stands, its middle column this many pixels from the south point, and the hills' heights
-VILLAGE_LAYOUT = [("small", -53), ("fir", -46), ("tree", -36), ("small", -29), ("house", -18), ("church", 7),
-                  ("tree", 20), ("poplar", 29), ("tree", 37), ("fir", 46), ("small", 53)]
+VILLAGE_LAYOUT = [("fir", -44), ("tree", -33), ("house", -18), ("church", 7), ("tree", 22), ("poplar", 31),
+                  ("small", 40)]
 VILLAGE_HILLS = [(-62, 1), (-48, 2), (-36, 3), (-24, 2), (-10, 1), (0, 1), (12, 2), (26, 3), (40, 2), (52, 2), (62, 1)]
 VILLAGE_SEASON = {"blossom": "blossom", "turning": "turning", "autumn": "autumn", "bare": "bare"}
-# the distant mountains behind it where the place's own skyline is not known (or is flat): two massifs with low
-# hills between, so the steeple stands against the sky; heights in pixels above the window's edge, drawn as straight
-# ridges between these points
-DISTANT_RANGE = [(-72, 5), (-66, 8), (-60, 12), (-56, 11), (-50, 16), (-46, 15), (-42, 20), (-38, 17), (-34, 18),
-                 (-29, 12), (-24, 13), (-18, 8), (-11, 8), (-5, 6), (2, 7), (9, 10), (14, 9), (19, 14), (23, 13),
-                 (28, 21), (33, 17), (37, 19), (42, 13), (48, 14), (54, 9), (60, 10), (66, 6), (72, 5)]
+# the distant hills behind it where the place's own skyline is not known (or is flat): low and far, a long ridge
+# rising to a summit either side, the steeple against the sky between; heights in pixels above the window's edge,
+# straight ridges between these points
+DISTANT_RANGE = [(-72, 3), (-62, 5), (-52, 7), (-43, 10), (-35, 8), (-25, 5), (-13, 4), (0, 3), (12, 4), (21, 6),
+                 (31, 10), (40, 8), (51, 6), (62, 4), (72, 3)]
 
 
 def distant_range(dxs):
-    """The drawn range at each column offset: (its height above the window's edge, whether the ridge rises to the
-    right there: on a northern chart an east face, on a southern one a west face). The faces follow the ridge
-    between the drawn points, so a peak's two sides each keep one light."""
+    """The drawn hills' height above the window's edge at each column offset."""
     xs, hs = zip(*DISTANT_RANGE)
-    out = {}
-    for dx in dxs:
-        k = int(np.searchsorted(xs, dx, side="right")) - 1
-        k = max(0, min(len(xs) - 2, k))
-        out[dx] = (int(round(np.interp(dx, xs, hs))), hs[k + 1] >= hs[k])
-    return out
+    return {dx: int(round(np.interp(dx, xs, hs))) for dx in dxs}
+
+
 VANE = {                        # the church's weather vane on its mast, the arrow pointing where the wind comes from
     "left": [".#..#",           # (seen from the north, looking south: east is to the left), its barb and its tail
              "#####",           # standing up; end on, a cross
