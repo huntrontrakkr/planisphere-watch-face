@@ -38,6 +38,7 @@ from pixeltext import pixel_text, time_text, temp_text, ornament, concat, stamp,
 import events
 import figures
 import frame
+import horizon
 import skies
 import sprites
 import weather as meteo
@@ -442,6 +443,56 @@ def tick_pixels(dial, a_deg, length):
     return pts
 
 
+def altaz_to_eq(alt, az, lat):
+    """(dec, hour angle) in degrees for altitude `alt` and azimuth `az` (east of north) at latitude `lat`."""
+    a, z, f = math.radians(alt), math.radians(az), math.radians(lat)
+    dec = math.asin(math.sin(f) * math.sin(a) + math.cos(f) * math.cos(a) * math.cos(z))
+    ha = math.atan2(-math.sin(z) * math.cos(a), math.cos(f) * math.sin(a) - math.sin(f) * math.cos(a) * math.cos(z))
+    return math.degrees(dec), math.degrees(ha)
+
+
+def edge_geometry(dial, edge_):
+    """For each column offset along the window's lower edge: the bearing it looks toward (degrees east of north)
+    and how many pixels a degree of altitude takes there (the same at every hour, so kept)."""
+    key = tuple(sorted(edge_.items()))
+    cache = dial.__dict__.setdefault("_edge_geo", {})
+    if key not in cache:
+        lat = math.radians(abs(dial.lat))
+        out = {}
+        for dx, y in edge_.items():
+            px, py = int(dial.cx) + dx + 0.5 - dial.cx, y + 0.5 - dial.cy
+            dec = math.radians(90 - math.hypot(px, py) / dial.k)
+            ha = math.atan2(px, py)
+            az = math.degrees(math.atan2(-math.cos(dec) * math.sin(ha),
+                                         math.sin(dec) * math.cos(lat) - math.cos(dec) * math.cos(ha) * math.sin(lat))) % 360
+            pts = []
+            for alt in (0.0, 1.0):
+                d_, h_ = altaz_to_eq(alt, az, abs(dial.lat))
+                r_ = (90 - d_) * dial.k
+                pts.append((r_ * math.sin(math.radians(h_)), r_ * math.cos(math.radians(h_))))
+            out[dx] = (az, math.hypot(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]))
+        cache[key] = out
+    return cache[key]
+
+
+def real_range(dial, edge_, sky, most=4.0, room=20.0, least=4.0):
+    """The place's own skyline along the window's lower edge: ({dx: (height in pixels, east face)}, {dx: the
+    ground's height in metres}), or (None, None) where it is too low to draw. Magnified up to `most` times, as
+    the old panoramas exaggerate relief, while that keeps them under `room` pixels; never smaller than true, so
+    where the mountains are big they stand as they really do, hiding the stars they really hide."""
+    geo = edge_geometry(dial, edge_)
+    true = {dx: horizon.at(sky, az) * kpd for dx, (az, kpd) in geo.items()}
+    top = max(true.values()) if true else 0.0
+    if top <= 0:
+        return None, None
+    mag = max(1.0, min(most, room / top))                # never smaller than the mountains really stand
+    if top * mag < least:
+        return None, None
+    hpx = {dx: v * mag for dx, v in true.items()}
+    out = {dx: (int(round(v)), hpx.get(dx + 2, v) >= hpx.get(dx - 2, v)) for dx, v in hpx.items()}
+    return out, {dx: horizon.at(sky, geo[dx][0], 1) for dx in geo}
+
+
 _WIDEST = {}
 
 
@@ -798,10 +849,76 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         snow_ = wsky.snow_lying
     lit_ = sun_alt < -4 and (17 <= local.hour <= 22 or 5 <= local.hour <= 7)
     edge_ = {}
-    for dx_ in range(-64, 65):
+    for dx_ in range(-72, 73):
         x = col + dx_
         if 0 <= x < W and inside[:, x].any():
             edge_[dx_] = int(np.nonzero(inside[:, x])[0].max())
+    # the distant mountains behind the village, catching the light: by day pale with the haze, at sunrise and
+    # sunset their faces toward the Sun lit gold, then rose, then the pink afterglow, the far faces in shadow; by
+    # night a dark cutout where the stars stop, its ridge faintly silvered. Snow on the peaks in winter. Lost in
+    # fog and falling rain or snow; grey under a closed sky. On a printed chart, engraved: the ridge drawn and its
+    # shadowed faces hatched
+    if not (wsky is not None and (wsky.fog or wsky.falls)):
+        # the place's own mountains where its skyline is known and has any (from the terrain, worked out once
+        # for the place), else the drawn range
+        heights, ridge_m = None, None
+        own = horizon.cached(dial.lat, dial.lon)
+        if own is not None:
+            heights, ridge_m = real_range(dial, edge_, own)
+        if heights is None:
+            heights = sprites.distant_range(edge_)
+        ha_sun = ((lst - pos["sun"][0]) + 180) % 360 - 180
+        morning = ha_sun < 0                             # the Sun east of the meridian: the east faces are lit
+        closed_ = wsky is not None and wsky.stratus >= 0.6
+        if P["window"] == "red":
+            lit_c, shade_c, cap_c, ridge_c = c8(1, 0, 0), c8(0, 0, 0), c8(2, 0, 0), None
+        elif paper:
+            lit_c, shade_c, cap_c, ridge_c = None, None, None, P["line"]
+        elif closed_ and s_eff >= -6:
+            lit_c, shade_c, cap_c, ridge_c = c8(2, 2, 2), c8(1, 1, 1), c8(3, 3, 3), None
+        elif s_eff >= 8:
+            lit_c, shade_c, cap_c, ridge_c = c8(2, 2, 3), c8(1, 1, 2), c8(3, 3, 3), None
+        elif s_eff >= 2:
+            lit_c, shade_c, cap_c, ridge_c = c8(3, 2, 2), c8(1, 1, 2), c8(3, 3, 3), None
+        elif s_eff >= -1:
+            lit_c, shade_c, cap_c, ridge_c = c8(3, 2, 1), c8(2, 1, 2), c8(3, 3, 2), None
+        elif s_eff >= -4:
+            lit_c, shade_c, cap_c, ridge_c = c8(3, 1, 1), c8(2, 1, 2), c8(3, 2, 2), None
+        elif s_eff >= -8:
+            lit_c, shade_c, cap_c, ridge_c = c8(2, 1, 2), c8(1, 1, 2), c8(3, 2, 3), None
+        elif s_eff >= -12:
+            lit_c, shade_c, cap_c, ridge_c = c8(1, 1, 2), c8(0, 0, 1), c8(2, 2, 3), None
+        else:
+            moonlit_ = f > 0.4 and moon_up
+            lit_c, shade_c, cap_c = None, None, c8(2, 2, 2) if moonlit_ else None
+            ridge_c = c8(2, 2, 2) if moonlit_ else c8(1, 1, 2)
+        snowy_peaks = season == "bare" or (wsky is not None and (wsky.snow_lying or wsky.temp < 2))
+        line_m = horizon.snowline(dial.lat, season) - (800 if snowy_peaks else 0)
+        for dx_, (hgt, rising) in sorted(heights.items()):
+            e = edge_[dx_]
+            x = col + dx_
+            east_face = rising if dial.lat >= 0 else not rising   # a southern chart has the east on the right
+            facing_sun = east_face == morning
+            for y in range(e - hgt + 1, e + 1):
+                if not (0 <= y < H and inside[y, x]):
+                    continue
+                top_ = y == e - hgt + 1
+                if ridge_m is not None:                  # the real peaks: snow above the season's snowline
+                    cap = ridge_m[dx_] > line_m and y <= e - hgt + 2
+                else:
+                    cap = snowy_peaks and hgt >= 15 and y <= e - hgt + 2
+                if paper:
+                    if top_:
+                        img[y, x] = ridge_c
+                    elif not facing_sun and not cap and (x + y) % 3 == 0:
+                        img[y, x] = P["line"]            # the shadowed face, hatched
+                    else:
+                        img[y, x] = ground[y, x]
+                elif lit_c is None:                      # night: the sky's own colour, the ridge silvered
+                    img[y, x] = (cap_c if cap and cap_c is not None else ridge_c) if top_ else ground[y, x]
+                else:
+                    img[y, x] = cap_c if cap else (lit_c if facing_sun else shade_c)
+                blocked[y, x] = True
     village_px, anchors = sprites.village(edge_, season, snow_, vane, lit_)
     night_land = sun_alt < -6 or P["window"] == "red"
     silhouette = P["line"] if paper else (c8(0, 0, 0) if night_land else c8(0, 0, 1))

@@ -113,6 +113,22 @@ def main():
         crop = Image.fromarray(im[168:210, 50:150]).resize((400, 168), Image.NEAREST)
         sheet.paste(crop, ((i % 4) * 412 + 6, 464 + 4 + (i // 4) * 172))
     sheet.save(ROOT / "docs" / "seasons.png")
+    # the mountains behind the village catching the light: the drawn range over New York at noon, as the Sun sets,
+    # in the afterglow and at night; then Chamonix's own skyline, the Mont Blanc massif from its terrain, at
+    # noon, lit by the setting Sun, in the afterglow, and snowy on a winter's noon
+    PAR = ZoneInfo("Europe/Paris")
+    cham = RectDial(200, 228, 45.9237, 6.8694)
+    shots = [(t2, datetime(2026, 10, 14, 12, 15, tzinfo=NY), NY), (t2, datetime(2026, 10, 14, 18, 10, tzinfo=NY), NY),
+             (t2, datetime(2026, 10, 14, 18, 25, tzinfo=NY), NY), (t2, datetime(2026, 10, 14, 21, 30, tzinfo=NY), NY),
+             (cham, datetime(2026, 10, 14, 13, 0, tzinfo=PAR), PAR), (cham, datetime(2026, 10, 14, 19, 5, tzinfo=PAR), PAR),
+             (cham, datetime(2026, 10, 14, 19, 25, tzinfo=PAR), PAR), (cham, datetime(2027, 1, 20, 12, 30, tzinfo=PAR), PAR)]
+    sheet = Image.new("RGB", (4 * 412, 2 * 464), (24, 24, 26))
+    for i, (dial, t, tz) in enumerate(shots):
+        w = wx.SAMPLES["frost" if t.month == 1 else "fair"]
+        im = Image.fromarray(render(t.astimezone(timezone.utc), dial, sky, tz, "planisphere", False, weather=w,
+                                    fahrenheit=tz is NY))
+        sheet.paste(im.resize((400, 456), Image.NEAREST), ((i % 4) * 412 + 6, (i // 4) * 464 + 4))
+    sheet.save(ROOT / "docs" / "mountains.png")
     print(len(frames), "frames")
 
 

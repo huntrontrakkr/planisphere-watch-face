@@ -595,10 +595,13 @@ def glory():
 # edge: a tree where its trunk meets the ground, a building as low as the ground under it goes (the hillside laps
 # its uphill side). Roles: K the silhouette, R blossom or turning leaves (coloured by day), Y a window lit at night
 VILLAGE_PIECES = {
-    "church": [".....#...................",       # the mast (the vane stands on it), the spire, pinnacles at the
-               ".....#...................",       # tower's corners, the belfry's opening; the nave's ridge and eaves,
-               "....###..................",       # three lancet windows; the west door
+    "church": [".....#...................",       # the mast (the vane stands on it), the tall spire, pinnacles at
+               ".....#...................",       # the tower's corners, the belfry's opening; the nave's ridge and
+               ".....#...................",       # eaves, three lancet windows; the west door
                "....###..................",
+               "....###..................",
+               "....###..................",
+               "...#####.................",
                "...#####.................",
                "..#.###.#................",
                "..#######................",
@@ -610,6 +613,8 @@ VILLAGE_PIECES = {
                "..#######################",
                "..##########.###.###.###.",
                "..##########.###.###.###.",
+               "..######################.",
+               "..###.##################.",
                "..###.##################.",
                "..###.##################."],
     "house": ["......#...#..",                    # a gable end with a chimney, two windows up and two down, a door
@@ -656,6 +661,25 @@ VILLAGE_LAYOUT = [("small", -53), ("fir", -46), ("tree", -36), ("small", -29), (
                   ("tree", 20), ("poplar", 29), ("tree", 37), ("fir", 46), ("small", 53)]
 VILLAGE_HILLS = [(-62, 1), (-48, 2), (-36, 3), (-24, 2), (-10, 1), (0, 1), (12, 2), (26, 3), (40, 2), (52, 2), (62, 1)]
 VILLAGE_SEASON = {"blossom": "blossom", "turning": "turning", "autumn": "autumn", "bare": "bare"}
+# the distant mountains behind it where the place's own skyline is not known (or is flat): two massifs with low
+# hills between, so the steeple stands against the sky; heights in pixels above the window's edge, drawn as straight
+# ridges between these points
+DISTANT_RANGE = [(-72, 5), (-66, 8), (-60, 12), (-56, 11), (-50, 16), (-46, 15), (-42, 20), (-38, 17), (-34, 18),
+                 (-29, 12), (-24, 13), (-18, 8), (-11, 8), (-5, 6), (2, 7), (9, 10), (14, 9), (19, 14), (23, 13),
+                 (28, 21), (33, 17), (37, 19), (42, 13), (48, 14), (54, 9), (60, 10), (66, 6), (72, 5)]
+
+
+def distant_range(dxs):
+    """The drawn range at each column offset: (its height above the window's edge, whether the ridge rises to the
+    right there: on a northern chart an east face, on a southern one a west face). The faces follow the ridge
+    between the drawn points, so a peak's two sides each keep one light."""
+    xs, hs = zip(*DISTANT_RANGE)
+    out = {}
+    for dx in dxs:
+        k = int(np.searchsorted(xs, dx, side="right")) - 1
+        k = max(0, min(len(xs) - 2, k))
+        out[dx] = (int(round(np.interp(dx, xs, hs))), hs[k + 1] >= hs[k])
+    return out
 VANE = {                        # the church's weather vane on its mast, the arrow pointing where the wind comes from
     "left": [".#..#",           # (seen from the north, looking south: east is to the left), its barb and its tail
              "#####",           # standing up; end on, a cross
@@ -716,8 +740,8 @@ def village(edge, season="leaf", snow=False, vane="end", lit=False):
         y0 = base - h + 1
         if name == "church":
             anchors["mast"] = (x0 + 5, y0)
-            anchors["ridge"] = (x0 + 16, y0 + 9)
-            anchors["belfry"] = (x0 + 5, y0 + 8)
+            anchors["ridge"] = (x0 + 16, y0 + 12)
+            anchors["belfry"] = (x0 + 5, y0 + 11)
         elif name == "house":
             anchors["peak"] = (x0 + 6, y0)
             anchors["chimney"] = (x0 + 10, y0)
