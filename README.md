@@ -121,6 +121,13 @@ The village keeps the year, as an almanac's cuts of the months do. The season co
 - The trees come into blossom in April, stand in full leaf through the summer, turn gold in October and stand bare through the winter. The firs stay green.
 - The house's windows are lit of an evening.
 - The Time 2's corner sprigs follow the season.
+- In the cream between the window and the ring, one each side where there is most room, stands a pair of the season's pieces. They are charted needlework, copied stitch for stitch from the pattern books and samplers in `research/needlework/`, and worked in the card's own quiet tone so they sit back:
+  - spring: Quentel's blossom rosette (Cologne, 1529);
+  - summer: a tree in leaf from Vosterman's book (Antwerp, c. 1527);
+  - September: a bunch of grapes from an 18th-century German sampler;
+  - October and November: an acorn from Dillmont's DMC album (1890);
+  - winter: a fir from Quentel's band of firs (1544);
+  - in snow or frost, whatever the season: the ice crystal from the *Petit nécessaire des jeunes demoiselles* (Paris, 1819).
 
 ![The year at eleven in the morning: blossom in April, leaf in July, gold in October, snow in January; below, the village up close: blossom, high summer, autumn leaves, frost and snow; a frosty evening with chimney smoke and lit windows, fog, a summer gale, a snowy night](docs/seasons.png)
 
@@ -269,6 +276,6 @@ Next: the same drawing in C for the watch, with the pieces and the stars as smal
 
 Star positions and colours, constellation lines and the Milky Way's outline come from [d3-celestial](https://github.com/ofrohn/d3-celestial), © 2015 Olaf Frohn, BSD 3-Clause (`data/`). The numerals use the monoline stroke font made for Morphogen 9.
 
-Quentel's flower is transcribed from *Eyn New Kunstlich Boich* (Peter Quentel, Cologne, 1529) in the Metropolitan Museum of Art's Open Access collection (CC0, 20.50.2).
+Quentel's flower is transcribed from *Eyn New Kunstlich Boich* (Peter Quentel, Cologne, 1529) in the Metropolitan Museum of Art's Open Access collection (CC0, 20.50.2). The season's pieces come from the same book and from Quentel's book of 1544 and Vosterman's of c. 1527 (the Met, CC0), a German sampler (Cooper Hewitt, public domain), Dillmont's DMC album of 1890 and the *Petit nécessaire* of 1819 (archive.org, public domain); `research/needlework/sources.md` gives every source.
 
 Pixel type: Not Jam Old Style 11 by Not Jam (CC0, `fonts/pixel/`). Type: Old Standard TT (Alexey Kryukov), Libre Caslon Text, Playfair Display, with IM Fell, EB Garamond and Cinzel tried in [the type specimen](docs/type-specimen.png). All are SIL Open Font License 1.1, and the licences are in `fonts/`.

@@ -385,6 +385,93 @@ QUENTEL_FLOWER = art([
     "...R..R...",
 ])
 
+# ---- the season's pieces: charted needlework from research/needlework/, stitch for stitch, set as a pair in the
+# cream between the window and the ring, one each side, worked in the card's quiet tone. The season's piece, or
+# the weather's when there is snow or frost
+NEEDLEWORK = {
+    "rosette": (["....##.##....",       # spring, the blossom: Quentel, Eyn New Kunstlichboich, Cologne 1529
+                 "....##.##....",
+                 "..####.####..",
+                 "..####.####..",
+                 "####.....####",
+                 "####..#..####",
+                 ".....###.....",
+                 "####..#..####",
+                 "####.....####",
+                 "..####.####..",
+                 "..####.####..",
+                 "....##.##....",
+                 "....##.##...."], "quentel1529-rosette-13"),
+    "tree": (["...#..###..#...",        # summer, a tree in leaf: Vosterman, Antwerp c. 1527 (and Quentel 1529)
+              "..###.###.###..",
+              ".###...#...###.",
+              "###.##.#.##.###",
+              ".###.#####.###.",
+              "..###.###.###..",
+              "...#...#...#...",
+              ".......#.......",
+              "....##.#.##....",
+              ".....#####.....",
+              "......###......",
+              ".......#.......",
+              ".......#.......",
+              "......###......",
+              ".....#####....."], "vosterman1527-leafy-tree-15"),
+    "grapes": (["...#...#...",          # the vintage: a German sampler of the 18th century (Cooper Hewitt)
+                "..###.###..",
+                "..###.###..",
+                ".#.#.#.#.#.",
+                "###.###.###",
+                "###.###.###",
+                ".#.#.#.#.#.",
+                "..###.###..",
+                "..###.###..",
+                "...#.#.#...",
+                "....###....",
+                "....###....",
+                ".....#....."], "ch-18616709-grape-bunch"),
+    "acorn": (["##........",           # autumn, an acorn on its twig: DMC's album, Dillmont 1890
+               "##........",
+               "..#####...",
+               "..######..",
+               "..#######.",
+               "..#####.##",
+               "..####.##.",
+               "...##.##..",
+               "....###.#.",
+               ".....#..##"], "dmc1890-acorn-10"),
+    "fir": ([".....#.....",           # winter, a fir: Quentel's band of firs, Cologne 1544, with the band's own
+             "....###....",           # stitches beneath it for its trunk and stepped foot
+             "...#####...",
+             "..#.###.#..",
+             ".###.#.###.",
+             "###########",
+             ".###.#.###.",
+             ".....#.....",
+             "....###....",
+             "...#####..."], "quentel1544-fir-band"),
+    "ice": (["..#.#..",               # snow or frost, an ice crystal: Petit necessaire des jeunes demoiselles,
+             "...#...",               # Paris 1819
+             "#..#..#",
+             ".##.##.",
+             "#..#..#",
+             "...#...",
+             "..#.#.."], "petit1819-snowflake-7"),
+}
+SEASON_PIECE = {"blossom": "rosette", "leaf": "tree", "harvest": "tree", "turning": "grapes", "autumn": "acorn",
+                "bare": "fir"}
+
+
+def needlework(name):
+    rows, _ = NEEDLEWORK[name]
+    return np.array([[c == "#" for c in r] for r in rows])
+
+
+def season_piece(season, snow=False, frost=False):
+    """The pair's piece: the ice crystal in snow or frost, else the season's."""
+    return "ice" if (snow or frost) else SEASON_PIECE.get(season, "rosette")
+
+
 # ---- small marks: the south point's star, the studs on the ring at every third hour, a meteor shower's radiant
 SOUTH_STAR = art([
     "..R..",
@@ -1043,6 +1130,7 @@ if __name__ == "__main__":
                    "poplar:autumn", "poplar:bare", "fir", "small", "small:blossom", "small:turning", "small:autumn",
                    "small:bare")]
         + [block(art([r.replace("#", "K") for r in VANE[k]]), {1: (0, 0, 85)}, (85, 170, 255)) for k in ("left", "end", "right")],
+        [mask_block(needlework(k), (170, 170, 85), cream) for k in ("rosette", "tree", "grapes", "acorn", "fir", "ice")],
         [block(CORNER_SEASONS[k], gold, cream) for k in ("blossom", "leaf", "autumn", "bare")]
         + [block(cloud(c), {1: (255, 255, 255), 5: (255, 255, 255), 7: (170, 170, 255)}, (85, 170, 255))
            for c in CUMULUS + STRATUS]
@@ -1061,6 +1149,7 @@ if __name__ == "__main__":
               "The days' planets (Monday's Moon to Sunday's Sun), the south star, a stud, a corner leaf, Quentel's flower (1529), the zenith, a radiant",
               "The engraved glory round the Sun on the printed charts; the church (its spire on the meridian) and the house, its windows lit",
               "The trees through the year (in leaf, blossom, turning, gold, bare; the fir stays green), and the vane: wind from the east, north or south, west",
+              "The season's pieces, charted needlework: Quentel's rosette (1529), Vosterman's tree (c. 1527), grapes (18th c.), DMC's acorn (1890), Quentel's fir (1544), Petit's ice crystal (1819)",
               "The corner sprigs through the year, Howard's cumulus heaps and banks (lit tops, shaded bases), cirrus",
               "The passers-by: a swallow, a bat and a jackdaw on the wing, the owl (blinking, looking about), a leaf tumbling, a firefly's flash, a snowflake",
               "MIDNIGHT and NOON along the Time 2's ring", "MIDNIGHT and NOON along the Round 2's ring"]
