@@ -61,8 +61,6 @@ typedef struct {
   int16_t box[MAX_BOXES][4];
   int nbox;
   int16_t btop[MAX_W];                       /* the land's top in each column (hills, village), NONE16 none */
-  int16_t edge[2 * VILLAGE_DX + 1];          /* the window's lowest row at each column from the south point, -1 none */
-  int16_t vtop[2 * VILLAGE_DX + 1], vground[2 * VILLAGE_DX + 1];
   int col;
   /* the weather, as the sky shows it */
   bool wx, fog, falls, rain_or_hail, thunder, snow_lying, frost, smoke, snow_falls, halo;
@@ -75,8 +73,8 @@ typedef struct {
   int16_t strat[28][3];                      /* y, x0, x1 */
   int nstrat;
   uint8_t cc[3], c_line, c_hair, c_rain[2], c_snow;   /* the clouds' colours for the hour (K, W, S roles; 0 the sky) */
-  /* the village's pieces as placed: drawing, left, top; the ground's top and the buildings' bases by column */
-  uint32_t vmask[2 * VILLAGE_DX + 1];         /* the village's pixels in each column, a bit a row up from its edge */
+  int16_t drawn[96][3];                      /* the drawn bright stars (x, y, half their size): the clouds keep off */
+  int ndrawn;
   int16_t chimney_x, chimney_y;
   bool chimney, night_land;
   /* the sky's events: an eclipse under way here, the umbra's dimming, Jupiter's moons' reach, a shower */
@@ -89,17 +87,21 @@ typedef struct {
   int nmarks;
   int8_t first;                              /* Christmas Eve's first star, as Plan.feast_first, once it is out */
   bool weaver;                               /* Qixi's Weaver and Cowherd, named */
-  /* memory the layers take in turn (the watch's is short): the Milky Way's first; then the stars' places, which the
-   * clouds and Jupiter's moons keep off; then the lines of type for the names, the ring and the time */
+  /* memory the layers take in turn (the watch's is short): the Milky Way's first; then Jupiter's moons' and the
+   * village's; then the lines of type for the names, the ring and the time. (Only what nothing reads once the names
+   * begin: the halos' ground_at reads the clouds and the stars' places, so those keep their own.) */
   union {
     struct {
       int32_t thresh12[256];                 /* each blue-noise level's threshold for the Milky Way */
       int16_t mra[2][MAX_W / 4 + 3], mdec[2][MAX_W / 4 + 3];   /* its nodes' places, two rows at a time */
     };
     struct {
-      int16_t drawn[96][3];                  /* the drawn bright stars (x, y, half their size): the clouds keep off */
-      int ndrawn;
       uint64_t lane[40];                     /* the lane cleared round Jupiter for its moons (bit x of row y) */
+      int16_t edge[2 * VILLAGE_DX + 1];      /* the window's lowest row at each column from the south point, -1 none */
+      /* the village's pieces as placed: the ground's top and the buildings' bases by column, and its pixels in
+       * each column, a bit a row up from its edge */
+      int16_t vtop[2 * VILLAGE_DX + 1], vground[2 * VILLAGE_DX + 1];
+      uint32_t vmask[2 * VILLAGE_DX + 1];
     };
     struct { Text t1, t2, t3, t4; };
   };
@@ -1560,7 +1562,6 @@ static const uint8_t STAR_COLOURS[5] = {C8(2, 2, 3), C8(3, 3, 3), C8(3, 3, 2), C
 static void stars(R *r, float faint, float mx, float my, float moon_reach) {
   const Plate *P = r->P;
   const uint8_t *st = sec(r->p->data, SEC_STARS);
-  r->ndrawn = 0;                                         /* (its memory the Milky Way's until now) */
   for (int i = 0; i < STAR_COUNT; i++) {
     const uint8_t *s = st + STAR_SIZE * i;
     int mg = star_mag(s), cls = star_class(s);
@@ -1616,6 +1617,8 @@ static void stars(R *r, float faint, float mx, float my, float moon_reach) {
 /* the window's lowest row in each column near the south point, from the bottom up (the window is convex) */
 static void window_edge(R *r) {
   Plan *p = r->p;
+  memset(r->vtop, 0, sizeof r->vtop), memset(r->vground, 0, sizeof r->vground);   /* (their memory the sky's till now) */
+  memset(r->vmask, 0, sizeof r->vmask);
   for (int i = 0; i <= 2 * VILLAGE_DX; i++) r->edge[i] = -1;
   for (int y = p->win_bottom; y >= p->win_top && y >= 0; y--) {
     if (p->wx0[y] > p->wx1[y]) continue;

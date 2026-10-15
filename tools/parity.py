@@ -1,8 +1,11 @@
 """The watch's C (build/host) against the prototype (proto/plates.py), pixel for pixel: for each case, the two faces
-and where they differ, side by side in out/parity/, and the count of differing pixels.
+and where they differ, side by side in out/parity/, and the count of differing pixels, against the count last accepted
+(tools/parity-baseline.json). A case with more than before fails the run: the two are deterministic, so any rise is a
+change to look at (a small slip hides easily among a few hundred pixels). --accept takes the counts as the baseline.
 
-    tools/build-host.sh && uv run python tools/parity.py [names...]
+    tools/build-host.sh && uv run python tools/parity.py [names...] [--accept]
 """
+import json
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -18,6 +21,7 @@ import weather as meteo           # noqa: E402
 from render import load_sky        # noqa: E402
 
 OUT = ROOT / "out" / "parity"
+BASELINE = ROOT / "tools" / "parity-baseline.json"
 NY = (40.71, -74.01, -240)         # New York in October: four hours behind
 PLATE_ID = {n: i for i, n in enumerate(plates.PLATES)}
 
@@ -132,7 +136,10 @@ def py_render(screen, plate, when, place, opts, sky):
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     sky = load_sky(4.6)
-    names = sys.argv[1:] or list(CASES)
+    accept = "--accept" in sys.argv[1:]
+    names = [a for a in sys.argv[1:] if a != "--accept"] or list(CASES)
+    base = json.loads(BASELINE.read_text()) if BASELINE.exists() else {}
+    worse = []
     for name in names:
         screen, plate, when, place, opts = CASES[name]
         a = py_render(screen, plate, when, place, opts, sky)
@@ -143,7 +150,16 @@ def main():
         d[~diff] = a[~diff] // 3
         S = np.concatenate([a, np.full((a.shape[0], 4, 3), 40, np.uint8), b, np.full((a.shape[0], 4, 3), 40, np.uint8), d], axis=1)
         Image.fromarray(S).resize((S.shape[1] * 2, S.shape[0] * 2), Image.NEAREST).save(OUT / f"{name}.png")
-        print(f"{name:16s} {int(diff.sum()):6d} pixels differ ({100 * diff.mean():.2f}%)", flush=True)
+        n, was = int(diff.sum()), base.get(name)
+        note = "" if was is None or n == was else f"  (was {was}{', worse' if n > was else ''})"
+        if was is not None and n > was:
+            worse.append(name)
+        print(f"{name:16s} {n:6d} pixels differ ({100 * diff.mean():.2f}%){note}", flush=True)
+        base[name] = n
+    if accept:
+        BASELINE.write_text(json.dumps(base, indent=1, sort_keys=True) + "\n")
+    elif worse:
+        sys.exit(f"parity: more pixels differ than before in {', '.join(worse)} (--accept if that is meant)")
 
 
 if __name__ == "__main__":
