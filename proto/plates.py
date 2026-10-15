@@ -51,6 +51,7 @@ import figures
 import frame
 import horizon
 from rng import Rng
+import screen
 import lunar
 import skies
 import sprites
@@ -1601,8 +1602,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     if fits:
         stamp(img, fits[0], dial.cx, ring_in + span * rows_at[2], P["accent"])
 
-    if round_screen:
-        img[np.hypot(xx + 0.5 - dial.cx, yy + 0.5 - dial.cy) > W / 2] = 0
+    if round_screen:                                     # what the Round 2's display lights (proto/screen.py)
+        first = np.array([screen.round2_row(y)[0] for y in range(H)])
+        img[(xx < first[:, None]) | (xx > W - 1 - first[:, None])] = 0
     return nearest(img)
 
 

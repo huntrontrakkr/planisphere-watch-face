@@ -8,6 +8,10 @@
  *     --weather T10,CODE,LOW,MID,HIGH,WIND,FROM,PRESSURE,SNOW_MM,VIS_DAM
  *     --fahrenheit
  *     --time N          render N times and print the mean milliseconds
+ *     --labours         the labours of the months
+ *     --no-coords       no latitude and longitude on the ring
+ *     --mem             print the most memory the drawing held at once (as the watch's heap counts it: each block
+ *                       rounded to 4 bytes, with its 4-byte header), and its blocks
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +23,24 @@
 static uint8_t fb[MAX_W * MAX_H];
 static int16_t rx0[MAX_H], rx1[MAX_H];
 static int W, H;
+
+/* the drawing's memory, counted as PebbleOS's heap counts it (lib/util/heap.c: 4-byte units, a 4-byte header) */
+static size_t mem_now, mem_peak, mem_blocks, mem_peak_blocks;
+static void *counted(size_t n) {
+  size_t *b = malloc(n + sizeof(size_t));
+  if (!b) return NULL;
+  *b = ((n + 3) & ~(size_t)3) + 4;
+  if (getenv("PLAN_MEM_LOG")) fprintf(stderr, "alloc %zu\n", n);
+  mem_now += *b, mem_blocks++;
+  if (mem_now > mem_peak) mem_peak = mem_now, mem_peak_blocks = mem_blocks;
+  return b + 1;
+}
+static void uncounted(void *p) {
+  if (!p) return;
+  size_t *b = (size_t *)p - 1;
+  mem_now -= *b, mem_blocks--;
+  free(b);
+}
 
 static uint8_t *row(void *ctx, int y, int *x0, int *x1) {
   (void)ctx;
@@ -42,6 +64,7 @@ int main(int argc, char **argv) {
   f.names = true, f.coords = true;
   Weather wx;
   int repeat = 1;
+  bool mem = false;
   for (int i = 8; i < argc; i++) {
     if (!strcmp(argv[i], "--24")) f.clock24 = true;
     else if (!strcmp(argv[i], "--no-names")) f.names = false;
@@ -51,6 +74,7 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--city") && i + 1 < argc) f.city = argv[++i];
     else if (!strcmp(argv[i], "--country") && i + 1 < argc) f.country = argv[++i];
     else if (!strcmp(argv[i], "--time") && i + 1 < argc) repeat = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "--mem")) mem = true;
     else if (!strcmp(argv[i], "--weather") && i + 1 < argc) {
       int v[10] = {0};
       sscanf(argv[++i], "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7], &v[8], &v[9]);
@@ -62,13 +86,9 @@ int main(int argc, char **argv) {
   for (int y = 0; y < H; y++) {
     rx0[y] = 0, rx1[y] = (int16_t)(W - 1);
     if (!round) continue;
-    /* the round screen: the pixels whose middles lie within its circle */
-    int a = W, b = -1;
-    for (int x = 0; x < W; x++) {
-      double dx = x + 0.5 - W / 2.0, dy = y + 0.5 - H / 2.0;
-      if (dx * dx + dy * dy <= (W / 2.0) * (W / 2.0)) { if (x < a) a = x; b = x; }
-    }
-    rx0[y] = (int16_t)a, rx1[y] = (int16_t)b;
+    /* the round screen: the pixels its display lights (proto/screen.py) */
+    int a = ROUND2_TOPLEFT[y < 130 ? y : 259 - y];
+    rx0[y] = (int16_t)a, rx1[y] = (int16_t)(259 - a);
   }
   static Plan p;
   plan_init(&p, W, H, BLOB_PLAN, round ? BLOB_GABBRO : BLOB_EMERY);
@@ -76,7 +96,8 @@ int main(int argc, char **argv) {
   struct timespec t0, t1;
   clock_gettime(CLOCK_MONOTONIC, &t0);
   for (int i = 0; i < repeat; i++)
-    if (!plan_render(&p, &f, utc, offset, &t, malloc, free)) { fprintf(stderr, "render failed\n"); return 1; }
+    if (!plan_render(&p, &f, utc, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
+  if (mem) printf("peak %zu bytes in %zu blocks\n", mem_peak, mem_peak_blocks);
   clock_gettime(CLOCK_MONOTONIC, &t1);
   if (repeat > 1)
     printf("%.2f ms a render\n", ((t1.tv_sec - t0.tv_sec) * 1e3 + (t1.tv_nsec - t0.tv_nsec) / 1e6) / repeat);

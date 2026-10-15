@@ -49,10 +49,9 @@ typedef struct {
   uint8_t tint, ramp[6];
   int nramp;
   const uint8_t *bn;
-  int32_t thresh12[256];                     /* each blue-noise level's threshold for the Milky Way */
   /* the window's ground: two values on a grid every 4 pixels over the window */
   int gx0, gy0, gnx, gny;
-  int16_t *ga, *gb, *gra, *gdec;
+  int16_t *ga, *gb;
   float ik, ssd, csd, csh, ssh, sl0, cl0;
   SkyK sk, sk6;                              /* the sky's Sun-dependent parts, now and (under an eclipse) at -6 */
   int16_t bright[96][2];                     /* the stars brighter than 2.1 on the screen, for the zodiac to avoid */
@@ -88,7 +87,15 @@ typedef struct {
   int jlo, jhi, nmoons, shower;
   int16_t moonbox[4][2];                     /* Jupiter's moons, where names keep off */
   uint64_t lane[40];                         /* the lane cleared for them, round Jupiter (bit x of row y) */
-  Text t1, t2, t3, t4;
+  /* memory the layers take in turn (the watch's is short): the Milky Way's first, then the lines of type for the
+   * names, the ring and the time, which all come after it */
+  union {
+    struct {
+      int32_t thresh12[256];                 /* each blue-noise level's threshold for the Milky Way */
+      int16_t mra[2][MAX_W / 4 + 3], mdec[2][MAX_W / 4 + 3];   /* its nodes' places, two rows at a time */
+    };
+    struct { Text t1, t2, t3, t4; };
+  };
 } R;
 
 /* ---- pixels --------------------------------------------------------------------------------------------------- */
@@ -481,19 +488,16 @@ static int q12(float v) { return (int)(v * 4096 + (v < 0 ? -0.5f : 0.5f)); }
 
 /* the grid's values at a node (pixel coordinates of the point): the ground's (Q12, the woodcut's ecliptic latitude Q8)
  * and its warmth (Q12); with the Milky Way, the point's right ascension (Q6) and declination (Q8) */
-static void node_values(R *r, float x, float y, int16_t *va, int16_t *vb, int16_t *vra, int16_t *vdec) {
+static void node_values(R *r, float x, float y, int16_t *va, int16_t *vb) {
   float dx = x - r->cx, dy = y - r->cy, rho = f_sqrt(dx * dx + dy * dy), irho = rho > 0 ? 1 / rho : 0;
   float dec = 90.0f - rho * r->ik, ch = rho > 0 ? dy * irho : 1, sh = dx * irho;
   *va = *vb = 0;
-  if (vra || r->woodcut) {
+  if (r->woodcut) {                               /* the ecliptic latitude, for the zodiac's band */
     float ha = f_atan2d(dx, dy), ra = r->south ? r->lst + ha : r->lst - ha;
     ra = pyf_mod(ra, 360);
-    if (vra) *vra = (int16_t)(int)(ra * 64), *vdec = (int16_t)(int)((r->south ? -dec : dec) * 256);
-    if (r->woodcut) {                             /* the ecliptic latitude, for the zodiac's band */
-      float d = r->south ? -dec : dec, e = (float)r->sky.eps;
-      *va = (int16_t)(int)(f_asind(f_sind(d) * f_cosd(e) - f_cosd(d) * f_sind(e) * f_sind(ra)) * 256);
-      return;
-    }
+    float d = r->south ? -dec : dec, e = (float)r->sky.eps;
+    *va = (int16_t)(int)(f_asind(f_sind(d) * f_cosd(e) - f_cosd(d) * f_sind(e) * f_sind(ra)) * 256);
+    return;
   }
   if (r->P->window != WIN_SKY && r->P->window != WIN_RED) return;
   if (r->closed_sky) {                            /* an even grey under a closed sky, paler overhead */
@@ -670,7 +674,15 @@ static uint8_t ground_at(R *r, int x, int y) {
 }
 
 /* the grid over the window: its nodes' values, and with the Milky Way the nodes' places in the sky */
-static bool make_grid(R *r, bool coords, void *(*alloc)(size_t)) {
+/* a node's place in the sky, for the Milky Way: right ascension (1/64 degree) and declination (1/256 degree) */
+static void node_radec(R *r, float x, float y, int16_t *vra, int16_t *vdec) {
+  float dx = x - r->cx, dy = y - r->cy, rho = f_sqrt(dx * dx + dy * dy);
+  float dec = 90.0f - rho * r->ik, ha = f_atan2d(dx, dy), ra = r->south ? r->lst + ha : r->lst - ha;
+  ra = pyf_mod(ra, 360);
+  *vra = (int16_t)(int)(ra * 64), *vdec = (int16_t)(int)((r->south ? -dec : dec) * 256);
+}
+
+static bool make_grid(R *r, void *(*alloc)(size_t)) {
   Plan *p = r->p;
   int minx = r->W, maxx = -1;
   for (int y = p->win_top; y <= p->win_bottom && y >= 0; y++) {
@@ -682,15 +694,13 @@ static bool make_grid(R *r, bool coords, void *(*alloc)(size_t)) {
   r->gx0 = minx, r->gy0 = p->win_top;
   r->gnx = (maxx - minx) / 4 + 2, r->gny = (p->win_bottom - p->win_top) / 4 + 2;
   size_t n = (size_t)r->gnx * (size_t)r->gny;
-  r->ga = alloc((coords ? 4 : 2) * n * sizeof(int16_t));
+  r->ga = alloc(2 * n * sizeof(int16_t));
   if (!r->ga) return false;
   r->gb = r->ga + n;
-  r->gra = coords ? r->ga + 2 * n : NULL, r->gdec = coords ? r->ga + 3 * n : NULL;
   for (int j = 0; j < r->gny; j++)
     for (int i = 0; i < r->gnx; i++) {
       size_t k = (size_t)j * r->gnx + i;
-      node_values(r, r->gx0 + 4 * i + 0.5f, r->gy0 + 4 * j + 0.5f, r->ga + k, r->gb + k,
-                  coords ? r->gra + k : NULL, coords ? r->gdec + k : NULL);
+      node_values(r, r->gx0 + 4 * i + 0.5f, r->gy0 + 4 * j + 0.5f, r->ga + k, r->gb + k);
     }
   return true;
 }
@@ -767,13 +777,17 @@ static void milky_way(R *r) {
   /* dens^1.2 > t, as level > t^(1/1.2), in the level's units: each threshold's root worked out once */
   float scale = (r->paper ? 0.30f : 0.42f) / MILKY_LEVELS / 16384;
   for (int i = 0; i < 256; i++) r->thresh12[i] = (int32_t)(f_pow((i + 0.5f) * (1.0f / 256), 1.0f / 1.2f) / scale);
-  /* a cell of the grid at a time: its corners' places in the sky, and none of it if no part of the Milky Way is near */
-  for (int j = 0; j < r->gny - 1; j++)
+  /* a cell of the grid at a time: its corners' places in the sky (worked out a row of nodes ahead), and none of it
+   * if no part of the Milky Way is near */
+  for (int i = 0; i < r->gnx; i++) node_radec(r, r->gx0 + 4 * i + 0.5f, r->gy0 + 0.5f, &r->mra[0][i], &r->mdec[0][i]);
+  for (int j = 0; j < r->gny - 1; j++) {
+    int n0 = j & 1, n1 = n0 ^ 1;
+    for (int i = 0; i < r->gnx; i++)
+      node_radec(r, r->gx0 + 4 * i + 0.5f, r->gy0 + 4 * (j + 1) + 0.5f, &r->mra[n1][i], &r->mdec[n1][i]);
     for (int i = 0; i < r->gnx - 1; i++) {
       int x0 = r->gx0 + 4 * i, y0 = r->gy0 + 4 * j;
-      Cell a, d;
-      cell_at(r, r->gra, x0, y0, &a);
-      cell_at(r, r->gdec, x0, y0, &d);
+      Cell a = {r->mra[n0][i], r->mra[n0][i + 1], r->mra[n1][i], r->mra[n1][i + 1], 0, 0};
+      Cell d = {r->mdec[n0][i], r->mdec[n0][i + 1], r->mdec[n1][i], r->mdec[n1][i + 1], 0, 0};
       int lo = a.v00, hi = a.v00, dlo = d.v00, dhi = d.v00;
       int *v[3] = {&a.v10, &a.v01, &a.v11}, *w[3] = {&d.v10, &d.v01, &d.v11};
       for (int k = 0; k < 3; k++) {              /* the corners' right ascensions taken round with the first */
@@ -811,6 +825,7 @@ static void milky_way(R *r) {
         }
       }
     }
+  }
 }
 
 /* ---- lines ----------------------------------------------------------------------------------------------------- */
@@ -1884,7 +1899,7 @@ static void corona(R *r, int si, int sj, float ox, float oy) {
   }
 }
 
-static void names(R *r, float mx, float my) {
+static __attribute__((noinline)) void names(R *r, float mx, float my) {
   const Plate *P = r->P;
   Sky *k = &r->sky;
   if (altitude(r, k->moon_ra, k->moon_dec) > 0) {
@@ -2611,7 +2626,20 @@ static int compose(R *r, int style, int screen, int hour, int minute, int *asc_o
 static int hour_of(int h, bool clock24) { return clock24 ? h : (h % 12 ? h % 12 : 12); }
 
 /* the time as an astronomer writes it, the needlework either side, the date, the almanac's line */
-static void time_block(R *r, int fy0, int season) {
+/* the almanac's searches, kept in the Plan until they lapse: the Sun's next rising or setting, and the day's news.
+ * Called at the top of the drawing, where the stack is shallowest: they go deep. */
+static __attribute__((noinline)) void almanac(R *r) {
+  Plan *p = r->p;
+  if (p->ev_kind < 0 || r->utc < p->ev_from || r->utc >= p->ev_at || p->ev_lat != r->f->lat || p->ev_lon != r->f->lon) {
+    p->ev_kind = plan_sun_event(r->utc, r->f->lat, r->f->lon, &p->ev_at);
+    if (!p->ev_kind) p->ev_at = r->utc + 3600;     /* the Sun neither rises nor sets today: look again in an hour */
+    p->ev_from = r->utc, p->ev_lat = r->f->lat, p->ev_lon = r->f->lon;
+  }
+  day_news(r);
+}
+
+/* (each of the long layers in a frame of its own, not in plan_render's: the stack is 2 KB) */
+static __attribute__((noinline)) void time_block(R *r, int fy0, int season) {
   const Plate *P = r->P;
   Plan *p = r->p;
   float ring_in = r->rect ? 17.0f : r->cy - (r->p->R - 18.0f);
@@ -2697,12 +2725,6 @@ static void time_block(R *r, int fy0, int season) {
   stamp(r, &r->t1, left + ds->w + 4, y_date, P->ink, false, false, 1);
   /* the almanac's line: the sky's news (its wordings, the longest first), or else the Sun's next rising or setting;
    * with the weather, each with the temperature after a lozenge, then each alone, then the temperature alone */
-  if (p->ev_kind < 0 || r->utc < p->ev_from || r->utc >= p->ev_at || p->ev_lat != r->f->lat || p->ev_lon != r->f->lon) {
-    p->ev_kind = plan_sun_event(r->utc, r->f->lat, r->f->lon, &p->ev_at);
-    if (!p->ev_kind) p->ev_at = r->utc + 3600;     /* the Sun neither rises nor sets today: look again in an hour */
-    p->ev_from = r->utc, p->ev_lat = r->f->lat, p->ev_lon = r->f->lon;
-  }
-  day_news(r);
   r->totality = (r->have_sol && r->sol.kind == ECLIPSE_TOTAL) || (r->have_lun && r->lun.kind == ECLIPSE_TOTAL);
   float room = (r->W - 2 * ring_in) * 0.84f;
   Text *line = &r->t1, *both = &r->t2, *temp = &r->t3, *tmp = &r->t4;
@@ -2759,6 +2781,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   plan_window(p, f->lat);
   plan_sky(&r->sky, utc, f->lon);
   plan_civil(utc + offset, &r->local);
+  almanac(r);
   r->bn = sec(p->data, SEC_BLUE_NOISE);
   r->cx = p->cx, r->cy = p->cy, r->k = p->k;
   r->col = (int)p->cx;
@@ -2796,18 +2819,23 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   for (int x = 0; x < MAX_W; x++) r->btop[x] = NONE16;
   r->closed_sky = P->window == WIN_SKY && r->wx && (r->stratus >= 0.6f || r->fog || r->falls);
 
-  /* the card, and the window's ground */
+  /* where the numerals stand on the ring for this clock (worked out once, from the ring alone), before the window's
+   * grid takes its memory */
+  int style = f->clock24 ? 2 : P->ring == RING_ROMAN ? 0 : P->ring == RING_GOTHIC ? 3 : P->ring == RING_MINUSCULE ? 4 : 1;
+  if (!numeral_layout(r, style, alloc, release)) { release(r); return false; }
+  /* the card, the labours in it (before the grid too: they keep to the card, the grid to the window), and the
+   * window's ground */
   for (int y = 0; y < r->H; y++)
     for (int x = p->rx0[y]; x <= p->rx1[y]; x++) p->rows[y][x] = card_at(r, x, y);
+  if (f->labours) labours(r, alloc, release);
   r->ik = 1 / r->k;
   sky_constants(&r->sk, P->window == WIN_RED ? r->s_eff : r->sun_alt);
   sky_constants(&r->sk6, -6);
   r->ssd = f_sind(r->sdec), r->csd = f_cosd(r->sdec), r->csh = f_cosd(r->sha), r->ssh = f_sind(r->sha);
   bool milky = !r->rete && (r->paper || (r->sun_alt < -15 &&
                !(r->wx && r->live && (r->haze > 1.0f || r->stratus + r->cumulus > 0.45f))));
-  if (!make_grid(r, milky, alloc)) { release(r); return false; }
+  if (!make_grid(r, alloc)) { release(r); return false; }
   window_ground(r);
-  if (f->labours) labours(r, alloc, release);
   r->dark = r->paper ? true : r->s_eff < -12;
   r->figs = r->paper || r->s_eff < -10.5f;
   float faint = 4.6f;
@@ -2989,8 +3017,6 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   ornaments(r);
   /* the window's edge, the ring, the time */
   int fy0 = rims(r);
-  int style = f->clock24 ? 2 : P->ring == RING_ROMAN ? 0 : P->ring == RING_GOTHIC ? 3 : P->ring == RING_MINUSCULE ? 4 : 1;
-  if (!numeral_layout(r, style, alloc, release)) { release(r->ga); release(r); return false; }
   ring(r, season);
   time_block(r, fy0, season);
   release(r->ga);

@@ -33,9 +33,11 @@ OUT = ROOT / "watchface" / "resources" / "data" / "plan_code.bin"
 WORK = ROOT / "build" / "blob"
 SDK = Path(os.environ.get("PEBBLE_SDK", Path.home() / ".local/share/pebble-sdk/SDKs/current"))
 TC = SDK / "toolchain" / "arm-none-eabi" / "bin"     # (or --cc's directory)
-CFLAGS = ["-mcpu=cortex-m3", "-mthumb", "-Os", "-std=c99", "-ffunction-sections", "-fdata-sections",
+CFLAGS = ["-mcpu=cortex-m3", "-mthumb", "-Os", "-std=c11", "-ffunction-sections", "-fdata-sections",
           "-ffp-contract=off", "-fno-common", "-Wall", "-Wextra", "-Wno-unused-parameter", "-Werror",
-          "-fno-tree-loop-distribute-patterns", f"-I{SRC}"]
+          "-fno-tree-loop-distribute-patterns", f"-I{SRC}",
+          # each layer in a frame of its own, not all of them in plan_render's: the watch's stack is 2 KB
+          "-fno-inline-functions-called-once"]
 # for tools/emulator.py profile: every function its own, to count where the time goes; else link-time optimisation
 CFLAGS += ["-fno-inline"] if os.environ.get("PLAN_PROFILE") else ["-flto"]
 SOURCES = [SRC / "plan_render.c", SRC / "plan_astro.c", SRC / "plan_math.c", BLOB / "plan_blob.c"]

@@ -64,6 +64,8 @@ jobs:
           cd watchface
           pebble build
           cd ..
+          python tools/stack_depth.py --budget 1000
+          python tools/check_memory.py
           python tools/release.py package
           python tools/release.py check
       - name: Decide whether this push is a release

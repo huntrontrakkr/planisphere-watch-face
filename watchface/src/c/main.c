@@ -38,6 +38,8 @@ typedef struct { Weather w; uint32_t time; } Stored;
  * the moment last drawn, for tools/host to draw again) */
 volatile uint32_t g_render_ms = 0, g_render_max = 0, g_heap_free = 0, g_heap_low = 0, g_code = 0, g_utc = 0;
 volatile int32_t g_offset = 0;
+/* the stack's deepest (stack_deepest), ever and by the end of init; and how deep it is where the renderer is called */
+volatile uint32_t g_stack = 0, g_stack_init = 0, g_stack_at = 0;
 
 static Window *s_window;
 static Layer *s_layer;
@@ -60,6 +62,25 @@ static uint32_t now_ms(void) {
   uint16_t ms;
   time_ms(&s, &ms);
   return (uint32_t)s * 1000u + ms;
+}
+
+/* How deep the stack has been, in bytes (after Groundtrack). PebbleOS gives an app 2 KB of it less a 32-byte guard
+ * (APP_STACK_NORMAL_SIZE in its app_manager.c), just below the app itself, whose header leads it, and the system's
+ * own calls run on it too. Past the guard a watch stops the app; the emulator does not, so the app marks what it
+ * has not yet used as it starts, and g_stack says how much of that has since been written over. */
+#define STACK_BYTES (2048 - 32)
+#define STACK_MARK 0xA5
+extern const uint8_t __pbl_app_info[];
+static void stack_mark(void) {
+  volatile uint8_t here = 0;
+  const uintptr_t top = (uintptr_t)__pbl_app_info;
+  for (uintptr_t a = top - STACK_BYTES; a < (uintptr_t)&here - 96; a++) *(volatile uint8_t *)a = STACK_MARK;
+}
+static uint32_t stack_deepest(void) {
+  const uintptr_t top = (uintptr_t)__pbl_app_info;
+  uintptr_t a = top - STACK_BYTES;
+  while (a < top && *(volatile const uint8_t *)a == STACK_MARK) a++;
+  return (uint32_t)(top - a);
 }
 
 /* ---- the place and the weather ---- */
@@ -146,10 +167,12 @@ static void update(Layer *layer, GContext *ctx) {
   Target tg = {fb_row, fb};
   if (heap_bytes_free() < g_heap_low || !g_heap_low) g_heap_low = heap_bytes_free();
   g_utc = (uint32_t)now, g_offset = utc_offset(now);
+  g_stack_at = (uint32_t)((uintptr_t)__pbl_app_info - (uintptr_t)&tg);
   s_api->render(s_plan, &f, (int64_t)now, g_offset, &tg, alloc, free);
   graphics_release_frame_buffer(ctx, fb);
   g_render_ms = now_ms() - t0;
   if (g_render_ms > g_render_max) g_render_max = g_render_ms;
+  g_stack = stack_deepest();
 }
 
 static void tick(struct tm *t, TimeUnits changed) {
@@ -262,6 +285,7 @@ static void window_load(Window *window) {
 static void window_unload(Window *window) { layer_destroy(s_layer), s_layer = NULL; }
 
 static void init(void) {
+  stack_mark();
   defaults(&s_settings);
   Settings s;
   if (persist_read_data(KEY_SETTINGS, &s, sizeof s) == (int)sizeof s && s.version == SETTINGS_VERSION) s_settings = s;
@@ -277,6 +301,7 @@ static void init(void) {
   window_stack_push(s_window, false);
   tick_timer_service_subscribe(MINUTE_UNIT, tick);
   app_timer_register(4000, ask_later, NULL);     /* once the phone's side has started */
+  g_stack_init = stack_deepest();
 }
 
 static void deinit(void) {

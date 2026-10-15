@@ -22,20 +22,13 @@ static uint8_t *pv_row(void *ctx, int y, int *x0, int *x1) {
   return fb + y * W;
 }
 
-/* The screen: the Time 2 (200 x 228) or the Round 2 (260 x 260, its rows cut to the circle). */
+/* The screen: the Time 2 (200 x 228) or the Round 2 (260 x 260, its rows cut to what its display lights). */
 EMSCRIPTEN_KEEPALIVE void pv_screen(int round) {
   round_screen = round != 0;
   W = round_screen ? 260 : 200, H = round_screen ? 260 : 228;
   for (int y = 0; y < H; y++) {
-    int a = 0, b = W - 1;
-    if (round_screen) {
-      a = W, b = -1;
-      for (int x = 0; x < W; x++) {
-        double dx = x + 0.5 - W / 2.0, dy = y + 0.5 - H / 2.0;
-        if (dx * dx + dy * dy <= (W / 2.0) * (W / 2.0)) { if (x < a) a = x; b = x; }
-      }
-    }
-    row_x0[y] = (int16_t)a, row_x1[y] = (int16_t)b;
+    int a = round_screen ? ROUND2_TOPLEFT[y < 130 ? y : 259 - y] : 0;
+    row_x0[y] = (int16_t)a, row_x1[y] = (int16_t)(W - 1 - a);
   }
   memset(fb, 0, sizeof fb);
   plan_init(&P, W, H, BLOB_PLAN, round_screen ? BLOB_GABBRO : BLOB_EMERY);
