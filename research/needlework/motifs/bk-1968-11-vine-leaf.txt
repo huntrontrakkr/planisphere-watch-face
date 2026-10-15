@@ -1,0 +1,28 @@
+title: Vine leaf with a stalk (from a vine border), 13 x 13
+section: Seasons and plants
+source: A.M. Luns, sampler, wool and silk cross stitch, Brussels, c. 1870-1880; Rijksmuseum BK-1968-11 (gift of Mrs A.M. Luns, 1968), public domain (CC0; Commons licence checked: CC0)
+short-source: A.M. Luns sampler c. 1875 (Rijksmuseum BK-1968-11)
+page: right-hand border (a red vine of lobed leaves on a zigzag stem with curling tendrils, the "wingerdbladeren" of the museum description); the leaf on the right of the stem about a quarter of the way down; crop x5300-5650 y1360-1720 of the full Commons image (6444 x 6117)
+url: https://www.rijksmuseum.nl/en/collection/BK-1968-11
+image: https://commons.wikimedia.org/wiki/File:Merklap_met_veelkleurig_wol_en_zijde_borduurwerk.,_BK-1968-11.jpg
+size: 13 x 13 cells
+symmetry: none (a leaf pointing up and to the right, stalk at the upper left)
+colours: # = red wool cross stitch, . = ground
+use: season (autumn: a red vine leaf; also a leaf for any vine or ring garland)
+status: VERIFIED
+verified: lattice fitted to the stitches (pitch about 23.2 x 23.8 px), red channel: 165/169 cells agree; the 4 others are stitches of the neighbours deliberately left out of the chart: the end of a tendril above the leaf (row 1, cols 4-5) and the tip of the next leaf at the lower left (row 13, cols 1-2) (images/bk-1968-11-vine-leaf_ver.jpg)
+notes: A solid three-lobed leaf: the right lobe ends in a point at col 12 with a one-cell notch below it (row 6), the broad lower lobe runs down to a point at the bottom right, and a one- to two-cell slit at the foot (rows 12-13) separates the small lower-left lobe. The stalk (rows 3-4, cols 1-2) is the start of the stem it hangs from. In the border the leaves alternate along a zigzag stem with spiral tendrils (single-stitch lines) and are drawn in several slightly different shapes; this one was chosen for its clean outline. Wool on canvas, solid fill; at 1x it reads as a leaf silhouette.
+---
+.......#.....
+.....####....
+#...#######..
+.#.########..
+..##########.
+..########.#.
+.##########..
+.##########..
+.##########..
+.###########.
+..##########.
+...##.######.
+...##..######

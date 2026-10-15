@@ -1,0 +1,69 @@
+title: Chevron band (two parallel zigzag lines with bars at the turns; vertical band)
+section: Narrow bands
+source: Peter Quentel, Eyn Newe kunstlich moetdelboech alle kunst, Cologne 1532; The Met 24.29(1-32), Harris Brisbane Dick Fund 1924, Public Domain
+short-source: Quentel 1532 (Met DP363342)
+page: image DP363342, a page of vertical bands; the narrow band at the far left; read from x652-875 y385-1640 at pitch 21 (band = lattice columns 2-10, between the page's black frame and the black separator); reference crop x640-890 y380-1650
+url: https://www.metmuseum.org/art/collection/search/355820
+image: https://images.metmuseum.org/CRDImages/dp/original/DP363342.jpg
+size: period 9 cells wide x 10 rows (runs down the page; rotated, a 10-cell period in a 9-row band)
+symmetry: the vertical band mirrors top-bottom about each bar row; rotated to run horizontally it is mirror left-right
+colours: # = black cell of the woodcut, . = white cell (black is the ground; here the black cells draw the lines)
+use: ring band (rotated: a 9-row lacy zigzag, a light filigree for the ring's edge)
+status: VERIFIED
+verified: the period tiled down the band (56 rows x 9 columns, rows 1-56 of the reading) and overlaid: darkness at the white-cell-lattice sites (g3check.py) 503/504 agree; white-cell lattice reader (nwtool verify --g3) 500/504. The one darkness difference is a single cell cut white in one repeat (the sixth row, last column); the other g3 differences are merged white cells. Overlay: images/quentel1532-chevron-band_ver.jpg (upper half; green = black cell confirmed, red = the cut cell)
+notes: Two diagonal lines run side by side, five cells apart, turning at four-cell bars; together they make nested chevrons pointing to the left. Rotated (second block) they read as a lattice of zigzags with short posts, light at 1x.
+---
+period (9 x 10):
+....####.
+...#....#
+..#....#.
+.#....#..
+#....#...
+.####...#
+#....#...
+.#....#..
+..#....#.
+...#....#
+
+three repeats (stacked down the page, as printed):
+....####.
+...#....#
+..#....#.
+.#....#..
+#....#...
+.####...#
+#....#...
+.#....#..
+..#....#.
+...#....#
+....####.
+...#....#
+..#....#.
+.#....#..
+#....#...
+.####...#
+#....#...
+.#....#..
+..#....#.
+...#....#
+....####.
+...#....#
+..#....#.
+.#....#..
+#....#...
+.####...#
+#....#...
+.#....#..
+..#....#.
+...#....#
+
+period rotated 90 degrees clockwise, to run horizontally (10 x 9):
+...#.#....
+..#.#.#...
+.#..#..#..
+#...#...#.
+....#....#
+...#.#...#
+..#...#..#
+.#.....#.#
+#...#...#.

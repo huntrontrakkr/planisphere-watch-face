@@ -1,0 +1,47 @@
+title: Eight-spoked wheel (a ring with spokes and a hub: rose window, sun wheel; voided woodcut)
+section: Stars and sky
+source: Peter Quentel, Ein new kunstlich Modelbuch..., Cologne 1544 (woodcut pattern book); The Met 22.84.1(1-102), Public Domain
+short-source: Quentel 1544 (Met DP357063)
+page: image DP357063, third band of four (a row of wheels in medallions, separated by half-diamonds); the second wheel from the left, x760-1140 y1400-1860 of the full scan (2134 x 2628)
+url: https://www.metmuseum.org/art/collection/search/354658
+image: https://images.metmuseum.org/CRDImages/dp/original/DP357063.jpg
+size: 15 x 15 cells
+symmetry: full square symmetry (both mirrors, both diagonals, quarter turn)
+colours: as charted below, # = WHITE cell of the woodcut (the wheel), . = black ground: the woodcut is voided work, the motif left white on a worked ground. (The literal woodcut, # = black, is the inverse.)
+use: star (the Sun as a wheel, a dial or rete-like emblem; the wheel of the year) / corner (a medallion for the card's corners)
+status: VERIFIED
+verified: darkness at each site of the woodcut's white-cell lattice (Otsu threshold) compared with the black/white inverse of this chart: 225/225 cells agree (images/quentel1544-wheel-15_ver.jpg, green dots = black cells)
+notes: A ring two cells thick (three on the diagonals), eight spokes of single cells, and a hub: a small ring round an empty centre cell through which the horizontal and vertical spokes pass. At 1x it reads as a wheel or a rose window; in gold or red on cream it is an emblem of the turning sky. On the page each wheel sits in a black octagonal medallion between white half-diamonds.
+---
+....#######....
+...#########...
+..###..#..###..
+.###...#...###.
+###.#..#..#.###
+##...#.#.#...##
+##....###....##
+#######.#######
+##....###....##
+##...#.#.#...##
+###.#..#..#.###
+.###...#...###.
+..###..#..###..
+...#########...
+....#######....
+
+the literal woodcut (# = black cell), 15 x 15:
+####.......####
+###.........###
+##...##.##...##
+#...###.###...#
+...#.##.##.#...
+..###.#.#.###..
+..####...####..
+.......#.......
+..####...####..
+..###.#.#.###..
+...#.##.##.#...
+#...###.###...#
+##...##.##...##
+###.........###
+####.......####

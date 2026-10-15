@@ -1,0 +1,28 @@
+title: Tee fret band (hanging and standing T's between two rules)
+section: Narrow bands
+source: Thérèse de Dillmont, Album de broderies au point de croix, IIme Série, Planche No 11 (narrow borders), item 40; Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie (printed by Brustlein & Co., Mulhouse), 1890; Smithsonian Libraries copy, archive.org item albumdebroderies02dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album II 1890, Pl. 11 no. 40 (archive.org albumdebroderies02dill)
+page: archive.org albumdebroderies02dill page n30 (Planche No 11), item 40, the top band of the left column; crop x255-1425 y420-545 of the full page image (3011 x 4047)
+url: https://archive.org/details/albumdebroderies02dill
+image: https://archive.org/download/albumdebroderies02dill/page/n30.jpg
+size: period 6 cells x 5 rows
+symmetry: mirror left-right about each T (axes at columns 2 and 5 of the period); glide reflection (top-bottom mirror + shift 3 cells); rot180 (bandsym.py)
+colours: # = cross stitch (one colour), . = canvas ground
+use: ring band (a 5-row fret or battlement filigree; one-cell lines throughout)
+status: VERIFIED
+verified: printed chart, each stitch drawn as a cross symbol on a fine printed canvas grid (4 x 4 canvas squares per stitch); stitch lattice fitted to the cross symbols (nwtool read, dark channel, pitch 20.97 x 20.19 px), Otsu threshold; the period tiled 9 times (54 x 5) and overlaid on the band: 270/270 cells agree, no mismatches (images/dmc1890-tee-fret-band_ver.jpg)
+notes: Between a solid top rule and a solid bottom rule, T's hang from the top rule (3-cell bar, 1-cell stem) and stand on the bottom rule (1-cell stem, 3-cell bar), alternating every 3 cells, so the band reads as an interlocking fret. On the plate the band runs 9 periods and a column. At 1x on the face: a crisp 5-row line of crenellations, the lightest of the DMC narrow borders.
+---
+period (6 x 5):
+######
+.###..
+..#..#
+#...##
+######
+
+three repeats:
+##################
+.###...###...###..
+..#..#..#..#..#..#
+#...###...###...##
+##################

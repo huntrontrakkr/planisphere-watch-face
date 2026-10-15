@@ -1,0 +1,36 @@
+title: I-beams and blocks (two-colour narrow band)
+section: Narrow bands
+source: Johann Sibmacher, Schön Neues Modelbuch, Nuremberg 1597 (etched pattern book); The Met 20.16(1-43), Public Domain
+short-source: Sibmacher 1597 p.25 (Met DP363498)
+page: image DP363498 (page 25: narrow bands in three columns), left column, first band; crop x300-760 y190-330
+url: https://www.metmuseum.org/art/collection/search/357195
+image: https://images.metmuseum.org/CRDImages/dp/original/DP363498.jpg
+size: period 6 cells x 4 rows (on the page it sits between two rules of star symbols, one empty row each side)
+symmetry: mirror left-right and top-bottom
+colours: * = four-point-star symbol (colour 1), H = vertically hatched cell (colour 2), . = ground. The etching gives symbols, not colours; e.g. * = red, H = ink
+use: ring band (a 4-row filigree; reads as a chain of I's at 1x)
+status: VERIFIED
+verified: lattice fitted to the etched grid lines; 3 tiled periods overlaid (any symbol = filled): 72/72 cells agree; symbols checked by eye at 5x zoom (images/sibmacher1597-narrow-band-a_ver.jpg)
+notes: The narrowest two-colour band found so far. With its rule of stars above and below (a row of * on every cell, one empty row between) it makes an 8-row band.
+---
+period (6 x 4):
+****..
+.**.HH
+.**.HH
+****..
+
+three repeats:
+****..****..****..
+.**.HH.**.HH.**.HH
+.**.HH.**.HH.**.HH
+****..****..****..
+
+as printed, with the star rules (8 rows):
+******************
+..................
+****..****..****..
+.**.HH.**.HH.**.HH
+.**.HH.**.HH.**.HH
+****..****..****..
+..................
+******************

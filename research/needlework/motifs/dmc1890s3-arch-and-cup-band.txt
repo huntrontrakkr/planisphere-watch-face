@@ -1,0 +1,34 @@
+title: Arches and cups band (dark stepped arches alternating with light cups)
+section: Narrow bands
+source: Thérèse de Dillmont, Album de broderies au point de croix, IIIme Série, Planche No 11, item 118; Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie, 1890 (catalogue date); Smithsonian Libraries copy, archive.org item albumdebroderies03dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album III 1890, Pl. 11 no. 118 (archive.org albumdebroderies03dill)
+page: archive.org albumdebroderies03dill page n28 (Planche No 11), item 118, the top band of the right column; crop x1475-2690 y420-625 of the full page image (3028 x 3987)
+url: https://archive.org/details/albumdebroderies03dill
+image: https://archive.org/download/albumdebroderies03dill/page/n28.jpg
+size: period 16 cells x 8 rows (a cup 7 wide, a gap, an arch 7 wide, a gap)
+symmetry: mirror left-right (axes at columns 3 and 11 of the period: through each cup and each arch) (bandsym.py); the cup is the arch turned upside down
+colours: D = dark-shaded cross symbol (arches), L = light-shaded cross symbol (cups), . = canvas ground. The plate gives tones, not colour names
+use: ring band (an 8-row cresting: arches and cups alternate like a row of bells and tulips; in one colour a scalloped edge)
+status: VERIFIED
+verified: printed chart (cross symbols on a fine printed canvas grid); stitch lattice fitted to the symbols (pitch 21.03 x 20.46 px); a cell counts as inked when at least 60% of its inner area is inked (luminance < 170; the light symbols at the right end print pale, so the very-dark rule was not used) (/tmp/nw/printed/bin/vverify.py --useany 0.6); the period tiled across the whole band (55 x 8: four cups, three arches): 440/440 cells agree (images/dmc1890s3-arch-and-cup-band_ver.jpg). Tones split with a sliding 26-column window (2-means, /tmp/nw/printed/bin/tone2.py): the tiled letters agree in 440/440 cells
+notes: Each arch is a solid stepped pyramid (a one-cell finial over rows of 3, 5 and 7 cells) that opens below into a stepped notch 1, 3 and 5 cells wide between legs thinning from 3 cells to 1, like a bell or a Gothic arch; each cup is the same shape upside down (two horns, a stepped V, a one-cell foot). On the plate the band starts and ends with a cup. Read as a cresting, the arches point outward; turned over, the cups do.
+---
+period (16 x 8):
+...........D....
+L.....L...DDD...
+LL...LL..DDDDD..
+LLL.LLL.DDDDDDD.
+LLLLLLL.DDD.DDD.
+.LLLLL..DD...DD.
+..LLL...D.....D.
+...L............
+
+three repeats:
+...........D...............D...............D....
+L.....L...DDD...L.....L...DDD...L.....L...DDD...
+LL...LL..DDDDD..LL...LL..DDDDD..LL...LL..DDDDD..
+LLL.LLL.DDDDDDD.LLL.LLL.DDDDDDD.LLL.LLL.DDDDDDD.
+LLLLLLL.DDD.DDD.LLLLLLL.DDD.DDD.LLLLLLL.DDD.DDD.
+.LLLLL..DD...DD..LLLLL..DD...DD..LLLLL..DD...DD.
+..LLL...D.....D...LLL...D.....D...LLL...D.....D.
+...L...............L...............L............

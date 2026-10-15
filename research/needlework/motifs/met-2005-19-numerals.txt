@@ -1,0 +1,198 @@
+title: Old-style figures 1234567890 and oe (Sarah Thomas, Westtown School, Pennsylvania, 1801)
+section: Alphabets and numerals
+source: Sarah Thomas (1786-1826), sampler made at the Westtown Quaker School ("WESTON SCHOOL ... Sarah Thomas 1801"), Westtown, Pennsylvania, 1801, silk on linen, 37.5 x 31.8 cm; The Met 2005.19, Purchase, Mr. and Mrs. Frank Martucci and Mr. and Mrs. Robert T. Schaffner Gifts, and Gift of George Coe Graves, by exchange, 2005; Public Domain (Open Access, CC0)
+short-source: Westtown School sampler 1801 (Met 2005.19, DP363135)
+page: image DP363135 (3907 x 3346), top line "1234567890 oe." above "WESTON SCHOOL"; reference crop x1265-2600 y745-1045. Glyph windows (full-scan px): 1 and 2 x1265-1450 y815-975, 3 x1430-1585 y745-975, 4 x1565-1735 y765-975, 5 x1705-1885 y760-975, 6 x1850-1990 y750-975, 7 x1925-2075 y815-1045, 8 x2030-2175 y750-975, 9 x2145-2295 y815-1045, 0 x2260-2405 y815-975, oe x2415-2600 y815-975
+url: https://www.metmuseum.org/art/collection/search/18824
+image: https://images.metmuseum.org/CRDImages/ad/original/DP363135.jpg
+size: x-height 9 rows (1, 2, 0, oe); 3, 6, 8 rise 6 rows (15 rows), 5 rises 4 (13 rows), 4 rises 3 (12 rows); 7 and 9 hang 7 rows (16 rows). Widths: 1 = 3, 2 = 7, 3 = 9, 4 = 9, 5 = 10, 6 = 7, 7 = 8, 8 = 7, 9 = 7, 0 = 7, oe = 11
+symmetry: 1 has 180-degree rotational symmetry (flag top right, foot bottom left); the rest none
+colours: # = green (faded blue-green) silk cross stitch, . = linen ground
+use: numerals (ring hours, dates): a complete old-style 0-9 on a 9-row x-height, with rising 3, 4, 5, 6, 8 and hanging 7, 9
+status: VERIFIED
+verified: the linen threads are too fine to resolve, so the lattice was fitted to the stitches: per glyph window, a brute-force search over pitch (12.3-13.0 x 12.0-12.7 px) and phase for the most bimodal cell values (/tmp/nw/metsamplers/latsearch.py), then read on a green-minus-red channel (green silk on orange linen), Otsu threshold per window, cell centre (margin 0.25). Every glyph checked on the read overlays and on the verify overlays (images/met-2005-19-numerals_ver.jpg: 1, 2, 3, 4, 5, 6 / 7, 8, 9, 0, oe). Agreement (chart with a 1-cell empty margin, cells in frame): 1 55/55, 2 99/99, 3 187/187, 4 154/154, 5 180/180, 6 152/153, 7 172/180, 8 144/144, 9 162/162, 0 99/99, oe 130/130. The only mismatches are outside the glyphs except one: in the 6's and 7's margins the neighbouring glyph (the 7's serif, the 6's right side); and in the 7 a half-covered cell (value 0.49) beside its top-left serif, where the serif stitch straddles two cells (charted as one, at the cell the zoom shows it centred on). Cells near the threshold kept as read: the 4's top-right (0.55), the 5's bar end (0.55), the 6's ascender (0.55) and bowl foot (0.55), the 8's left side and waist (0.55), the 9's bowl foot and tail end (0.55).
+notes: The figures of a Westtown Quaker School sampler, worked in one green silk and very evenly spaced: a ready-made period font. Old-style: 1, 2, 0 at x-height; 3, 4, 5, 6, 8 rise (the 3 is the flat-topped "z"-shaped form whose bowl sits on the line); 7 and 9 hang. The 1 has a flag at the top right and a foot at the bottom left; the 2 a hook and an upturned tail; the 4 is open with its crossbar three rows above the line; the 0 is an upright oval, narrower than the oe. The photograph's line rises by about one row from left to right; the line below sets every figure on one baseline with one empty column between figures (the sampler leaves 2-4). At 1x the set reads cleanly in one ink; the x-height 9 suits an hour ring of about 11-12 px with ascenders and descenders.
+---
+1 (3 wide, 9 rows, on the line):
+.##
+.#.
+.#.
+.#.
+.#.
+.#.
+.#.
+.#.
+##.
+
+2 (7 wide, 9 rows, on the line):
+..###..
+.#...#.
+.....#.
+.....#.
+....#..
+...#...
+..#....
+.#....#
+######.
+
+3 (9 wide, 15 rows, on the line, rises 6):
+.....##..
+....#..#.
+........#
+........#
+.......#.
+......#..
+.....#...
+...###...
+......#..
+......#..
+......#..
+......#..
+......#..
+#....#...
+.####....
+
+4 (9 wide, 12 rows, on the line, rises 3; crossbar 3 rows above the line):
+........#
+.......##
+......###
+.....#.#.
+....#..#.
+...#...#.
+..#....#.
+.#.....#.
+#########
+.......#.
+.......#.
+.......#.
+
+5 (10 wide, 13 rows, on the line, rises 4):
+.........#
+.....####.
+....#.....
+...#......
+..#.......
+.####.....
+....#.....
+.....#....
+.....#....
+.....#....
+.....#....
+#...#.....
+.###......
+
+6 (7 wide, 15 rows, on the line, rises 6):
+.....##
+....#..
+...#...
+..#....
+..#....
+.#.....
+.####..
+.#..#..
+#....#.
+#....#.
+#....#.
+#....#.
+#....#.
+.#..#..
+.###...
+
+7 (8 wide, 16 rows: bar at x-height, hangs 7):
+..######
+.#....#.
+......#.
+.....#..
+.....#..
+....#...
+....#...
+...#....
+...#....
+..#.....
+..#.....
+..#.....
+.#......
+.#......
+#.......
+#.......
+
+8 (7 wide, 15 rows, on the line, rises 6):
+...###.
+..#...#
+.#....#
+.#....#
+.#....#
+.#...#.
+..#.#..
+...#...
+..###..
+.#..#..
+#....#.
+#....#.
+#....#.
+##..#..
+.###...
+
+9 (7 wide, 16 rows: bowl at x-height, hangs 7):
+..####.
+.#....#
+#.....#
+#.....#
+#.....#
+#.....#
+#....#.
+#....#.
+.#####.
+.....#.
+....#..
+....#..
+....#..
+...#...
+..#....
+###....
+
+0 (7 wide, 9 rows, on the line):
+..####.
+.#...#.
+#.....#
+#.....#
+#.....#
+#.....#
+#.....#
+##...#.
+.####..
+
+oe ligature (11 wide, 9 rows, on the line):
+..###..###.
+.#...##...#
+#....#....#
+#....######
+#....#.....
+#....#.....
+#....#.....
+.#..#.#...#
+..##...###.
+
+as a line, 1234567890 (one empty column between figures; 7 and 9 hang below the baseline):
+.................##.............................##.............###.................
+................#..#...........................#..............#...#................
+....................#....................#....#..............#....#................
+....................#.........#......####....#...............#....#................
+...................#.........##.....#........#...............#....#................
+..................#.........###....#........#................#...#.................
+.##...###........#.........#.#....#.........####.....######...#.#.....####....####.
+.#...#...#.....###........#..#...####.......#..#....#....#.....#.....#....#..#...#.
+.#.......#........#......#...#......#......#....#........#....###...#.....#.#.....#
+.#.......#........#.....#....#.......#.....#....#.......#....#..#...#.....#.#.....#
+.#......#.........#....#.....#.......#.....#....#.......#...#....#..#.....#.#.....#
+.#.....#..........#...#########......#.....#....#......#....#....#..#.....#.#.....#
+.#....#...........#..........#.......#.....#....#......#....#....#..#....#..#.....#
+.#...#....#.#....#...........#..#...#.......#..#......#.....##..#...#....#..##...#.
+##..######...####............#...###........###.......#......###.....#####...####..
+.....................................................#...................#.........
+.....................................................#..................#..........
+.....................................................#..................#..........
+....................................................#...................#..........
+....................................................#..................#...........
+...................................................#..................#............
+...................................................#................###............

@@ -1,0 +1,41 @@
+title: Band of hanging acorns (or bells), 7 rows
+section: Narrow bands
+source: Peter Quentel, Eyn New Kunstlichboich, Cologne 1529; The Met 20.50.2(1-49), Public Domain
+short-source: Quentel 1529 (Met DP361405)
+page: image DP361405 (blackletter a-p, printed folio "50"), the narrow band at the foot of the block: eleven acorns, 7 rows between white margin rows; read from x440-1650 y2060-2225 at pitch 15.3; crop x780-1310 y2050-2225
+url: https://www.metmuseum.org/art/collection/search/354657
+image: https://images.metmuseum.org/CRDImages/dp/original/DP361405.jpg
+size: period 6 cells x 7 rows (each acorn 5 x 7)
+symmetry: each acorn mirror left-right
+colours: # = black cell of the woodcut, . = white cell
+use: season (autumn: a row of acorns) / ring band (7 rows); a single acorn (5 x 7) is a spot motif
+status: VERIFIED
+verified: 8 tiled periods (48 x 7, the right two-thirds of the band) overlaid: darkness at the white-cell-lattice sites (g3check.py) 335/336 agree, the one difference an extra black cell beside one acorn's tip (a cutting fault, in one repeat only); white-cell lattice reader (nwtool verify --g3) 332/336, the others merged double white cells. In the left third the cut grid is uneven (one acorn reads a column wider), so it was left out. Overlay: images/quentel1529-acorn-band_ver.jpg
+notes: A one-cell stalk, a domed cup (3 then 5 cells) whose rim hangs down at both sides, the nut (3 cells, two rows) and a pointed tip: an acorn hanging from its stalk; turned over it is a bell. One blank column between acorns. At 1x the 5 x 7 acorn reads clearly.
+---
+period (6 x 7):
+..#...
+.###..
+#####.
+#...#.
+.###..
+.###..
+..#...
+
+three repeats:
+..#.....#.....#...
+.###...###...###..
+#####.#####.#####.
+#...#.#...#.#...#.
+.###...###...###..
+.###...###...###..
+..#.....#.....#...
+
+one acorn (5 x 7):
+..#..
+.###.
+#####
+#...#
+.###.
+.###.
+..#..

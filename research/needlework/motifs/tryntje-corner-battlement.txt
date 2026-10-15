@@ -1,0 +1,33 @@
+title: Top-left corner: frame line, checker, battlement turning the corner, start of the spiral-key band
+section: Corners and spot motifs
+source: Sampler and darning sampler with red embroidery ("Merklap en stoplap met rood borduurwerk"), Tryntje de Gra, Dutch, c. 1895; Rijksmuseum BK-1974-26, public domain (CC0)
+short-source: Tryntje de Gra sampler (Rijksmuseum BK-1974-26)
+page: top-left corner of the sampler; crop x875-2000 y790-1610 of the full Commons image (6844 x 6119); chart row 0 = the outer frame line (y about 817), col 0 = the left frame line (x about 920)
+url: https://www.rijksmuseum.nl/en/collection/BK-1974-26
+image: https://commons.wikimedia.org/wiki/File:Merklap_en_stoplap_met_rood_borduurwerk.,_BK-1974-26.jpg
+size: 25 x 18 cells (the corner and one period of each band; both bands run on)
+symmetry: none as stitched: the corner is not mirrored on the diagonal (see notes); the frame and checker alone are diagonal-symmetric
+colours: # = red cross stitch, . = linen ground
+use: corner (how a square-wave battlement turns a corner, inside a line + checker frame); ring band end-cap (the key band's closed start)
+status: VERIFIED
+verified: lattice fitted to the weave (red channel) in three windows because the open linen is uneven (pitch 41-44.4 px): left frame strip 72/72; top frame strip 102/105; battlement and key band 291/294; 445 of the 450 cells agree. The 5 mismatches are reader artefacts checked on 3.5x zooms and ink profiles: two loose pink thread ends lying on the work (row 2 col 13, row 9 col 18), two cells into which neighbouring checker stitches spill (row 3 col 4, row 4 col 5), and the first stitch of the left band (row 5 col 5) which sits half a cell low on the weave (5 stitches in that column, as in the merlon leg beside it). Overlay: images/tryntje-corner-battlement_ver.jpg (three windows pasted in place)
+notes: Frame: a solid line (row 0 / col 0), one empty row, a two-row checker (cells with row+col even) and one empty row; the checker simply runs round the corner. Battlement (the square wave of tryntje-battlement-band, 5 rows, period 8): along the top the wave starts with a full merlon (cols 7-11); down the left side the wave runs between cols 5 and 9 (period 8 rows). The two meet by a T join: the merlon's left leg (col 7) comes down to the left band's first bar (row 9, cols 5-9), and the left band's first upright (col 5, rows 5-9) ends free under the checker. So the embroiderer turned the corner by butting the two waves, not by mitring them. The spiral-key band (tryntje-spiral-key-band) starts at col 12 with a closed half unit (an extra upright at its left end), then runs on with period 8 from col 17. Clean one-cell lines throughout; at 1x the corner reads as a castle-wall angle. For a mirrored, diagonal-symmetric corner, reflect the top band on the diagonal instead (an editorial change).
+---
+#########################
+#........................
+#.#.#.#.#.#.#.#.#.#.#.#.#
+#..#.#.#.#.#.#.#.#.#.#.#.
+#.#......................
+#..#.#.#####...#####...##
+#.#..#.#...#...#...#...#.
+#..#.#.#...#...#...#...#.
+#.#..#.#...#...#...#...#.
+#..#.#####.#####...#####.
+#.#......#...............
+#..#.....#..#####.#######
+#.#......#......#.#.....#
+#..#.#####..###.#.#.###.#
+#.#..#......#...#.#.#...#
+#..#.#......#.###.#.#.###
+#.#..#......#.....#.#....
+#..#.#####..#######.#####

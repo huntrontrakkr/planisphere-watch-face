@@ -1,0 +1,38 @@
+title: Balusters on a rule (black two-tier vases, white goblets between)
+section: Narrow bands
+source: Peter Quentel, Ein new kunstlich Modelbuch..., Cologne 1544 (woodcut pattern book); The Met 22.84.1(1-102), Public Domain
+short-source: Quentel 1544 (Met DP357065)
+page: image DP357065, third band of five; crop x530-1720 y860-1095 of the full scan
+url: https://www.metmuseum.org/art/collection/search/354658
+image: https://images.metmuseum.org/CRDImages/dp/original/DP357065.jpg
+size: period 6 cells x 10 rows (9 rows + the solid rule)
+symmetry: each baluster mirror left-right; translation along the band
+colours: # = black cell of the woodcut, . = white cell (the white spaces between the balusters read as stacked goblets: a figure-ground band)
+use: ring band (a 10-row colonnade: balusters, or a row of stylised firs standing on the rule)
+status: VERIFIED
+verified: darkness at each site of the white-cell lattice (Otsu) against 8 tiled periods: 480/480 cells agree (images/quentel1544-baluster-band_ver.jpg)
+notes: Each baluster: a 1-3-3-5 upper tier, a waist (3, 1), a 3-3-5 lower tier, all standing on a full rule; neighbours touch at the widest rows, so the white between them forms 5-3-3-1 goblets. Without the rule (rows 1-9) it is a 9-row band.
+---
+period (6 x 10):
+..#...
+.###..
+.###..
+#####.
+.###..
+..#...
+.###..
+.###..
+#####.
+######
+
+three repeats:
+..#.....#.....#...
+.###...###...###..
+.###...###...###..
+#####.#####.#####.
+.###...###...###..
+..#.....#.....#...
+.###...###...###..
+.###...###...###..
+#####.#####.#####.
+##################

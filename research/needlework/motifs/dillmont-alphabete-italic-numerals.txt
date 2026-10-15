@@ -1,0 +1,131 @@
+title: Italic figures 1234567890 (red, single-cell strokes; 6 rises, 7 and 9 hang)
+section: Alphabets and numerals
+source: Thérèse de Dillmont (ed.), Alphabete für die Stickerin (Bibliothek D.M.C), Tafel 10; Dornach (Elsass): Verlag von Th. de Dillmont, c. 1900; Smithsonian Libraries copy, archive.org item alphabetefrdiest00dill; public domain (published c. 1900; Dillmont died 1890)
+short-source: DMC Alphabete c.1900, Tafel 10 (archive.org alphabetefrdiest00dill)
+page: archive.org alphabetefrdiest00dill page n13 (Tafel 10), fourth line (red), after "t u v w x y z ." : the figures; crop x1060-2400 y830-1050 of the full page image (2657 x 1892)
+url: https://archive.org/details/alphabetefrdiest00dill
+image: https://archive.org/download/alphabetefrdiest00dill/page/n13.jpg
+size: x-height 7-8 rows (1-5, 8, 0); the 6 rises 2 rows higher (10 rows); the 7 hangs 2 rows and the 9 3 rows below the baseline; the whole line 93 x 13 cells; digits 5-10 wide
+symmetry: none (italic: every figure leans right)
+colours: # = red (one colour), . = ground
+use: numerals (hours or dates in an italic hand; 7-8 rows at x-height, a good match for a 7-row text line)
+status: VERIFIED
+verified: colour reader (/tmp/nw/printed/bin/colread.py), lattice fitted on the red channel (pitch 13.37 x 13.34 px; fitted on all colours it locked onto the printed grid, which sits a third of a cell off the red fills), cells classified ground / red, no ambiguous cells; the whole line overlaid: 1209/1209 cells agree, and every red cell carries a green dot in the overlay (images/dillmont-alphabete-italic-numerals_ver.jpg, the line cut in two and stacked)
+notes: Calligraphic italic figures drawn with one-cell strokes on a slant: the 1 is a slanted stroke with a flag, the 2 ends in a wavy foot, the 4 is open with a long cross bar, the 6 has a long flag rising two rows above the line, the 7 a notched bar and a long diagonal stem hanging below the line, the 9 a loop on a long tail that sweeps left below the line. On the plate they follow the red Gothic minuscule alphabet; the line starts with a full stop (not charted). Leave one or two empty columns between figures (the plate leaves 2-4).
+---
+the line as printed (93 x 13; baseline = row 10):
+....................................................##.......................................
+...................................................#.........................................
+................................#.........#.......#.......#####.#.....##........##........##.
+....#.....###.......##.........#.......###.......#.#......#....#.....#..#......#..#......#..#
+...#.....#...#.....#..#.......#........#........#.#.#.........#......#..#.....#...#.....#...#
+..##.....#...#........#......#.........##.......#...#........#......####.....#....#....#....#
+.##.........#........#......#..#......#..#.....#....#.......#......#...#.....#...#.....#...#.
+..#........#..........#....######........#.....#...#.......#.......#...#.....#.#.#.....#..#..
+.#.......##.......#...#.......#.....#...#......#..#.......#.........###.......#.#.......##...
+##......#..##......###.......#.......###........##.......#.....................#.............
+........................................................#.....................#..............
+.......................................................#....................##...............
+.........................................................................###.................
+
+1 (5 wide x 7 rows; line rows 4-10, baseline = line row 10):
+....#
+...#.
+..##.
+.##..
+..#..
+.#...
+##...
+
+2 (6 wide x 7 rows; line rows 4-10, baseline = line row 10):
+..###.
+.#...#
+.#...#
+....#.
+...#..
+.##...
+#..##.
+
+3 (5 wide x 7 rows; line rows 4-10, baseline = line row 10):
+..##.
+.#..#
+....#
+...#.
+....#
+#...#
+.###.
+
+4 (6 wide x 8 rows; line rows 3-10, baseline = line row 10):
+.....#
+....#.
+...#..
+..#...
+.#..#.
+######
+...#..
+..#...
+
+5 (7 wide x 8 rows; line rows 3-10, baseline = line row 10):
+......#
+...###.
+...#...
+...##..
+..#..#.
+.....#.
+#...#..
+.###...
+
+6 (7 wide x 10 rows; line rows 1-10, baseline = line row 10):
+.....##
+....#..
+...#...
+..#.#..
+.#.#.#.
+.#...#.
+#....#.
+#...#..
+#..#...
+.##....
+
+7 (10 wide x 10 rows; line rows 3-12, baseline = line row 10):
+...#####.#
+...#....#.
+.......#..
+......#...
+.....#....
+....#.....
+...#......
+..#.......
+.#........
+#.........
+
+8 (6 wide x 7 rows; line rows 3-9, baseline = line row 10):
+...##.
+..#..#
+..#..#
+.####.
+#...#.
+#...#.
+.###..
+
+9 (10 wide x 11 rows; line rows 3-13, baseline = line row 10):
+.......##.
+......#..#
+.....#...#
+....#....#
+....#...#.
+....#.#.#.
+.....#.#..
+......#...
+.....#....
+...##.....
+###.......
+
+0 (6 wide x 7 rows; line rows 3-9, baseline = line row 10):
+...##.
+..#..#
+.#...#
+#....#
+#...#.
+#..#..
+.##...

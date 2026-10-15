@@ -1,0 +1,30 @@
+title: Standing bird with a long tail, facing right (from a band of trees and birds)
+section: Creatures
+source: Giovanni Ostaus, La Vera Perfettione del Disegno di varie sorti di recami, Venice 1567; The Met 21.15.3(1-79), Public Domain
+short-source: Ostaus 1567 fol. LXXII (Met DP362020)
+page: image DP362020 (folio LXXII), top band (15 rows: blossom tree, bird facing right, lattice tree, bird facing left; period 56 cells); this is the first right-facing bird, x956-1205 y261-542 of the full scan
+url: https://www.metmuseum.org/art/collection/search/354909
+image: https://images.metmuseum.org/CRDImages/dp/original/DP362020.jpg
+size: 13 x 15 cells
+symmetry: none (faces right); the band has the same bird mirrored (facing left) in the next half-period
+colours: # = filled cell (cut as a grey-hatched cell in the woodcut), . = white cell
+use: creature (a perching bird: crow, magpie or hawk; mirror it for a facing pair)
+status: VERIFIED
+verified: two reads on the white-cell lattice: (1) white-cell blob reader and (2) darkness at each lattice site (Otsu): both 185/195 on this repeat, and both 184-185/195 on the second right-facing repeat (x1817-2062); the 10 differences are all cells of the neighbouring tree's X-shaped blossoms inside the bounding box (rows 1-3 and 6-8, cols 1-3); every chart cell is confirmed. All four birds of the band (two of them mirrored) agree with the chart in 186-195 of 195 cells. Looked at the overlay: images/ostaus1567-bird-13x15_ver.jpg (green = chart cell confirmed filled; blue squares = the tree's blossoms)
+notes: Head (3x3) with a beak pointing down-right, a neck, a full body with a white wing line, legs drawn as a small lattice of diagonal dots (claws on a perch), and a tail sweeping down-left. In the band the last four cells of the tail diagonal (rows 12-15, cols 1-4) coincide with the right-hand root of the neighbouring tree; without them the bird is 11 x 15 with a short tail. The woodcut fills cells with grey hatching, so the chart is two-tone.
+---
+........###..
+.......###.#.
+........###.#
+........##...
+.......###...
+......#####..
+......#####..
+......##.##..
+.....###.##..
+....###.##...
+..##...##....
+...#####.#.#.
+..###..#..#..
+.##....#.#.#.
+##....#.#....

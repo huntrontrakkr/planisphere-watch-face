@@ -1,0 +1,30 @@
+title: Star lattice with saltire crosses (two-symbol narrow band)
+section: Narrow bands
+source: Johann Sibmacher, Schön Neues Modelbuch, Nuremberg 1597 (etched pattern book); The Met 20.16(1-43), Public Domain
+short-source: Sibmacher 1597 p.25 (Met DP363498)
+page: image DP363498 (page 25: narrow bands in three columns), middle column, second band (between two star rules); crop x1060-1770 y325-495
+url: https://www.metmuseum.org/art/collection/search/357195
+image: https://images.metmuseum.org/CRDImages/dp/original/DP363498.jpg
+size: period 10 cells x 6 rows (four repeats and a little across the column; the page's first column is period column 9)
+symmetry: mirror left-right and top-bottom (full: the saltire sits on both axes)
+colours: * = four-point-star symbol (colour 1), x = one arm of a large diagonal cross drawn across a 2 x 2 block (colour 2, or a saltire stitched in one colour), . = ground. Binary versions: stars only ##.####.## / #.##..##.# / .##....##. / .##....##. / #.##..##.# / ##.####.##; with the saltire filled the middle rows read .##.##.##.
+use: ring band (6 rows; the saltires, one every 10 cells, can mark the hours)
+status: VERIFIED
+verified: cells taken between the detected (uneven) etched grid lines, rows on slanted lines (the page is turned about 1.2 degrees); 42 x 6 cells: stars and empty cells 236/236 by ink (Otsu) and by k-means on the cell patches; the 16 saltire cells have too little ink for the ink test, so each was checked for a diagonal line: all 16 carry a line on the diagonal that points to the centre of their 2 x 2 block (ink 169-204 on that diagonal, 57-88 on the other) while no empty cell exceeds 131 on either diagonal. Overlay: images/sibmacher1597-saltire-lattice-band_ver.jpg (green = star confirmed; the saltires are left unmarked)
+notes: Two-cell diagonal strokes of stars form a lattice of lozenges; every other lozenge holds a large saltire (an X over 2 x 2 cells), the others a 2 x 2 gap. At 1x the binary version reads as a chain of small diamonds.
+---
+period (10 x 6):
+**.****.**
+*.**..**.*
+.**.xx.**.
+.**.xx.**.
+*.**..**.*
+**.****.**
+
+three repeats:
+**.****.****.****.****.****.**
+*.**..**.**.**..**.**.**..**.*
+.**.xx.**..**.xx.**..**.xx.**.
+.**.xx.**..**.xx.**..**.xx.**.
+*.**..**.**.**..**.**.**..**.*
+**.****.****.****.****.****.**

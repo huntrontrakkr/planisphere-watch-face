@@ -1,0 +1,32 @@
+title: Small dove (or partridge) with a striped, trailing tail (red cross stitch)
+section: Creatures
+source: Sampler, Mexico, 1861-62 ("Es propiedad de Ramoncita Pita", "AÑOS DE 1861 Y 1862"), red cotton cross stitch on linen; Cooper Hewitt, Smithsonian Design Museum, object 18616901; image via Wikimedia Commons "Sampler (Mexico), 1861–62 (CH 18616901).jpg", public domain
+short-source: Mexican sampler 1861-62 (Cooper Hewitt 18616901)
+page: lower left, the small bird above the first laurel wreath; crop x1095-1280 y4515-4710 of the full CH image (5559 x 5456)
+url: https://collection.cooperhewitt.org/objects/18616901/
+image: https://images.collection.cooperhewitt.org/112770_3d96f7feca96fc44_x.jpg
+size: 16 x 17 cells (body and head 12 x 15; the legs are rows 14-17)
+symmetry: none (faces right; mirror for a left-facing bird)
+colours: # = red cross stitch, . = linen ground
+use: creature (a small bird for the ring or a corner; pairs well facing its mirror)
+status: VERIFIED
+verified: lattice fitted to the stitches (red channel, pitch 9.3 x 9.4 px); 272/272 cells agree, no mismatches; images/ch-18616901-dove-16x17_ver.jpg
+notes: An upright head with an eye hole and a one-stitch beak, a solid breast, and a tail drawn as open diagonal stripes trailing down to the left (the openwork reads as barred feathers); two stick legs with splayed feet. Reads at 1x as a plump dove or partridge. The sampler is a large model sheet of red cross-stitch alphabets, small bands, sprays and creatures (cocks, dogs, a horse, camels, an elephant, giraffes, herons, a swan).
+---
+............##..
+...........####.
+...........#.#..
+...........###..
+......####.###..
+.....##########.
+....############
+.....##.#..#####
+....#..#.#######
+...#.##.#######.
+..#.##.#######..
+.#.#.########...
+.....#######....
+...#..#.#.#.....
+..#.##..#.#.....
+.#.#.#..#.#.....
+#.#.#..#.#.#....

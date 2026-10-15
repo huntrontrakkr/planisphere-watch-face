@@ -1,0 +1,30 @@
+title: Standing bird with a long tail (one of a pair, back to back)
+section: Creatures
+source: Peter Quentel, Eyn New Kunstlichboich, Cologne 1529; The Met 20.50.2(1-49), Public Domain
+short-source: Quentel 1529 (Met DP361383)
+page: image DP361383, band 5 of 7 (from the top): tree, lily, bird, lattice heart, bird; this is the left bird, x1135-1370 y1232-1500 of the full scan (band crop: images/quentel1529-band5.jpg)
+url: https://www.metmuseum.org/art/collection/search/354657
+image: https://images.metmuseum.org/CRDImages/dp/original/DP361383.jpg
+size: 11 x 15 cells (bird 11 x 14 below one empty row)
+symmetry: none; the right-hand bird of the band is its exact mirror image (checked cell by cell: identical apart from the neighbouring motifs' cells)
+colours: # = black cell of the woodcut, . = white cell
+use: creature (a bird for the corner or the season ring; mirror pair back to back flanking a centre piece)
+status: VERIFIED
+verified: read twice: (1) white-cell lattice reader, (2) darkness of each lattice site with an Otsu threshold: 164/165 cells agree; the one difference is a cell of the next motif's arm inside the bounding box. Legs corrected by eye (the white slot between them is a merged double cell). Overlay: images/quentel1529-bird-11x15_ver.jpg (green = chart cell confirmed black)
+notes: Head and beak pointing down-left, a short neck, a body with three white feather spots, two legs, and a double-line tail sweeping down to the right (the tails of the pair run toward the centre of the band).
+---
+...........
+..###......
+.#.###.....
+#.###......
+...##......
+...###.....
+..#####....
+.###.###...
+.##.#.###..
+.###.#####.
+..######.##
+...#.#.##.#
+...#.#..##.
+...#.#...##
+...#.#....#

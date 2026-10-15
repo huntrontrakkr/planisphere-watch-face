@@ -1,0 +1,28 @@
+title: Battlement (crenellated meander) band
+section: Narrow bands
+source: Sampler and darning sampler with red embroidery ("Merklap en stoplap met rood borduurwerk"), Tryntje de Gra, Dutch, c. 1895; Rijksmuseum BK-1974-26, public domain (CC0)
+short-source: Tryntje de Gra sampler (Rijksmuseum BK-1974-26)
+page: outer border, top and left sides; crop x2300-3700 y930-1330 of the full Commons image (6844 x 6119)
+url: https://www.rijksmuseum.nl/en/collection/BK-1974-26
+image: https://commons.wikimedia.org/wiki/File:Merklap_en_stoplap_met_rood_borduurwerk.,_BK-1974-26.jpg
+size: period 8 cells x 5 rows
+symmetry: each merlon mirror left-right; period 8 (merlon 5 wide, gap 3)
+colours: # = red cross stitch, . = linen ground
+use: ring band (a castle-wall line round the ring; also an inner rule of the card)
+status: VERIFIED
+verified: lattice fitted to the weave, red-channel reading; 3 tiled periods overlaid: 118/120 cells agree; the two mismatches are one corner stitch the embroiderer set a cell to the right (images/tryntje-battlement-band_ver.jpg)
+notes: A single-line meander: only one cell wide everywhere, so it stays light. At 5 rows it fits a narrow ring band; it turns the corner of the sampler cleanly (see the top-left corner of the sampler).
+---
+period (8 x 5):
+.#####..
+.#...#..
+.#...#..
+.#...#..
+##...###
+
+three repeats:
+.#####...#####...#####..
+.#...#...#...#...#...#..
+.#...#...#...#...#...#..
+.#...#...#...#...#...#..
+##...#####...#####...###

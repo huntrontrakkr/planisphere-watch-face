@@ -1,0 +1,25 @@
+title: Small dog with a curled tail, facing right (red cross stitch)
+section: Creatures
+source: Sampler signed "Maria Hancock", England, 19th century; red cotton cross stitch on cotton, 30.5 x 26.1 cm; The Cleveland Museum of Art 1943.113, Gift of George W. Bierce; CC0 (Open Access, share_license_status CC0)
+short-source: Maria Hancock sampler (CMA 1943.113)
+page: row of small creatures under the cross and Bible, second from the left (between the long-tailed bird and the hedgehog-like beast); crop x1620-1800 y3260-3400 of the full image (1943.113_full.tif, 4050 x 4773)
+url: https://clevelandart.org/art/1943.113
+image: https://openaccess-cdn.clevelandart.org/1943.113/1943.113_full.tif
+size: 12 x 10 cells
+symmetry: none (faces right)
+colours: # = red cross stitch, . = cream cotton ground
+use: creature / village (a farm or house dog; reads at 1x as a dog with a looped tail and an eye)
+status: VERIFIED
+verified: weave lattice on the red channel; 120/120 cells agree, and the same 120/120 with two other lattices (pitch forced to 10.9 px; a larger crop with pitch 10.3 x 11.4), so the reading does not depend on the fitted pitch. Overlay: images/cma-1943-113-curly-tailed-dog_ver.jpg
+notes: A solid 3-row body (10 cells long), a 4 x 5 head with two ear stitches on top, an open eye and a one-cell muzzle, a tail curled up into an open loop over the back, and four legs: the hind pair splayed (an inverted V), the fore pair both slanting forward, as if trotting. One of the smallest whole animals in the library.
+---
+........##..
+.......####.
+..##...#.###
+.#..#..####.
+.#.....####.
+.##########.
+.##########.
+.##########.
+.#.#....#.#.
+#...#....#.#

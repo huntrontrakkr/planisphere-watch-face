@@ -1,0 +1,32 @@
+title: Breaking-wave band: blue waves with navy curls and shadows between a blue and a navy rule (Berlin work, two colours)
+section: Narrow bands
+source: Emma Merlo, Neueste Portefeuille für Freundinnen weiblicher Kunst-Arbeiten: eine Auswahl von Guirlanden, allerlei Blumen, Kränzen, Bouquets, Fruchtkörben, Schmetterlingen, Kanten, Arabesken u.s.w. zum künstlichen Stricken, Häkeln, zur Tapisserie- und Mosaik-Arbeit, Pirna/Leipzig: Carl August Friese, c. 1835 (catalogued [183-?]); hand-coloured printed charts ("bei Friese in Leipzig"); Getty Research Institute copy, archive.org neuesteportefeui00merl; public domain (published in the 1830s; no rights statement on the item)
+short-source: Merlo c.1835, plate Zz (archive.org neuesteportefeui00merl n26)
+page: leaf n26 (plate "Zz"): the blue band under the fruit basket; crop x975-2050 y1230-1420 of the 3004 x 2294 page image (cell pitch 15.6 px)
+url: https://archive.org/details/neuesteportefeui00merl
+image: https://archive.org/download/neuesteportefeui00merl/page/n26.jpg
+size: period 6 cells x 7 rows (the waves alone: 6 x 3)
+symmetry: none within the unit: every wave breaks to the right (translation only). Mirror the chart left-right for waves running the other way
+colours: b = blue (painted RGB about 48,88,119; the top rule and the waves are the same blue), n = navy-black (about 6,10,22), . = paper (about 238,238,216). Face palette: b window blue, n ink
+use: ring band (7 rows with both rules; the waves alone are a 3-row band; a sea or sky band: waves, or clouds if mirrored top-bottom)
+status: VERIFIED
+verified: grid-paper reader (g4lib cell centres), median colour per cell classified to paper / blue / navy (+ a grey class for stains); the period tiled over the whole drawn band (66 x 7 cells, 11 repeats) matches 458/462 cells; every painted cell of the chart agrees (242/242). The 4 others: 3 cells under the top rule in one repeat carry a faint blue-grey smudge (RGB 150-205, not a stitch), and the band's last cell on the right (row 4, column 66) is painted blue to close the band. Overlay (left half above, right half below): images/merlo1835-blue-wave-band_ver.jpg
+notes: Each wave is a blue parallelogram of 3 + 3 cells leaning right, with a single navy cell (the curl) at its left foot and a navy 3-cell shadow under its right end; a 1-cell blue rule above and a 1-cell navy rule below, each one row clear of the waves. Very clean and legible at 1x; the shortest period on the plate. The two-colour scheme (blue body, dark curl and shadow) maps directly onto window blue and ink.
+---
+period (6 x 7):
+bbbbbb
+......
+.bbb..
+n.bbb.
+...nnn
+......
+nnnnnn
+
+three repeats:
+bbbbbbbbbbbbbbbbbb
+..................
+.bbb...bbb...bbb..
+n.bbb.n.bbb.n.bbb.
+...nnn...nnn...nnn
+..................
+nnnnnnnnnnnnnnnnnn

@@ -1,0 +1,36 @@
+title: Running hook band in outline (stepped spirals linked by stairs; double-running line work)
+section: Narrow bands
+source: Peter Quentel, Eyn New Kunstlichboich, Cologne 1529; The Met 20.50.2(1-49), Public Domain
+short-source: Quentel 1529 (Met DP361373)
+page: image DP361373 (the page of nine outline bands, inked page number "34"), bottom band (the ninth); first three repeats, crop x455-960 y2100-2225; lattice lines at x 465 487 519 528 552 577 592 609 629 649 665 682 699 724 745 765 787 810 834 847 871 890 907 927 945 and y 2124 2145 2168 2189 2209
+url: https://www.metmuseum.org/art/collection/search/354657
+image: https://images.metmuseum.org/CRDImages/dp/original/DP361373.jpg
+size: period 8 x 4 grid units, drawn as pixels at 2 px per unit: period 16 px x 9 rows
+symmetry: none (a running band: translation only)
+colours: # = line, . = ground. The woodcut draws black lines along the grid edges (Holbein or double-running stitch); the chart renders each grid vertex as the pixel at even (row, column) and each unit edge as the pixel between two vertices, so a 1-px line with 1-px gaps. Stitch it as double running along the edges, or use the pixels as they are
+use: ring band (a 9-row running scroll: a classic outline border for the ring or the card edge)
+status: VERIFIED (regularised: the cut grid is irregular)
+verified: the woodcut's grid lines are unevenly spaced (gaps of 9-32 px for a nominal 20 px unit in x, about 21 px in y) and its lines wobble by up to 6 px, so a regular lattice cannot fit. The lattice lines were placed on the vertical-stroke and horizontal-stroke peaks of the image without using the chart (eight vertical strokes per repeat, one per lattice line, matching the stroke counts expected), every unit edge was sampled on stroke maps, and the chart compared edge by edge over three repeats: 217/220 unit edges agree. The three others: a real break in the third repeat's bottom line, a corner where the line overshoots by a few px (first repeat, bottom line), and the next repeat's first edge at the right of the crop. The topology (which edges are drawn) is the same in all three repeats and is unambiguous; only the spacing was regularised. Overlay: images/quentel1529-running-hook-band_ver.jpg (green = chart edge on the woodcut's line, red = the break, blue = image line outside the chart)
+notes: Each repeat is a squared spiral (an outer box with a side ear and an inner hook) whose bottom line climbs by four stairs to become the top of the next spiral. The band has seven and a half repeats on the page; the last three are squeezed narrower by the cutter (periods of about 142, 130 and 120 px instead of 158) and were not checked edge by edge. At 1x the 9-row pixel version reads as a running scroll.
+---
+period (16 x 9):
+#########.......
+#.......#.......
+#.#####.###...##
+..#...#...#...#.
+###.###.###.###.
+#...#...#...#...
+###.#####.###...
+..#.......#.....
+..#########.....
+
+three repeats (plus the closing column):
+#########.......#########.......#########.......#
+#.......#.......#.......#.......#.......#.......#
+#.#####.###...###.#####.###...###.#####.###...###
+..#...#...#...#...#...#...#...#...#...#...#...#..
+###.###.###.###.###.###.###.###.###.###.###.###.#
+#...#...#...#...#...#...#...#...#...#...#...#...#
+###.#####.###...###.#####.###...###.#####.###...#
+..#.......#.......#.......#.......#.......#......
+..#########.......#########.......#########......

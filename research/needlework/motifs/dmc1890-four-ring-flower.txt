@@ -1,0 +1,30 @@
+title: Four-ring flower (four ring-buds round a cross of stems)
+section: Seasons and plants
+source: Thérèse de Dillmont, Album de broderies au point de croix, IIme Série, Planche No 31, item 119 (second band, the flower under each bird); Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie (printed by Brustlein & Co., Mulhouse), 1890; Smithsonian Libraries copy, archive.org item albumdebroderies02dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album II 1890, Pl. 31 no. 119 (archive.org albumdebroderies02dill)
+page: archive.org albumdebroderies02dill page n70 (Planche No 31), item 119, the band of birds: the flower under each bird; crop x290-1420 y860-1540 of the full page image (3011 x 4047) (the same crop as dmc1890-crested-bird-on-flower)
+url: https://archive.org/details/albumdebroderies02dill
+image: https://archive.org/download/albumdebroderies02dill/page/n70.jpg
+size: 13 x 15 cells
+symmetry: mirror left-right and top-bottom, rot180 (sym.py)
+colours: # = cross stitch (one colour), . = canvas ground
+use: season (spring: a cluster of four buds) / corner or spot motif (fully symmetric both ways)
+status: VERIFIED
+verified: read from the same verification as dmc1890-crested-bird-on-flower: the 19-cell band period tiled over the crop, 1643/1643 cells agree (images/dmc1890-four-ring-flower_ver.jpg, a copy of that overlay); the flower occupies rows 17-31 and columns 5-17 of the period, and the three flowers in the crop are identical
+notes: Four small rings (each a hollow 3 x 3 bud with a stalk cell) set round a short cross of stems: two buds lean up and out, two lean down and out, with a three-cell bar at the centre and one-cell stem tips top and bottom. In the band the top stem cell is where the bird's legs meet. At 1x the four rings read as a quatrefoil cluster; a lighter alternative to a solid rosette.
+---
+......#......
+....##.##....
+..#.##.##.#..
+.###.#.#.###.
+..#.##.##.#..
+##.##...##.##
+####..#..####
+.....###.....
+####..#..####
+##.##...##.##
+..#.##.##.#..
+.###.#.#.###.
+..#.##.##.#..
+....##.##....
+......#......

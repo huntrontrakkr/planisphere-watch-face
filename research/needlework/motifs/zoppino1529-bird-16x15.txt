@@ -1,0 +1,30 @@
+title: Standing bird facing right, long tail sweeping down-left (one of a pair, back to back)
+section: Creatures
+source: Nicolo Zoppino, Esemplario di lavori, Venice, August 1529; The Met 21.98(1-36), Public Domain
+short-source: Zoppino 1529 pl. XI (Met DP364477)
+page: image DP364477 (plate XI), sixth band from the top (15 rows: a pair of birds back to back with a heart-shaped trellis between their tails, a lily plant in a pot, a leafy tree); this is the right-hand bird of the pair, x885-1162 y1469-1730 of the full scan
+url: https://www.metmuseum.org/art/collection/search/349352
+image: https://images.metmuseum.org/CRDImages/dp/original/DP364477.jpg
+size: 16 x 15 cells
+symmetry: none (faces right); its partner on the other side of the trellis is its mirror image (238/240 cells; only the eye sits one cell differently)
+colours: # = black cell of the woodcut (worked), . = white cell
+use: creature (a bird for the ring or a corner; mirrored, a pair back to back or facing each other across a centre piece)
+status: VERIFIED
+verified: two reads on the white-cell lattice: (1) white-cell blob reader and (2) darkness at each site (Otsu): both 214/240; all 26 differences are cells of the trellis behind the bird, in the upper-left triangle of the bounding box; every chart cell is confirmed. Cross-checks: the left bird mirrored agrees in 238/240 cells (the eye, row 2), and the same band cut separately in Vosterman's Antwerp book (Met DP355625, 4th band, last bird) agrees in 235/240 (beak tip one row higher, one white cell in the wing, two more tail cells). Looked at the overlay: images/zoppino1529-bird-16x15_ver.jpg (blue squares = the trellis)
+notes: Head with a white eye and a beak to the right, a full breast, a wing outlined by white cells, two legs (parallel columns of cells) and a tail of two parallel diagonal strokes down to the lower left. At 1x it reads as a bird in profile; in the band the mirrored pair stand back to back. The same bird, mirrored, is quentel1529-bird-11x15 (Quentel, Cologne 1529, the same band of trees, lilies, birds and lattice hearts): its 11 x 15 box agrees with this chart in 153 of 154 overlapping cells; this version adds the full length of the double-stroke tail and the feet. The lily between the pairs is the design of quentel1529-lily-pot-23x15 (same chart: read on this plate 305/345 by darkness and 304/345 by white-cell blobs, every difference a cell of the checkered half-diamonds that fill the four corners of the lily's box, as in Quentel's print).
+---
+...........###..
+..........###.#.
+...........###.#
+...........##...
+..........###...
+.........#####..
+........###.###.
+.......###.#.##.
+......#####.###.
+.....#########..
+....##.##.#.#...
+...##.##..#.#...
+..##.##...#.#...
+.##.##....#.#...
+##.##....#.#.#..

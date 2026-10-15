@@ -1,0 +1,184 @@
+title: Old-style (hanging) figures 1-9, small size (Eliza Dymond Hull's type-specimen sampler, "F.bridge" 1799)
+section: Alphabets and numerals
+source: Eliza Dymond Hull, sampler ("Eliza: Dymond Hull F.bridge 1799"), "Sampler made at a Quaker school" (Met title; place not recorded: "F.bridge" is probably Fordingbridge, Hampshire: a guess), silk embroidery on linen, 31.1 x 40.6 cm; The Met 57.122.348, From the Collection of Mrs. Lathrop Colgate Harper, Bequest of Mabel Herbert Harper, 1957; Public Domain (Open Access, CC0)
+short-source: Quaker school sampler 1799 (Met 57.122.348, DP363105)
+page: image DP363105 (front, 3921 x 3034): "123456" at the right end of the sixth line (crop x3100-3770 y1480-1790) and "789" at the start of the seventh line (crop x150-650 y1700-2080); glyph windows 1 x3110-3220 y1553-1707, 2 x3160-3290, 3 x3240-3380 y1553-1775, 4 x3320-3490 y1542-1740, 5 x3430-3590 y1553-1775, 6 x3520-3710 y1490-1690, 7 x210-350 y1820-2040, 8 x290-440 y1740-1980, 9 x390-555 y1810-2050. Back of the work: image DP363106 (mirror image), same glyphs at x230-830 y1460-1840 and x3280-3780 y1700-2110
+url: https://www.metmuseum.org/art/collection/search/228275
+image: https://images.metmuseum.org/CRDImages/es/original/DP363105.jpg
+size: x-height 7 rows (1, 2); 3 and 5 hang 6 rows below the line (13 rows), 4 rises 1 and hangs 3 (11 rows), 6 rises 6 rows (13 rows); 7, 8, 9 (next line) are one size larger: x-height 9, 7 and 9 hang 5-6 rows (13 and 15 rows), 8 rises 6 (15 rows). Widths 4-10 cells (1 = 4x7, 2 = 6x7, 3 = 6x13, 4 = 9x11, 5 = 10x13, 6 = 8x13, 7 = 8x13, 8 = 8x15, 9 = 9x15)
+symmetry: none
+colours: # = brown silk cross stitch over one thread of an open, gauze-like linen, . = linen ground
+use: numerals (ring hours, dates): genuine 18th-century old-style figures with ascenders and descenders; the 1 and 2 (7 rows) sit at x-height, so the set works on a 7-row x-height with room above and below
+status: VERIFIED
+verified: lattice from the linen weave by phase demodulation of the thread pattern in a window around each glyph (/tmp/nw/metsamplers/phaselat.py; threads about 9.2-10.4 px across, 11 px down; one stitch per thread crossing), cell = mean darkness at the cell centre against the local background, threshold 0.5; the same reading made independently on the back of the work (DP363106, mirrored). Charts = front reading, with cells the front reads as ambiguous (0.33-0.6) decided by the back, every glyph checked by eye on 5x zooms with the curved lattice drawn. Front agreement (chart with a 1-cell empty margin, in frame): 1 54/54, 2 70/72, 3 120/120, 4 142/143, 5 179/180, 6 149/150, 7 150/150, 8 168/170, 9 183/187 (overlay images/met-57-122-348-numerals_ver.jpg, 1-5 above, 6-9 below). Back agreement (mirrored charts): 1 51/54, 2 70/72, 3 118/120, 4 139/143, 5 176/180, 6 140/150, 7 148/150, 8 158/170, 9 178/187. Choices: 2, the diagonal's third stitch is charted where the back has it (front reads it one cell right: the stitch straddles); 4, the fourth diagonal stitch (front 0.47) kept because the stroke is continuous in the photograph; 9, top-right of the bowl (front 0.36, back 0.99) kept and its top-left (front 0.58, back 0.00, continuous in the photograph) kept; 5, a straddling stitch at the bowl's lower right (front 0.45, back 0.58) left out after the zoom. Caveat: the linen is an open gauze whose threads wander; the silk spreads over about 1.3 threads, so a few stroke ends could be one cell longer or shorter (the back disagrees on 2-12 cells per glyph, mostly at stroke ends and in the 6 and 8, whose back is less clear).
+notes: The sampler copies a printer's type specimen: capitals, lowercase, ligatures (ct, ff, fi, fl, ffi, the long-s pairs and ae, oe), punctuation and figures, in four type sizes, signed "Eliza: Dymond Hull F.bridge 1799". These are the second (smaller) figure line, "123456 / 789"; the larger figures (x-height 9: 12 / 3456789) are on lines 3-4 and "1799" in the signature. Genuine hanging figures: 1 and 2 at x-height; 3, 4, 5, 7, 9 descend; 6 and 8 rise. The 1 is a serifed I with a long foot to the right; the 3 has a flat-topped arc, a pointed waist and a long hanging bowl; the 4 is open with a crossbar on the line and a short tail; the 5 has a flag and a big hanging bowl; the 7 has a downturned left serif. There is no 0 in this line. At 1x they read as figures even in one ink; for a 7-row hour ring use 1, 2 as they are and let 3-9 hang and rise as in print.
+---
+1 (4 wide, 7 rows, on the line):
+###.
+.#..
+.#..
+.#..
+.#..
+.#..
+####
+
+2 (6 wide, 7 rows, on the line):
+.###..
+#...#.
+....#.
+...#..
+..#...
+.#...#
+#####.
+
+3 (6 wide, 13 rows: top at x-height, hangs 6 rows):
+.###..
+#...#.
+.....#
+.....#
+....#.
+...#..
+..##..
+....#.
+.....#
+.....#
+.....#
+#...#.
+.###..
+
+4 (9 wide, 11 rows: stem rises 1 row above x-height, crossbar on the baseline, hangs 3):
+......#..
+......#..
+.....##..
+....#.#..
+...#..#..
+..#...#..
+.#....#..
+#########
+......#..
+......#..
+......#..
+
+5 (10 wide, 13 rows: flag at x-height, hangs 6 rows):
+........##
+.....####.
+....#.....
+..##......
+..#.......
+.###......
+....#.....
+.....#....
+.....#....
+.....#....
+....##....
+##..#.....
+.###......
+
+6 (8 wide, 13 rows: bowl on the line, rises 6 rows):
+......##
+.....###
+.....#..
+....#...
+...#....
+.#......
+.####...
+##...#..
+#.....#.
+.#....#.
+.#.....#
+..#...##
+...###..
+
+7 (8 wide, 13 rows, larger line: bar one row below the 9's top, hangs 5 rows):
+.#######
+#....#..
+.....#..
+....#...
+....#...
+...#....
+...#....
+..#.....
+..#.....
+.#......
+.#......
+#.......
+#.......
+
+8 (8 wide, 15 rows, larger line: on the line, rises 6 rows above the 9's top):
+...####.
+..#...#.
+.#.....#
+##.....#
+.#.....#
+.##...#.
+..##.#..
+....#...
+...#.#..
+..#...#.
+.#.....#
+.#.....#
+.#.....#
+..#...#.
+...###..
+
+9 (9 wide, 15 rows, larger line: bowl 9 rows at x-height, hangs 6 rows):
+..#####..
+.#....#..
+#......#.
+#......#.
+#......#.
+#......#.
+#......#.
+.#...###.
+..#######
+......#..
+.....#...
+.....#...
+...##....
+..##.....
+.##......
+
+as lines (positions as stitched: 1-6 on one line, 7-9 on the next; one empty column between glyphs):
+123456:
+..............................................##
+.............................................###
+.............................................#..
+............................................#...
+...........................................#....
+.........................#...............#......
+###...###....###.........#...........##..####...
+.#...#...#..#...#.......##........####..##...#..
+.#.......#.......#.....#.#.......#......#.....#.
+.#......#........#....#..#.....##........#....#.
+.#.....#........#....#...#.....#.........#.....#
+.#....#...#....#....#....#....###.........#...##
+####.#####....##...#########.....#.........###..
+................#........#........#.............
+.................#.......#........#.............
+.................#.......#........#.............
+.................#...............##.............
+............#...#............##..#..............
+.............###..............###...............
+
+789:
+............####...........
+...........#...#...........
+..........#.....#..........
+.........##.....#..........
+..........#.....#..........
+..........##...#...........
+...........##.#.....#####..
+.#######.....#.....#....#..
+#....#......#.#...#......#.
+.....#.....#...#..#......#.
+....#.....#.....#.#......#.
+....#.....#.....#.#......#.
+...#......#.....#.#......#.
+...#.......#...#...#...###.
+..#.........###.....#######
+..#.....................#..
+.#.....................#...
+.#.....................#...
+#....................##....
+#...................##.....
+...................##......

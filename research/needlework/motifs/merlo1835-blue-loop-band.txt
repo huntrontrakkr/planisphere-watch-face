@@ -1,0 +1,60 @@
+title: Looped ribbon band: a blue ribbon curling in loops with black shadow lines, between a black-and-blue rule and a blue rule (Berlin work, two colours)
+section: Narrow bands
+source: Emma Merlo, Neueste Portefeuille für Freundinnen weiblicher Kunst-Arbeiten: eine Auswahl von Guirlanden, allerlei Blumen, Kränzen, Bouquets, Fruchtkörben, Schmetterlingen, Kanten, Arabesken u.s.w. zum künstlichen Stricken, Häkeln, zur Tapisserie- und Mosaik-Arbeit, Pirna/Leipzig: Carl August Friese, c. 1835 (catalogued [183-?]); hand-coloured printed charts ("bei Friese in Leipzig"); Getty Research Institute copy, archive.org neuesteportefeui00merl; public domain (published in the 1830s; no rights statement on the item)
+short-source: Merlo c.1835, plate Xx (archive.org neuesteportefeui00merl n24)
+page: leaf n24 (plate "Xx"): the vertical blue band at the far left; crop x430-740 y520-1700 of the 3004 x 2294 page image (cell pitch 15.8 px)
+url: https://archive.org/details/neuesteportefeui00merl
+image: https://archive.org/download/neuesteportefeui00merl/page/n24.jpg
+size: period 16 cells x 8 rows (drawn vertically: 70 rows, 8.75 periods)
+symmetry: none (the loops lean and the two rules differ); translation by 8 along the band
+colours: b = blue (painted RGB about 43,80,124; the right-hand rule a shade lighter on average, about 50,87,121, within the same spread: one blue), k = black (about 3,4,10), . = paper (about 235,236,216). Face palette: b window blue, k ink
+use: ring band (turned: a 16-row band, or the 13-row ribbon without the rules; the black + blue double rule alone is a 2-row edge)
+status: VERIFIED
+verified: grid-paper reader (g4lib cell centres), median colour per cell classified to paper / blue / light blue (merged) / black (+ a grey class for edge cells); period from the majority of the 8 full repeats (3 disagreements, each in one repeat), tiled over the whole drawn band (16 x 70 cells) matches 1116/1120 cells. The 4 others: the first unit's black dot at the top painted blue, two dabs of blue in blank cells, and a pale bluish smear (114,138,164) in a blank cell. Overlay (top half left, bottom half right): images/merlo1835-blue-loop-band_ver.jpg
+notes: A double rule (black, then blue with a small three-step bump at each loop) on one side and a plain blue rule on the other; between them a blue ribbon drawn as a series of loops: a 5-cell blue bar, a black shadow bar under it (5 cells, then 2, then 1, stepping down), a blue loop back. The black shadows give the ribbon a twist and read at 1x as a rope or ribbon; a good companion to the blue wave band (merlo1835-blue-wave-band).
+---
+period (16 x 8, as drawn: the band runs down the page):
+kb.k..bbb..bkb.b
+kb..k.......b..b
+kb...kkkkk.....b
+kbb....bbbkk...b
+kbbb......bbk..b
+kbb....bbbbb...b
+kb...bbbbb.....b
+kb..b.......b..b
+
+two repeats (16 x 16):
+kb.k..bbb..bkb.b
+kb..k.......b..b
+kb...kkkkk.....b
+kbb....bbbkk...b
+kbbb......bbk..b
+kbb....bbbbb...b
+kb...bbbbb.....b
+kb..b.......b..b
+kb.k..bbb..bkb.b
+kb..k.......b..b
+kb...kkkkk.....b
+kbb....bbbkk...b
+kbbb......bbk..b
+kbb....bbbbb...b
+kb...bbbbb.....b
+kb..b.......b..b
+
+turned 90 degrees clockwise for a horizontal band (8 x 16; the black rule at the top), three repeats:
+kkkkkkkkkkkkkkkkkkkkkkkk
+bbbbbbbbbbbbbbbbbbbbbbbb
+..bbb.....bbb.....bbb...
+...b...k...b...k...b...k
+b.....k.b.....k.b.....k.
+.b...k...b...k...b...k..
+.b...k.b.b...k.b.b...k.b
+.bb.bk.b.bb.bk.b.bb.bk.b
+.bb.bk.b.bb.bk.b.bb.bk.b
+.bb.bk...bb.bk...bb.bk..
+..bbk.....bbk.....bbk...
+..bbk..b..bbk..b..bbk..b
+b..k..bkb..k..bkb..k..bk
+.......b.......b.......b
+........................
+bbbbbbbbbbbbbbbbbbbbbbbb

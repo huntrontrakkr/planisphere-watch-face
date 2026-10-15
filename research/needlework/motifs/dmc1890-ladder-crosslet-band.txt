@@ -1,0 +1,28 @@
+title: Ladder band with crosslets (bars and single crosses between two rules)
+section: Narrow bands
+source: Thérèse de Dillmont, Album de broderies au point de croix, IIme Série, Planche No 11 (narrow borders), item 47; Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie (printed by Brustlein & Co., Mulhouse), 1890; Smithsonian Libraries copy, archive.org item albumdebroderies02dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album II 1890, Pl. 11 no. 47 (archive.org albumdebroderies02dill)
+page: archive.org albumdebroderies02dill page n30 (Planche No 11), item 47, the top band of the right column; crop x1505-2690 y420-545 of the full page image (3011 x 4047)
+url: https://archive.org/details/albumdebroderies02dill
+image: https://archive.org/download/albumdebroderies02dill/page/n30.jpg
+size: period 4 cells x 5 rows
+symmetry: mirror left-right (axes at columns 0 and 2 of the period), mirror top-bottom, rot180 (bandsym.py)
+colours: # = cross stitch (one colour), . = canvas ground
+use: ring band (a 5-row ladder: rungs every 4 cells with a crosslet between; reads as a row of linked plus signs)
+status: VERIFIED
+verified: printed chart (cross symbols on a fine printed canvas grid); stitch lattice fitted to the cross symbols (nwtool read, dark channel, pitch 20.97 x 20.40 px), Otsu threshold; the period tiled 13 times (52 x 5) and overlaid: 260/260 cells agree, no mismatches (images/dmc1890-ladder-crosslet-band_ver.jpg)
+notes: Two solid rules joined by a rung every 4 cells; the middle row adds one cross either side of each rung, so each rung carries a small plus sign and the gaps between hold a single empty cell. On the plate it runs 13 periods and ends on a rung (both ends are rungs). At 1x it reads as a beaded ladder; the simplest of the DMC bands and fully symmetric, so it turns corners cleanly on a rung.
+---
+period (4 x 5):
+####
+#...
+##.#
+#...
+####
+
+three repeats:
+############
+#...#...#...
+##.###.###.#
+#...#...#...
+############

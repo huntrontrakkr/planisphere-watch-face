@@ -1,0 +1,40 @@
+title: Garland from the flower wreath: two four-lobed flowers between leaf pairs on one stem
+section: Seasons and plants
+source: Sampler, red silk cross stitch on cotton, "A.DE.KAT.MDK.HAV.SDK.EDK.ZDK. ICK MK, ANNO 1857", Dutch, 1857; Rijksmuseum BK-1980-63, public domain (CC0)
+short-source: Dutch sampler 1857 (Rijksmuseum BK-1980-63)
+page: the flower wreath at the top centre (round the initials PDK / ADH): its left side; crop x2620-3000 y1520-2280 of the full Commons image (6844 x 6119). The right side of the wreath is the same garland; the top and bottom are made of larger flowers and leaves
+url: https://www.rijksmuseum.nl/en/collection/BK-1980-63
+image: https://commons.wikimedia.org/wiki/File:Merklap_van_katoen_waarop_met_rode_zijde_A.DE.KAT.MDK.HAV.SDK.EDK.ZDK._ICK_MK,_ANNO_1857_en_een_aantal_voorstellingen_z,_BK-1980-63.jpg
+size: 13 x 25 cells (each flower 13 x 6)
+symmetry: mirror left-right, mirror top-bottom, rot180 (full rectangle symmetry)
+colours: # = red cross stitch (the large stitch, about 26 px), . = ground
+use: season (summer garland); a vertical ornament for the side of a panel or the ring; one flower (rows 6-11) is a 13 x 6 spot motif
+status: VERIFIED
+verified: lattice fitted to the weave (pitch 25.1 x 27.6 px), red channel: 322/325 cells agree; the 3 mismatches are the first stitches of the wreath's top-left corner flower, which touch the chart's top-right corner and are left out (images/bk-1980-63-wreath-garland_ver.jpg)
+notes: One-cell stem down the middle, crossed by a 5-cell bar at each end and at the waist of each leaf pair; from top to bottom: bar, a pair of 4-lobed leaves, bar, flower, junction, flower, bar, leaf pair, bar. Each flower is four rounded lobes round a 3 x 2 centre on the stem. Solid at 1x, reads as a stiff baroque garland; repeat it vertically (sharing the end bars) for a longer chain.
+---
+....#####....
+..###.#.###..
+.####.#.####.
+####..#..####
+.##...#...##.
+.#..#####..#.
+..###.#.###..
+.####.#.####.
+####.###.####
+.###.###.###.
+.####.#.####.
+..####.####..
+...#..#..#...
+..####.####..
+.####.#.####.
+.###.###.###.
+####.###.####
+.####.#.####.
+..###.#.###..
+.#..#####..#.
+.##...#...##.
+####..#..####
+.####.#.####.
+..###.#.###..
+....#####....

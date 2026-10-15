@@ -1,0 +1,38 @@
+title: Compact running Greek key (meander), 6 rows, period 8 (red cross stitch)
+section: Narrow bands
+source: Band sampler, Austria, 1899, red and pink cotton embroidery on cotton (Java canvas), 47.6 x 36.8 cm; Cooper Hewitt, Smithsonian Design Museum 1981-28-175 (object 18616463), Bequest of Gertrude M. Oppenheimer; image via Wikimedia Commons "Sampler (Austria), 1899 (CH 18616463).jpg", public domain
+short-source: Austrian band sampler 1899 (Cooper Hewitt 1981-28-175)
+page: middle row of cross-stitched bands, right-hand section (left of it a "rope" band of slanting bars and a T-key band); crop x2050-2920 y1545-1720 of the full CH image (3249 x 4096); five units from x2070 to x2860
+url: https://collection.cooperhewitt.org/objects/18616463/
+image: https://images.collection.cooperhewitt.org/229155_4b84b07d287b179f_x.jpg
+size: period 8 x 6 rows (5 units stitched; the foot of the last unit runs one cell past it)
+symmetry: none within the unit (each unit is the same hook, translated; mirror left-right to run the other way)
+colours: # = red cross stitch, . = cream canvas ground
+use: ring band (the most compact true meander: 6 rows, one-cell lines and gaps; with the 7-row and 9-row keys of the library it completes a three-size set)
+status: VERIFIED
+verified: lattice fitted to the stitches (red channel, pitch 19.7 x 19.9 px): units 1-4 tiled (32 x 6) 191/192 cells agree; the one difference is the foot of the first unit (row 6 col 1), which is ground because no unit precedes it (the band's start). The last unit with the run-out foot (10 x 6, own lattice 19.5 x 19.3 px, the canvas is slightly skewed) 60/60. images/ch-18616463-greek-key-band_ver.jpg (top: units 1-4; below: unit 5)
+notes: The spiral has a single turn (the two inner hooks, rows 3 and 4, interlock without a gap row), which is what makes it one row shorter than the 7-row key (cma-1943-113-greek-key-band). The line climbs the upright (col 1), runs along the top (row 1, a one-cell gap between units), comes down col 7 to row 4, turns in along rows 4 and 3, and leaves down col 3 to the foot (row 6), which runs on into the next unit's upright. On the sampler the band starts with the first upright (no foot cell under it) and ends with the foot running one cell beyond the last upright.
+---
+period (8 x 6):
+#######.
+#.....#.
+#.###.#.
+#.#.###.
+#.#.....
+#.######
+
+three repeats:
+#######.#######.#######.
+#.....#.#.....#.#.....#.
+#.###.#.#.###.#.#.###.#.
+#.#.###.#.#.###.#.#.###.
+#.#.....#.#.....#.#.....
+#.#######.#######.######
+
+as stitched, whole band (41 x 6: start without the first foot cell, five units, foot run out one cell):
+#######.#######.#######.#######.#######..
+#.....#.#.....#.#.....#.#.....#.#.....#..
+#.###.#.#.###.#.#.###.#.#.###.#.#.###.#..
+#.#.###.#.#.###.#.#.###.#.#.###.#.#.###..
+#.#.....#.#.....#.#.....#.#.....#.#......
+..#######.#######.#######.#######.#######

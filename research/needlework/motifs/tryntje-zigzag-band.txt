@@ -1,0 +1,44 @@
+title: Zigzag (dog-tooth) band over a checker and the frame line: the bottom edge of the sampler
+section: Narrow bands
+source: Sampler and darning sampler with red embroidery ("Merklap en stoplap met rood borduurwerk"), Tryntje de Gra, Dutch, c. 1895; Rijksmuseum BK-1974-26, public domain (CC0)
+short-source: Tryntje de Gra sampler (Rijksmuseum BK-1974-26)
+page: bottom border, under the running-S band; crop x2400-3645 y5130-5530 of the full Commons image (6844 x 6119)
+url: https://www.rijksmuseum.nl/en/collection/BK-1974-26
+image: https://commons.wikimedia.org/wiki/File:Merklap_en_stoplap_met_rood_borduurwerk.,_BK-1974-26.jpg
+size: period 4 cells x 3 rows (zigzag alone); 4 x 8 with the checker and the frame line as stitched
+symmetry: zigzag: each tooth mirror left-right, period 4; the checker has period 2
+colours: # = red cross stitch, . = linen ground
+use: ring band (a 3-row zigzag; with the checker and rule it is a complete 8-row outer edge for the ring or the card)
+status: VERIFIED
+verified: lattice fitted to the weave (pitch 43.6 x 43.3 px), red channel; 7 tiled periods of the 8-row edge overlaid: 224/224 cells agree (images/tryntje-zigzag-band_ver.jpg)
+notes: The zigzag is single stitches set corner to corner, so it is the lightest possible tooth line. Below it, one empty row, a two-row checker (the same checker frames all four sides and runs straight round the corners: see tryntje-corner-battlement), one empty row and the outer rule. Further right the work is crossed by a loose end of red thread (not charted). The running-S band sits one empty row above the zigzag.
+---
+period (4 x 3):
+..#.
+.#.#
+#...
+
+three repeats:
+..#...#...#.
+.#.#.#.#.#.#
+#...#...#...
+
+as stitched with the checker and the frame line (period 4 x 8):
+..#.
+.#.#
+#...
+....
+#.#.
+.#.#
+....
+####
+
+three repeats of the full edge:
+..#...#...#.
+.#.#.#.#.#.#
+#...#...#...
+............
+#.#.#.#.#.#.
+.#.#.#.#.#.#
+............
+############

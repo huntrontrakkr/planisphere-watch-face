@@ -1,0 +1,25 @@
+title: Small acorn, 10 x 10 (solid nut with its tip, scaly cup in two symbols, on a twig)
+section: Seasons and plants
+source: Thérèse de Dillmont, Album de broderies au point de croix, IIme Série, Planche No 37, item 132 (oak band; the acorn border at the top); Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie (printed by Brustlein & Co., Mulhouse), 1890; Smithsonian Libraries copy, archive.org item albumdebroderies02dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album II 1890, Pl. 37 no. 132 (archive.org albumdebroderies02dill)
+page: archive.org albumdebroderies02dill page n82 (Planche No 37), top border of item 132, the second acorn from the left; crop x1260-1520 y460-710 of the full page image (3011 x 4047)
+url: https://archive.org/details/albumdebroderies02dill
+image: https://archive.org/download/albumdebroderies02dill/page/n82.jpg
+size: 10 x 10 cells (with the nut's tip and the start of the twig)
+symmetry: none (the acorn hangs on a diagonal, tip to the upper left, twig to the lower right; it is close to symmetric about that diagonal)
+colours: X = cross symbol (the nut, part of the cup, the twig), o = open square symbol (the other cup cells; a second, lighter colour), . = canvas ground. The border prints its three acorns in three tones of cross (dark, medium, light), all with the same X/o drawing
+use: season (autumn: a small acorn, reads at 1x as a dark nut in a chequered cup) / with dmc1890-acorn-band a growth pair, 10 and 17 cells
+status: VERIFIED
+verified: symbol classifier (/tmp/nw/printed/bin/symcls.py, symver.py): lattice fitted on the acorn's own crop (pitch 20.76 x 20.70 px), each cell classified by the darkness of its centre (cross symbols are dark at the centre) and of its rim (open squares are dark only at the rim); the chart overlaid on all three acorns of the border: 100/100, 100/100 and 99/100 cells agree (the miss is a printing speck above the first acorn) (images/dmc1890-acorn-10_ver.jpg: green dot = cross confirmed, cyan ring = open square confirmed)
+notes: A solid 5 x 5 nut (with one cell cut from its lower left corner) with a separate 2 x 2 tip at its upper left, and a cup of crosses and open squares in a diamond net round the nut's lower right, its four gaps left empty, the twig leaving the cup at the lower right. On the plate the acorns hang from a branch with an oak leaf between them. For one colour, make the o cells crosses or leave them out (the nut and the cup's crosses alone still read as an acorn).
+---
+XX........
+XX........
+..XXXXX...
+..XXXXXo..
+..XXXXXXo.
+..XXXXX.Xo
+..XXXX.Xo.
+...oX.Xo..
+....oXo.X.
+.....o..XX

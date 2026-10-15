@@ -1,0 +1,24 @@
+title: Rule with hanging pendants, alternately one and two cells (3-row fringe)
+section: Narrow bands
+source: Thérèse de Dillmont, Album de broderies au point de croix, Ire Série, Planche No 3 (narrow borders 13-57); Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie, 1890 (catalogue date); Smithsonian Libraries copy, archive.org item albumdebroderies01dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album I 1890, Pl. 3 no. 14 (archive.org albumdebroderies01dill)
+page: archive.org albumdebroderies01dill page n12 (Planche No 3), item 14, left column; crop x318-1082 y472-588 of the full page image (3008 x 4063)
+url: https://archive.org/details/albumdebroderies01dill
+image: https://archive.org/download/albumdebroderies01dill/page/n12.jpg
+size: period 6 cells x 3 rows (the rule and 2 rows of pendants)
+symmetry: mirror left-right, axes at columns 1, 4 (mod 6) (bandsym.py)
+colours: # = cross stitch (one colour), . = canvas ground
+use: ring band (the narrowest fringe: a rule with short drops, like a row of tassels; inner or outer edge of the ring)
+status: VERIFIED
+verified: printed chart (cross symbols on a fine printed canvas grid); stitch lattice fitted to the symbols (pitch about 20.8 px); a cell counts as inked when at least 30% of its inner area is very dark (/tmp/nw/printed/bin/bandauto.py + vverify.py; inked symbols 0.43-0.71, ground at most 0.20); the smallest period found by comparing the band with itself shifted, built by majority per phase, tiled over the whole band (36 columns): 108/108 cells agree (images/dmc1890s1-pendant-fringe-band_ver.jpg)
+notes: A solid rule with a pendant every 3 cells, alternately one cell and two cells long. On the plate it runs 6 periods. At 1x a dotted fringe under a line.
+---
+period (6 x 3):
+######
+.#..#.
+....#.
+
+four repeats:
+########################
+.#..#..#..#..#..#..#..#.
+....#.....#.....#.....#.

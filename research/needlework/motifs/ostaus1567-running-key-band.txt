@@ -1,0 +1,28 @@
+title: Running key (fret of interlocking hooks)
+section: Narrow bands
+source: Giovanni Ostaus, La Vera Perfettione del Disegno di varie sorti di recami, Venice 1567; The Met 21.15.3(1-79), Public Domain
+short-source: Ostaus 1567 fol. LXIIII (Met DP362011)
+page: image DP362011 (folio LXIIII, a page of seven bands), top band; 8 repeats verified at x777-1687 y407-585 of the full scan (library crop and overlay: 5 repeats, x777-1366 y410-585)
+url: https://www.metmuseum.org/art/collection/search/354909
+image: https://images.metmuseum.org/CRDImages/dp/original/DP362011.jpg
+size: period 7 cells x 5 rows (in the woodcut framed by an empty row and a solid rule above and below)
+symmetry: half-turn (rot180) symmetric with a 1-cell shift; no mirror (the hooks run one way)
+colours: # = filled cell (cut as a grey-hatched cell in the woodcut), . = white cell
+use: ring band (a 5-row key pattern: the most classical filigree in the library; 7 with the empty rows)
+status: VERIFIED
+verified: the period voted over the band's 18 repeats on the white-cell lattice; 8 tiled periods (with the empty row above and below) overlaid: 391/392 cells (white-cell blob reader) and 389/392 (darkness at each site, Otsu); the mismatches are ink spots in white cells. The library overlay (5 repeats): 244/245 and 243/245. Looked at the overlays: images/ostaus1567-running-key-band_ver.jpg
+notes: Each hook is a 5x5 spiral (top bar, a stem down, a bar back) joined to the next by the bottom rule; the white path forms a continuous key. Reads well at 1x as a fine fret on the ring.
+---
+period (7 x 5):
+#.#####
+#.#....
+#.####.
+#....#.
+######.
+
+three repeats:
+#.######.######.#####
+#.#....#.#....#.#....
+#.####.#.####.#.####.
+#....#.#....#.#....#.
+######.######.######.

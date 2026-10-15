@@ -1,0 +1,29 @@
+title: Crescent moon with a face in profile (man in the moon), 7 x 14
+section: Stars and sky
+source: Thérèse de Dillmont, Album de broderies au point de croix, Ire Série, Planche No 32 "Page des enfants" (30 small subjects, nos. 245-274); Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie, 1890 (catalogue date); Smithsonian Libraries copy, archive.org item albumdebroderies01dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album I 1890, Pl. 32 Page des enfants (archive.org albumdebroderies01dill)
+page: archive.org albumdebroderies01dill page n70 (Planche No 32), top left corner: the crescent moon; crop x320-540 y400-740 of the full page image (3008 x 4063)
+url: https://archive.org/details/albumdebroderies01dill
+image: https://archive.org/download/albumdebroderies01dill/page/n70.jpg
+size: 7 x 14 cells
+symmetry: none (a profile facing right: the eye hole, the nose and the chin break the mirror); the outer curve alone is close to mirror top-bottom
+colours: # = cross stitch (one colour), . = canvas ground
+use: star (the Moon: a waxing crescent with a face, for the moon phase or the night sector; reads at 1x)
+status: VERIFIED
+verified: printed chart (cross symbols on a fine printed canvas grid); stitch lattice fitted to the symbols (pitch 20.70 x 20.61 px); a cell counts as inked when at least 20% of its inner area is very dark (all symbols 0.27-0.42, ground at most 0.15) (/tmp/nw/printed/bin/vverify.py); chart overlaid: 98/98 cells agree (images/dmc1890s1-crescent-moon_ver.jpg)
+notes: A crescent opening to the right, three cells thick, with a face on its inner edge: an empty cell for the eye (row 5), a one-cell nose (row 6), a notch for the mouth (row 8) and a chin (row 9). Each horn ends in a short straight stitch (a dash half a cell long on the grid line beyond the last cross), which is not a cell and is left out; on the face add one pixel at each horn tip if wanted. On the plate it sits in the top left corner of a children's sampler page with a tree, a rocking horse, a heron, an owl, birds, a cock, a hare, a vase, a boar, a fox, a hedgehog, a stag, two birds face to face, and an alphabet with figures.
+---
+....###
+...###.
+..###..
+.###...
+.#.#...
+#####..
+####...
+###....
+####...
+.###...
+.###...
+..###..
+...###.
+.....##

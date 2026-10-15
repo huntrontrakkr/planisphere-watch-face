@@ -1,0 +1,36 @@
+title: Dotted lattice band (checker rows with little X-crosses: a net ground)
+section: Narrow bands
+source: Peter Quentel, Eyn New Kunstlichboich, Cologne 1529; The Met 20.50.2(1-49), Public Domain
+short-source: Quentel 1529 (Met DP361383)
+page: image DP361383, the narrow band at the foot of the block (under band 7), 9 rows between a white margin row above and below; crop x470-1100 y2070-2280; read from x470-1720 y2082-2272 at pitch 15.5
+url: https://www.metmuseum.org/art/collection/search/354657
+image: https://images.metmuseum.org/CRDImages/dp/original/DP361383.jpg
+size: period 8 cells x 9 rows
+symmetry: mirror top-bottom and left-right; the 9 x 9 unit (period plus one column, as in the repeats) has full square symmetry
+colours: # = black cell, . = white cell
+use: ring band (a fine net ground: at 1x a grey mesh; a filler strip for the ring or the card margin)
+status: VERIFIED
+verified: 9 tiled periods (72 x 9) overlaid on the band: darkness at the white-cell-lattice sites (g3check.py) 647/648 agree, the one difference a worn cell at the right end (row 2, the block is worn there); white-cell lattice reader (nwtool verify --g3) 645/648, the three others merged double white cells. Overlay: images/quentel1529-dotted-lattice-band_ver.jpg
+notes: Rows 2, 4, 6, 8 are checker rows (every other cell); between them single cells every 4 (rows 3, 7) or every 8 (rows 1, 5, 9), which makes little five-cell X-crosses round an empty centre. The plainest band on the page; the period was read with a phase shifted one column from the reading (same cells).
+---
+period (8 x 9):
+....#...
+.#.#.#.#
+..#...#.
+.#.#.#.#
+#.......
+.#.#.#.#
+..#...#.
+.#.#.#.#
+....#...
+
+three repeats:
+....#.......#.......#....
+.#.#.#.#.#.#.#.#.#.#.#.#.
+..#...#...#...#...#...#..
+.#.#.#.#.#.#.#.#.#.#.#.#.
+#.......#.......#.......#
+.#.#.#.#.#.#.#.#.#.#.#.#.
+..#...#...#...#...#...#..
+.#.#.#.#.#.#.#.#.#.#.#.#.
+....#.......#.......#....

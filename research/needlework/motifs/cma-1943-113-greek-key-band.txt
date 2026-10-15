@@ -1,0 +1,41 @@
+title: Small running Greek key (meander), 7 rows, period 8 (red cross stitch)
+section: Narrow bands
+source: Sampler signed "Maria Hancock", England, 19th century; red cotton cross stitch on cotton, 30.5 x 26.1 cm; The Cleveland Museum of Art 1943.113, Gift of George W. Bierce; CC0 (Open Access, share_license_status CC0)
+short-source: Maria Hancock sampler (CMA 1943.113)
+page: right-hand side of the band field, under the leaf spray and right of the diamond chain; crop x3175-3835 y2950-3090 of the full image (1943.113_full.tif, 4050 x 4773); the band rises about 17 px to the right (fabric skew), so the crop was rotated -1.7 degrees before the lattice fit
+url: https://clevelandart.org/art/1943.113
+image: https://openaccess-cdn.clevelandart.org/1943.113/1943.113_full.tif
+size: period 8 x 7 rows (7 periods stitched, closed at the right end by one extra upright)
+symmetry: none within the unit (each unit is the same hook, translated; mirror left-right to run the other way)
+colours: # = red cross stitch, . = cream cotton ground
+use: ring band (the narrowest true meander in the library: lines and gaps one cell each, 7 rows; crisp at 1x)
+status: VERIFIED
+verified: weave lattice (red channel) fitted after de-skewing the crop by -1.7 degrees (pitch 10.6 x 10.7 px); the 7 tiled periods (56 x 7) against the whole band: 392/392 cells agree (the same at -1.5 and -1.9 degrees); with the closing upright added (57 x 7): 399/399. Without the rotation, a lattice forced to 10.56 x 11.34 px gave 162/168 on the first three units, the 6 misses all in the third unit where the skew has lifted the band by half a row. Overlay (rotated): images/cma-1943-113-greek-key-band_ver.jpg
+notes: The same hook as the 9-row key of bk-1968-11-greek-key-band, one size smaller: the line climbs the upright (col 1), runs along the top, comes down col 7, turns in for a one-cell spiral (rows 3-5) and leaves down col 3 to the foot, where it runs on into the next unit's upright. Top row has a one-cell gap between units; the foot row a gap at col 2. At the right end the stitcher closed the band with one more upright (rows 1-7) after the 7th unit. Together with the 9-row key this makes a two-size meander set.
+---
+period (8 x 7):
+#######.
+#.....#.
+#.###.#.
+#.#.#.#.
+#.#.###.
+#.#.....
+#.######
+
+three repeats:
+#######.#######.#######.
+#.....#.#.....#.#.....#.
+#.###.#.#.###.#.#.###.#.
+#.#.#.#.#.#.#.#.#.#.#.#.
+#.#.###.#.#.###.#.#.###.
+#.#.....#.#.....#.#.....
+#.#######.#######.######
+
+as stitched at the right end (last period + the closing upright, 9 x 7):
+#######.#
+#.....#.#
+#.###.#.#
+#.#.#.#.#
+#.#.###.#
+#.#.....#
+#.#######

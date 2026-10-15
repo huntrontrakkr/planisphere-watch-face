@@ -1,0 +1,103 @@
+title: Key band on yellow: an ochre fret with maroon crosses between dotted edges (ochre blocks left, maroon blocks right) (Berlin work, three colours)
+section: Narrow bands
+source: Emma Merlo, Neueste Portefeuille für Freundinnen weiblicher Kunst-Arbeiten: eine Auswahl von Guirlanden, allerlei Blumen, Kränzen, Bouquets, Fruchtkörben, Schmetterlingen, Kanten, Arabesken u.s.w. zum künstlichen Stricken, Häkeln, zur Tapisserie- und Mosaik-Arbeit, Pirna/Leipzig: Carl August Friese, c. 1835 (catalogued [183-?]); hand-coloured printed charts ("bei Friese in Leipzig"); Getty Research Institute copy, archive.org neuesteportefeui00merl; public domain (published in the 1830s; no rights statement on the item)
+short-source: Merlo c.1835, plate Xx (archive.org neuesteportefeui00merl n24)
+page: leaf n24 (plate "Xx"): the vertical yellow band at the far right; crop x2385-2680 y520-1700 of the 3004 x 2294 page image (cell pitch 15.3 x 16.1 px)
+url: https://archive.org/details/neuesteportefeui00merl
+image: https://archive.org/download/neuesteportefeui00merl/page/n24.jpg
+size: period 14 cells x 24 rows (drawn vertically, 70 rows long); the inner key alone 10 x 8, the edges 2 x 3
+symmetry: none (the fret and the crosses are offset, and the two edges differ); translation only. The inner key repeats every 8 rows, the dotted edges every 3, so the whole band repeats every 24
+colours: y = yellow (painted RGB about 219,210,102; some cells in a denser olive wash, about 160,150,64, merged), o = ochre (about 166,118,36), r = maroon (about 38,9,8: the edge blocks and the inner crosses are the same paint, the inner ones a little denser), . = paper. Face palette: y yellow, o gold/ochre, r red-brown or ink
+use: ring band (turned 90 degrees: a 14-row band, or the 10-row inner key alone; each dotted edge is a 2-row beaded rule of period 3)
+status: VERIFIED
+verified: grid-paper reader (g4lib cell centres), median colour per cell classified to paper / yellow / dull yellow (merged into yellow) / ochre / maroon (+ a grey class for edge cells); periods from majorities: the inner key over 8 repeats (every disagreement 7:1), the edges over 23 repeats (left: no disagreement; right: 22:1); the 24-row period tiled over the whole drawn band (14 x 70 cells) matches 975/980 cells. The 5 others: one yellow cell painted ochre (158,122,34), one ochre edge cell in a thin wash (173,136,53), one maroon cell painted ochre-brown (128,80,35), one ochre edge cell painted dark (81,34,9), and one maroon cell of the band's last row left unpainted. Overlay (top half left, bottom half right): images/merlo1835-yellow-key-band_ver.jpg
+notes: Between a column of ochre 2 x 2 blocks (left) and a column of maroon 2 x 2 blocks (right), each separated by single rows, runs a yellow field with an ochre fret: a broken vertical line, paired horizontal bars, and a second vertical line with short arms, with maroon crosses and T-shapes caught in the fret on alternate sides. Very regular and legible; the narrowest geometric band on the plates (the inner key turned for a horizontal ring band is 8 rows high). Typical of 1830s Berlin-work borders imitating gold braid.
+---
+period (14 x 24, as drawn: the band runs down the page):
+ooyoyryyoyyyrr
+ooyoooooyyyyrr
+yyyyyryyyyyyoo
+ooyoooooyyyyrr
+ooyoyryyoyyyrr
+yyyorryyoryyoo
+ooyyyyyyorryrr
+ooyorryyoryyrr
+yyyoyryyoyyyoo
+ooyoooooyyyyrr
+ooyyyryyyyyyrr
+yyyoooooyyyyoo
+ooyoyryyoyyyrr
+ooyorryyoryyrr
+yyyyyyyyorryoo
+ooyorryyoryyrr
+ooyoyryyoyyyrr
+yyyoooooyyyyoo
+ooyyyryyyyyyrr
+ooyoooooyyyyrr
+yyyoyryyoyyyoo
+ooyorryyoryyrr
+ooyyyyyyorryrr
+yyyorryyoryyoo
+
+two repeats (14 x 48):
+ooyoyryyoyyyrr
+ooyoooooyyyyrr
+yyyyyryyyyyyoo
+ooyoooooyyyyrr
+ooyoyryyoyyyrr
+yyyorryyoryyoo
+ooyyyyyyorryrr
+ooyorryyoryyrr
+yyyoyryyoyyyoo
+ooyoooooyyyyrr
+ooyyyryyyyyyrr
+yyyoooooyyyyoo
+ooyoyryyoyyyrr
+ooyorryyoryyrr
+yyyyyyyyorryoo
+ooyorryyoryyrr
+ooyoyryyoyyyrr
+yyyoooooyyyyoo
+ooyyyryyyyyyrr
+ooyoooooyyyyrr
+yyyoyryyoyyyoo
+ooyorryyoryyrr
+ooyyyyyyorryrr
+yyyorryyoryyoo
+ooyoyryyoyyyrr
+ooyoooooyyyyrr
+yyyyyryyyyyyoo
+ooyoooooyyyyrr
+ooyoyryyoyyyrr
+yyyorryyoryyoo
+ooyyyyyyorryrr
+ooyorryyoryyrr
+yyyoyryyoyyyoo
+ooyoooooyyyyrr
+ooyyyryyyyyyrr
+yyyoooooyyyyoo
+ooyoyryyoyyyrr
+ooyorryyoryyrr
+yyyyyyyyorryoo
+ooyorryyoryyrr
+ooyoyryyoyyyrr
+yyyoooooyyyyoo
+ooyyyryyyyyyrr
+ooyoooooyyyyrr
+yyyoyryyoyyyoo
+ooyorryyoryyrr
+ooyyyyyyorryrr
+yyyorryyoryyoo
+
+the inner key alone (10 x 8, columns 3-12), turned 90 degrees clockwise for a horizontal band (8 x 10), three repeats:
+yyyyyyyyyyyyyyyyyyyyyyyy
+oyoooyoooyoooyoooyoooyoo
+ryryoyoyryryoyoyryryoyoy
+ryrrororryrrororryrroror
+yyyyoyoyyyyyoyoyyyyyoyoy
+yyyyoyoyyyyyoyoyyyyyoyoy
+ooooyyyoooooyyyoooooyyyo
+rrryyyyyrrryyyyyrrryyyyy
+yryyyyyyyryyyyyyyryyyyyy
+yyyyyyyyyyyyyyyyyyyyyyyy
+

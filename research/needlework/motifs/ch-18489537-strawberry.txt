@@ -1,0 +1,27 @@
+title: Strawberry on its calyx, standing in the trough of a zigzag vine (gold and green, 11 x 12)
+section: Seasons and plants
+source: Mary Hall, sampler ("Live to Die" / "The Desire"), England, 1786, silk cross stitch on linen; Cooper Hewitt, Smithsonian Design Museum, object 18489537; image via Wikimedia Commons "Sampler (England), 1786 (CH 18489537).jpg", public domain
+short-source: Mary Hall sampler 1786 (Cooper Hewitt 18489537)
+page: top border, the first upright strawberry from the left (right of the top-left corner); crop x380-720 y170-380 of the full CH image (2940 x 4096)
+url: https://collection.cooperhewitt.org/objects/18489537/
+image: https://images.collection.cooperhewitt.org/230619_6ab5221925289d88_x.jpg
+size: 11 x 12 cells (berry 7 x 7, calyx and stem 4 rows, and the vine's flat trough as the last row)
+symmetry: mirror left-right
+colours: y = gold (yellow-brown) silk, g = green silk, . = linen ground. Face palette: red berry (y -> red) and green or ink calyx on cream
+use: season (summer: strawberry; also a spot motif or a ring-band unit)
+status: VERIFIED
+verified: lattice fitted to the stitches (pitch 15.5 x 15.0 px), each cell's median colour classified to ground / gold / green: 132/132 cells agree, no mismatches; images/ch-18489537-strawberry_ver.jpg. Cross-check: the next upright strawberry along the same border has the same berry (48 of 49 berry cells, one edge cell ambiguous); its calyx was not compared because the lattice drifts there
+notes: The museum calls the border "reversing strawberries": a zigzag vine with leaves, and in every trough a berry stands up on a green calyx (a bar, two leaves sloping out, a one-cell stem); at every crest a berry hangs down from the same calyx turned over. On the top border the upright berries keep their gold silk and the hanging ones have lost theirs (only the needle holes remain), on the bottom border the reverse, so the two orientations were probably worked in two colours, one of them now perished. The berry is a rounded 7 x 7 dome: point up here, point down when hanging (flip the chart top to bottom for the hanging berry). At 1x it reads as a strawberry or an acorn; drop the last row to free it from the vine.
+---
+.....y.....
+....yyy....
+...yyyyy...
+..yyyyyyy..
+..yyyyyyy..
+..yyyyyyy..
+...yyyyy...
+..ggggggg..
+.ggg.g.ggg.
+ggg..g..ggg
+.....g.....
+ggggggggggg

@@ -1,0 +1,27 @@
+title: Flower head on a stem (the fence-post flower): a lozenge with three spikes
+section: Seasons and plants
+source: Sampler, red silk cross stitch on cotton, "A.DE.KAT.MDK.HAV.SDK.EDK.ZDK. ICK MK, ANNO 1857", Dutch, 1857; Rijksmuseum BK-1980-63, public domain (CC0)
+short-source: Dutch sampler 1857 (Rijksmuseum BK-1980-63)
+page: upper left group, the post at the left end of the fence under the stag; crop x1050-1400 y1940-2290 of the full Commons image (6844 x 6119); the same flower tops the right-hand post and both posts of the mirrored group on the right
+url: https://www.rijksmuseum.nl/en/collection/BK-1980-63
+image: https://commons.wikimedia.org/wiki/File:Merklap_van_katoen_waarop_met_rode_zijde_A.DE.KAT.MDK.HAV.SDK.EDK.ZDK._ICK_MK,_ANNO_1857_en_een_aantal_voorstellingen_z,_BK-1980-63.jpg
+size: 9 x 12 cells (head 9 x 8, stem 4)
+symmetry: mirror left-right
+colours: # = red cross stitch, . = ground
+use: season (spring/summer flower; a tulip or clipped bay on a stem, or a small tree for the village)
+status: VERIFIED
+verified: lattice fitted to the weave (pitch 25.2 x 27.6 px), red channel: 144/144 cells of the 12 x 12 window round the post agree (images/bk-1980-63-flower-head_ver.jpg); the chart is that window's flower and stem (the picket tips beside the stem are left out)
+notes: Three spikes (the middle one taller) over a solid lozenge 9 wide that tapers to a 3 x 2 neck and a one-cell stem; in the original the stem runs down into the fence. Solid, so it reads at 1x as a dark tulip or topiary ball; 12 rows with the stem, 9 without.
+---
+....#....
+..#.#.#..
+.#######.
+#########
+.#######.
+..#####..
+...###...
+...###...
+....#....
+....#....
+....#....
+....#....

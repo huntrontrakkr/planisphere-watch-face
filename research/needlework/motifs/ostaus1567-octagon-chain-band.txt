@@ -1,0 +1,36 @@
+title: Octagon chain (hollow octagons linked by diamonds)
+section: Narrow bands
+source: Giovanni Ostaus, La Vera Perfettione del Disegno di varie sorti di recami, Venice 1567; The Met 21.15.3(1-79), Public Domain
+short-source: Ostaus 1567 fol. LXIIII (Met DP362011)
+page: image DP362011 (folio LXIIII), fifth band; 5 repeats verified at x791-2228 y1034-1273 of the full scan (library crop and overlay: 2 repeats, x791-1396 y1050-1273)
+url: https://www.metmuseum.org/art/collection/search/354909
+image: https://images.metmuseum.org/CRDImages/dp/original/DP362011.jpg
+size: period 18 cells x 9 rows (in the woodcut with an empty row and a solid rule above and below)
+symmetry: half-turn (rot180) symmetric with a 5-cell shift; no exact mirror (the diagonal strokes inside the links twist)
+colours: # = filled cell (cut as a grey-hatched cell in the woodcut), . = white cell
+use: ring band (a 9-row chain; the octagons can hold a small spot motif)
+status: VERIFIED
+verified: the period voted over the band's 7 repeats; 5 tiled periods (with the empty rows) overlaid: 974/990 (blob reader) and 962/990 (darkness at each site); the library overlay (2 repeats): 385/396 and 377/396; most mismatches are an ink smear over the first repeat (white cells inked) and broken cells; the band's repeats differ from each other in up to 2 cells per row (hand-cut). Looked at the overlays: images/ostaus1567-octagon-chain-band_ver.jpg
+notes: Large white octagons (outlined by 2-3 cell bars) alternate with diamond knots; the band is busier than the other narrow bands, best on the wider ring of the Round 2.
+---
+period (18 x 9):
+######.....#.....#
+#######...###...##
+.....###.#####.###
+......#.###.#.###.
+.......###...###..
+......###.#.###.#.
+.....###.#####.###
+#######...###...##
+######.....#.....#
+
+three repeats:
+######.....#.....#######.....#.....#######.....#.....#
+#######...###...#########...###...#########...###...##
+.....###.#####.###.....###.#####.###.....###.#####.###
+......#.###.#.###.......#.###.#.###.......#.###.#.###.
+.......###...###.........###...###.........###...###..
+......###.#.###.#.......###.#.###.#.......###.#.###.#.
+.....###.#####.###.....###.#####.###.....###.#####.###
+#######...###...#########...###...#########...###...##
+######.....#.....#######.....#.....#######.....#.....#

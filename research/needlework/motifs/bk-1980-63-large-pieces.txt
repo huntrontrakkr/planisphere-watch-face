@@ -1,0 +1,16 @@
+title: Large pieces of the 1857 sampler (ship, tree of life, carnation pots, sentry boxes): described, not charted
+section: Notes and pointers
+source: Sampler, red silk cross stitch on cotton, "A.DE.KAT.MDK.HAV.SDK.EDK.ZDK. ICK MK, ANNO 1857", Dutch, 1857; Rijksmuseum BK-1980-63, public domain (CC0)
+short-source: Dutch sampler 1857 (Rijksmuseum BK-1980-63)
+page: ship x2450-4800 y2550-3720 (the reference image); tree over the couple x2700-4000 y3650-5200; left carnation pot x1020-1880 y4180-5330 (right pot about x4880-5610 y4360-5350); left sentry box x1430-1780 y2790-3710 (right one, mirrored, about x4890-5190 y2860-3710); all in the full Commons image (6844 x 6119)
+url: https://www.rijksmuseum.nl/en/collection/BK-1980-63
+image: https://commons.wikimedia.org/wiki/File:Merklap_van_katoen_waarop_met_rode_zijde_A.DE.KAT.MDK.HAV.SDK.EDK.ZDK._ICK_MK,_ANNO_1857_en_een_aantal_voorstellingen_z,_BK-1980-63.jpg
+size: ship about 85 x 40 large stitches; tree about 36 x 55; carnation pot about 60 x 75 small stitches; sentry box about 26 x 38 small stitches (plus its 13 x 16 crest)
+symmetry: none of them (the tree's two halves differ; the pots are near mirror images of each other)
+colours: # = red cross stitch, . = ground (the sampler mixes a large star-like cross stitch, about 26 px, with a small one, about 13 px)
+use: pointers for later work (village / creature / season), too large for the face at 1x
+status: UNVERIFIED (no chart: see notes)
+verified: not charted; the pieces were viewed on crops of the full image. Pieces taken from them and charted cell for cell: bk-1980-63-ship-globe (the main-mast top), bk-1980-63-anchor and bk-1980-63-lantern (beside the ship), bk-1980-63-flower-urn (the pot of the carnations), bk-1980-63-bird-on-post (beside the sentry box), bk-1980-63-picket-fence (beside the sentry box)
+notes: SHIP: a long hull in solid stitching with a gallery rail of single openings (a checker of holes) along the deck, three masts, two with swallow-tailed pennants and an empty oval top, the main mast with the crossed oval top (charted as bk-1980-63-ship-globe); a dog and a figure in a hood stand on deck; at the stern a stepped ramp under a large square flag. TREE OF LIFE over the couple (a man with a stick and a woman holding a flower): a 2-cell trunk, branches of single diagonal stitches, and stepped foliage clusters with openwork (3 x 3 to 7 x 8 lozenges of stitches with single holes), standing on a base line with a row of single-stitch tufts; framed left and right by vine sprays. CARNATION POTS: in the bottom corners, each a stem rising from the urn with a pair of small leaf sprigs, two leafy side shoots carrying hanging bells (fuchsia-like, solid, 11 x 9), two carnations in profile on long single-stitch stalks, a carnation seen as a fan at the top (26 x 12, with diagonal lines of single holes as the petal divisions) over a 5 x 7 bud; a few cells of the fan's open lines are ambiguous on the photograph. SENTRY BOXES: a round-arched box drawn in a one-stitch outline with a soldier standing inside (shako, arms akimbo, 15 x 30), crowned with a flower and two crossed flags; worked in the small stitch on a skewed patch of cotton, so the walls drift off a straight lattice by up to a stitch.
+---
+(no chart: see notes)

@@ -1,0 +1,42 @@
+title: Bead band: blue lozenges with orange bars, between black forked-serif columns and rose rules (four colours)
+section: Narrow bands
+source: Manuscript album of designs for lace and embroidery, German, c. 1596 (woodcut grid paper, designs inked and painted by hand); The Met 53.566.7(1-69), Public Domain
+short-source: German album c.1596 (Met DP356737)
+page: image DP356737 (a page of coloured band and spot patterns), top band; crop x1380-2100 y1210-1510 of the full scan
+url: https://www.metmuseum.org/art/collection/search/368249
+image: https://images.metmuseum.org/CRDImages/dp/original/DP356737.jpg
+size: period 8 cells x 12 rows (10 rows between the two rules)
+symmetry: mirror left-right (about the black column and about the lozenge's centre) and top-bottom
+colours: r = rose red (rules), k = black ink, b = blue-green (verdigris), o = orange, . = paper (cream). Face palette: r red, k ink, b the window blue, o gold
+use: ring band (a jewelled band: beads strung between columns; the black columns alone are I's with forked serifs)
+status: VERIFIED
+verified: cell centres from the printed grid (grid-paper reader), each cell's median colour classified to the nearest of five reference colours; the chart (29 x 12 as drawn) matches 343/348 cells; the 5 others are black dots drawn as rings with white centres (read as blue or red), confirmed black by eye on the 2x overlay (images/album1596-oval-bead-band_ver.jpg, red dots).
+notes: Painted by hand on printed woodcut grid paper, so the colours are the album's own: verdigris, orange, rose and black. On the page the band starts with a half column at the left (no left serifs) and runs 3.5 periods.
+---
+period (8 x 12):
+rrrrrrrr
+.kk...kk
+kk..b..k
+k..b.b..
+k.b.o.b.
+k.b.o.b.
+k.b.o.b.
+k.b.o.b.
+k..b.b..
+kk..b..k
+.kk...kk
+rrrrrrrr
+
+three repeats:
+rrrrrrrrrrrrrrrrrrrrrrrr
+.kk...kk.kk...kk.kk...kk
+kk..b..kkk..b..kkk..b..k
+k..b.b..k..b.b..k..b.b..
+k.b.o.b.k.b.o.b.k.b.o.b.
+k.b.o.b.k.b.o.b.k.b.o.b.
+k.b.o.b.k.b.o.b.k.b.o.b.
+k.b.o.b.k.b.o.b.k.b.o.b.
+k..b.b..k..b.b..k..b.b..
+kk..b..kkk..b..kkk..b..k
+.kk...kk.kk...kk.kk...kk
+rrrrrrrrrrrrrrrrrrrrrrrr

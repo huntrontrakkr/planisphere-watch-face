@@ -1,0 +1,35 @@
+title: Small bird with a long tail (one of a pair facing a lily)
+section: Creatures
+source: Peter Quentel, Eyn New Kunstlichboich, Cologne 1529; The Met 20.50.2(1-49), Public Domain
+short-source: Quentel 1529 (Met DP361378)
+page: image DP361378 (folio "10"), bottom band of small figures (9 rows between margin rows); the group bird-lily-bird is at band columns 29-63 when read from x395-1590 y2110-2300 at pitch 15.2 (this bird, the left one, is x861-1022); crop x800-1460 y2110-2300
+url: https://www.metmuseum.org/art/collection/search/354657
+image: https://images.metmuseum.org/CRDImages/dp/original/DP361378.jpg
+size: 11 x 9 cells (the group in the second block: 35 x 9)
+symmetry: none; the bird on the other side of the lily is its exact mirror image, so the group is mirror left-right
+colours: # = black cell of the woodcut, . = white cell
+use: creature (a small bird: hen, partridge or goose; the pair with the lily is a ready centre-piece for the foot of the card)
+status: VERIFIED
+verified: two independent reads of the whole 35 x 9 group, on two crops: darkness at each white-cell-lattice site, Otsu (g3check.py): 313/315; white-cell lattice reader (nwtool verify --g3): 312/315. The two cells both readers call white are wear flecks in solid black (group row 4 col 22 in the lily, row 5 col 29 in the right bird's body), each far smaller than a cell and absent from the mirror half; checked at 7x zoom and charted black. The g3 reader also calls one blotchy body cell of the left bird white (row 4, col 9). The bird alone: darkness 99/99. Overlay: images/quentel1529-small-bird-11x9_ver.jpg (green = chart cell confirmed black, red = the two flecks)
+notes: Faces right: a round head with a white eye, a one-cell beak, a plump body, two legs with splayed three-toed feet, and a long tail sweeping down to the left. It reads well at 1x. The page's woodcut is worn (white flecks in the black, a distorted grid at the band's left end), so the band's other figures were checked one by one: the lily is quentel1529-lily-11x9; the two checkered lozenges are quentel1529-checker-lozenge-9.
+---
+......###..
+......#.##.
+......#####
+.....####..
+....######.
+...#######.
+..###.#.#..
+.###..#.#..
+###..#.#.#.
+
+the group: bird, lily, mirrored bird (35 x 9; two wear flecks charted black, see verified):
+......###........#........###......
+......#.##....#.###.#....##.#......
+......#####..###.#.###..#####......
+.....####...##.#####.##...####.....
+....######..##..###..##..######....
+...#######...##..#..##...#######...
+..###.#.#.....#..#..#.....#.#.###..
+.###..#.#.......###.......#.#..###.
+###..#.#.#.....#####.....#.#.#..###

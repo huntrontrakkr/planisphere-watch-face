@@ -1,0 +1,32 @@
+title: Spiral key (running square spiral) band
+section: Narrow bands
+source: Sampler and darning sampler with red embroidery ("Merklap en stoplap met rood borduurwerk"), Tryntje de Gra, Dutch, c. 1895; Rijksmuseum BK-1974-26, public domain (CC0)
+short-source: Tryntje de Gra sampler (Rijksmuseum BK-1974-26)
+page: second band at the top, under the battlement; crop x2300-3700 y1230-1700 of the full Commons image
+url: https://www.rijksmuseum.nl/en/collection/BK-1974-26
+image: https://commons.wikimedia.org/wiki/File:Merklap_en_stoplap_met_rood_borduurwerk.,_BK-1974-26.jpg
+size: period 8 cells x 7 rows
+symmetry: none within a unit (a spiral turns one way); translation only. Mirror the chart for the other hand
+colours: # = red cross stitch, . = linen ground
+use: ring band (Greek-key filigree)
+status: VERIFIED
+verified: lattice fitted to the weave (pitch 43.2 px), red-channel reading; 3 tiled periods overlaid: 168/168 cells agree (images/tryntje-spiral-key-band_ver.jpg)
+notes: Each unit is a square spiral of one-cell lines, and the units share their outer walls, so the line runs on unbroken. 7 rows; the bottom row is the shared baseline.
+---
+period (8 x 7):
+.#######
+.#.....#
+.#.###.#
+.#.#...#
+.#.#.###
+.#.#....
+##.#####
+
+three repeats:
+.#######.#######.#######
+.#.....#.#.....#.#.....#
+.#.###.#.#.###.#.#.###.#
+.#.#...#.#.#...#.#.#...#
+.#.#.###.#.#.###.#.#.###
+.#.#.....#.#.....#.#....
+##.#######.#######.#####

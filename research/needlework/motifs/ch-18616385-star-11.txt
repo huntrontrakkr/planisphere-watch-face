@@ -1,0 +1,26 @@
+title: Eight-pointed star with forked arm-ends (red cross stitch, 11 cells)
+section: Stars and sky
+source: Sampler, Italy, 1802 (signed F. N. A.), red silk cross stitch on linen; Cooper Hewitt, Smithsonian Design Museum, object 18616385; image via Wikimedia Commons "Sampler (Italy), 1802 (CH 18616385).jpg", public domain
+short-source: Italian sampler 1802 (Cooper Hewitt 18616385)
+page: lower field, far left, the small star left of the crowned M monogram; crop x400-700 y2080-2380 of the full CH image (4096 x 3275)
+url: https://collection.cooperhewitt.org/objects/18616385/
+image: https://images.collection.cooperhewitt.org/220797_d42186cdbc6ab946_x.jpg
+size: 11 x 11 cells
+symmetry: full square symmetry (both mirrors, both diagonals, quarter turn)
+colours: # = red cross stitch, . = linen ground. Face palette: red on cream, or cream/white on the blue window
+use: star (a ready star for the window or the ring; also a corner rosette or a snow crystal)
+status: VERIFIED
+verified: lattice fitted to the stitches (red channel, pitch 17.2 x 17.9 px); 121/121 cells agree, no mismatches; images/ch-18616385-star-11_ver.jpg
+notes: A plus-cross whose four arms end in a three-cell bar (a T, so each end reads as a fork) laid over a diagonal saltire of single stitches, all crossing a solid 3 x 3 centre. 41 stitches. The large stars that open the two alphabets are bigger cousins with lozenge ends, and the field's two large crosses are related (see ch-18616385-cross-star-15). Reads at 1x as a twinkling star; a natural "bright star" glyph for the planisphere, or a snowflake for winter.
+---
+.....#.....
+....###....
+..#..#..#..
+...#.#.#...
+.#..###..#.
+###########
+.#..###..#.
+...#.#.#...
+..#..#..#..
+....###....
+.....#.....

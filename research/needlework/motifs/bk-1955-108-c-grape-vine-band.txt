@@ -1,0 +1,56 @@
+title: Grape vine with hanging bunches (green and purple), period 20 x 19 rows
+section: Seasons and plants
+source: Unfinished sampler, wool cross stitch on wool muslin, probably North Holland, c. 1700-1725; Rijksmuseum BK-1955-108-C (gift of Mrs Knotter, Amsterdam, 1955), public domain (CC0; Commons licence checked: CC0)
+short-source: Dutch sampler c. 1700-1725 (Rijksmuseum BK-1955-108-C)
+page: the border of grape bunches ("rand van druiventrossen") along the top, left half; the charted period is read from x1995-2315 y730-1090 of the full Commons image (6844 x 6119), straightened by a 2.8 degree rotation (the band rises to the right in the photograph); the next repeat (x2295-2615) was checked too
+url: https://www.rijksmuseum.nl/en/collection/BK-1955-108-C
+image: https://commons.wikimedia.org/wiki/File:Merklap_van_wollen_mousseline.,_BK-1955-108-C.jpg
+size: period 20 x 19 rows (an upper and a lower unit per period)
+symmetry: none overall; each leaf cluster is a small diamond (mirror left-right), the two units alternate high and low along a zigzag vine
+colours: g = green (sage) cross stitch (leaves, vine, the cup over each bunch), p = dark purple (aubergine) cross stitch (grape bunches), . = ground
+use: ring band / season (autumn: a running vine with hanging grapes; at 1x the bunches read as dark drops under green leaves)
+status: VERIFIED
+verified: lattice fitted on the straightened crop (pitch 14.9 x 15.0 px; phase chosen to make the cells most two-valued, confirmed by the stitch-centre positions). Filled/empty, notcream channel with Otsu threshold: 378/380 cells agree at the charted repeat; the 2 others are a half-covered cell beside the upper unit's stalk (row 5 col 7, read empty) and a pale stitch at the right edge (row 13 col 20) (images/bk-1955-108-c-grape-vine-band_ver.jpg). The same chart against the next repeat to the right: 349/380 cells: the hand varies (that repeat's lower unit sits one row higher and some leaf and vine cells shift by one). Colours: green/purple by hue (G-R of the cell mean), checked by eye at 4x and 8x zoom; dark-green stitches that an RGB nearest-colour rule calls purple were corrected by the hue rule
+notes: Each unit is a diamond leaf cluster (1-3-5-3-1 rows) on a stalk, with a dark bunch hanging below it under a green cup: the upper unit's bunch is 6 wide x 6 tall (rows 9-14), the lower unit's 5 x 7 (rows 13-19). A one-cell vine zigzags between them, with a pair of small three-cell leaves where it bends. The vine has one gap in the charted repeat (row 10 col 18, under the lower leaf cluster), as stitched. The museum lists the border as grape bunches; on the face it could be cut to rows 3-15 (the upper units only) for a narrower band. Tile horizontally: column 1 continues the vine from column 20.
+---
+period (20 x 19):
+.......g............
+......ggg...........
+.gg..ggggg.ggg......
+.ggg..ggg..ggg......
+..gg...g...gg....g..
+...gggggggg.....ggg.
+...g..gg...g...ggggg
+..g...ggg..gg...ggg.
+.g...ggpgg..gg...g..
+g....gpppg....ggg.gg
+.g..pppppp.ggg...g..
+.gggpppppp.ggg..ggg.
+.gg..pppp..gg..ggpgg
+.....ppp.......gppg.
+...............pppp.
+..............ppppp.
+..............ppppp.
+...............ppp..
+................p...
+
+three repeats:
+.......g...................g...................g............
+......ggg.................ggg.................ggg...........
+.gg..ggggg.ggg.......gg..ggggg.ggg.......gg..ggggg.ggg......
+.ggg..ggg..ggg.......ggg..ggg..ggg.......ggg..ggg..ggg......
+..gg...g...gg....g....gg...g...gg....g....gg...g...gg....g..
+...gggggggg.....ggg....gggggggg.....ggg....gggggggg.....ggg.
+...g..gg...g...ggggg...g..gg...g...ggggg...g..gg...g...ggggg
+..g...ggg..gg...ggg...g...ggg..gg...ggg...g...ggg..gg...ggg.
+.g...ggpgg..gg...g...g...ggpgg..gg...g...g...ggpgg..gg...g..
+g....gpppg....ggg.ggg....gpppg....ggg.ggg....gpppg....ggg.gg
+.g..pppppp.ggg...g...g..pppppp.ggg...g...g..pppppp.ggg...g..
+.gggpppppp.ggg..ggg..gggpppppp.ggg..ggg..gggpppppp.ggg..ggg.
+.gg..pppp..gg..ggpgg.gg..pppp..gg..ggpgg.gg..pppp..gg..ggpgg
+.....ppp.......gppg......ppp.......gppg......ppp.......gppg.
+...............pppp................pppp................pppp.
+..............ppppp...............ppppp...............ppppp.
+..............ppppp...............ppppp...............ppppp.
+...............ppp.................ppp.................ppp..
+................p...................p...................p...

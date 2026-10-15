@@ -1,0 +1,30 @@
+title: Framed saltire squares between star saltires (three-symbol narrow band)
+section: Narrow bands
+source: Johann Sibmacher, Schön Neues Modelbuch, Nuremberg 1597 (etched pattern book); The Met 20.16(1-43), Public Domain
+short-source: Sibmacher 1597 p.25 (Met DP363498)
+page: image DP363498 (page 25: narrow bands in three columns), right column, first band (between the star rule at the top of the column and the next rule); crop x1795-2520 y200-370
+url: https://www.metmuseum.org/art/collection/search/357195
+image: https://images.metmuseum.org/CRDImages/dp/original/DP363498.jpg
+size: period 9 cells x 6 rows (four and two-thirds repeats across the column; the page's first column is period column 5)
+symmetry: mirror top-bottom; mirror left-right about the centre of each framed square and about the middle column of each star group
+colours: * = four-point-star symbol, H = vertically hatched cell, x = one arm of a large diagonal cross over the 2 x 2 centre of each square, . = ground. Binary (all symbols #): #..##.#.# / .##.##.## / ####.###. / ####.###. / .##.##.## / #..##.#.#
+use: ring band (6 rows, three colours: e.g. H = red frames, x = ink saltires, * = ink); the framed squares can carry the hour marks
+status: VERIFIED
+verified: cells between the detected (uneven) etched grid lines, rows on slanted lines (rows measured at four places); 42 x 6 cells: stars, hatched and empty cells 252/252 by ink (Otsu) and 252/252 by k-means on the cell patches (one cluster holds exactly the hatched cells); the 16 saltire cells, too faint for the ink test, all carry a line on the diagonal that points to the centre of their 2 x 2 block (weakest 148, while no empty cell exceeds 114 on either diagonal). Overlay: images/sibmacher1597-framed-saltire-band_ver.jpg (left half; green = symbol cell confirmed; saltires unmarked)
+notes: Each square: a 2 x 2 saltire framed by pairs of hatched cells on its four sides, corners open; between the squares a saltire of stars (5 x 6). A bigger cousin of sibmacher1597-narrow-band-b. At 1x the binary version reads as alternating blocks and crosses.
+---
+period (9 x 6):
+*..**.*.*
+.HH.**.**
+HxxH.***.
+HxxH.***.
+.HH.**.**
+*..**.*.*
+
+three repeats (plus the next square's first four columns):
+*..**.*.**..**.*.**..**.*.**..*
+.HH.**.**.HH.**.**.HH.**.**.HH.
+HxxH.***.HxxH.***.HxxH.***.HxxH
+HxxH.***.HxxH.***.HxxH.***.HxxH
+.HH.**.**.HH.**.**.HH.**.**.HH.
+*..**.*.**..**.*.**..**.*.**..*

@@ -1,0 +1,30 @@
+title: Twin zigzag band (dark and light chevrons interlocking, with three-cell heads)
+section: Narrow bands
+source: Thérèse de Dillmont, Album de broderies au point de croix, IIIme Série, Planche No 11, item 117; Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie, 1890 (catalogue date); Smithsonian Libraries copy, archive.org item albumdebroderies03dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album III 1890, Pl. 11 no. 117 (archive.org albumdebroderies03dill)
+page: archive.org albumdebroderies03dill page n28 (Planche No 11), item 117, the top band of the left column; crop x245-1440 y430-610 of the full page image (3028 x 3987)
+url: https://archive.org/details/albumdebroderies03dill
+image: https://archive.org/download/albumdebroderies03dill/page/n28.jpg
+size: period 16 cells x 6 rows
+symmetry: mirror left-right (axes at columns 4 and 12 of the period, through the heads), tones included (bandsym.py); the light chevron is the dark one shifted 8 cells and turned upside down
+colours: D = dark-shaded cross symbol, L = light-shaded cross symbol, . = canvas ground. The plate gives tones, not colour names (e.g. D = red, L = ink)
+use: ring band (a 6-row two-colour zigzag; in one colour it reads as a double chevron chain)
+status: VERIFIED
+verified: printed chart (cross symbols on a fine printed canvas grid); stitch lattice fitted to the symbols (pitch 20.97 x 20.61 px); a cell counts as inked when at least 25% of its inner area is very dark (/tmp/nw/printed/bin/vverify.py); the period tiled across the band (56 x 6, 3.5 periods): 336/336 cells agree (images/dmc1890s3-twin-zigzag-band_ver.jpg). Tones: the page prints lighter towards the right, so the two tones were split with a sliding 16-column window (2-means on the dark fraction, /tmp/nw/printed/bin/tone2.py); the tiled period's letters agree with that split in 336/336 cells
+notes: Dark chevrons (V's whose arms are single diagonal steps, two cells thick, meeting at the bottom in a three-cell head) alternate with light inverted chevrons (meeting at the top in a head); the arms of neighbouring chevrons run parallel one cell apart, so the two tones interlock as one zigzag chain. In the mouth of each chevron sits a small head of the other tone (1 + 3 cells). On the plate the band starts at the left with half a chevron. In one colour (any letter = filled) it reads as a double zigzag with sprigs.
+---
+period (16 x 6):
+D..LLL..DD..L..D
+DD..L..DD..LLL..
+.DD...DD..LL.LL.
+..DD.DD..LL...LL
+L..DDD..LL..D..L
+LL..D..LL..DDD..
+
+three repeats:
+D..LLL..DD..L..DD..LLL..DD..L..DD..LLL..DD..L..D
+DD..L..DD..LLL..DD..L..DD..LLL..DD..L..DD..LLL..
+.DD...DD..LL.LL..DD...DD..LL.LL..DD...DD..LL.LL.
+..DD.DD..LL...LL..DD.DD..LL...LL..DD.DD..LL...LL
+L..DDD..LL..D..LL..DDD..LL..D..LL..DDD..LL..D..L
+LL..D..LL..DDD..LL..D..LL..DDD..LL..D..LL..DDD..

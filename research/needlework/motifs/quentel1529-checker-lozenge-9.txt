@@ -1,0 +1,24 @@
+title: Checker lozenge (a 9 x 9 diamond of checker cells with corner rays)
+section: Corners and spot motifs
+source: Peter Quentel, Eyn New Kunstlichboich, Cologne 1529; The Met 20.50.2(1-49), Public Domain
+short-source: Quentel 1529 (Met DP361378)
+page: image DP361378 (folio "10"), bottom band of small figures: two copies, band columns 19-27 (x700-830) and 65-73 (x1436-1564) when read from x395-1590 y2110-2300 at pitch 15.2; each read on its own crop (x620-900 and x1390-1600, y2110-2300); reference crop x680-850 y2120-2300 (the left copy)
+url: https://www.metmuseum.org/art/collection/search/354657
+image: https://images.metmuseum.org/CRDImages/dp/original/DP361378.jpg
+size: 9 x 9 cells
+symmetry: full square symmetry (mirror both ways, quarter-turn, both diagonals)
+colours: # = black cell of the woodcut, . = white cell
+use: star / corner (a spot motif that reads as a small twinkling star or a lattice rosette; four of them make corner pieces)
+status: VERIFIED
+verified: the chart checked against both copies, each with two independent readers: left copy 80/81 (darkness at the white-cell-lattice sites, g3check.py) and 80/81 (white-cell lattice reader, nwtool verify --g3): the one difference is the middle row's seventh cell, white in this copy (a cut or worn cell; black in the right copy and in its own mirror cell); right copy 77/81 (darkness) and 75/81 (g3), every difference in its last column, which is squeezed against the block's right frame and cut differently. Every chart cell is confirmed by at least one copy. Overlays (left copy, right copy): images/quentel1529-checker-lozenge-9_ver.jpg
+notes: A diamond outline of single checker cells round a checkered centre, with a three-cell bar at the middle of each side and single-cell rays to the corners. At 1x it twinkles like a small star. The same band holds the bird pair with a lily (quentel1529-small-bird-11x9).
+---
+#...#...#
+.#.###.#.
+..#.#.#..
+.#.#.#.#.
+###.#.###
+.#.#.#.#.
+..#.#.#..
+.#.###.#.
+#...#...#

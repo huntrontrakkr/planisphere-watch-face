@@ -1,0 +1,26 @@
+title: Zigzag hanging from a rule (peaks joined to the rule), 4 rows
+section: Narrow bands
+source: Thérèse de Dillmont, Album de broderies au point de croix, Ire Série, Planche No 3 (narrow borders 13-57); Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie, 1890 (catalogue date); Smithsonian Libraries copy, archive.org item albumdebroderies01dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album I 1890, Pl. 3 no. 15 (archive.org albumdebroderies01dill)
+page: archive.org albumdebroderies01dill page n12 (Planche No 3), item 15, left column; crop x318-1082 y638-776 of the full page image (3008 x 4063)
+url: https://archive.org/details/albumdebroderies01dill
+image: https://archive.org/download/albumdebroderies01dill/page/n12.jpg
+size: period 5 cells x 4 rows
+symmetry: mirror left-right, axes at columns 0, 2.5 (mod 5) (bandsym.py)
+colours: # = cross stitch (one colour), . = canvas ground
+use: ring band (a 4-row edge: a line with a zigzag of single diagonal steps under it)
+status: VERIFIED
+verified: printed chart (cross symbols on a fine printed canvas grid); stitch lattice fitted to the symbols (pitch about 20.8 px); a cell counts as inked when at least 30% of its inner area is very dark (/tmp/nw/printed/bin/bandauto.py + vverify.py; inked symbols 0.43-0.71, ground at most 0.20); the smallest period found by comparing the band with itself shifted, built by majority per phase, tiled over the whole band (36 columns): 144/144 cells agree (images/dmc1890s1-zigzag-under-rule-band_ver.jpg)
+notes: Under a solid rule, a zigzag of single diagonal steps whose peaks (2 cells wide) touch the rule and whose troughs reach row 4; the triangles between rule and zigzag are open. At 1x it reads as a scalloped or Vandyke edge.
+---
+period (5 x 4):
+#####
+..##.
+.#..#
+#....
+
+four repeats:
+####################
+..##...##...##...##.
+.#..#.#..#.#..#.#..#
+#....#....#....#....

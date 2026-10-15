@@ -1,0 +1,28 @@
+title: Staggered dash band (three rows of three-cell dashes, offset like brickwork)
+section: Narrow bands
+source: Nicolo Zoppino, Convivio delle Belle Donne, Venice, August 1532; The Met 22.66.6(1-43), Public Domain
+short-source: Zoppino 1532 (Met DP366823)
+page: image DP366823, the narrow strip at the top of the plate (above a band of a lozenge motif and a rhomb-petal star, over a key lattice); 8 repeats verified at x568-1714 y252-430 of the full scan (library crop and overlay: 4 repeats, x568-1165 y252-430)
+url: https://www.metmuseum.org/art/collection/search/347839
+image: https://images.metmuseum.org/CRDImages/dp/original/DP366823.jpg
+size: period 6 cells x 5 rows (an empty row, three rows of dashes, an empty row; solid rules above and below in the woodcut)
+symmetry: mirror left-right and top-bottom; half-turn with a 3-cell shift
+colours: # = black cell of the woodcut, . = white cell
+use: ring band (a 3-row (5 with the empty rows) staggered dash: reads as a plaited cord or a stitched seam at 1x)
+status: VERIFIED
+verified: read with the white-cell lattice reader; all 8 repeats agree cell for cell (no disagreements in the vote). 8 tiled periods: 239/240 (white-cell blobs) and 240/240 (darkness at each site, Otsu); 4 repeats (library overlay): 119/120 and 120/120. Looked at the overlay: images/zoppino1532-staggered-dash-band_ver.jpg
+notes: The simplest band in the library: dashes three cells long with three-cell gaps, the middle row offset by half a period. Between two rules it makes a quiet edge for the ring or a divider on the card.
+---
+period (6 x 5):
+......
+...###
+###...
+...###
+......
+
+three repeats:
+..................
+...###...###...###
+###...###...###...
+...###...###...###
+..................

@@ -1,0 +1,55 @@
+title: Band of linked snowflakes (white stars on black, joined by a stem; vertical band)
+section: Narrow bands
+source: Peter Quentel, Eyn Newe kunstlich moetdelboech alle kunst, Cologne 1532; The Met 24.29(1-32), Harris Brisbane Dick Fund 1924, Public Domain
+short-source: Quentel 1532 (Met DP363344)
+page: image DP363344, a page of five vertical bands; the narrow band at the far left; read from x698-935 y392-1645 at pitch 21 (band = lattice columns 0-10, white frame columns 0 and 10 included); reference crop x690-945 y385-1650
+url: https://www.metmuseum.org/art/collection/search/355820
+image: https://images.metmuseum.org/CRDImages/dp/original/DP363344.jpg
+size: period 11 cells wide (9 inside the white frame columns) x 6 rows
+symmetry: mirror left-right; each star mirror both ways; rotated to run horizontally, mirror top-bottom
+colours: # = black cell of the woodcut, . = white cell (black is the ground; the white cells draw the stars)
+use: ring band (rotated: a row of small stars or snowflakes joined by a thread, 9 or 11 rows) / winter (snowflakes)
+status: VERIFIED
+verified: the period tiled down the band (56 rows x 11 columns, rows 2-57 of the reading) and overlaid: darkness at the white-cell-lattice sites (g3check.py) 616/616 agree; white-cell lattice reader (nwtool verify --g3) 613/616, the three others merged white cells. Overlay: images/quentel1532-snowflake-band_ver.jpg (upper half; green = black cell confirmed)
+notes: In white: a star of 9 x 7 cells (a cross with a barred middle row and diagonal points; quentel1532-snowflake-9x7), the stars stacked so that each shares its top and bottom cell with its neighbours: a column of snowflakes on a thread. Rotated (second block) it is a horizontal band.
+---
+period (11 x 6):
+.####.####.
+.##.#.#.##.
+.#.......#.
+....#.#....
+.#.......#.
+.##.#.#.##.
+
+three repeats (stacked down the page, as printed):
+.####.####.
+.##.#.#.##.
+.#.......#.
+....#.#....
+.#.......#.
+.##.#.#.##.
+.####.####.
+.##.#.#.##.
+.#.......#.
+....#.#....
+.#.......#.
+.##.#.#.##.
+.####.####.
+.##.#.#.##.
+.#.......#.
+....#.#....
+.#.......#.
+.##.#.#.##.
+
+period rotated 90 degrees clockwise, to run horizontally (6 x 11):
+......
+##.###
+#...##
+.....#
+#.#.##
+......
+#.#.##
+.....#
+#...##
+##.###
+......

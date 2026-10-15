@@ -1,0 +1,65 @@
+title: Sawtooth band with slanting crossed strokes (vertical band; white ribbons on black)
+section: Narrow bands
+source: Peter Quentel, Eyn Newe kunstlich moetdelboech alle kunst, Cologne 1532; The Met 24.29(1-32), Harris Brisbane Dick Fund 1924, Public Domain
+short-source: Quentel 1532 (Met DP363341)
+page: image DP363341 (inked folio "14"), the leftmost of the five vertical bands; read from x458-770 y365-1650 at pitch 20.7 (band = lattice columns 0-12, between the page's black frame and the black separator on column 13); reference crop x440-790 y360-1660
+url: https://www.metmuseum.org/art/collection/search/355820
+image: https://images.metmuseum.org/CRDImages/dp/original/DP363341.jpg
+size: period 13 cells wide x 8 rows (runs down the page; rotated, an 8-cell period in a 13-row band)
+symmetry: no mirror; half-turn symmetry (turned through 180 degrees the band is the same, shifted by 7 rows)
+colours: # = black cell of the woodcut, . = white cell (black is the ground; the white cells make diagonal ribbons)
+use: ring band (rotated: teeth along both edges with slanting strokes between; 13 rows, or keep one edge for a narrower band)
+status: VERIFIED
+verified: the period tiled down the band (55 rows x 13 columns, rows 2-56 of the reading) and overlaid: darkness at the white-cell-lattice sites (g3check.py) 712/715 agree; white-cell lattice reader (nwtool verify --g3) 707/715. The three darkness differences are on the band's left edge near the foot (column 1), where the block is worn against the page frame; the other g3 differences are merged white cells. The period holds in every row from 2 to 55 apart from that edge. Overlay: images/quentel1532-sawtooth-diagonal-band_ver.jpg (upper half; green = black cell confirmed)
+notes: Triangular teeth (1-2-3-4-3-2-1 cells) stand along both edges, offset by half a period; a one-cell stroke runs diagonally from each tooth on the left to the tooth below it on the right, with a small cross at its middle. The white between reads as stepped diagonal ribbons, a zigzag. Rotated (second block) it is a horizontal band.
+---
+period (13 x 8):
+#.....#.....#
+##.....#...##
+###.....#.###
+####.....####
+###.#.....###
+##...#.....##
+#.....#.....#
+.....###.....
+
+three repeats (stacked down the page, as printed):
+#.....#.....#
+##.....#...##
+###.....#.###
+####.....####
+###.#.....###
+##...#.....##
+#.....#.....#
+.....###.....
+#.....#.....#
+##.....#...##
+###.....#.###
+####.....####
+###.#.....###
+##...#.....##
+#.....#.....#
+.....###.....
+#.....#.....#
+##.....#...##
+###.....#.###
+####.....####
+###.#.....###
+##...#.....##
+#.....#.....#
+.....###.....
+
+period rotated 90 degrees clockwise, to run horizontally (8 x 13):
+.#######
+..#####.
+...###..
+....#...
+...#....
+#.#.....
+##.....#
+#.....#.
+.....#..
+....#...
+...###..
+..#####.
+.#######

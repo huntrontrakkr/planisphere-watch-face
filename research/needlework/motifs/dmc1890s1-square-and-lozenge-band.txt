@@ -1,0 +1,32 @@
+title: Hollow squares alternating with a lozenge lattice, 7 rows (no rules)
+section: Narrow bands
+source: Thérèse de Dillmont, Album de broderies au point de croix, Ire Série, Planche No 3 (narrow borders 13-57); Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie, 1890 (catalogue date); Smithsonian Libraries copy, archive.org item albumdebroderies01dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album I 1890, Pl. 3 no. 24 (archive.org albumdebroderies01dill)
+page: archive.org albumdebroderies01dill page n12 (Planche No 3), item 24, left column; crop x318-1082 y2499-2699 of the full page image (3008 x 4063)
+url: https://archive.org/details/albumdebroderies01dill
+image: https://archive.org/download/albumdebroderies01dill/page/n12.jpg
+size: period 16 cells x 7 rows
+symmetry: mirror left-right, axes at columns 2, 10 (mod 16); mirror top-bottom; rot180 about column 2 (bandsym.py)
+colours: # = cross stitch (one colour), . = canvas ground
+use: ring band (7 rows, symmetric top and bottom: a chequer of square rings and diamond trellis)
+status: VERIFIED
+verified: printed chart (cross symbols on a fine printed canvas grid); stitch lattice fitted to the symbols (pitch about 20.8 px); a cell counts as inked when at least 30% of its inner area is very dark (/tmp/nw/printed/bin/bandauto.py + vverify.py; inked symbols 0.43-0.71, ground at most 0.20); the smallest period found by comparing the band with itself shifted, built by majority per phase, tiled over the whole band (36 columns): 252/252 cells agree (images/dmc1890s1-square-and-lozenge-band_ver.jpg)
+notes: Two columns of hollow squares (two rows of 3 x 3 rings) alternate with a trellis of single crosses forming lozenges, and the pattern is symmetric top to bottom, so it reads the same from inside and outside the ring. No rules: add a solid row above and below for a framed 9-row band.
+---
+period (16 x 7):
+##.###.#.#.#.#.#
+.#.#.#..#...#..#
+##.###.#.#.#.#.#
+..#...#...#...#.
+##.###.#.#.#.#.#
+.#.#.#..#...#..#
+##.###.#.#.#.#.#
+
+three repeats:
+##.###.#.#.#.#.###.###.#.#.#.#.###.###.#.#.#.#.#
+.#.#.#..#...#..#.#.#.#..#...#..#.#.#.#..#...#..#
+##.###.#.#.#.#.###.###.#.#.#.#.###.###.#.#.#.#.#
+..#...#...#...#...#...#...#...#...#...#...#...#.
+##.###.#.#.#.#.###.###.#.#.#.#.###.###.#.#.#.#.#
+.#.#.#..#...#..#.#.#.#..#...#..#.#.#.#..#...#..#
+##.###.#.#.#.#.###.###.#.#.#.#.###.###.#.#.#.#.#

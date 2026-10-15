@@ -1,0 +1,30 @@
+title: Snowflake rosette, 15 x 15 (powdering motif)
+section: Stars and sky
+source: Thérèse de Dillmont, Album de broderies au point de croix, IIme Série, Planche No 3, item 17 ("subjects for powderings"); Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie (printed by Brustlein & Co., Mulhouse), 1890; Smithsonian Libraries copy, archive.org item albumdebroderies02dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album II 1890, Pl. 3 no. 17 (archive.org albumdebroderies02dill)
+page: archive.org albumdebroderies02dill page n12 (Planche No 3), item 17, left of the figures 7 8 9 0; crop x335-725 y2835-3240 of the full page image (3011 x 4047)
+url: https://archive.org/details/albumdebroderies02dill
+image: https://archive.org/download/albumdebroderies02dill/page/n12.jpg
+size: 15 x 15 cells
+symmetry: full square symmetry (mirror left-right and top-bottom, both diagonals, rot90) (sym.py)
+colours: # = cross stitch (one colour), . = canvas ground
+use: star (a snowflake for winter or a bright-star glyph) / corner (fully symmetric, turns any corner)
+status: VERIFIED
+verified: printed chart (cross symbols on a fine printed canvas grid); stitch lattice fitted to the cross symbols (nwtool read, dark channel, pitch 20.76 x 20.70 px), Otsu threshold; chart overlaid: 225/225 cells agree, no mismatches (images/dmc1890-snowflake-rosette-15_ver.jpg)
+notes: A ring of stitches round a plus-shaped hole at the centre; from the ring four solid arms (4 cells) run to the middle of each side, and between them the diagonals hold 2 x 2 blocks and chequered single stitches that end in forked tips, so the outline has eight points. The Directions call items 11-21 of plates 2-3 "subjects for powderings" (scattered spot motifs). At 1x it reads as a frost crystal; the 17-cell companion (item 18) is dmc1890-snowflake-rosette-17.
+---
+.....#...#.....
+....#.#.#.#....
+..##.#.#.#.##..
+..##...#...##..
+.#..#.###.#..#.
+#.#..#####..#.#
+.#..###.###..#.
+..####...####..
+.#..###.###..#.
+#.#..#####..#.#
+.#..#.###.#..#.
+..##...#...##..
+..##.#.#.#.##..
+....#.#.#.#....
+.....#...#.....

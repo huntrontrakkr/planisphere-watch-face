@@ -1,0 +1,54 @@
+title: Band of small orange flowers and green sprays on a black stem, between light and dark green rules (Berlin work, seven colours)
+section: Narrow bands
+source: Emma Merlo, Neueste Portefeuille für Freundinnen weiblicher Kunst-Arbeiten: eine Auswahl von Guirlanden, allerlei Blumen, Kränzen, Bouquets, Fruchtkörben, Schmetterlingen, Kanten, Arabesken u.s.w. zum künstlichen Stricken, Häkeln, zur Tapisserie- und Mosaik-Arbeit, Pirna/Leipzig: Carl August Friese, c. 1835 (catalogued [183-?]); hand-coloured printed charts ("bei Friese in Leipzig"); Getty Research Institute copy, archive.org neuesteportefeui00merl; public domain (published in the 1830s; no rights statement on the item)
+short-source: Merlo c.1835, plate Zz (archive.org neuesteportefeui00merl n26)
+page: leaf n26 (plate "Zz"): the lowest band in the middle, under the blue wave band; crop x960-2080 y1460-1710 of the 3004 x 2294 page image (cell pitch 15.6 x 16.3 px)
+url: https://archive.org/details/neuesteportefeui00merl
+image: https://archive.org/download/neuesteportefeui00merl/page/n26.jpg
+size: period 20 cells x 14 rows (the flower alone: 6 x 6)
+symmetry: none (each spray curls up to the right and each flower is drawn as a turning five-petal head); translation only
+colours: l = light green (painted RGB about 133,148,80; the wash ranges from about 100 to 190 in brightness, as much inside the single-colour rules as in the leaves, so it is one green; the engraving shows diagonal hatching under it), g = dark green (about 21,30,14), k = black (0,0,0: the stem; printed solid), o = orange (about 189,90,24; dotted in the engraving), r = dark maroon (about 25,4,4; the ring round the flower's eye), y = yellow (about 225,212,112), . = paper (about 244,244,221). Face palette: l light green, g dark green, k ink, o gold/orange, r red-brown, y yellow
+use: ring band (14 rows with the rules; rows 4-11 without them); the flower alone is a 6 x 6 summer or autumn spot motif (marigold / nasturtium)
+status: VERIFIED
+verified: grid-paper reader (g4lib cell centres), median colour per cell classified to eight references (paper, yellow, light green, a pale light green merged into light green, orange, dark green, black, maroon), very dark cells (max channel < 70) sorted by hue (red excess >= 4 -> maroon, green excess >= 3 -> dark green, else black); the period tiled over the whole drawn band (70 x 14 cells, 3.5 repeats, the band cut through a flower at the left and through a spray at the right) matches 976/980 cells. The 4 others: one leaf cell beside the stem (row 10, period column 4) is light green with hatching in repeats 1 and 2 but painted dark green in repeats 3 and 4 (a 2:2 tie: light green charted, as the hatching shows); one stem-junction cell painted near-black (8,8,6) instead of dark green in repeat 2; one orange petal cell painted thinly (194,137,95) in repeat 3. Overlay (left half above, right half below): images/merlo1835-orange-flower-band_ver.jpg
+notes: A typical Biedermeier border: a black stem runs along the foot of the band from each flower to the next spray, which climbs as a dark green midrib with light green leaflets; the flower is a small five-petalled orange head with a maroon ring round a 2 x 2 yellow eye. Light green over dark green rules frame it (mirror pair). At 1x the flowers read as orange dots with dark eyes, the sprays as grass; the flower alone is the best small piece. Merged shades: only the light green (one paint, uneven wash); dark green, black and maroon are distinct on the plate (black is jet, dark green is greenish, the ring is reddish even where very dense).
+---
+period (20 x 14):
+llllllllllllllllllll
+gggggggggggggggggggg
+....................
+.........l.llll.....
+.......l.llg...loo..
+.....l.llg....oorr..
+.....lllggg...oryyro
+...l.llg.......ryyro
+...lllkgg.....oorro.
+...lkkg.......oo.ook
+kkkkgggg............
+....................
+gggggggggggggggggggg
+llllllllllllllllllll
+
+three repeats:
+llllllllllllllllllllllllllllllllllllllllllllllllllllllllllll
+gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg
+............................................................
+.........l.llll..............l.llll..............l.llll.....
+.......l.llg...loo.........l.llg...loo.........l.llg...loo..
+.....l.llg....oorr.......l.llg....oorr.......l.llg....oorr..
+.....lllggg...oryyro.....lllggg...oryyro.....lllggg...oryyro
+...l.llg.......ryyro...l.llg.......ryyro...l.llg.......ryyro
+...lllkgg.....oorro....lllkgg.....oorro....lllkgg.....oorro.
+...lkkg.......oo.ook...lkkg.......oo.ook...lkkg.......oo.ook
+kkkkgggg............kkkkgggg............kkkkgggg............
+............................................................
+gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg
+llllllllllllllllllllllllllllllllllllllllllllllllllllllllllll
+
+the flower alone (6 x 6; period rows 5-10, columns 15-20, without the leaf tip and the stem cell):
+..oo..
+oorr..
+oryyro
+.ryyro
+oorro.
+oo.oo.

@@ -1,0 +1,125 @@
+title: Cursive figures & 1-9 (Maria Lalor's sampler, New York, 1793)
+section: Alphabets and numerals
+source: Maria Lalor, sampler ("Maria Lalor Her sampler New York March 3 1793"), American, silk embroidery on linen, 14 x 16.5 cm; The Met 1993.100, Gift of Elizabeth M. Riley, 1993; Public Domain (Open Access, CC0)
+short-source: Maria Lalor 1793 (Met 1993.100, DP363125)
+page: image DP363125 (3178 x 3861), the row "&12345678910" under the capitals; each glyph read in its own window, all y 1365-1595: & x695-845, 1 x845-950, 2 x950-1110, 3 x1130-1280, 4 x1290-1460, 5 x1480-1620, 6 x1620-1780, 7 x1790-1960, 8 x1950-2100, 9 x2150-2310 (reference crop x690-2320)
+url: https://www.metmuseum.org/art/collection/search/13472
+image: https://images.metmuseum.org/CRDImages/ad/original/DP363125.jpg
+size: 7-9 rows (lining figures, all on one baseline); widths 3-8 cells (1 = 3x9, 2 = 7x9, 3 = 4x8, 4 = 8x9, 5 = 4x8, 6 = 4x7, 7 = 6x7, 8 = 4x8, 9 = 4x8, & = 6x7)
+symmetry: none (cursive)
+colours: # = black (faded dark brown) silk cross stitch over 2x2 linen threads, . = linen ground
+use: numerals (ring hours, dates): a period cursive set that reads at 1x; the 3 and 8 are the cleanest
+status: VERIFIED
+verified: lattice from the linen weave itself (phase demodulation of the thread pattern, about 9 px per thread, stitches over 2 threads, local pitch fitted per glyph window; tool /tmp/nw/metsamplers/phaselat.py), cell = mean darkness at the cell centre against the local background, threshold 0.5; every glyph checked by eye on 4-9x zooms with the curved lattice drawn, and on the overlay (images/met-1993-100-numerals_ver.jpg, glyphs & 1 2 3 4 / 5 6 7 8 9). Agreement (chart cells incl. a 1-cell empty margin, in frame): & 53/54, 1 42/44, 2 86/88, 3 60/60, 4 99/99, 5 58/60, 6 51/54, 7 61/63, 8 59/60, 9 53/54. All mismatches are stroke ends that the reader puts just under or over threshold (values 0.42-0.66): kept as stitched by eye: the &'s top-left (0.42), the 1's top flick and the top of its stem (0.43, 0.42), the 2's hook (charted one row higher than the reader's 0.58 cell, the stitch straddles both), the 5's stem top (0.42), the 6's left side (0.46, 0.46), the 8's top-right (0.40), the 9's top-left (0.44); left out: fuzz under the 5 and the 6 (0.50, 0.54) and the upper half of the 7's bar (0.66, 0.50: the bar is worked one thread higher than the rest, straddling two rows; charted as one row).
+notes: Lining (not old-style) cursive figures of a New York schoolgirl, stitched in black silk over two threads of a coarse linen (the stitches read as clean crosses). The 1 is a stem with a flick at the top and a foot turning left; the 2 has a hook, a round shoulder, a diagonal and a flat base with an upturned end; the 3 has a spur at the end of each arc; the 4 is open-topped with an 8-cell bar; the 5 is an S-like hook and bowl with no top bar; the 6 has an ascender and a gap where its stroke steps two rows (as stitched); the 7 has a 4-cell bar and a long diagonal; the 8's upper loop is cut at the top-left (as stitched). The "10" that ends the row runs into the sampler's border and the lattice breaks there: not charted. The baseline of the original wavers by up to about half a row; the line below sets every glyph on one baseline with one empty column between glyphs (the sampler leaves 2-4).
+---
+& (6 wide):
+.###..
+.#.#..
+..#...
+.#.#.#
+#...#.
+#..#.#
+.##...
+
+1 (3 wide):
+..#
+.#.
+.#.
+.#.
+.#.
+.#.
+.#.
+#..
+#..
+
+2 (7 wide):
+..##...
+.#..#..
+....#..
+....#..
+...#...
+..#....
+.#.....
+##....#
+######.
+
+3 (4 wide):
+.##.
+...#
+#..#
+...#
+.##.
+...#
+#..#
+.##.
+
+4 (8 wide):
+....#...
+...##...
+...##...
+..#.#...
+.#..#...
+########
+....#...
+....#...
+....#...
+
+5 (4 wide):
+.#..
+#...
+#...
+#...
+.##.
+...#
+#..#
+.##.
+
+6 (4 wide, 7 rows: its ascender starts two rows below the tallest figures; the curl at the top of the ascender is a thin half stitch, not charted):
+...#
+....
+..#.
+.##.
+#..#
+#..#
+.##.
+
+7 (6 wide):
+..####
+.....#
+....#.
+...#..
+..#...
+.#....
+#.....
+
+8 (4 wide):
+.##.
+...#
+#..#
+#..#
+.##.
+#..#
+#..#
+.##.
+
+9 (4 wide):
+..#.
+.#.#
+#..#
+#..#
+.##.
+.#..
+#...
+#...
+
+as a line, & 1 2 3 4 5 6 7 8 9 (bottom-aligned, one empty column between glyphs):
+.........#...##.............#..............................
+........#...#..#....##.....##.....#................##....#.
+.###....#......#......#....##....#.......#...####....#..#.#
+.#.#....#......#...#..#...#.#....#..............#.#..#.#..#
+..#.....#.....#.......#..#..#....#......#......#..#..#.#..#
+.#.#.#..#....#......##..########..##...##.....#....##...##.
+#...#...#...#.........#.....#.......#.#..#...#....#..#..#..
+#..#.#.#...##....#.#..#.....#....#..#.#..#..#.....#..#.#...
+.##....#...######...##......#.....##...##..#.......##..#...

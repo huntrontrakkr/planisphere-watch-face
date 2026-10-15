@@ -1,0 +1,33 @@
+title: Crouching rabbit (hare), solid silhouette on the ground line
+section: Creatures
+source: Sampler, red silk cross stitch on cotton, "IH.SCHOLTZ.ALS.DAS", other initials, leaping stags, flower pots and rabbits, "AN 18 74 NO", Dutch, 1874; Rijksmuseum BK-14683-A, public domain (CC0; Commons licence checked: CC0)
+short-source: Dutch sampler 1874 (Rijksmuseum BK-14683-A)
+page: bottom row, the left of the two rabbits (between the left bird-on-sprig and the centre sprig); crop x2480-3250 y4850-5300 of the full Commons image (6844 x 6119); the right rabbit (about x3550-4160) faces the same way
+url: https://www.rijksmuseum.nl/en/collection/BK-14683-A
+image: https://commons.wikimedia.org/wiki/File:Merklap_van_katoen_waarop_met_rode_zijde_IH.SCHOLTZ.ALS.DAS,_verschillende_andere_initialen,_springende_herten,_bloempotten_en_konijnen,_ANNO_1874,_BK-14683-A.jpg
+size: 31 x 18 cells (the last row is the ground line under it, which runs on both sides)
+symmetry: none (faces right)
+colours: # = red cross stitch, . = ground
+use: creature (rabbit or hare for the fields; spring / Easter; a running figure for a seconds ring if mirrored); large, a solid shape that survives reduction
+status: VERIFIED
+verified: stitch pitch measured on single-stitch lines (ground line 21.3 px across, flower stem 20.0 px down: the weave is not square), lattice phase set from the stitch centres of those lines and checked against the corner holes in the solid body; red channel: 558/558 cells agree (images/bk-14683-a-rabbit_ver.jpg). The automatic lattice fit is unreliable on a solid shape (it wandered between 18.6 and 21.8 px), hence the measured lattice. Edge cells are stitched cleanly; the leaves of the sprigs either side (outside the chart) are left out
+notes: Tall ears laid back at the top right (two 4-5 cell steps), a round back 12 cells long, the head with a blunt nose at the right (rows 6-10), the haunch and hind foot stepping down to the left, the forepaws stretched forward along the ground at the right. A simple, legible solid silhouette; for 1x on the face it is large (31 cells) but would halve cleanly to about 16 x 9.
+---
+.....................####......
+.....................#####.....
+......................####.....
+.......................###.....
+..........############.###.....
+.........##################....
+.......#####################...
+......########################.
+......########################.
+......########################.
+......########################.
+......#####################....
+......###################......
+...######################......
+...##########################..
+###############################
+###############################
+###############################

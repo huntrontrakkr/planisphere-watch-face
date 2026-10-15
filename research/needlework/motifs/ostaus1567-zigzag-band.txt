@@ -1,0 +1,30 @@
+title: Zigzag band (a chevron line two to three cells thick)
+section: Narrow bands
+source: Giovanni Ostaus, La Vera Perfettione del Disegno di varie sorti di recami, Venice 1567; The Met 21.15.3(1-79), Public Domain
+short-source: Ostaus 1567 fol. LXIIII (Met DP362011)
+page: image DP362011 (folio LXIIII), third band; 12 repeats verified at x782-1944 y714-907 of the full scan (library crop and overlay: 6 repeats, x782-1390 y723-907)
+url: https://www.metmuseum.org/art/collection/search/354909
+image: https://images.metmuseum.org/CRDImages/dp/original/DP362011.jpg
+size: period 6 cells x 6 rows (in the woodcut with an empty row and a solid rule above and below)
+symmetry: mirror left-right (axes through the peaks and through the valleys); also a glide (top-bottom mirror with a half-period shift), as a zigzag line should be
+colours: # = filled cell (cut as a grey-hatched cell in the woodcut), . = white cell
+use: ring band (a 6-row zigzag: the simplest running filigree, crisp at 1x)
+status: VERIFIED
+verified: the period voted over the band's 21 repeats; 12 tiled periods (with the empty rows) overlaid: 570/576 with both readers (blob reader; darkness at each site); the library overlay (6 repeats): 284/288 and 285/288; the mismatches are blotted white cells (ink inside two of the chevrons). Looked at the overlays: images/ostaus1567-zigzag-band_ver.jpg
+notes: A continuous zigzag: each peak is a single cell, the line thickens to 3 cells on the flanks (rows 3-4) and the valleys are single cells at the bottom row, so white triangles stand under every peak and hang between them. 6 rows, period 6.
+---
+period (6 x 6):
+...#..
+..###.
+.#####
+###.##
+##...#
+#.....
+
+three repeats:
+...#.....#.....#..
+..###...###...###.
+.#####.#####.#####
+###.#####.#####.##
+##...###...###...#
+#.....#.....#.....

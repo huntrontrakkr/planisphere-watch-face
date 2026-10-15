@@ -1,0 +1,28 @@
+title: Rosette (head of a flowering sprig)
+section: Seasons and plants
+source: Peter Quentel, Eyn New Kunstlichboich, Cologne 1529; The Met 20.50.2(1-49), Public Domain
+short-source: Quentel 1529 (Met DP361408)
+page: image DP361408 (last pattern page), bottom row, middle panel: a sprig about 21 x 40 cells whose head is this rosette; crop x960-1290 y1440-1790
+url: https://www.metmuseum.org/art/collection/search/354657
+image: https://images.metmuseum.org/CRDImages/dp/original/DP361408.jpg
+size: 13 x 13 cells
+symmetry: full square symmetry (both mirrors, both diagonals, quarter turn)
+colours: # = black cell, . = white cell
+use: season (spring: the blossom) / star / corner
+status: VERIFIED
+verified: overlay on the scan (lattice from the white cells, comb fitted to their centroids): 169/169 cells agree; images/quentel1529-rosette-13_ver.jpg
+notes: Four double petals round a hollow ring with a centre cross; on the page it tops a stem with paired leaves (the stem below is not transcribed). Works alone as a four-petalled blossom or a quatrefoil star.
+---
+....##.##....
+....##.##....
+..####.####..
+..####.####..
+####.....####
+####..#..####
+.....###.....
+####..#..####
+####.....####
+..####.####..
+..####.####..
+....##.##....
+....##.##....

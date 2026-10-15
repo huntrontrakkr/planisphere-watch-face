@@ -1,0 +1,32 @@
+title: Perching bird facing right, long tail sweeping down-left (blackbird or thrush)
+section: Creatures
+source: Giovanni Ostaus, La Vera Perfettione del Disegno di varie sorti di recami, Venice 1567; The Met 21.15.3(1-79), Public Domain
+short-source: Ostaus 1567 fol. LXIX (Met DP362017)
+page: image DP362017 (folio LXIX), middle band (birds among small diamonds); x619-951 y929-1247 of the full scan
+url: https://www.metmuseum.org/art/collection/search/354909
+image: https://images.metmuseum.org/CRDImages/dp/original/DP362017.jpg
+size: 18 x 17 cells
+symmetry: none (faces right)
+colours: # = filled cell (cut as a grey-hatched cell in the woodcut), . = white cell
+use: creature (songbird on a branch; the tail diagonal suits a corner)
+status: VERIFIED
+verified: two reads on the white-cell lattice: darkness at each site (Otsu) 303/306, blob reader 302/306. The 3 shared differences are cells of a neighbouring motif in the top-left corner (rows 1-2, cols 1-2); the blob reader also calls one breast cell white (row 7 col 12), which a 6x zoom shows is hatched (filled), as charted. Looked at the overlay: images/ostaus1567-blackbird-18x17_ver.jpg
+notes: Head with a beak to the right and a white eye, the wing outlined by a white line, legs and claws as diagonal dots, a long tail of two steps running down to the left.
+---
+.............#....
+............####..
+............##.###
+............####..
+............####..
+...........######.
+..........###.####
+.........####.###.
+........####.###..
+.......###..###...
+.....###..###.....
+....#########.....
+..#######..#.#....
+.#####.....#..#.#.
+####.......#...#.#
+...........#.#....
+..........#.#.....

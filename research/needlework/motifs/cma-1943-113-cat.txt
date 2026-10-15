@@ -1,0 +1,25 @@
+title: Cat with raised curling tail, walking left (red cross stitch)
+section: Creatures
+source: Sampler signed "Maria Hancock", England, 19th century; red cotton cross stitch on cotton, 30.5 x 26.1 cm; The Cleveland Museum of Art 1943.113, Gift of George W. Bierce; CC0 (Open Access, share_license_status CC0)
+short-source: Maria Hancock sampler (CMA 1943.113)
+page: row of small creatures under the cross and Bible, fourth from the left (between the hedgehog-like beast and the second bird); crop x1960-2135 y3255-3400 of the full image (1943.113_full.tif, 4050 x 4773)
+url: https://clevelandart.org/art/1943.113
+image: https://openaccess-cdn.clevelandart.org/1943.113/1943.113_full.tif
+size: 13 x 10 cells
+symmetry: none (faces left; mirror for a right-facing cat)
+colours: # = red cross stitch, . = cream cotton ground
+use: creature / village (a house cat for a village scene; at 1x: pricked ear, open eye, arched tail)
+status: VERIFIED
+verified: weave lattice on the red channel (pitch 10.6 x 11.2 px): 130/130 cells agree; with a wider crop and a re-fitted lattice 129/130, and on the notcream channel 129/130: the one cell in question (0-based chart row 3, col 2, under the head) reads 0.45-0.50, and a 10x zoom shows only a single diagonal strand there (a half stitch joining head and chest), so it is charted empty. Overlay: images/cma-1943-113-cat_ver.jpg
+notes: One-cell ear on a 3-cell head with an open eye, a solid body 9 cells long tapering to the rump, a tail rising from the back and curling over at the top right, and four thin legs: the near foreleg reaching forward in a 3-stitch diagonal, the far foreleg straight, the hind legs one straight and one angled back. A lively walking pose for so few stitches.
+---
+...#......##.
+..###.......#
+..#.#.......#
+...#######.#.
+...#########.
+...########..
+..####...##..
+.#..#...#..#.
+#...#...#..#.
+....#..#..#..

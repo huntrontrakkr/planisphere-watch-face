@@ -1,0 +1,28 @@
+title: Little crosses over bars, alternately up and down (one-symbol narrow band)
+section: Narrow bands
+source: Johann Sibmacher, Schön Neues Modelbuch, Nuremberg 1597 (etched pattern book); The Met 20.16(1-43), Public Domain
+short-source: Sibmacher 1597 p.25 (Met DP363498)
+page: image DP363498 (page 25: narrow bands in three columns), right column, second band (between two star rules); crop x1795-2520 y352-515
+url: https://www.metmuseum.org/art/collection/search/357195
+image: https://images.metmuseum.org/CRDImages/dp/original/DP363498.jpg
+size: period 24 cells x 5 rows (half-period 12: the second half is the first turned upside down)
+symmetry: the period plus one column (25 wide, as in the repeats) is mirror left-right; the band is a glide (shift 12 + flip top-bottom)
+colours: * = four-point-star symbol (one colour throughout), . = ground
+use: ring band (5 rows, one colour: a light filigree that reads as little crosses at 1x)
+status: VERIFIED
+verified: cells between the detected (uneven) etched grid lines, rows on slanted lines (rows measured at four places along the band); the whole band (42 x 5 cells, one and three-quarter periods): ink in each cell (Otsu) 210/210 agree; k-means on the cell patches 210/210. Overlay: images/sibmacher1597-cross-and-bar-band_ver.jpg (left half; green = star cell confirmed)
+notes: Pairs of small crosses (.**. / **** / .**.) above four-cell bars, then the same pair hanging below bars, linked by single-cell steps. All symbols are stars, so the band is a plain two-tone chart.
+---
+period (24 x 5):
+*.**..*.****.****.*..**.
+.****..*....*....*..****
+*.**..*..**.*.**..*..**.
+*....*..****.****..*....
+.****.*..**.*.**..*.****
+
+two repeats (plus the closing column):
+*.**..*.****.****.*..**.*.**..*.****.****.*..**.*
+.****..*....*....*..****.****..*....*....*..****.
+*.**..*..**.*.**..*..**.*.**..*..**.*.**..*..**.*
+*....*..****.****..*....*....*..****.****..*....*
+.****.*..**.*.**..*.****.****.*..**.*.**..*.****.

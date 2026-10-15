@@ -1,0 +1,53 @@
+title: Woven paling fence with a flower-topped post (three panels, left of the gate)
+section: Village
+source: Sampler, red silk cross stitch on cotton, "A.DE.KAT.MDK.HAV.SDK.EDK.ZDK. ICK MK, ANNO 1857", Dutch, 1857; Rijksmuseum BK-1980-63, public domain (CC0)
+short-source: Dutch sampler 1857 (Rijksmuseum BK-1980-63)
+page: upper left group, under the leaping stag: the fence section left of the gate with its flower post; crop x1050-1510 y1940-2640 of the full Commons image (6844 x 6119). The same fence runs right of the gate (x1880-2350) and, mirrored, in the upper right group
+url: https://www.rijksmuseum.nl/en/collection/BK-1980-63
+image: https://commons.wikimedia.org/wiki/File:Merklap_van_katoen_waarop_met_rode_zijde_A.DE.KAT.MDK.HAV.SDK.EDK.ZDK._ICK_MK,_ANNO_1857_en_een_aantal_voorstellingen_z,_BK-1980-63.jpg
+size: 16 x 24 cells as charted (post 9 wide, fence 15 rows); the fence body repeats with period 5 cells x 3 rows
+symmetry: fence body: translation (period 5 across, 3 down), each board block mirror left-right; the post's flower head mirror left-right; the picket points lean toward the post (cols 3 and 7 flank the stem at col 5), so the section as a whole is not symmetric
+colours: # = red cross stitch, . = ground
+use: village (a garden fence or wattle along the horizon; the flower post is a season piece on its own)
+status: VERIFIED
+verified: lattice fitted to the weave (pitch 25.2-25.5 x 27.4-27.6 px; the cotton weave is not square), red channel, two windows: flower post and picket tops (12 x 12) 144/144; fence body with the picket tops (16 x 15) 240/240 (images/bk-1980-63-paling-fence_ver.jpg). Rows 0-8 of cols 12-15 hold the stag's hind hoof in the original and are left blank here
+notes: Boards 4 cells wide in courses two rows high, divided by one-cell gaps; a single stitch sits at every gap crossing, so at 1x the fence reads as a woven hurdle with a bead at each joint. Each panel ends in a 3-row point (2 x 2 shoulders and a one-cell tip). The post is a flower (or clipped tree) head: a 9 x 5 lozenge with three spikes on top and a 3 x 2 neck, on a one-cell stem that runs down between the panels to the third course; it is charted on its own as bk-1980-63-flower-head. A base row closes the fence. The gate (two 2-cell posts and three rails) stands to the right of col 15.
+---
+as stitched (16 x 24):
+.....#..........
+...#.#.#........
+..#######.......
+.#########......
+..#######.......
+...#####........
+....###.........
+....###.........
+.....#..........
+...#.#.#.....#..
+..##.#.##...##..
+#.##.#.##.#.##..
+.####.####.####.
+.####.####.####.
+#....#....#....#
+.####.####.####.
+.####.####.####.
+#....#....#....#
+.####.####.####.
+.####.####.####.
+#....#....#....#
+.####.####.####.
+.####.####.####.
+.###############
+
+period (5 x 3), the fence body:
+.####
+.####
+#....
+
+three repeats (two courses down):
+.####.####.####
+.####.####.####
+#....#....#....
+.####.####.####
+.####.####.####
+#....#....#....

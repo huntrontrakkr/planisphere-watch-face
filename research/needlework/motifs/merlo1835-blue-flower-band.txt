@@ -1,0 +1,88 @@
+title: Flower band: round lavender flowers with blue eyes and black undersides, alternating with small yellow-edged lilac flowers, between green sprigs and double rules (Berlin work, eight colours)
+section: Narrow bands
+source: Emma Merlo, Neueste Portefeuille für Freundinnen weiblicher Kunst-Arbeiten: eine Auswahl von Guirlanden, allerlei Blumen, Kränzen, Bouquets, Fruchtkörben, Schmetterlingen, Kanten, Arabesken u.s.w. zum künstlichen Stricken, Häkeln, zur Tapisserie- und Mosaik-Arbeit, Pirna/Leipzig: Carl August Friese, c. 1835 (catalogued [183-?]); hand-coloured printed charts ("bei Friese in Leipzig"); Getty Research Institute copy, archive.org neuesteportefeui00merl; public domain (published in the 1830s; no rights statement on the item)
+short-source: Merlo c.1835, plate Tt (archive.org neuesteportefeui00merl n16)
+page: leaf n16 (plate "Tt"): the lowest horizontal band, between green rules; crop x670-2060 y1270-1740 of the 3004 x 2294 page image (cell pitch 15.6 px)
+url: https://archive.org/details/neuesteportefeui00merl
+image: https://archive.org/download/neuesteportefeui00merl/page/n16.jpg
+size: period 13 cells x 27 rows (with the rules; the flower row alone 13 x 6; round flower 8 x 6, small flower 5 x 6)
+symmetry: each flower is mirror left-right; the sprigs below the flowers mirror those above (minus the small fork at the very top), but the flowers (orange bases, black undersides) are not mirrored, so the period has no exact symmetry; translation by 13
+colours: l = light green (painted RGB about 163,177,91), g = dark green (about 47,69,37; thin washes about 70,95,50 merged), v = lavender (about 100,102,116; dense washes about 72,72,92 merged), b = blue (about 45,73,111; light washes about 80,110,138 merged), k = black (about 23,31,27; slightly bluish), y = pale yellow (about 211,213,137), o = orange (about 175,117,38), . = paper (about 242,243,222). Face palette: l light green, g dark green, v lilac/grey-violet, b window blue, k ink, y yellow, o gold-orange
+use: season (spring/summer: the round flower alone, 8 x 6, or the small flower, 5 x 6) / ring band (27 rows with rules: too wide; the 6-row flower row alone, period 13, is a jewelled band)
+status: VERIFIED
+verified: grid-paper reader (g4lib cell centres), median colour per cell classified to eleven references (the eight colours above plus dense lavender, light blue and thin dark green, merged into their parents); dark cells re-decided by hue (green excess -> dark green, else black); yellow and light green told apart by hue (R-G > -8 -> yellow). Period from the majority of 6 full repeats (the one 3:3 tie, a cell of the small flower's yellow edge, set by the flower's mirror symmetry); tiled over the whole drawn band (86 x 27 cells: 6 repeats plus a closing small flower and the rule ends) it matches 2287/2322 cells. The 35 others: 10 faint yellow smudges in blank cells (RGB about 215-236, 220-236, 160-182); 9 cells on the light-green / pale-yellow border (dull light green with R about equal to G, or greenish yellow); 5 cells of one lower sprig left unpainted (repeat 6); 3 light-green cells painted dark green and 2 blank cells with a dab of green; 4 mid-tone greens (a dense light green, a thin dark green dot, an extra dot); 2 lavender ring cells painted bluish or blue. Overlay (left half above, right half below): images/merlo1835-blue-flower-band_ver.jpg
+notes: The flower row: a round flower (a lavender ring left open at the top by two white highlight cells, a 2 x 2 blue eye, a black crescent underneath) alternates with a small lilac flower outlined in pale yellow with an orange base and a black cross-shadow. Above and below run sprigs of light green with dark green buds and leaves; a light green over dark green double rule closes the band at top and bottom (mirrored). The round flower is the best small piece: it reads at 1x as a blue-eyed bloom (forget-me-not or anemone).
+---
+period (13 x 27):
+lllllllllllll
+ggggggggggggg
+.............
+.l.l.........
+..l..........
+l.l.llg....gl
+.lll..g....g.
+..l..........
+l.g.llgg..ggl
+.lgl..gg..gg.
+..g..........
+.yyy...vvvv..
+y.v.y.vv..vv.
+yvvvyvv.bb.vv
+ykvkykvvbbvvk
+o.k.o.kvvvvk.
+.ooo...kkkk..
+..g..........
+.lgl..gg..gg.
+l.g.llgg..ggl
+..l..........
+.lll..g....g.
+l.l.llg....gl
+..l..........
+.............
+ggggggggggggg
+lllllllllllll
+
+three repeats:
+lllllllllllllllllllllllllllllllllllllll
+ggggggggggggggggggggggggggggggggggggggg
+.......................................
+.l.l..........l.l..........l.l.........
+..l............l............l..........
+l.l.llg....gll.l.llg....gll.l.llg....gl
+.lll..g....g..lll..g....g..lll..g....g.
+..l............l............l..........
+l.g.llgg..ggll.g.llgg..ggll.g.llgg..ggl
+.lgl..gg..gg..lgl..gg..gg..lgl..gg..gg.
+..g............g............g..........
+.yyy...vvvv...yyy...vvvv...yyy...vvvv..
+y.v.y.vv..vv.y.v.y.vv..vv.y.v.y.vv..vv.
+yvvvyvv.bb.vvyvvvyvv.bb.vvyvvvyvv.bb.vv
+ykvkykvvbbvvkykvkykvvbbvvkykvkykvvbbvvk
+o.k.o.kvvvvk.o.k.o.kvvvvk.o.k.o.kvvvvk.
+.ooo...kkkk...ooo...kkkk...ooo...kkkk..
+..g............g............g..........
+.lgl..gg..gg..lgl..gg..gg..lgl..gg..gg.
+l.g.llgg..ggll.g.llgg..ggll.g.llgg..ggl
+..l............l............l..........
+.lll..g....g..lll..g....g..lll..g....g.
+l.l.llg....gll.l.llg....gll.l.llg....gl
+..l............l............l..........
+.......................................
+ggggggggggggggggggggggggggggggggggggggg
+lllllllllllllllllllllllllllllllllllllll
+
+the round flower alone (8 x 6; period rows 12-17, columns 6-13):
+..vvvv..
+.vv..vv.
+vv.bb.vv
+kvvbbvvk
+.kvvvvk.
+..kkkk..
+
+the small flower alone (5 x 6; period rows 12-17, columns 1-5):
+.yyy.
+y.v.y
+yvvvy
+ykvky
+o.k.o
+.ooo.

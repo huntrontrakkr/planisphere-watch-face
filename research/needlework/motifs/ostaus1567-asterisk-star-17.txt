@@ -1,0 +1,32 @@
+title: Asterisk star (eight rays of dotted chevrons on a cross; reads as a snowflake)
+section: Stars and sky
+source: Giovanni Ostaus, La Vera Perfettione del Disegno di varie sorti di recami, Venice 1567; The Met 21.15.3(1-79), Public Domain
+short-source: Ostaus 1567 fol. LXIII (Met DP362010)
+page: image DP362010 (folio LXIII, the counted alphabet A-Z); the star closes the last line after Z, flanked by two of the alphabet's 4-dot stops; x2033-2350 y1389-1711 of the full scan
+url: https://www.metmuseum.org/art/collection/search/354909
+image: https://images.metmuseum.org/CRDImages/dp/original/DP362010.jpg
+size: 17 x 17 cells
+symmetry: full square symmetry by design (mirror left-right, top-bottom, both diagonals) apart from one cell the cutter left white: row 2, column 5 (its three mirror images are filled)
+colours: # = filled cell (cut as a grey-hatched cell in the woodcut), . = white cell
+use: star (a bright-star glyph or compass star) / weather and season (a snowflake for winter)
+status: VERIFIED
+verified: two reads on the white-cell lattice: (1) white-cell blob reader and (2) darkness at each site (Otsu): both 289/289. The one asymmetric cell (row 2, col 5) was checked on a 6x zoom: it is a clean white cell in the print. Looked at the overlay: images/ostaus1567-asterisk-star-17_ver.jpg
+notes: A full-length upright and a full-width horizontal spine with a white cell at the crossing (ringed by the 3-cell bars above and below), and in each quadrant two parallel dotted diagonals that turn into chevrons with the spines. It is a line-drawing star, airy rather than solid: at 1x it reads as an asterisk or snowflake. For a symmetric version fill row 2, column 5.
+---
+........#........
+.#......#...#..#.
+..#..#..#..#..#..
+...#..#.#.#..#...
+.#..#...#...#..#.
+..#..#..#..#..#..
+...#..#.#.#..#...
+.......###.......
+########.########
+.......###.......
+...#..#.#.#..#...
+..#..#..#..#..#..
+.#..#...#...#..#.
+...#..#.#.#..#...
+..#..#..#..#..#..
+.#..#...#...#..#.
+........#........

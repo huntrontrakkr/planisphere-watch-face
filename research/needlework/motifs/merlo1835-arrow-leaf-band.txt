@@ -1,0 +1,38 @@
+title: Shaded-leaf band: light green leaves with black L-shaped shadows, alternating above and below a zigzag stem (Berlin work, two colours)
+section: Narrow bands
+source: Emma Merlo, Neueste Portefeuille für Freundinnen weiblicher Kunst-Arbeiten: eine Auswahl von Guirlanden, allerlei Blumen, Kränzen, Bouquets, Fruchtkörben, Schmetterlingen, Kanten, Arabesken u.s.w. zum künstlichen Stricken, Häkeln, zur Tapisserie- und Mosaik-Arbeit, Pirna/Leipzig: Carl August Friese, c. 1835 (catalogued [183-?]); hand-coloured printed charts ("bei Friese in Leipzig"); Getty Research Institute copy, archive.org neuesteportefeui00merl; public domain (published in the 1830s; no rights statement on the item)
+short-source: Merlo c.1835, plate Oo (archive.org neuesteportefeui00merl n6)
+page: leaf n6 (plate "Oo"): the third horizontal band from the top (under the cable band); crop x790-2140 y1150-1370 of the 3004 x 2294 page image (cell pitch 14.6 px on this plate)
+url: https://archive.org/details/neuesteportefeui00merl
+image: https://archive.org/download/neuesteportefeui00merl/page/n6.jpg
+size: period 10 cells x 10 rows
+symmetry: none exact; the lower half is close to the upper half mirrored top-bottom and shifted by 5 (a near glide reflection: 76/100 cells); translation by 10
+colours: l = light green (painted RGB about 150,165,90; washes from about 118 to 148 in brightness with no pattern between repeats: one green; the engraving shows hatching under it), k = black (about 5,7,6), . = paper (about 240,240,222). Face palette: l light green, k ink
+use: ring band (10 rows, period 10: a crisp two-colour leaf border; the black L's alone make a 10-row fret of hooks)
+status: VERIFIED
+verified: grid-paper reader (g4lib cell centres), median colour per cell classified to paper / light green / black (+ a grey class); period from the majority of 9 repeats (3 disagreements, each in one repeat), tiled over the whole drawn band (90 x 10 cells, 9 repeats) matches 897/900 cells. The 3 others: one extra light green cell, one leaf cell painted thinly (175,181,149), one leaf cell painted dense (75,88,42, read as black). Overlay (left half above, right half below): images/merlo1835-arrow-leaf-band_ver.jpg
+notes: Each leaf is a 3 x 3 light green blot with a black L along two sides (its shaded edge): upper leaves shaded below and to the right, lower leaves shaded above and to the right, with plain green leaves between, all on a thin green zigzag. At 1x the black L's dominate and read as a row of hooks or arrowheads over a green ribbon: a good, simple ink-and-green filigree.
+---
+period (10 x 10):
+ll.k......
+lllk..ll..
+.lkk..lll.
+kkkk...ll.
+....lll..l
+...l....l.
+.ll..kkkk.
+lll...lkk.
+ll...lllk.
+.....ll.k.
+
+three repeats:
+ll.k......ll.k......ll.k......
+lllk..ll..lllk..ll..lllk..ll..
+.lkk..lll..lkk..lll..lkk..lll.
+kkkk...ll.kkkk...ll.kkkk...ll.
+....lll..l....lll..l....lll..l
+...l....l....l....l....l....l.
+.ll..kkkk..ll..kkkk..ll..kkkk.
+lll...lkk.lll...lkk.lll...lkk.
+ll...lllk.ll...lllk.ll...lllk.
+.....ll.k......ll.k......ll.k.

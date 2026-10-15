@@ -1,0 +1,36 @@
+title: Lozenge chain (linked hollow diamonds)
+section: Narrow bands
+source: Giovanni Ostaus, La Vera Perfettione del Disegno di varie sorti di recami, Venice 1567; The Met 21.15.3(1-79), Public Domain
+short-source: Ostaus 1567 fol. LXIIII (Met DP362011)
+page: image DP362011 (folio LXIIII), fourth band; 12 repeats verified at x788-1948 y853-1092 of the full scan (library crop and overlay: 6 repeats, x788-1396 y864-1092)
+url: https://www.metmuseum.org/art/collection/search/354909
+image: https://images.metmuseum.org/CRDImages/dp/original/DP362011.jpg
+size: period 6 cells x 9 rows (in the woodcut with an empty row and a solid rule above and below)
+symmetry: half-turn (rot180) symmetric with a 1-cell shift; near mirror top-bottom (rows 4 and 6 differ by one cell: the chain twists)
+colours: # = filled cell (cut as a grey-hatched cell in the woodcut), . = white cell
+use: ring band (a 9-row chain of diamonds)
+status: VERIFIED
+verified: the period voted over the band's 21 repeats; 12 tiled periods (with the empty rows) overlaid: 785/792 (blob reader) and 786/792 (darkness at each site); library overlay (6 repeats): 394/396 with both readers. Looked at the overlays: images/ostaus1567-lozenge-chain-band_ver.jpg
+notes: Diagonal strokes three cells thick cross to make a chain of small diamonds, each diamond holding a white centre; the triangles left at the top and bottom edges are solid. At 1x it reads as a lattice chain.
+---
+period (6 x 9):
+#.....
+##...#
+###.##
+.#.###
+..###.
+.###.#
+###.##
+##...#
+#.....
+
+three repeats:
+#.....#.....#.....
+##...###...###...#
+###.#####.#####.##
+.#.###.#.###.#.###
+..###...###...###.
+.###.#.###.#.###.#
+###.#####.#####.##
+##...###...###...#
+#.....#.....#.....

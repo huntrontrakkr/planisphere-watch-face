@@ -1,0 +1,22 @@
+title: Snowflake star (ice crystal: a cross with forked arms and four corner sparks)
+section: Weather
+source: Petit nécessaire des jeunes demoiselles: recueil d'exemples de marque, broderie, filet, tricot..., Paris: A. Legrand / Pélicier, 1819; plate "Marque, No 3"; archive.org Petit_necessaire_des_jeunes_demoiselles, Public Domain Mark
+short-source: Petit nécessaire 1819, Marque No 3 (archive.org)
+page: archive.org leaf n73 (plate "Marque, No 3"), the ornament between the capitals and the figures; x495-595 y320-420 of the 1042 x 668 page image
+url: https://archive.org/details/Petit_necessaire_des_jeunes_demoiselles
+image: https://archive.org/download/Petit_necessaire_des_jeunes_demoiselles/page/n73.jpg
+size: 7 x 7 cells (on the plate each cell is drawn as a 2x2 block of stitches, i.e. the ornament is set at double size beside the letters)
+symmetry: full square symmetry (both mirrors, both diagonals, quarter turn)
+colours: # = stitch (printed blue-grey), . = ground
+use: weather (snowflake, winter) / star (a small sparkle) / corner
+status: VERIFIED
+verified: lattice fitted to the drawn blocks (13.4 px), dark-channel reading; overlay 49/49 cells agree (images/petit1819-snowflake-7_ver.jpg)
+notes: A hollow centre, four arms of two cells, each arm ending in a fork, and four single sparks on the diagonals. Six-fold in spirit but drawn four-fold, as needlework snowflakes are. Reads at 1x as a snow crystal; at 2x (as printed) it is a bold winter ornament.
+---
+..#.#..
+...#...
+#..#..#
+.##.##.
+#..#..#
+...#...
+..#.#..

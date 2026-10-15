@@ -1,0 +1,22 @@
+title: Four-petal flower (quatrefoil) from a corner block, 7 x 7
+section: Corners and spot motifs
+source: A.M. Luns, sampler, wool and silk cross stitch, Brussels, c. 1870-1880; Rijksmuseum BK-1968-11 (gift of Mrs A.M. Luns, 1968), public domain (CC0; Commons licence checked: CC0)
+short-source: A.M. Luns sampler c. 1875 (Rijksmuseum BK-1968-11)
+page: bottom-left corner block (where the Greek key border starts); the flower sits inside an L-shaped frame; flower read in x800-1020 y5225-5450 of the full Commons image (6444 x 6117); reference crop images/bk-1968-11-four-petal-flower.jpg = the whole corner block, x640-1100 y5150-5600
+url: https://www.rijksmuseum.nl/en/collection/BK-1968-11
+image: https://commons.wikimedia.org/wiki/File:Merklap_met_veelkleurig_wol_en_zijde_borduurwerk.,_BK-1968-11.jpg
+size: 7 x 7 cells
+symmetry: full square symmetry (both mirrors, both diagonals, rot90)
+colours: # = dark red (maroon) wool cross stitch, . = ground
+use: corner (spot motif for a corner or between band repeats) / star (reads as a small four-armed star at 1x)
+status: VERIFIED
+verified: local lattice fitted to the stitches (pitch about 24.4 x 24.9 px here; the canvas is uneven), notcream channel: 49/49 cells agree (images/bk-1968-11-four-petal-flower_ver.jpg)
+notes: Four three-cell petals pointing to the corners, joined by a single centre stitch. In the sampler it fills an L-shaped corner frame four cells thick: an outer solid line, a two-cell "ladder" (filled every other cell, so it shows a row of short gaps) and an inner solid line; along the bottom the ladder reads, top to bottom, ######## / #.#.#.#. / #.#.#.#. / ######## (period 2). The frame is open at the top and its right side is the first upright of the Greek key (bk-1968-11-greek-key-band). The frame itself was not charted cell by cell (the canvas is sheared near the corner).
+---
+##...##
+###.###
+.##.##.
+...#...
+.##.##.
+###.###
+##...##

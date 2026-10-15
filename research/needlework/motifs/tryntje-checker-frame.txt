@@ -1,0 +1,34 @@
+title: Frame: outer rule and two-row checker (runs round all four sides)
+section: Narrow bands
+source: Sampler and darning sampler with red embroidery ("Merklap en stoplap met rood borduurwerk"), Tryntje de Gra, Dutch, c. 1895; Rijksmuseum BK-1974-26, public domain (CC0)
+short-source: Tryntje de Gra sampler (Rijksmuseum BK-1974-26)
+page: outermost border on every side; reference crop = the left side from the top-left corner down, x875-1085 y790-1650 of the full Commons image (6844 x 6119); also checked on the bottom edge (x2400-3645 y5340-5530)
+url: https://www.rijksmuseum.nl/en/collection/BK-1974-26
+image: https://commons.wikimedia.org/wiki/File:Merklap_en_stoplap_met_rood_borduurwerk.,_BK-1974-26.jpg
+size: period 2 cells x 4 rows (rule, empty row, two checker rows)
+symmetry: checker: translation by one cell plus a shift (each row is the other moved one cell); the band turns a corner with diagonal symmetry (see notes)
+colours: # = red cross stitch, . = linen ground
+use: ring band / card frame (the outermost line and checker of an almanac border)
+status: VERIFIED
+verified: lattice fitted to the weave, red channel: left side from the corner down (cols 0-3, 18 rows) 72/72 cells agree (images/tryntje-checker-frame_ver.jpg); bottom edge, 7 periods of rule + checker inside the zigzag-band check: 112/112. The top edge is wavier (114/130 with the lattice drifting at the ends) and was not used.
+notes: The rule is a solid line of stitches; one empty row; then a checker two rows deep (on the sampler the cells with row+col even are stitched, counting from the corner). At the corners the rule turns square and the checker simply continues as one checkerboard, so the corner is the same cell pattern seen along either side: a ready-made mitre-free corner. Inside it, one more empty row before the next band.
+---
+period (2 x 4):
+##
+..
+#.
+.#
+
+three repeats:
+######
+......
+#.#.#.
+.#.#.#
+
+the corner as stitched (top-left, 6 x 6; row 0 = rule, col 0 = rule):
+######
+#.....
+#.#.#.
+#..#.#
+#.#...
+#..#..

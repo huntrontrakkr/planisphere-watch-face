@@ -1,0 +1,39 @@
+title: Lattice heart (checkered outline with solid inner chevrons)
+section: Corners and spot motifs
+source: Peter Quentel, Eyn New Kunstlichboich, Cologne 1529; The Met 20.50.2(1-49), Public Domain
+short-source: Quentel 1529 (Met DP361383)
+page: image DP361383, band 5 of 7 (from the top): tree, lily, bird, lattice heart, bird; this is the heart between the two birds. Band read from x488-1700 y1232-1500 at pitch 15.5: heart = band columns 55-69, rows 1-11; crop x1320-1585 y1232-1430
+url: https://www.metmuseum.org/art/collection/search/354657
+image: https://images.metmuseum.org/CRDImages/dp/original/DP361383.jpg
+size: 15 x 11 cells
+symmetry: mirror left-right (axis on column 8) except one cell: row 7, column 10 is white in the print where its mirror (column 6) is black; the second block restores it
+colours: # = black cell of the woodcut, . = white cell
+use: corner / spot motif (a downward point: a heart for the foot of the card or a ring divider)
+status: VERIFIED
+verified: two independent reads of the 15 x 11 box (which also holds four cells of the two birds' tails in its bottom corners, rows 10-11): (1) darkness at each white-cell-lattice site, Otsu (g3check.py): 165/165 agree; (2) white-cell lattice reader (nwtool verify --g3): 164/165, the one difference a white cell with a speck (row 3, col 7) that the darkness reader and the eye read white. The white cell at row 7, col 10 is a merged double white cell (cols 10-11) in the print, checked at 4x zoom. Overlay: images/quentel1529-lattice-heart-15x11_ver.jpg
+notes: Two lobes of checker dots (single cells on the diagonal) with solid three-cell chevrons inside, closing to a point at the bottom: the heart is drawn as a little piece of lattice. In the band the two birds stand back to back on either side of it, their tails sweeping under its lobes. At 1x it reads as a dotted heart; the symmetric version (second block) is the one to use.
+---
+...#.......#...
+..#.#.....#.#..
+.#.#.#...#.#.#.
+#.###.#.#.###.#
+.#.###.#.###.#.
+..#.###.###.#..
+...#.####..#...
+....#.###.#....
+.....#.#.#.....
+......#.#......
+.......#.......
+
+symmetric (row 7, column 10 restored):
+...#.......#...
+..#.#.....#.#..
+.#.#.#...#.#.#.
+#.###.#.#.###.#
+.#.###.#.###.#.
+..#.###.###.#..
+...#.#####.#...
+....#.###.#....
+.....#.#.#.....
+......#.#......
+.......#.......

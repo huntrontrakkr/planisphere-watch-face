@@ -1,0 +1,25 @@
+title: Anchor (with ring)
+section: Village
+source: Sampler, red silk cross stitch on cotton, "A.DE.KAT.MDK.HAV.SDK.EDK.ZDK. ICK MK, ANNO 1857", Dutch, 1857; Rijksmuseum BK-1980-63, public domain (CC0)
+short-source: Dutch sampler 1857 (Rijksmuseum BK-1980-63)
+page: middle row, hanging on a rope from the lantern left of the ship; crop x2320-2560 y3540-3830 of the full Commons image (6844 x 6119)
+url: https://www.rijksmuseum.nl/en/collection/BK-1980-63
+image: https://commons.wikimedia.org/wiki/File:Merklap_van_katoen_waarop_met_rode_zijde_A.DE.KAT.MDK.HAV.SDK.EDK.ZDK._ICK_MK,_ANNO_1857_en_een_aantal_voorstellingen_z,_BK-1980-63.jpg
+size: 9 x 10 cells
+symmetry: mirror left-right
+colours: # = red cross stitch, . = cotton ground
+use: village (harbour sign) / emblem (hope); a small stop on the ring
+status: VERIFIED
+verified: lattice fitted to the weave (pitch about 26 px), red-channel reading: 90/90 cells agree (images/bk-1980-63-anchor_ver.jpg). The rope leaves the top of the ring diagonally up to the right (not charted).
+notes: Diamond ring, 7-cell stock, shank, and flukes curving up in single diagonal stitches. Clean single-line work, legible at 1x.
+---
+....#....
+...#.#...
+...#.#...
+....#....
+.#######.
+....#....
+....#....
+.#..#..#.
+..#.#.#..
+...###...

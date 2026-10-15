@@ -1,0 +1,112 @@
+title: Band of octagonal wheels (eight-spoked rims in white line-work on black), vertical band
+section: Narrow bands
+source: Peter Quentel, Eyn Newe kunstlich moetdelboech alle kunst, Cologne 1532; The Met 24.29(1-32), Harris Brisbane Dick Fund 1924, Public Domain
+short-source: Quentel 1532 (Met DP363341)
+page: image DP363341 (inked folio "14"), a page of five vertical bands; the second band from the left; crop x760-1240 y360-1660 (read at pitch 20.7: the band is lattice columns 0-19 between white frame columns 0 and 19, with the black separator line on column 20)
+url: https://www.metmuseum.org/art/collection/search/355820
+image: https://images.metmuseum.org/CRDImages/dp/original/DP363341.jpg
+size: period 20 cells wide x 18 rows (the band runs down the page; rotated, an 18-cell period in a 20-row band)
+symmetry: each wheel has full square symmetry (see quentel1532-wheel-15); the band is not mirror-symmetric only because the black margin between the wheels and the frame is one column on the left and two on the right
+colours: # = black cell of the woodcut, . = white cell. The black is the ground; the white cells draw the rims and spokes
+use: ring band (rotated: wheels or suns all round the ring, one per hour if 12 fit) / the single wheel as a spot motif
+status: VERIFIED
+verified: the period tiled down the whole band (56 rows x 20 columns, rows 2-57 of the reading) and overlaid: darkness at the white-cell-lattice sites (g3check.py) 1116/1120 agree; white-cell lattice reader (nwtool verify --g3) 1114/1120. Every difference lies in the truncated half-wheel at the top of the band (two cells of its right side cut white, and two in the row under the frame); the two full repeats and the half at the foot agree cell for cell. Overlay: images/quentel1532-octagon-wheel-band_ver.jpg (top half of the band; green = black cell confirmed, red = the top-row differences)
+notes: Octagonal rims two cells thick with eight spokes (vertical, horizontal and diagonal) round a one-cell black hub, joined rim to rim by short black bars. At 1x the wheel (15 x 15) reads clearly as a spoked wheel or a sun. The rotated period is given below for a horizontal ring band.
+---
+period (20 x 18):
+.#..###########.....
+.....#########...#..
+.#..###########.....
+..####.......####...
+..###.........####..
+.###...##.##...####.
+.##...###.###...###.
+.#...#.##.##.#...##.
+.#..###.#.#.###..##.
+.#..####...####..##.
+.#.......#.......##.
+.#..####...####..##.
+.#..###.#.#.###..##.
+.#...#.##.##.#...##.
+.##...###.###...###.
+.###...##.##...####.
+..###.........####..
+..####.......####...
+
+three repeats (stacked down the page, as printed):
+.#..###########.....
+.....#########...#..
+.#..###########.....
+..####.......####...
+..###.........####..
+.###...##.##...####.
+.##...###.###...###.
+.#...#.##.##.#...##.
+.#..###.#.#.###..##.
+.#..####...####..##.
+.#.......#.......##.
+.#..####...####..##.
+.#..###.#.#.###..##.
+.#...#.##.##.#...##.
+.##...###.###...###.
+.###...##.##...####.
+..###.........####..
+..####.......####...
+.#..###########.....
+.....#########...#..
+.#..###########.....
+..####.......####...
+..###.........####..
+.###...##.##...####.
+.##...###.###...###.
+.#...#.##.##.#...##.
+.#..###.#.#.###..##.
+.#..####...####..##.
+.#.......#.......##.
+.#..####...####..##.
+.#..###.#.#.###..##.
+.#...#.##.##.#...##.
+.##...###.###...###.
+.###...##.##...####.
+..###.........####..
+..####.......####...
+.#..###########.....
+.....#########...#..
+.#..###########.....
+..####.......####...
+..###.........####..
+.###...##.##...####.
+.##...###.###...###.
+.#...#.##.##.#...##.
+.#..###.#.#.###..##.
+.#..####...####..##.
+.#.......#.......##.
+.#..####...####..##.
+.#..###.#.#.###..##.
+.#...#.##.##.#...##.
+.##...###.###...###.
+.###...##.##...####.
+..###.........####..
+..####.......####...
+
+period rotated 90 degrees clockwise, to run horizontally (18 x 20):
+..................
+..###########..#.#
+####.......####...
+###.........###...
+##...##.##...###.#
+#...###.###...####
+...#.##.##.#...###
+..###.#.#.###..###
+..####...####..###
+.......#.......###
+..####...####..###
+..###.#.#.###..###
+...#.##.##.#...###
+#...###.###...####
+##...##.##...###.#
+###.........###...
+####.......####...
+.#############..#.
+..###########.....
+..................

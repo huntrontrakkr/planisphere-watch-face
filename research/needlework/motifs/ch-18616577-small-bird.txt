@@ -1,0 +1,22 @@
+title: Small bird pecking at a sprig (black cross stitch), 11 x 7
+section: Creatures
+source: Sampler signed "GEERTRUIDA H BONTKES 1844", Netherlands, 1844, black silk cross stitch on cotton, 45.1 x 49.5 cm; Cooper Hewitt, Smithsonian Design Museum 1981-28-226 (object 18616577), Bequest of Gertrude M. Oppenheimer; image via Wikimedia Commons "Sampler (Netherlands), 1844 (CH 18616577).jpg", public domain
+short-source: Dutch sampler 1844, G. H. Bontkes (Cooper Hewitt 1981-28-226)
+page: lower middle: two small birds flank the foot of the central plant above the initials "CHB."; left bird (faces right) crop x1505-1750 y2625-2810 of the full CH image (4096 x 3761); its mirror twin x2310-2560 y2620-2810
+url: https://collection.cooperhewitt.org/objects/18616577/
+image: https://images.collection.cooperhewitt.org/230827_81b7e453c06cb6e8_x.jpg
+size: 11 x 7 cells (the bird 8 x 7, the sprig 3 x 5 in front of its beak)
+symmetry: none (faces right; the sampler pairs it with a left-facing mirror twin)
+colours: # = black cross stitch, . = natural ground
+use: creature (a songbird small enough for 1x: perched in the ring, on a roof, or in a corner)
+status: VERIFIED
+verified: the silk crosses are fuzzy and the gap reader locks onto the fabric threads (about 10 px), so the stitch lattice (each cross over 2 x 2 threads) was set from the thread lattice by pairing threads, then checked by eye on the overlay (every dot sits on a cross): left bird, dark channel, pitch 19.9 x 20.0 px, 77/77 cells agree. Independent check against the right-hand twin read on its own lattice (18.9 x 18.8 px) and compared with the mirrored chart: 72/77; the five differences are all at the edges (twin's twig one cell taller, its tail tip one cell further down, one cell of the beak and one of the tail feather fainter, values 0.38-0.45 against a threshold of 0.42), i.e. the stitcher's variation. images/ch-18616577-small-bird_ver.jpg (top: left bird; below: right twin against the mirrored chart)
+notes: Head and beak on top (row 1, cols 6-8, the beak pointing right at col 8), a two-cell neck (row 2), a solid body (rows 3-5, cols 2-8) whose back runs out into the upper tail feather (row 4 col 2), the tail as a three-cell stroke to the lower left (row 6 cols 1-3), the belly and legs (row 6 cols 6-7) and one foot (row 7 col 5). The sprig in front of the beak is a stem (col 10, rows 2-6) with leaf cells at col 11 (rows 3 and 6) and col 9 (row 4). At 1x the silhouette reads as a small perched bird; drop cols 9-11 for the bird alone (8 x 7).
+---
+.....###...
+.....##..#.
+...####..##
+.######.##.
+..######.#.
+###..##..##
+....#......

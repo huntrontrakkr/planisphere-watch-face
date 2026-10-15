@@ -1,0 +1,48 @@
+title: Bead band: shaded rolls (blue, purple and black) with orange-and-black C ends and dotted yellow arcs, linked by small rolls (Berlin work, six colours)
+section: Narrow bands
+source: Emma Merlo, Neueste Portefeuille für Freundinnen weiblicher Kunst-Arbeiten: eine Auswahl von Guirlanden, allerlei Blumen, Kränzen, Bouquets, Fruchtkörben, Schmetterlingen, Kanten, Arabesken u.s.w. zum künstlichen Stricken, Häkeln, zur Tapisserie- und Mosaik-Arbeit, Pirna/Leipzig: Carl August Friese, c. 1835 (catalogued [183-?]); hand-coloured printed charts ("bei Friese in Leipzig"); Getty Research Institute copy, archive.org neuesteportefeui00merl; public domain (published in the 1830s; no rights statement on the item)
+short-source: Merlo c.1835, plate Ww (archive.org neuesteportefeui00merl n22)
+page: leaf n22 (plate "Ww"): the lower left band; crop x490-1480 y1390-1670 of the 3004 x 2294 page image (cell pitch 15.6 x 15.9 px)
+url: https://archive.org/details/neuesteportefeui00merl
+image: https://archive.org/download/neuesteportefeui00merl/page/n22.jpg
+size: period 12 cells x 15 rows
+symmetry: the outline (arcs, caps, links) is mirror top-bottom; the colours of the roll are shaded from blue at the top to black at the foot, so the full-colour chart has no symmetry (sym.py: none); translation only
+colours: b = blue (painted RGB about 64,104,146), p = purple (about 80,66,84), k = black (about 14,5,7), o = orange (about 168,75,16), y = yellow (about 217,213,104; each yellow cell carries an engraved dot), . = paper (about 240,240,220). Face palette: b window blue, p dark violet or ink-blue, k ink, o gold-orange, y yellow
+use: ring band (a wide, jewel-like band of 15 rows; too wide for the narrow ring, better as a card border or a frame bar); the 5-row roll alone (rows 6-10) is a shaded bar
+status: VERIFIED
+verified: grid-paper reader (g4lib cell centres), median colour per cell classified to six references; period from the majority of units 2-5 (unit 1 is smudged), the one 2:2 tie (row 2, column 8) settled by the engraved yellow dot seen in four units; the period tiled over the whole drawn band (60 x 15 cells, 5 units) matches 880/900 cells. The 20 others: 7 in unit 1 under a brown ink scribble over the first C end and bar; 3 dabs of yellow paint in blank cells (no engraved dot); 4 dotted yellow cells covered by the orange overflowing from the arcs (one half-and-half); 2 yellow cells of the links overpainted blue or purple; 3 orange cells of unit 5 painted dark brown-orange (RGB about 75,30,12); 1 cell at the band's cut right end left blank. The colourist's orange spills over the grid lines, but cell centres still read. Overlay (left half above, right half below): images/merlo1835-bead-roll-band_ver.jpg
+notes: Each unit is a roll seen from the side: a 5-row bar shaded blue, blue, purple, purple, black, closed at the left by an orange C with a black inner line and at the right by a C of single yellow cells (stepped 1-2-1-1), and joined to the next roll by a short link (orange caps, blue top, a 2 x 3 yellow block, black foot). A rich jewel border typical of the 1830s; at 1x it reads as a chain of beads. The engraved dots mark the yellow cells, which settles cells where the paint strays.
+---
+period (12 x 15):
+......oo....
+.....okyy...
+....oky..y..
+...ooky...y.
+oo.oky....y.
+bbyokybbbbyo
+yybokybbbbyb
+yypokyppppyp
+yypokyppppyp
+kkyokykkkkko
+oo.oky....y.
+...ooky...y.
+....oky..y..
+.....okyy...
+......oo....
+
+three repeats:
+......oo..........oo..........oo....
+.....okyy........okyy........okyy...
+....oky..y......oky..y......oky..y..
+...ooky...y....ooky...y....ooky...y.
+oo.oky....y.oo.oky....y.oo.oky....y.
+bbyokybbbbyobbyokybbbbyobbyokybbbbyo
+yybokybbbbybyybokybbbbybyybokybbbbyb
+yypokyppppypyypokyppppypyypokyppppyp
+yypokyppppypyypokyppppypyypokyppppyp
+kkyokykkkkkokkyokykkkkkokkyokykkkkko
+oo.oky....y.oo.oky....y.oo.oky....y.
+...ooky...y....ooky...y....ooky...y.
+....oky..y......oky..y......oky..y..
+.....okyy........okyy........okyy...
+......oo..........oo..........oo....

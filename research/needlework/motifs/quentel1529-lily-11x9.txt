@@ -1,0 +1,24 @@
+title: Small lily on a mound (two curled outer petals round a cross-headed stem)
+section: Seasons and plants
+source: Peter Quentel, Eyn New Kunstlichboich, Cologne 1529; The Met 20.50.2(1-49), Public Domain
+short-source: Quentel 1529 (Met DP361378)
+page: image DP361378 (folio "10"), bottom band of small figures, between the pair of birds; band columns 41-51 when read from x395-1590 y2110-2300 at pitch 15.2 (x1053-1206); crop x1030-1230 y2120-2300
+url: https://www.metmuseum.org/art/collection/search/354657
+image: https://images.metmuseum.org/CRDImages/dp/original/DP361378.jpg
+size: 11 x 9 cells
+symmetry: mirror left-right (axis on column 6)
+colours: # = black cell of the woodcut, . = white cell
+use: season (spring flower; the small lily for the season ring) / village (a garden plant); flanked by the two birds it is a centre-piece (see quentel1529-small-bird-11x9)
+status: VERIFIED
+verified: read with the bird pair as one 35 x 9 group (two independent reads: darkness at the white-cell-lattice sites 313/315, white-cell lattice reader 312/315); within the lily, 98/99 by darkness: the one cell both readers call white (row 4, column 10) is a wear fleck in solid black where the lattice site is also displaced; at 7x zoom it is black like its mirror cell (column 2). Overlay: images/quentel1529-lily-11x9_ver.jpg (red dot = the fleck)
+notes: A stem with a small cross for a head (rows 1-6), two crescent petals curling out and back round it, standing on a stepped mound (3 then 5 cells). At 1x it reads as a fleur-de-lis or a lily. Same family as the larger lily of DP361383 (quentel1529-lily-pot-23x15).
+---
+.....#.....
+..#.###.#..
+.###.#.###.
+##.#####.##
+##..###..##
+.##..#..##.
+..#..#..#..
+....###....
+...#####...

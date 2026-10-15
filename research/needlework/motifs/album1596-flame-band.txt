@@ -1,0 +1,34 @@
+title: Slanting flame band (rust, red and yellow staircases over a dark rule)
+section: Narrow bands
+source: Manuscript album of designs for lace and embroidery, German, c. 1596 (woodcut grid paper, designs inked and painted by hand); The Met 53.566.7(1-69), Public Domain
+short-source: German album c.1596 (Met DP356737)
+page: image DP356737, the lowest band on the page; crop x1540-2010 y2700-2860 of the full scan (the band starts at x about 1570)
+url: https://www.metmuseum.org/art/collection/search/368249
+image: https://images.metmuseum.org/CRDImages/dp/original/DP356737.jpg
+size: period 4 cells x 4 rows (+ 1 empty row + a dark rule = 6 rows)
+symmetry: none within the unit (each flame slants down to the right); translation only. Mirror the chart for flames leaning the other way
+colours: o = rust (dark orange-red), r = red, y = yellow ochre, d = dark brown-black, . = paper. Under the band the painter added a row of white dots, set on the grid lines rather than in the cells (not charted)
+use: ring band (a 4-row warm filigree: flames, or autumn leaves; reads at 1x as a running diagonal ribbon)
+status: VERIFIED
+verified: grid-paper reader for the cell centres, median colour per cell classified to six reference colours; 5 tiled periods over the drawn band: 79/80 cells agree (the one other cell is painted between rust and red); the rule below reads dark brown in all 23 cells. Overlay: images/album1596-flame-band_ver.jpg
+notes: Each unit is a staircase of three colours: a rust pair at the top, then yellow-red-rust-rust, then a yellow-red-red step, and a yellow cell between two dark cells at the foot, so a yellow highlight runs down each flame's left edge. The narrowest coloured band in the library.
+---
+period (4 x 4):
+oo..
+yroo
+.yrr
+d.yd
+
+three repeats:
+oo..oo..oo..
+yrooyrooyroo
+.yrr.yrr.yrr
+d.ydd.ydd.yd
+
+as drawn, with the gap row and the rule (6 rows; d = the rule):
+oo..oo..oo..
+yrooyrooyroo
+.yrr.yrr.yrr
+d.ydd.ydd.yd
+............
+dddddddddddd

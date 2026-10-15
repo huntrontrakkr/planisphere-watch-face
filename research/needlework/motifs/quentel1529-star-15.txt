@@ -1,0 +1,30 @@
+title: Eight-lobed star
+section: Stars and sky
+source: Peter Quentel, Eyn New Kunstlichboich, Cologne 1529 (woodcut pattern book); The Met 20.50.2(1-49), Public Domain
+short-source: Quentel 1529 (Met DP361383)
+page: image DP361383, band 6 of 7 (the star alternates with a flowering sprig in a pot); crop x860-1160 y1500-1800 of the full scan
+url: https://www.metmuseum.org/art/collection/search/354657
+image: https://images.metmuseum.org/CRDImages/dp/original/DP361383.jpg
+size: 15 x 15 cells
+symmetry: full square symmetry (both mirrors, both diagonals, quarter turn)
+colours: # = black (filled) cell of the woodcut, . = white cell
+use: star (bright-star glyph, compass star) / corner
+status: VERIFIED
+verified: overlay on the scan, lattice taken from the white cells (clustered by row and column): 225/225 cells agree; images/quentel1529-star-15_ver.jpg. A 2x2 white cell merge at lower left of the woodcut is a cutting fault, read as two empty cells (matches the mirror image).
+notes: Eight petals of 4-5 cells round a hollow centre cross; reads as a star at 1x. The 3-cell-wide petals make a strong silhouette in red or ink on cream. The same star, cell for cell, is printed 290 years later on plate "Marque, No 7" of the Petit nécessaire des jeunes demoiselles (Paris 1819; archive.org leaf n81, x185-305 y400-515): overlay 225/225 (images/quentel1529-star-15_petit1819.jpg and _petit1819_ver.jpg). A stable, period-true form from 1529 to 1819.
+---
+....#.....#....
+....##...##....
+....###.###....
+....###.###....
+####.##.##.####
+.####.#.#.####.
+..####.#.####..
+......#.#......
+..####.#.####..
+.####.#.#.####.
+####.##.##.####
+....###.###....
+....###.###....
+....##...##....
+....#.....#....

@@ -1,0 +1,58 @@
+title: Running wave band: a brown wave with dark green leaf sprays above and below (Berlin work, three colours)
+section: Narrow bands
+source: Emma Merlo, Neueste Portefeuille für Freundinnen weiblicher Kunst-Arbeiten: eine Auswahl von Guirlanden, allerlei Blumen, Kränzen, Bouquets, Fruchtkörben, Schmetterlingen, Kanten, Arabesken u.s.w. zum künstlichen Stricken, Häkeln, zur Tapisserie- und Mosaik-Arbeit, Pirna/Leipzig: Carl August Friese, c. 1835 (catalogued [183-?]); hand-coloured printed charts ("bei Friese in Leipzig"); Getty Research Institute copy, archive.org neuesteportefeui00merl; public domain (published in the 1830s; no rights statement on the item)
+short-source: Merlo c.1835, plate Tt (archive.org neuesteportefeui00merl n16)
+page: leaf n16 (plate "Tt", narrow borders): the top horizontal band; crop x670-2070 y515-800 of the 3004 x 2294 page image (cell pitch 15.6 x 16.1 px)
+url: https://archive.org/details/neuesteportefeui00merl
+image: https://archive.org/download/neuesteportefeui00merl/page/n16.jpg
+size: period 20 cells x 16 rows (the wave alone: 20 x 6)
+symmetry: glide reflection: mirror top-bottom + a shift of half a period (10 cells) maps the band onto itself (sym.py on the period alone: none). Each spray slants, so there is no left-right mirror
+colours: b = brown (painted RGB about 79,45,19), g = dark green (about 37,55,38; some sprays in a thinner wash, about 58,80,56, merged: the lighter cells fall on whole sprays, differently in each repeat, so the plate has one green here), . = paper (about 236,238,219). Face palette: b red-brown or ink, g dark green
+use: ring band (a wide leafy band; the brown wave alone, rows 6-11 of the period, is a 6-row running wave for the ring)
+status: VERIFIED
+verified: grid-paper reader (g4lib cell centres), median colour per cell classified to four reference colours (paper, dark green, light green wash, brown; the two greens merged); the period tiled over the whole drawn band (86 x 16 cells, 4.3 repeats) matches 1365/1376 cells. The 11 others: 9 at the band's cut left end (the first lower spray is not drawn: 5 cells; the small 3-cell leaf under the first crest is missing; one extra leaf cell at the very start), and 2 single extra green cells, each in one repeat only (a leaf painted one cell longer). Repeats 2-4 agree among themselves except for those 2 cells. Overlay (two strips, left half above, right half below): images/merlo1835-wave-leaf-band_ver.jpg
+notes: A classic Biedermeier running wave: a 1-cell brown line climbing in steps of 1, 2 and 4 cells from trough to crest (period 20, amplitude 6 rows), with a spray of small two- and three-cell leaves rising from each trough and hanging from each crest. At 1x the wave reads clearly; the sprays read as dotted foliage. The wave alone (rows 6-11, below) is the most useful piece for a narrow ring band; for an even narrower wave, halve the steps.
+---
+period (20 x 16):
+........g...........
+.....g.gg..g........
+....gg...g.gg.......
+.g....gg.gg.........
+gg...g..g...........
+..ggg....gg...bbbb..
+.g...g...g..bb....bb
+b.....gg...b....g...
+.b....g...b.....gg..
+..bb....bb.g...g...g
+g...bbbb....ggg....g
+..........gg...g..g.
+g..........g....gg.g
+.gg...........gg...g
+.g.............g.gg.
+..................g.
+
+three repeats:
+........g...................g...................g...........
+.....g.gg..g.............g.gg..g.............g.gg..g........
+....gg...g.gg...........gg...g.gg...........gg...g.gg.......
+.g....gg.gg..........g....gg.gg..........g....gg.gg.........
+gg...g..g...........gg...g..g...........gg...g..g...........
+..ggg....gg...bbbb....ggg....gg...bbbb....ggg....gg...bbbb..
+.g...g...g..bb....bb.g...g...g..bb....bb.g...g...g..bb....bb
+b.....gg...b....g...b.....gg...b....g...b.....gg...b....g...
+.b....g...b.....gg...b....g...b.....gg...b....g...b.....gg..
+..bb....bb.g...g...g..bb....bb.g...g...g..bb....bb.g...g...g
+g...bbbb....ggg....gg...bbbb....ggg....gg...bbbb....ggg....g
+..........gg...g..g...........gg...g..g...........gg...g..g.
+g..........g....gg.gg..........g....gg.gg..........g....gg.g
+.gg...........gg...g.gg...........gg...g.gg...........gg...g
+.g.............g.gg..g.............g.gg..g.............g.gg.
+..................g...................g...................g.
+
+the brown wave alone (rows 6-11 of the period; 20 x 6), two repeats:
+..............bbbb................bbbb..
+............bb....bb............bb....bb
+b..........b........b..........b........
+.b........b..........b........b.........
+..bb....bb............bb....bb..........
+....bbbb................bbbb............

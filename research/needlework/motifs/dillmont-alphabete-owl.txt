@@ -1,0 +1,48 @@
+title: Owl perched on a branch (red owl with dark eyes and spots)
+section: Creatures
+source: Thérèse de Dillmont (ed.), Alphabete für die Stickerin (Bibliothek D.M.C), Tafel 80; Dornach (Elsass): Verlag von Th. de Dillmont, c. 1900; Smithsonian Libraries copy, archive.org item alphabetefrdiest00dill; public domain (published c. 1900; Dillmont died 1890)
+short-source: DMC Alphabete c.1900, Tafel 80 (archive.org alphabetefrdiest00dill)
+page: archive.org alphabetefrdiest00dill page n83 (Tafel 80), top row, between the boar and the fox: the owl; crop x990-1265 y245-520 of the full page image (2672 x 1885)
+url: https://archive.org/details/alphabetefrdiest00dill
+image: https://archive.org/download/alphabetefrdiest00dill/page/n83.jpg
+size: 14 x 17 cells with the branch; the owl alone 9 x 13
+symmetry: none (the owl sits slightly turned: ear tufts centred on column 7.5, eyes and beak on column 8, the body wider on the left)
+colours: R = red (the owl), B = dark (the plate's blue-black: eyes, beak, breast spots, feet, branch), . = ground
+use: creature (an owl for night, the evening sector or a corner; at 1x the two ear tufts and the dark eyes read at once)
+status: VERIFIED
+verified: colour reader (/tmp/nw/printed/bin/colread.py), lattice fitted to the colour fills (pitch 13.68 x 13.74 px), cells classified ground / red / dark, and the red and dark fill fraction of every cell printed (fillfrac.py: full cells 0.7-0.9, ground < 0.05); chart overlaid: 236/238 cells agree; the 2 others are cells crossed by the thin twig strokes, which are lines, not cells (images/dillmont-alphabete-owl_ver.jpg). Cross-check: the same chart is printed in the 1890 Album de broderies, Ire Serie, Pl. 32 (dmc1890s1-owl-on-branch): 238/238 cells agree in shape; there the breast has one more dark spot (row 11, column 8), which this colour plate leaves red.
+notes: An eared owl seen from the front: one-cell ear tufts, two dark eyes with a dark beak cell below between them, dark spots scattered over the red breast in a loose diagonal pattern, dark talons on the branch. The branch is a dark log 3 rows deep with a stub at its left end. Two thin twigs are drawn as stroke lines (back stitch), one rising to the right from the branch's right end with a forked tip, one falling to the left from its left end; they are not cells and are left out (draw them as diagonals of single pixels if wanted).
+---
+owl on its branch (14 x 17):
+....R......R..
+....RR....RR..
+.....RRRRRR...
+.....RRRRRR...
+.....RRBRBR...
+....RRRRBRRR..
+....RRRRRRRR..
+...RRBRRRRBR..
+...BRRRBRBRR..
+...RRBRRRRRB..
+...BRRRRRBRR..
+...RRBRRRRR...
+...BRRRBRB....
+.B..BBBBBBBBBB
+.BBBBBBBBBBB..
+BBBBBBBB......
+B.............
+
+owl alone (9 x 13):
+.R......R
+.RR....RR
+..RRRRRR.
+..RRRRRR.
+..RRBRBR.
+.RRRRBRRR
+.RRRRRRRR
+RRBRRRRBR
+BRRRBRBRR
+RRBRRRRRB
+BRRRRRBRR
+RRBRRRRR.
+BRRRBRB..

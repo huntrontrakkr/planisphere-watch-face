@@ -1,0 +1,21 @@
+title: The Four Seasons (Printemps, Esté, Automne, Hyver), lacis squares of 66 mailles: description and crops, not a counted chart
+section: Seasons and plants
+source: Matthias Mignerak, La Pratique de l'Aiguille Industrieuse, Paris: Jean Le Clerc, 1605 (privilege 14 July 1605); The Met 20.50.1(1-78), Public Domain
+short-source: Mignerak 1605 (Met DP358168-71)
+page: DP358168 "Premiere figure des 4. saisons cōtenant 66. mailles en carré, le Printēps" (sig. D iij); DP358169 "Seconde figure contenant 66. mailles, l'Esté" (sig. D iiij); DP358170 "Troisiesme figure contenant 66. mailles Lauthonne" (sig. E); DP358171 "Quatriesme figure contenant 66. mailles, L'hyver" (sig. E ij)
+url: https://www.metmuseum.org/art/collection/search/354009
+image: https://images.metmuseum.org/CRDImages/dp/original/DP358168.jpg (and DP358169, DP358170, DP358171)
+size: 66 x 66 mailles (meshes) each, plus a plain mesh border above and below
+symmetry: none (figure scenes)
+colours: woodcut: black squares = open mesh; the figure is drawn in white lines, its filled areas shown as a finer white mesh
+use: season (reference for the four seasonal emblems; not usable cell for cell)
+status: UNVERIFIED (not transcribed: the plates are drawings laid over the mesh, not counted charts)
+verified: viewed all four at full resolution (2400 x 2975 px) and zoomed: the outlines are free curves that cut across the mesh, and the "filled" areas are a half-pitch mesh that does not stay on the main grid, so no cell-exact reading exists. The same holds for the book's other plates (fruit trees, pots of flowers, the squares of 60, 32 and 22 mailles: e.g. DP358233). Crops of the whole plates: images/mignerak1605-printemps.jpg, -este.jpg, -automne.jpg, -hyver.jpg (and the four side by side: images/mignerak1605-four-seasons.jpg). Crops of the small elements, for redrawing (white line drawings, not counted): -printemps-chapel.jpg (x1650-2130 y1000-1700), -printemps-branch.jpg (the flowering branch, x1600-2060 y540-900), -printemps-rose.jpg (x600-880 y1830-2130), -printemps-lilies.jpg (vase of lilies, x290-640 y1060-1680), -este-flowers.jpg (flower spray, DP358169 x1800-2080 y1500-1950), -automne-sheaf.jpg (wheat ears and sheaf, DP358170 x1550-2150 y550-1400), -automne-grapes.jpg (vine with grape bunches, x280-650 y1050-1650), -automne-gourd.jpg (ribbed gourd, x1500-2150 y1800-2300), -hyver-bare-tree.jpg (bare forked trees, DP358171 x260-950 y470-1150), -hyver-house.jpg (gabled house with door, x280-720 y1000-1950), -hyver-fire.jpg (the hands, pot and fire at the hearth, x1300-1800 y1850-2300)
+notes: What each plate holds, for redrawing the seasons in the face's own pixel art:
+  PRINTEMPS: Flora, crowned with flowers, holds up a flowering branch; a chapel with three round-arched windows and a tiled roof (right); a vase of lilies (left); trees in leaf; a large rose (lower left); grass tufts along the ground; a small bird perched at the upper right.
+  ESTE: a woman crowned with flowers plays a bass viol; an open music book and a flower spray (lower right); leafy trees; a river bank or field behind.
+  AUTOMNE: a figure crowned with fruit and leaves holds a sheaf of wheat (ears at the top, right of centre); bunches of grapes on a vine (left); a large ribbed gourd or pumpkin (lower right); clouds (top left).
+  HYVER: an old woman wrapped in a hooded cloak warms her hands at a fire; bare, forked trees; a house with a steep gable and a door (left); a round disc on a stalk above it (a low sun, or a sign).
+  For the face, the emblems that reduce well to 7-12 cells are: a blossom spray or rose (spring), a wheat sheaf (summer or autumn), a grape bunch (autumn), and a bare tree or a fire (winter).
+---
+(no chart: see notes)

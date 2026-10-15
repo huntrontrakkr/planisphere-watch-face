@@ -1,0 +1,29 @@
+title: The Moon's disc with a face (Luna's emblem)
+section: Stars and sky
+source: Manuscript album of designs for lace and embroidery, German, c. 1596 (woodcut grid paper, filled in by hand); The Met 53.566.7(1-69), Public Domain
+short-source: German album c.1596 (Met DP356671)
+page: image DP356671, the LUNA page (crowned Luna with the crab of Cancer, her house); the disc at the lower right, crop x2040-2460 y1900-2320; whole page: images/album1596-luna-page.jpg
+url: https://www.metmuseum.org/art/collection/search/368249
+image: https://images.metmuseum.org/CRDImages/dp/original/DP356671.jpg
+size: 15 x 14 cells
+symmetry: none (a hand-drawn ring, one cell flatter at the top; the face inside is irregular)
+colours: # = cell filled with ink wash, . = empty cell
+use: star (the Moon: a full moon, or a moon emblem for Monday's sign)
+status: VERIFIED
+verified: grid-paper reader (cell centres from the printed lines), each cell's darkness printed on a 3x zoom and read by eye: filled cells 0.50-0.63, empty 0.20-0.29; overlay 210/210 (images/album1596-luna-moon-disc_ver.jpg). Three faint cells (0.33-0.36: wash spill at the lower left and right edge) are left empty.
+notes: A ring one cell thick (two cells on the left) round an irregular figure, perhaps a face: small marks near the top, a broad filled band across the middle. Not a neat geometric disc: period hand-work. On the same page: a rayed sun held on a staff (upper left, too irregular to be useful), a star on a flowering staff (album1596-luna-star-staff), the crab of Cancer (about 25 x 15), a ring on a stem (Venus's mirror?), and LUNA lettered in 5-row capitals.
+---
+.....######....
+...##...#.##...
+..#....###..#..
+.#.#...##....#.
+.###..#...#..##
+##...###.###..#
+##..#######...#
+###.########.#.
+##..####.##.#.#
+.#..####.#....#
+.#.##........#.
+..#....#.##.#..
+...#...#####...
+....#######....

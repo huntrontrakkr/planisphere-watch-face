@@ -1,0 +1,32 @@
+title: Zigzag with sprigs (a two-cell zigzag line, trefoil sprigs and small lozenges in the bays)
+section: Narrow bands
+source: Giovanni Ostaus, La Vera Perfettione del Disegno di varie sorti di recami, Venice 1567; The Met 21.15.3(1-79), Public Domain
+short-source: Ostaus 1567 fol. LXV (Met DP362012)
+page: image DP362012 (folio LXV), second band from the top (7 rows between rules); 3 repeats verified at x754-2179 y450-625 of the full scan (library crop and overlay: 2 repeats, x754-1730 y450-625)
+url: https://www.metmuseum.org/art/collection/search/354909
+image: https://images.metmuseum.org/CRDImages/dp/original/DP362012.jpg
+size: period 30 cells x 7 rows (half period 15: the second half is the first turned over)
+symmetry: mirror left-right about columns 1 and 16 of the period (the axes run through the peaks of the zigzag), and a glide: the top-bottom mirror shifted by 15 cells gives the same band, so the bays above and below hold the same sprigs
+colours: # = filled cell (cut as a grey-hatched cell in the woodcut), . = white cell
+use: ring band (a 7-row running zigzag with sprigs: lighter than a plain zigzag, suits the season ring)
+status: VERIFIED
+verified: the period voted over the band's 4 repeats (3 cells disagree once each); 3 tiled periods overlaid: 628/630 (white-cell blob reader) and 625/630 (darkness at each site, Otsu); the 2 shared misses are one sprig cell in the third repeat that the cutter left white, the other 3 are lightly hatched cells at the threshold. 2 repeats (library overlay): 420/420 and 419/420. Looked at the overlays: images/ostaus1567-zigzag-sprig-band_ver.jpg
+notes: The zigzag is a two-cell-thick diagonal line running between the rules; in each bay sits a trefoil sprig (three cells over a stem) facing the point of the bay, and small diamonds (3 cells) sit next to the peaks. At 1x the zigzag carries the band and the sprigs read as a dotted fill.
+---
+period (30 x 7):
+..####..#..###...###..#..####.
+.#...##..###..#.#..###..##...#
+#.....##...#...#...#...##.....
+##.#...##...#.###.#...##...#.#
+#...#...##.....#.....##...#...
+.#..###..##...#.#...##..###..#
+..###..#..####...####..#..###.
+
+three repeats:
+..####..#..###...###..#..####...####..#..###...###..#..####...####..#..###...###..#..####.
+.#...##..###..#.#..###..##...#.#...##..###..#.#..###..##...#.#...##..###..#.#..###..##...#
+#.....##...#...#...#...##.....#.....##...#...#...#...##.....#.....##...#...#...#...##.....
+##.#...##...#.###.#...##...#.###.#...##...#.###.#...##...#.###.#...##...#.###.#...##...#.#
+#...#...##.....#.....##...#...#...#...##.....#.....##...#...#...#...##.....#.....##...#...
+.#..###..##...#.#...##..###..#.#..###..##...#.#...##..###..#.#..###..##...#.#...##..###..#
+..###..#..####...####..#..###...###..#..####...####..#..###...###..#..####...####..#..###.

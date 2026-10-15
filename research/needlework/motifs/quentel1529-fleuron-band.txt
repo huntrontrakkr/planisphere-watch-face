@@ -1,0 +1,40 @@
+title: Fleuron band (arcade of trefoil fleurons)
+section: Narrow bands
+source: Peter Quentel, Eyn New Kunstlichboich, Cologne 1529; The Met 20.50.2(1-49), Public Domain
+short-source: Quentel 1529 (Met DP361401)
+page: image DP361401 (printed folio 40), bottom band; crop x380-1000 y2045-2245
+url: https://www.metmuseum.org/art/collection/search/354657
+image: https://images.metmuseum.org/CRDImages/dp/original/DP361401.jpg
+size: period 12 cells x 11 rows
+symmetry: each fleuron mirror left-right (axis on the column of the apex)
+colours: # = black cell, . = white cell. In the woodcut the black is the ground and the white cells draw the outline, so the motif reads as white line-work on black
+use: ring band (outer edge of the ring: the row of fleurons points outward); also a cresting along the card
+status: VERIFIED
+verified: read independently from the scan with a white-cell lattice reader (grid3): period 12 holds in every row; 3 tiled periods overlaid: 373/374 in-frame cells agree, the one mismatch is a single black cell in row 2 of one repeat (a cutting fault, absent from the other repeats). images/quentel1529-fleuron-band_ver.jpg
+notes: Trefoil heads on small arches, over a strip of stepped triangles. Inverted (white on ink) it is pure line-work, which suits the engraved look of the ring.
+---
+period (12 x 11):
+......#.....
+.....###....
+....#####...
+...#.###.#..
+..###.#.###.
+.###########
+..###.#.###.
+#..#..#..#..
+##...###...#
+###.#####.##
+############
+
+three repeats:
+......#...........#...........#.....
+.....###.........###.........###....
+....#####.......#####.......#####...
+...#.###.#.....#.###.#.....#.###.#..
+..###.#.###...###.#.###...###.#.###.
+.###########.###########.###########
+..###.#.###...###.#.###...###.#.###.
+#..#..#..#..#..#..#..#..#..#..#..#..
+##...###...###...###...###...###...#
+###.#####.#####.#####.#####.#####.##
+####################################

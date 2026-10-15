@@ -1,0 +1,23 @@
+title: Acorn (pink nut in a green cup), 5 x 8
+section: Seasons and plants
+source: A.C. van Duuren, sampler, coloured silk on cotton muslin, probably Amsterdam, c. 1800-1820; Rijksmuseum BK-1959-142-A, public domain (CC0; Commons licence checked: CC0)
+short-source: A.C. van Duuren sampler c. 1810 (Rijksmuseum BK-1959-142-A)
+page: the oak tree with the initials IA (lower left of the middle field, "een eikeboom" in the museum description): the upright acorn at the upper right of the crown; crop x2340-2530 y3730-3950 of the full Commons image (6879 x 6106)
+url: https://www.rijksmuseum.nl/en/collection/BK-1959-142-A
+image: https://commons.wikimedia.org/wiki/File:Merklap_van_gekleurde_zijde_op_katoenen_mousseline.,_BK-1959-142-A.jpg
+size: 5 x 8 cells
+symmetry: mirror left-right
+colours: p = rose pink silk (the nut), g = green silk (cup and stalk), . = ground
+use: season (autumn: an acorn; one of eight on the oak tree)
+status: VERIFIED
+verified: lattice measured from the stitch centres on a 4x zoom (pitch 21.25 x 20.4 px), notcream channel: 39/40 cells agree; the one other is the tip of the nut (row 1), a smaller stitch that reads 0.37 against a threshold of 0.38 and is pink in colour (images/bk-1959-142-a-acorn_ver.jpg). Colours checked from the cell means (nut cells about RGB 165,115,118, cup cells about 104,115,92) and by eye at 4x zoom
+notes: A rounded nut (1-3-5-5 cells) sitting in a cup of two full rows and a 3-cell base, on a one-cell stalk; on the tree the stalk joins a diagonal twig. The tree carries eight acorns in four directions (two upright at the top, two pointing out sideways at the top, two sideways and two hanging at the bottom); rotate this one for the others. Reads clearly as an acorn at 1x.
+---
+..p..
+.ppp.
+ppppp
+ppppp
+ggggg
+ggggg
+.ggg.
+..g..

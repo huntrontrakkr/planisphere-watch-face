@@ -1,0 +1,34 @@
+title: Sawtooth band (two staggered rows of triangles)
+section: Narrow bands
+source: Peter Quentel, Eyn New Kunstlichboich, Cologne 1529; The Met 20.50.2(1-49), Public Domain
+short-source: Quentel 1529 (Met DP361401)
+page: image DP361401 (printed folio 40), top band of the page (four tiers of triangles, i.e. two vertical periods); crop x360-860 y270-580
+url: https://www.metmuseum.org/art/collection/search/354657
+image: https://images.metmuseum.org/CRDImages/dp/original/DP361401.jpg
+size: period 8 cells across x 8 rows (one tier pair); 4 rows for a single tier
+symmetry: each triangle mirror left-right; the two tiers are offset by half a period (glide)
+colours: # = black cell, . = white cell
+use: ring band (sawtooth or "dog-tooth" edge: one tier alone, rows 5-8, is a 4-row edging)
+status: VERIFIED
+verified: tiled 3 periods x 2 tiers and overlaid on the scan: 383/384 cells agree; the one mismatch is an ink speck inside a white cell (images/quentel1529-triangle-band_ver.jpg)
+notes: The single tier (rows 5-8: 1,3,5,7 cells) is the simplest possible dog-tooth edging; the full 8-row pair makes a denser band.
+---
+period (8 x 8):
+.......#
+#.....##
+##...###
+###.####
+...#....
+..###...
+.#####..
+#######.
+
+three repeats:
+.......#.......#.......#
+#.....###.....###.....##
+##...#####...#####...###
+###.#######.#######.####
+...#.......#.......#....
+..###.....###.....###...
+.#####...#####...#####..
+#######.#######.#######.

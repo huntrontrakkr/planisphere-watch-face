@@ -1,0 +1,47 @@
+title: Diamond beads on a thread (white lozenges with a black eye, strung on a white line; voided work)
+section: Narrow bands
+source: Peter Quentel, Ein new kunstlich Modelbuch..., Cologne 1544 (woodcut pattern book); The Met 22.84.1(1-102), Rogers Fund 1922, Public Domain
+short-source: Quentel 1544 (Met DP357065)
+page: image DP357065, top band of five; crop x530-1720 y320-530 of the full scan (2133 x 2628)
+url: https://www.metmuseum.org/art/collection/search/354658
+image: https://images.metmuseum.org/CRDImages/dp/original/DP357065.jpg
+size: period 6 cells x 9 rows (11 with the white frame rows above and below)
+symmetry: mirror top-bottom; each lozenge mirror left-right (the period is shown starting beside a lozenge)
+colours: # = black cell of the woodcut, . = white cell. The design reads in WHITE (voided work: the ground is worked, the motif left empty); invert for a dark motif on a light ground
+use: ring band (a 9-row chain of beads on a thread: white beads on ink, or ink beads on cream when inverted)
+status: VERIFIED
+verified: two reads on the woodcut's white-cell lattice: darkness at each lattice site (Otsu) against 8 tiled periods: 432/432 cells agree (images/quentel1544-diamond-bead-band_ver.jpg); the white-cell reader gives the same pattern
+notes: Each bead is a white lozenge (1-3-5 cells) with a black eye above and below the thread, the thread a full white row through the middle. In the woodcut the band starts at the left with a white edge column.
+---
+period (6 x 9):
+###.##
+##...#
+#.....
+##.#.#
+......
+##.#.#
+#.....
+##...#
+###.##
+
+three repeats:
+###.#####.#####.##
+##...###...###...#
+#.....#.....#.....
+##.#.###.#.###.#.#
+..................
+##.#.###.#.###.#.#
+#.....#.....#.....
+##...###...###...#
+###.#####.#####.##
+
+inverted (motif as ink on cream), three repeats:
+...#.....#.....#..
+..###...###...###.
+.#####.#####.#####
+..#.#...#.#...#.#.
+##################
+..#.#...#.#...#.#.
+.#####.#####.#####
+..###...###...###.
+...#.....#.....#..

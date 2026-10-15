@@ -1,0 +1,44 @@
+title: Zigzag with lozenge loops over a chain rule (two-colour band)
+section: Narrow bands
+source: Thérèse de Dillmont, Album de broderies au point de croix, IIme Série, Planche No 11 (narrow borders), item 42; Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie (printed by Brustlein & Co., Mulhouse), 1890; Smithsonian Libraries copy, archive.org item albumdebroderies02dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album II 1890, Pl. 11 no. 42 (archive.org albumdebroderies02dill)
+page: archive.org albumdebroderies02dill page n30 (Planche No 11), item 42, third band of the left column; crop x255-1425 y1030-1325 of the full page image (3011 x 4047)
+url: https://archive.org/details/albumdebroderies02dill
+image: https://archive.org/download/albumdebroderies02dill/page/n30.jpg
+size: period 10 cells x 13 rows (zigzag 10 rows + chain rule 3 rows)
+symmetry: mirror left-right (axes at columns 0 and 5 of the period: through each lozenge and each V) (bandsym.py)
+colours: X = dark-shaded cross symbol (colour 1: the chain rule), x = light-shaded cross symbol (colour 2: the zigzag), . = canvas ground. The plate prints colours as tones; the Directions (p. 13) leave the colours to the worker
+use: ring band (a wide one: 13 rows; rows 11-13 alone make a 3-row chain rule, period 2; rows 1-10 alone a zigzag with lozenges)
+status: VERIFIED
+verified: printed chart (cross symbols on a fine printed canvas grid); stitch lattice fitted to the cross symbols (nwtool read, dark channel, pitch 20.97 x 20.88 px), Otsu threshold; the period tiled 5.5 times (55 x 13) and overlaid: 715/715 cells agree, no mismatches (images/dmc1890-diamond-zigzag-band_ver.jpg). Tones: the chain-rule crosses read 0.7-0.8 darkness, the zigzag 0.5-0.7; checked by eye at 6x zoom (the rule's symbols are near-black, the zigzag's grey)
+notes: A one-cell zigzag line (two cells thick on the diagonals) whose peaks each carry a hollow lozenge 7 cells wide; the V's bottom out on the row just above a chain rule of two solid rows with a row of alternate crosses between (a string of tiny square rings). At 1x the lozenges read as a row of beads on a wave; the chain rule alone (X rows) is the narrowest DMC border, 3 rows.
+---
+period (10 x 13):
+x.........
+xx.......x
+.xx.....xx
+..xx...xx.
+.xx.....xx
+xx.......x
+.xx.....xx
+..xx...xx.
+...xx.xx..
+....xxx...
+XXXXXXXXXX
+X.X.X.X.X.
+XXXXXXXXXX
+
+three repeats:
+x.........x.........x.........
+xx.......xxx.......xxx.......x
+.xx.....xx.xx.....xx.xx.....xx
+..xx...xx...xx...xx...xx...xx.
+.xx.....xx.xx.....xx.xx.....xx
+xx.......xxx.......xxx.......x
+.xx.....xx.xx.....xx.xx.....xx
+..xx...xx...xx...xx...xx...xx.
+...xx.xx.....xx.xx.....xx.xx..
+....xxx.......xxx.......xxx...
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX

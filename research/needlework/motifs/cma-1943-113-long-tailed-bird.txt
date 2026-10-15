@@ -1,0 +1,31 @@
+title: Long-tailed bird with an open eye, facing right (red cross stitch)
+section: Creatures
+source: Sampler signed "Maria Hancock", England, 19th century; red cotton cross stitch on cotton, 30.5 x 26.1 cm; The Cleveland Museum of Art 1943.113, Gift of George W. Bierce; CC0 (Open Access, share_license_status CC0)
+short-source: Maria Hancock sampler (CMA 1943.113)
+page: row of small creatures under the cross and Bible (third block of the band field), the left-hand bird; crop x1360-1610 y3195-3400 of the full image (1943.113_full.tif, 4050 x 4773)
+url: https://clevelandart.org/art/1943.113
+image: https://openaccess-cdn.clevelandart.org/1943.113/1943.113_full.tif
+size: 18 x 16 cells (body and head 11 x 12; tail 9 cells long; legs and feet 4 rows)
+symmetry: none (faces right; mirror for a left-facing bird)
+colours: # = red cross stitch, . = cream cotton ground
+use: creature (a perched bird, dove or pheasant; at 1x a solid silhouette with a one-cell eye)
+status: VERIFIED
+verified: weave lattice fitted on the red channel (pitch 10.9 x 11.3 px on the full TIFF); 286/288 cells agree; the 2 mismatches (0-based chart row 0 col 3 and row 1 col 2) are the last two stitches of the neighbouring sprig above-left, not part of the bird. A first lattice with a 4% short pitch put the tail one cell too far left; a 6x zoom of the tail (crosses about 65 px) confirmed the 10.9 px pitch. Overlay: images/cma-1943-113-long-tailed-bird_ver.jpg
+notes: Head of 3 x 4 cells with an open (unstitched) eye, a beak of one cell set diagonally below the forehead, a solid body widening from the neck down to the breast, a long 3-row tail with a two-cell upward flick at its tip, two straight legs and spread three-toed feet. The partner bird in the same row (to the right of the cat) has a longer drooping tail. All the creatures in this row (two birds, a lamb or dog, a hedgehog-like beast, a cat) are 12-18 cells.
+---
+..............##..
+.............#.##.
+.............###.#
+.............###..
+............####..
+..........######..
+.........#######..
+.......#########..
+.......#########..
+##...##########...
+.#############....
+#############.....
+..........#.#.....
+..........#.#.....
+......##.#.#.#.##.
+.......###.#.###..

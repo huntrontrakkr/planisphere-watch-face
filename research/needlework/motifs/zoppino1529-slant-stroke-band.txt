@@ -1,0 +1,32 @@
+title: Slant-stroke band (rope border: four-cell diagonal strokes between two rules)
+section: Narrow bands
+source: Nicolo Zoppino, Esemplario di lavori, Venice, August 1529; The Met 21.98(1-36), Public Domain
+short-source: Zoppino 1529 pl. XI (Met DP364477)
+page: image DP364477 (plate XI), the narrow band under the top zigzag band; 7 repeats verified at x653-1194 y884-1012 of the full scan (the band runs the width of the plate)
+url: https://www.metmuseum.org/art/collection/search/349352
+image: https://images.metmuseum.org/CRDImages/dp/original/DP364477.jpg
+size: period 5 cells x 7 rows (rule, 4 stroke rows, empty row, rule)
+symmetry: none within the period (the strokes lean one way); the band above the zigzag is its top-bottom mirror (strokes leaning the other way, the empty row next to the upper rule), so the pair frames the zigzag like two twisted cords
+colours: # = black cell of the woodcut (worked), . = white cell
+use: ring band (a 7-row rope or twisted-cord border; 5 rows without the rules; run the mirrored version on the other edge of the ring)
+status: VERIFIED
+verified: read with the white-cell lattice reader; period 5 holds across the band. 7 tiled periods overlaid: 245/245 with both readers (white-cell blobs; darkness at each site, Otsu). The mirrored band above the zigzag (rows: rule, empty row, 4 strokes, rule) was checked the same way: 243/245 on its left half (one extra cell where a stroke doubles, one faint cell) and 242/245 on its right half, which is shifted by one cell against the left half (the block has a joint near the middle). Looked at the overlays: images/zoppino1529-slant-stroke-band_ver.jpg
+notes: The simplest of filigree bands: single diagonal strokes 4 cells long, one every 5 cells, between two solid rules. On the face it gives a crisp corded edge to the ring at any radius (the 5-cell period divides well into the ring's circumference).
+---
+period (5 x 7):
+#####
+...#.
+..#..
+.#...
+#....
+.....
+#####
+
+three repeats:
+###############
+...#....#....#.
+..#....#....#..
+.#....#....#...
+#....#....#....
+...............
+###############

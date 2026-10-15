@@ -1,0 +1,30 @@
+title: Blossom tree (trunk with two tiers of branches tipped with X-shaped blossoms, on a little mound)
+section: Village
+source: Giovanni Ostaus, La Vera Perfettione del Disegno di varie sorti di recami, Venice 1567; The Met 21.15.3(1-79), Public Domain
+short-source: Ostaus 1567 fol. LXXII (Met DP362020)
+page: image DP362020 (folio LXXII), top band (15 rows: blossom tree, bird facing right, lattice tree, bird facing left; period 56 cells); this is the first tree, x788-1067 y264-543 of the full scan (repeats at +56 and +112 cells)
+url: https://www.metmuseum.org/art/collection/search/354909
+image: https://images.metmuseum.org/CRDImages/dp/original/DP362020.jpg
+size: 15 x 15 cells
+symmetry: mirror left-right
+colours: # = filled cell (cut as a grey-hatched cell in the woodcut), . = white cell
+use: village (a small tree, or an orchard tree in blossom) / season (spring: the blossoms)
+status: VERIFIED
+verified: the chart is the agreement of the band's three repeats of the tree (each repeat differs from it in 1-3 cells). Two reads on the white-cell lattice (blob reader; darkness at each site, Otsu). First repeat: 221/225 with both readers: 2 differences are the neighbouring bird's tail (row 11, cols 14-15) and 2 are lightly inked cells at the threshold (top centre row 1 col 7, row 14 col 8: darkness 0.42 and 0.41 against 0.42), which look filled on the overlay. Second repeat (x1646-1926): 220/225 by darkness: 4 cells of the two birds' tails, and one blossom cell (row 3 col 2) left white by the cutter. Looked at the overlay: images/ostaus1567-blossom-tree-15_ver.jpg
+notes: A straight trunk with a 3-cell crown, two tiers of V-shaped branches (each a pair of 2-cell steps joining a 5-cell bar), four X-shaped blossoms on each side, and a bowl-shaped mound or pot at the foot (the diagonal roots and a 5-cell base). Reads as a tree at 1x; the blossoms are the 3x3 X crosses.
+---
+.#.#..###..#.#.
+..#...###...#..
+.#.#...#...#.#.
+....##.#.##....
+.....#####.....
+.#.#..###..#.#.
+..#....#....#..
+.#.#...#...#.#.
+....##.#.##....
+.....#####.....
+......###......
+#......#......#
+##.....#.....##
+.##...###...##.
+..##.#####.##..

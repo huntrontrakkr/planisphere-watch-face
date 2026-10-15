@@ -1,0 +1,117 @@
+title: Figures 1234567890, 7 rows, one-cell strokes (roman, with a hanging 9)
+section: Alphabets and numerals
+source: Thérèse de Dillmont (ed.), Alphabete für die Stickerin (Bibliothek D.M.C), Tafel 10; Dornach (Elsass): Verlag von Th. de Dillmont, c. 1900; Smithsonian Libraries copy, archive.org item alphabetefrdiest00dill; public domain (published c. 1900; Dillmont died 1890)
+short-source: DMC Alphabete c.1900, Tafel 10 (archive.org alphabetefrdiest00dill)
+page: archive.org alphabetefrdiest00dill page n13 (Tafel 10), second line (blue-black), after "U V W X Y Z . Æ ." : the figures and a full stop; crop x1290-2420 y430-610 of the full page image (2657 x 1892)
+url: https://archive.org/details/alphabetefrdiest00dill
+image: https://archive.org/download/alphabetefrdiest00dill/page/n13.jpg
+size: 7 rows (all figures cap height), 4-7 cells wide; the 9 hangs 2 rows below the baseline (9 rows); the line 77 x 9 cells
+symmetry: 8 and 0 mirror left-right and top-bottom; the others none
+colours: # = the plate's blue-black (one colour), . = ground
+use: numerals (hour figures or dates; 7 rows tall with one-cell strokes: legible at 1x on the ring)
+status: VERIFIED
+verified: colour reader (/tmp/nw/printed/bin/colread.py), lattice fitted to the fills (pitch 13.40 x 13.61 px), cells classified ground / dark, no ambiguous cells; the whole line overlaid: 693/693 cells agree, every dark cell carries a green dot (images/dillmont-alphabete-numerals-7row_ver.jpg, the line cut in two and stacked)
+notes: A clean set of lining figures in one-cell strokes on a 7-row body, the companion to the plate's 7-row roman capitals: 1 with a flag and a 3-cell foot, 2 with a flat 5-cell base, a round 3 with a pinched waist, the 4 open with a 6-cell bar, the 5 with a short flag at the top right, the 6 with a curved head over a closed bowl, the 9 a closed bowl on a tail that drops 2 rows below the line and sweeps left (as in old-style figures), 7 with a notched bar, 8 and 0 symmetric. On the plate they stand with 2-3 empty columns between them.
+---
+the line as printed (77 x 9; baseline = row 7):
+..#.....###.....###.......#......##.....###...######...###.....###.....###...
+.##....#...#...#...#.....##.....#......#......#...#...#...#...#...#...#...#..
+#.#........#.......#....#.#....###....#..........#....#...#...#...#...#...#..
+..#.......#......##....#..#.......#...#.##......#......###....#...#...#...#..
+..#......#.........#..######......#...#...#....#......#...#....##.#...#...#..
+..#.....#......#...#......#...#..#....#...#...#.......#...#......#....#...#..
+.###...#####....###.......#....##......###...#.........###......#......###...
+...............................................................#.............
+.............................................................##..............
+
+1 (4 wide x 7 rows):
+..#.
+.##.
+#.#.
+..#.
+..#.
+..#.
+.###
+
+2 (5 wide x 7 rows):
+.###.
+#...#
+....#
+...#.
+..#..
+.#...
+#####
+
+3 (5 wide x 7 rows):
+.###.
+#...#
+....#
+..##.
+....#
+#...#
+.###.
+
+4 (6 wide x 7 rows):
+....#.
+...##.
+..#.#.
+.#..#.
+######
+....#.
+....#.
+
+5 (5 wide x 7 rows):
+...##
+..#..
+.###.
+....#
+....#
+#..#.
+.##..
+
+6 (5 wide x 7 rows):
+..###
+.#...
+#....
+#.##.
+#...#
+#...#
+.###.
+
+7 (7 wide x 7 rows):
+.######
+.#...#.
+....#..
+...#...
+..#....
+.#.....
+#......
+
+8 (5 wide x 7 rows):
+.###.
+#...#
+#...#
+.###.
+#...#
+#...#
+.###.
+
+9 (6 wide x 9 rows, the last 2 rows below the baseline):
+..###.
+.#...#
+.#...#
+.#...#
+..##.#
+....#.
+...#..
+..#...
+##....
+
+0 (5 wide x 7 rows):
+.###.
+#...#
+#...#
+#...#
+#...#
+#...#
+.###.

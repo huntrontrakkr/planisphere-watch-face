@@ -1,0 +1,47 @@
+title: Eight-spoked octagonal wheel (a sun or wheel spot motif)
+section: Stars and sky
+source: Peter Quentel, Eyn Newe kunstlich moetdelboech alle kunst, Cologne 1532; The Met 24.29(1-32), Harris Brisbane Dick Fund 1924, Public Domain
+short-source: Quentel 1532 (Met DP363341)
+page: image DP363341 (inked folio "14"), second vertical band: one of its wheels, reading rows 13-27, columns 2-16 at pitch 20.7 from the band crop x760-1240 y360-1660; wheel crop x810-1145 y634-959
+url: https://www.metmuseum.org/art/collection/search/355820
+image: https://images.metmuseum.org/CRDImages/dp/original/DP363341.jpg
+size: 15 x 15 cells
+symmetry: full square symmetry (mirror both ways, quarter-turn, both diagonals)
+colours: first block as printed: # = black cell of the woodcut, . = white cell. In the woodcut the white cells draw the wheel, so the second block (inverted: # = white cell) is the wheel as line-work: rim, spokes and an empty hub
+use: star / season (a sun wheel); also a compass rose or a wheel for the village (a mill or cart wheel)
+status: VERIFIED
+verified: read as part of quentel1532-octagon-wheel-band: the band's two full repeats agree with the tiled period cell for cell under both readers (darkness at the white-cell-lattice sites and the white-cell lattice reader), so this wheel is confirmed in two copies, 225/225 each. Overlay: images/quentel1532-wheel-15_ver.jpg (green = black cell)
+notes: Inverted, it is an octagonal rim two cells thick, with eight spokes meeting at a one-cell hub: at 1x a clean spoked wheel, or a sun with eight rays inside a ring. It has the same full symmetry as quentel1529-star-15, and the two would make a pair (sun and star).
+---
+####.......####
+###.........###
+##...##.##...##
+#...###.###...#
+...#.##.##.#...
+..###.#.#.###..
+..####...####..
+.......#.......
+..####...####..
+..###.#.#.###..
+...#.##.##.#...
+#...###.###...#
+##...##.##...##
+###.........###
+####.......####
+
+inverted (# = white cell: the rim and spokes):
+....#######....
+...#########...
+..###..#..###..
+.###...#...###.
+###.#..#..#.###
+##...#.#.#...##
+##....###....##
+#######.#######
+##....###....##
+##...#.#.#...##
+###.#..#..#.###
+.###...#...###.
+..###..#..###..
+...#########...
+....#######....

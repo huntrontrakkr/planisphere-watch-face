@@ -1,0 +1,38 @@
+title: Interlocking T fret between two rules, 6 rows, period 6 (red cross stitch)
+section: Narrow bands
+source: Band sampler, Austria, 1899, red and pink cotton embroidery on cotton (Java canvas), 47.6 x 36.8 cm; Cooper Hewitt, Smithsonian Design Museum 1981-28-175 (object 18616463), Bequest of Gertrude M. Oppenheimer; image via Wikimedia Commons "Sampler (Austria), 1899 (CH 18616463).jpg", public domain
+short-source: Austrian band sampler 1899 (Cooper Hewitt 1981-28-175)
+page: middle row of cross-stitched bands, left-hand section (to its right the rope band and the Greek key, ch-18616463-greek-key-band); crop x370-1200 y1540-1700 of the full CH image (3249 x 4096)
+url: https://collection.cooperhewitt.org/objects/18616463/
+image: https://images.collection.cooperhewitt.org/229155_4b84b07d287b179f_x.jpg
+size: period 6 x 6 rows (the two rules included); stitched 40 cells long (six periods and four cells)
+symmetry: mirror left-right about every stem (cols 1 and 4 of the period); the standing T is the hanging T turned upside down and shifted half a period (glide reflection), so the band reads the same upside down
+colours: # = red cross stitch, . = cream canvas ground
+use: ring band (a framed fret: the rules give the ring a clean inner and outer edge; 6 rows)
+status: VERIFIED
+verified: lattice fitted to the stitches (red channel, pitch 19.95 x 19.44 px): six tiled periods (36 x 6) 216/216 cells agree; the whole band as stitched (40 x 6) 240/240; a second crop further left confirms that the band starts with the first stem and nothing before it. images/ch-18616463-t-fret-band_ver.jpg
+notes: From the top rule a stem drops two cells to a three-cell bar (a hanging T); from the bottom rule a stem rises to a bar (a standing T); the bars of the two kinds sit on adjacent rows (rows 3 and 4) and overlap by half, so the band reads as a continuous interlocking fret with one-cell gaps throughout. On the sampler it begins with a hanging stem joined to both rules (col 1 rows 1-4, then the bar runs right) and ends on the stem of a standing T whose bar is cut by the end of the band. Drop the rules for a 4-row fret.
+---
+period (6 x 6):
+######
+#.....
+#.###.
+##.#.#
+...#..
+######
+
+three repeats:
+##################
+#.....#.....#.....
+#.###.#.###.#.###.
+##.#.###.#.###.#.#
+...#.....#.....#..
+##################
+
+as stitched, whole band (40 x 6):
+########################################
+#.....#.....#.....#.....#.....#.....#...
+#.###.#.###.#.###.#.###.#.###.#.###.#.##
+##.#.###.#.###.#.###.#.###.#.###.#.###.#
+...#.....#.....#.....#.....#.....#.....#
+########################################

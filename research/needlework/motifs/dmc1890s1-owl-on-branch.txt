@@ -1,0 +1,63 @@
+title: Owl perched on a branch (eared owl, spotted breast), 1890 original of the Alphabete owl
+section: Creatures
+source: Thérèse de Dillmont, Album de broderies au point de croix, Ire Série, Planche No 32 "Page des enfants" (30 small subjects, nos. 245-274); Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie, 1890 (catalogue date); Smithsonian Libraries copy, archive.org item albumdebroderies01dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album I 1890, Pl. 32 Page des enfants (archive.org albumdebroderies01dill)
+page: archive.org albumdebroderies01dill page n70 (Planche No 32), top row, the owl right of the heron; crop x1280-1700 y360-760 of the full page image (3008 x 4063)
+url: https://archive.org/details/albumdebroderies01dill
+image: https://archive.org/download/albumdebroderies01dill/page/n70.jpg
+size: 14 x 17 cells with the branch; the owl alone 9 x 13
+symmetry: none (the owl sits slightly turned; ear tufts on columns 5 and 12, eyes on 8 and 10, beak on 9)
+colours: L = light-shaded cross (the owl), M = medium-shaded cross (eyes, beak, breast spots, the branch), D = dark-shaded cross (the talons and the branch under them), . = canvas ground
+use: creature (an owl for night, the evening sector or a corner; at 1x the two ear tufts and the dark eyes read at once)
+status: VERIFIED
+verified: printed chart (cross symbols on a fine printed canvas grid); stitch lattice fitted to the symbols (pitch 20.73 x 20.85 px); a cell counts as inked when at least 15% of its inner area is very dark (/tmp/nw/printed/bin/vverify.py); chart overlaid: 236/238 cells agree, the 2 others are the straight-stitch twig below the branch (a line, not cells); tones: 122/122 lettered cells match their class (L 0.19-0.34, M 0.40-0.52, D 0.68-0.75) (images/dmc1890s1-owl-on-branch_ver.jpg). Independent check: the c.1900 colour plate (dillmont-alphabete-owl, Alphabete Tafel 80) prints the same chart: 238/238 cells agree in shape; its colours follow L = red, M and D = blue-black, except one breast spot (row 11, column 8) that the colour plate leaves red
+notes: The same owl as dillmont-alphabete-owl, here in its 1890 first printing, in three tones. Ear tufts of one cell over two, a square head with two dark eyes and a dark beak below between them, a body widening to 9 cells with dark spots on a loose diagonal lattice, two dark talons gripping a branch that runs off to the lower left (3 rows, stepping down) and to the right. The plate draws two twigs as straight stitches (lines) from the branch's right end; they are left out.
+---
+owl on its branch (14 x 17):
+....L......L..
+....LL....LL..
+.....LLLLLL...
+.....LLLLLL...
+.....LLMLML...
+....LLLLMLLL..
+....LLLLLLLL..
+...LLMLLLLML..
+...MLLLMLMLL..
+...LLMLLLLLM..
+...MLLLMLMLL..
+...LLMLLLLL...
+...MLLLDLD....
+.M..MDDDDMMMMM
+.MMMMDMMMMMM..
+MMMMMMMM......
+M.............
+
+owl alone (9 x 13):
+.L......L
+.LL....LL
+..LLLLLL.
+..LLLLLL.
+..LLMLML.
+.LLLLMLLL
+.LLLLLLLL
+LLMLLLLML
+MLLLMLMLL
+LLMLLLLLM
+MLLLMLMLL
+LLMLLLLL.
+MLLLDLD..
+
+one colour (owl alone):
+.#......#
+.##....##
+..######.
+..######.
+..######.
+.########
+.########
+#########
+#########
+#########
+#########
+########.
+#######..

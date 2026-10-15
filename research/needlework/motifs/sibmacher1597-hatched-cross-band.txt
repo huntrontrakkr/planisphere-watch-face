@@ -1,0 +1,28 @@
+title: Hatched lozenge rings in star blocks (two-symbol narrow band)
+section: Narrow bands
+source: Johann Sibmacher, Schön Neues Modelbuch, Nuremberg 1597 (etched pattern book); The Met 20.16(1-43), Public Domain
+short-source: Sibmacher 1597 p.25 (Met DP363498)
+page: image DP363498 (page 25: narrow bands in three columns), middle column, first band (between the star rule at the top of the column and the next rule); crop x1060-1770 y195-345
+url: https://www.metmuseum.org/art/collection/search/357195
+image: https://images.metmuseum.org/CRDImages/dp/original/DP363498.jpg
+size: period 14 cells x 5 rows (three repeats fill the column)
+symmetry: mirror top-bottom, and mirror left-right about the centre of each hatched ring (column 7) and about column 14 (between the blocks)
+colours: * = four-point-star symbol (colour 1), H = vertically hatched cell (colour 2), . = ground. Binary version (any symbol = #): .#.###.###.#.# / #.###.#.###.#. / #.##.#.#.##.#. / #.###.#.###.#. / .#.###.###.#.#
+use: ring band (5 rows, two colours: e.g. * = ink, H = red; the rings can carry the hour marks)
+status: VERIFIED
+verified: the etched grid is hand-ruled (cell widths 14-18 px) and the page is turned about 1.2 degrees, so the cells were taken between the detected grid lines (columns) and on slanted row lines (rows measured at four places along the band); all three repeats (42 x 5 cells): ink in each cell (Otsu) 210/210 agree with the chart (any symbol = filled); symbol classes by k-means on the cell patches (4 clusters): one cluster is exactly the 12 hatched cells, the others the stars and the empty cells: 210/210. Read by eye first at 5x zoom. Overlay: images/sibmacher1597-hatched-cross-band_ver.jpg (first one and a half repeats; green = symbol cell confirmed)
+notes: In each block the stars fill a 9 x 5 rectangle with a diamond-shaped hole holding a ring of four hatched cells round an empty centre; between blocks, two short bars of stars. At 1x the hatched rings read as small lozenges or rosettes in a dotted band.
+---
+period (14 x 5):
+.*.***.***.*.*
+*.***.H.***.*.
+*.**.H.H.**.*.
+*.***.H.***.*.
+.*.***.***.*.*
+
+two repeats (plus the closing column):
+.*.***.***.*.*.*.***.***.*.*.
+*.***.H.***.*.*.***.H.***.*.*
+*.**.H.H.**.*.*.**.H.H.**.*.*
+*.***.H.***.*.*.***.H.***.*.*
+.*.***.***.*.*.*.***.***.*.*.

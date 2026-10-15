@@ -1,0 +1,28 @@
+title: Running-S (running Z) band: slanted Z links chained along the bottom border
+section: Narrow bands
+source: Sampler and darning sampler with red embroidery ("Merklap en stoplap met rood borduurwerk"), Tryntje de Gra, Dutch, c. 1895; Rijksmuseum BK-1974-26, public domain (CC0)
+short-source: Tryntje de Gra sampler (Rijksmuseum BK-1974-26)
+page: bottom border, the band above the zigzag; it runs from x about 1340 (its left end joins the left-side battlement) to x about 5300, rows y4880-5110; reference crop x1300-3000 y4840-5160 of the full Commons image (6844 x 6119)
+url: https://www.rijksmuseum.nl/en/collection/BK-1974-26
+image: https://commons.wikimedia.org/wiki/File:Merklap_en_stoplap_met_rood_borduurwerk.,_BK-1974-26.jpg
+size: period 8 cells x 5 rows
+symmetry: no mirror; each Z (cols 0-4) is rot180-symmetric and the band is rot180-symmetric about the centre of any Z (sym.py on the uncentred 8-cell period window reports none); translation by 8
+colours: # = red cross stitch, . = linen ground
+use: ring band (a 5-row running scroll; reads as a chain of slanted S/Z links)
+status: VERIFIED
+verified: lattice fitted to the weave in 900-px windows (the open linen drifts), red channel, two tiled periods per window: x1300-2200 75/75 in frame, x2100-3000 78/80, x2900-3800 80/80, x3700-4600 69/70: 302 of 305 cells agree; the 3 mismatches are spill from the top bar into the row below (values just over the threshold). Overlay montage: images/tryntje-running-s-band_ver.jpg
+notes: Each unit is a Z: a 5-cell top bar, a diagonal down to the left and a 5-cell bottom bar under the top bar; a second diagonal climbs from the end of the bottom bar to the start of the next top bar, so the line never breaks. All lines are one stitch wide and the diagonals are single stitches corner to corner. On the open weave a few diagonals are not exact 45-degree steps (near x2580-2800 the bottom bar sits about half a stitch right of the top bar); the chart is the cell reading. At its left end the band grows out of the left-side battlement: the battlement's last bar (bottom-left corner, about x1150-1380 y5080-5110) runs on as the first bottom bar, and the first link diagonal climbs from its end (the fabric there is distorted and the diagonal stitches sit on half-cell steps, so that corner is not charted).
+---
+period (8 x 5):
+#####...
+...#...#
+..#...#.
+.#...#..
+#####...
+
+three repeats:
+#####...#####...#####...
+...#...#...#...#...#...#
+..#...#...#...#...#...#.
+.#...#...#...#...#...#..
+#####...#####...#####...

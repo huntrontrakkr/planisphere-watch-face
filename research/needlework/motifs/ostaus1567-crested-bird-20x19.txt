@@ -1,0 +1,34 @@
+title: Crested bird facing right, long tail down-left (hoopoe?)
+section: Creatures
+source: Giovanni Ostaus, La Vera Perfettione del Disegno di varie sorti di recami, Venice 1567; The Met 21.15.3(1-79), Public Domain
+short-source: Ostaus 1567 fol. LXIX (Met DP362017)
+page: image DP362017 (folio LXIX), middle band, first bird; x370-736 y769-1120 of the full scan
+url: https://www.metmuseum.org/art/collection/search/354909
+image: https://images.metmuseum.org/CRDImages/dp/original/DP362017.jpg
+size: 20 x 19 cells
+symmetry: none (faces right)
+colours: # = filled cell (cut as a grey-hatched cell in the woodcut), . = white cell
+use: creature (a crested bird; larger than the others)
+status: VERIFIED
+verified: two reads on the white-cell lattice: darkness at each site (Otsu) 380/380, blob reader 379/380 (one false hit outside the bird, row 11 col 3). Looked at the overlay: images/ostaus1567-crested-bird-20x19_ver.jpg
+notes: A small crest on the head, a white eye, the body with white wing lines, legs as dotted diagonals, a long stepped tail to the lower left.
+---
+...............##...
+..............#.##..
+.............#####..
+................###.
+................###.
+..............#####.
+............####.###
+...........#########
+..........###.######
+.........####.#####.
+.........##..#####..
+........#..######...
+.....###.#######....
+......#####..##.....
+.....####.#..#......
+....####..#..#......
+...####...#..#.#....
+.#####....#.#.#.....
+##.##....#.#...#....

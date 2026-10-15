@@ -1,0 +1,32 @@
+title: Running curl (wave-scroll) band, 7 rows, period 7 (red cross stitch)
+section: Narrow bands
+source: Sampler signed "Maria Hancock", England, 19th century; red cotton cross stitch on cotton, 30.5 x 26.1 cm; The Cleveland Museum of Art 1943.113, Gift of George W. Bierce; CC0 (Open Access, share_license_status CC0)
+short-source: Maria Hancock sampler (CMA 1943.113)
+page: bottom of the band field, middle: the row of eight curls over the three crosses; crop x1600-2245 y4315-4425 of the full image (1943.113_full.tif, 4050 x 4773)
+url: https://clevelandart.org/art/1943.113
+image: https://openaccess-cdn.clevelandart.org/1943.113/1943.113_full.tif
+size: period 7 x 7 rows (8 curls stitched)
+symmetry: none (a running scroll: each curl rolls the same way; mirror left-right to run the other way)
+colours: # = red cross stitch, . = cream cotton ground
+use: ring band (a 7-row running wave with a short 7-cell period: reads at 1x as a chain of rolling curls under a heavy top line)
+status: VERIFIED
+verified: weave lattice on the red channel, fitted per window because the pitch drifts along the band (10.55-10.7 px): curls 1-3 (21 x 7 tiled chart, x1600-1850) 147/147 cells agree; curls 4-8 (35 x 7, x1830-2245) 245/245, and the same 245/245 with the window moved 10 px either way. One lattice over the whole band gave 385/392, the 7 misses all at threshold (0.40-0.49) in curls 1-3 where that single lattice has drifted a third of a cell. Overlay (both windows): images/cma-1943-113-curl-band_ver.jpg
+notes: Each curl is a 7 x 7 roll: a heavy 2-row top line (4 then 6 stitches) that runs down the right side into the next curl, and below it an open ring of single stitches with a one-stitch inner hook, so the band reads as a breaking wave or a row of C-scrolls joined at the top. The band begins and ends with a full curl; the reader also finds one more stitch column after the last curl in rows 3-4 (a closing stub, not charted). One of the two shortest-period bands in the library.
+---
+period (7 x 7):
+.####..
+######.
+#...###
+..#.###
+.#.#..#
+.#...#.
+..###..
+
+three repeats:
+.####...####...####..
+######.######.######.
+#...####...####...###
+..#.###..#.###..#.###
+.#.#..#.#.#..#.#.#..#
+.#...#..#...#..#...#.
+..###....###....###..

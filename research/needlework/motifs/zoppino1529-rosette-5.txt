@@ -1,0 +1,20 @@
+title: Tiny rosette (four paired petals round a centre cell: a 5x5 flower or star)
+section: Stars and sky
+source: Nicolo Zoppino, Esemplario di lavori, Venice, August 1529; The Met 21.98(1-36), Public Domain
+short-source: Zoppino 1529 pl. XI (Met DP364477)
+page: image DP364477 (plate XI), fifth band from the top (a double zigzag, 14 rows, with one of these rosettes in each triangle); the first rosette, x753-875 y1244-1366 of the full scan
+url: https://www.metmuseum.org/art/collection/search/349352
+image: https://images.metmuseum.org/CRDImages/dp/original/DP364477.jpg
+size: 5 x 5 cells (13 cells filled)
+symmetry: full square symmetry (mirror left-right, top-bottom, both diagonals, rot90)
+colours: # = black cell of the woodcut (worked), . = white cell
+use: star (the smallest star glyph: faint stars, or a sprinkle on the star window) / season (a blossom: powdering for spring) / spot motif between larger pieces
+status: VERIFIED
+verified: five repeats in the band (three in the downward triangles, two in the upward ones), each read with two readers on the white-cell lattice (white-cell blobs; darkness at each site, Otsu): 25/25 in all five, ten reads in all. Looked at the overlays of all five; images/zoppino1529-rosette-5_ver.jpg is the first
+notes: Four L-shaped pairs of cells (petals) round a single centre cell with white diagonals between them, so it reads as a four-petalled flower or a small twinkling star. At 5 cells it is the most compact motif in the library: it holds its shape at 1x and doubles cleanly to 10x10.
+---
+.#.#.
+##.##
+..#..
+##.##
+.#.#.

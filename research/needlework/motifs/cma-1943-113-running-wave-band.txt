@@ -1,0 +1,34 @@
+title: Running wave scroll (Vitruvian scroll, "running dog"), 8 rows, period 9 (red cross stitch)
+section: Narrow bands
+source: Sampler signed "Maria Hancock", England, 19th century; red cotton cross stitch on cotton, 30.5 x 26.1 cm; The Cleveland Museum of Art 1943.113, Gift of George W. Bierce; CC0 (Open Access, share_license_status CC0)
+short-source: Maria Hancock sampler (CMA 1943.113)
+page: lower band field, third row, left: seven waves over the herringbone spray; crop x890-1720 y3840-3975 of the full image (1943.113_full.tif, 4050 x 4773)
+url: https://clevelandart.org/art/1943.113
+image: https://openaccess-cdn.clevelandart.org/1943.113/1943.113_full.tif
+size: period 9 x 8 rows (7 waves stitched)
+symmetry: none exactly (the S-scroll is nearly rot180-symmetric, the top and bottom curls differ only in their inner hooks); translation only
+colours: # = red cross stitch, . = cream cotton ground
+use: ring band (the classic running wave scroll at 8 rows and a 9-cell period; at 1x a chain of rolling S-curls, very legible)
+status: VERIFIED
+verified: weave lattice on the red channel fitted per two-wave window (pitch 10.7-11.1 px; one lattice over the band drifts to 94%): the 2-period chart (18 x 8) in five windows: x975 144/144, x1080 143/144, x1170 144/144, x1270 144/144, x1365 144/144. The one miss (x1080 window, 0-based row 1 col 0, value 0.53-0.57) is a stray half-stitch at the foot of the down-stroke into the second wave's top-left corner, empty in every other wave. The first window (x890) and the last (x1460) hold the band's lead-in and run-out, not full waves (see notes). Overlays (windows x975, x1170, x1365): images/cma-1943-113-running-wave-band_ver.jpg
+notes: Each wave is a top curl (a 4-cell cap, a 6-cell shoulder, a hooked inner bar) whose stroke runs down the left side and round into the bottom curl (a 6-cell then 4-cell base) and up the right side into the next wave. The band starts with a short lead-in (the bottom of a curl, about 5 x 2 cells) and ends after the 7th wave without its last down-stroke. A crisper, smaller relative of the Greek key (cma-1943-113-greek-key-band, 7 rows) and of the curl band (cma-1943-113-curl-band, 7 rows) on the same sampler.
+---
+period (9 x 8):
+..####...
+.######..
+##...##..
+#..####.#
+#.#.##..#
+..#....##
+..######.
+...####..
+
+three repeats:
+..####.....####.....####...
+.######...######...######..
+##...##..##...##..##...##..
+#..####.##..####.##..####.#
+#.#.##..##.#.##..##.#.##..#
+..#....##..#....##..#....##
+..######...######...######.
+...####.....####.....####..

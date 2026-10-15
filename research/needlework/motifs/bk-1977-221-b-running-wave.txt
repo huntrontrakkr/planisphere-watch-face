@@ -1,0 +1,30 @@
+title: Running wave (Vitruvian scroll) band, one-stitch line, 6 rows
+section: Narrow bands
+source: Sampler, blue cotton cross stitch on cotton ("Merklap van blauwe katoen op katoen"), Dutch, dated 1921; Rijksmuseum BK-1977-221-B, public domain (CC0; Commons licence checked: CC0)
+short-source: Dutch blue sampler 1921 (Rijksmuseum BK-1977-221-B)
+page: lower left, the band of six spirals left of the "1921" cartouche; crop x1050-2300 y2820-3060 of the full Commons image (5552 x 4368)
+url: https://www.rijksmuseum.nl/en/collection/BK-1977-221-B
+image: https://commons.wikimedia.org/wiki/File:Merklap_van_blauwe_katoen_op_katoen,_BK-1977-221-B.jpg
+size: period 7 cells x 6 rows
+symmetry: none within a unit (the scroll runs one way, clockwise curls); translation by 7. Mirror the chart for a band running the other way
+colours: # = dark blue cross stitch, . = ground (on the face: ink or red on cream)
+use: ring band (the classic running-wave filigree: very light, one cell wide, 6 rows)
+status: VERIFIED
+verified: lattice fitted to the weave (pitch 25.0 x 23.0 px: the cotton weave is not square), dark channel (the blue reads more evenly on darkness than on blue saturation); 5 tiled periods overlaid on units 2-6: 209/210 cells agree (images/bk-1977-221-b-running-wave_ver.jpg); the one extra inked cell is the arm of a neighbouring stitch spilling into a gap (value 0.52)
+notes: One continuous line: from the lower left it climbs to a 3-cell top bar, turns down the right side and curls in to the centre, then leaves the centre down the left side to a 3-cell bottom bar and climbs diagonally to the next top bar. The units share nothing but the climbing diagonal, so the band reads as a row of breaking waves or spirals; the first unit on the sampler starts with a closed hook and the last ends in a tail. At 6 rows it is one of the lightest bands in the library.
+---
+period (7 x 6):
+.###...
+#...#..
+..#.#.#
+.#.#..#
+.#...#.
+..###..
+
+three repeats:
+.###....###....###...
+#...#..#...#..#...#..
+..#.#.#..#.#.#..#.#.#
+.#.#..#.#.#..#.#.#..#
+.#...#..#...#..#...#.
+..###....###....###..

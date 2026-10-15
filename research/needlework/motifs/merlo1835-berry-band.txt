@@ -1,0 +1,59 @@
+title: Berry band: clusters of three dark berries (violet rims, white and blue highlights) between curling green fronds (Berlin work, six colours)
+section: Narrow bands
+source: Emma Merlo, Neueste Portefeuille für Freundinnen weiblicher Kunst-Arbeiten: eine Auswahl von Guirlanden, allerlei Blumen, Kränzen, Bouquets, Fruchtkörben, Schmetterlingen, Kanten, Arabesken u.s.w. zum künstlichen Stricken, Häkeln, zur Tapisserie- und Mosaik-Arbeit, Pirna/Leipzig: Carl August Friese, c. 1835 (catalogued [183-?]); hand-coloured printed charts ("bei Friese in Leipzig"); Getty Research Institute copy, archive.org neuesteportefeui00merl; public domain (published in the 1830s; no rights statement on the item)
+short-source: Merlo c.1835, plate Ww (archive.org neuesteportefeui00merl n22)
+page: leaf n22 (plate "Ww"): the lower right band; crop x1590-2660 y1350-1720 of the 3004 x 2294 page image (cell pitch 15.7 x 15.6 px; the grid is turned about half a degree here)
+url: https://archive.org/details/neuesteportefeui00merl
+image: https://archive.org/download/neuesteportefeui00merl/page/n22.jpg
+size: period 20 cells x 17 rows (one berry: 4 x 5)
+symmetry: the fronds and stalks are mirror top-bottom; the berries are not (every berry has its white and blue highlights at the lower left, as if lit from one side), so the chart has no exact symmetry (sym.py: none); translation only
+colours: v = violet (painted RGB about 100,87,104, the rims; light and dark washes of the same paint), k = black (about 5,5,8; some with a faint blue cast), b = blue (about 70,125,160, one reflection cell per berry), l = light green (about 158,173,98; washes from about 110 to 170 in brightness with no pattern between repeats: one green), g = dark green (about 15,24,16), . = paper (about 246,247,227; a white highlight cell inside each berry is left as paper). Face palette: v violet, k ink, b window blue, l light green, g dark green
+use: season (autumn: the berry alone, 4 x 5, or the three-berry cluster) / ring band (17 rows: a wide band; the fronds alone make a 7-row leaf band)
+status: VERIFIED
+verified: grid-paper reader (g4lib cell centres), median colour per cell classified to eight references (paper, a grey class for stains, light green and a dull light green merged into it, blue, violet, dark green, black), very dark cells sorted by hue (green excess with G >= B -> dark green, else black); the period from the majority of the three full units, tiled over the drawn band (64 x 17 cells: 3 units and the 4th unit's single left berry, which closes the band) matches 1080/1088 cells. The 8 others: 4 frond tips at the band's start (they belong to a frond of a unit before the first, which is not drawn); 1 extra dark green cell at a frond tip (unit 2); 1 faint grey stain (163,162,157); 1 berry rim cell painted olive (134,138,106) in unit 1; 1 light green leaf cell painted dark green in unit 3. Overlay (left half above, right half below): images/merlo1835-berry-band_ver.jpg
+notes: Each unit: three berries in a triangle (one at the left on the band's axis, one above and one below to the right), joined by light green stalks to a short dark green stem, then a pair of mirror-image fronds curling up and down (dark green midribs, light green leaflets). The berries are drawn like little lit spheres: violet rim, black body, a white cell and a blue cell for the highlight. The berry alone reads well at 1x as a dark fruit; the cluster suits an autumn spot, and the fronds a wreath. A cell beyond the drawn band (a 1-cell leaf stub after the last berry) is not charted.
+---
+period (20 x 17):
+ll.............l.lll
+.....vv.....l.lllgg.
+....vkkv...llllgg...
+....v.kv...lllgggg..
+....vbkvl..llgg.....
+.....vvvl..lgggg..ll
+.vvl....l..lg....ll.
+vkkvl....gll..ggll..
+v.kvlllgg...gg..gll.
+vbkvl....gll..ggll..
+.vvl....l..lg....ll.
+.....vvll..lgggg..ll
+....vkkvl..llgg.....
+....v.kv...lllgggg..
+....vbkv...llllgg...
+.....vv.....l.lllgg.
+ll.............l.lll
+
+three repeats:
+ll.............l.lllll.............l.lllll.............l.lll
+.....vv.....l.lllgg......vv.....l.lllgg......vv.....l.lllgg.
+....vkkv...llllgg.......vkkv...llllgg.......vkkv...llllgg...
+....v.kv...lllgggg......v.kv...lllgggg......v.kv...lllgggg..
+....vbkvl..llgg.........vbkvl..llgg.........vbkvl..llgg.....
+.....vvvl..lgggg..ll.....vvvl..lgggg..ll.....vvvl..lgggg..ll
+.vvl....l..lg....ll..vvl....l..lg....ll..vvl....l..lg....ll.
+vkkvl....gll..ggll..vkkvl....gll..ggll..vkkvl....gll..ggll..
+v.kvlllgg...gg..gll.v.kvlllgg...gg..gll.v.kvlllgg...gg..gll.
+vbkvl....gll..ggll..vbkvl....gll..ggll..vbkvl....gll..ggll..
+.vvl....l..lg....ll..vvl....l..lg....ll..vvl....l..lg....ll.
+.....vvll..lgggg..ll.....vvll..lgggg..ll.....vvll..lgggg..ll
+....vkkvl..llgg.........vkkvl..llgg.........vkkvl..llgg.....
+....v.kv...lllgggg......v.kv...lllgggg......v.kv...lllgggg..
+....vbkv...llllgg.......vbkv...llllgg.......vbkv...llllgg...
+.....vv.....l.lllgg......vv.....l.lllgg......vv.....l.lllgg.
+ll.............l.lllll.............l.lllll.............l.lll
+
+one berry (4 x 5; period rows 7-11, columns 1-4, without its stalk cells):
+.vv.
+vkkv
+v.kv
+vbkv
+.vv.

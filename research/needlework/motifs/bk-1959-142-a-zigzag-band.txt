@@ -1,0 +1,34 @@
+title: Zigzag under a straight line (border band), 8 rows, period 10
+section: Narrow bands
+source: A.C. van Duuren, sampler, coloured silk on cotton muslin, probably Amsterdam, c. 1800-1820; Rijksmuseum BK-1959-142-A, public domain (CC0; Commons licence checked: CC0)
+short-source: A.C. van Duuren sampler c. 1810 (Rijksmuseum BK-1959-142-A)
+page: the outer border on the left side, where it runs vertically (a straight line on the outside, a zigzag inside it); two repeats read in x1000-1230 y3040-3500 of the full Commons image (6879 x 6106)
+url: https://www.rijksmuseum.nl/en/collection/BK-1959-142-A
+image: https://commons.wikimedia.org/wiki/File:Merklap_van_gekleurde_zijde_op_katoenen_mousseline.,_BK-1959-142-A.jpg
+size: period 10 x 8 rows
+symmetry: each V is mirror-symmetric about its points (the period as cut starts at a top point)
+colours: # = dark green silk cross stitch, . = ground
+use: ring band (a fine single-line zigzag hanging from a rule: the classic sampler border, 8 rows)
+status: VERIFIED
+verified: lattice fitted on the vertical strip (pitch 22.0 x 20.4 px), notcream channel: two consecutive repeats (as stitched: 9 x 20 including the margin column) agree 180/180 cells (images/bk-1959-142-a-zigzag-band_ver.jpg, vertical). Further down the same border the photograph drifts by a column over 40 rows, and the third repeat has doubled cells at the points; those were not used. The chart here is the stitched one turned 90 degrees (the sampler's outer edge at the top)
+notes: On the sampler the band runs up the left side (and down the right) as a dark green line with a zigzag inside it, the zigzag 6 cells deep and turning every 5 rows; inside it, rows of small crosses and the alphabets. Turned for a ring: row 1 is the rule, row 2 a gap, rows 3-8 the zigzag. Very legible at 1x; for a lighter band drop the rule.
+---
+period (10 x 8):
+##########
+..........
+#.........
+.#.......#
+..#.....#.
+...#...#..
+....#.#...
+.....#....
+
+three repeats:
+##############################
+..............................
+#.........#.........#.........
+.#.......#.#.......#.#.......#
+..#.....#...#.....#...#.....#.
+...#...#.....#...#.....#...#..
+....#.#.......#.#.......#.#...
+.....#.........#.........#....

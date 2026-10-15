@@ -1,0 +1,36 @@
+title: Running Greek key (meander), 9 rows
+section: Narrow bands
+source: A.M. Luns, sampler, wool and silk cross stitch, Brussels, c. 1870-1880; Rijksmuseum BK-1968-11 (gift of Mrs A.M. Luns, 1968), public domain (CC0; Commons licence checked: CC0)
+short-source: A.M. Luns sampler c. 1875 (Rijksmuseum BK-1968-11)
+page: bottom border: the meander along the foot of the sampler (about 16 repeats, starting from a corner block at the left); crop x1010-1650 y5302-5567 of the full Commons image (6444 x 6117) = the first two repeats right of the corner block
+url: https://www.rijksmuseum.nl/en/collection/BK-1968-11
+image: https://commons.wikimedia.org/wiki/File:Merklap_met_veelkleurig_wol_en_zijde_borduurwerk.,_BK-1968-11.jpg
+size: period 11 x 9 rows
+symmetry: none (a running meander: every unit is the same hook, translated; mirror left-right to run the other way)
+colours: # = dark red (maroon) wool cross stitch, . = ground
+use: ring band (a 9-row running key: lines and gaps one cell each, a crisp fret at 1x)
+status: VERIFIED
+verified: lattice fitted to the stitches (pitch about 23.6 x 22.7 px), notcream channel. Two repeats (22 x 9) against the first two units: 196/198 cells agree; the 2 others are wool fluff spilling onto gap cells (images/bk-1968-11-greek-key-band_ver.jpg). The same 22 x 9 chart on a stretch further right (x3610-4250, y5343-5608): 193/198, the 5 others again fluff on gap cells (overlay looked at); four other stretches give 185-190/198 (counts only; the canvas is uneven and the band drifts 50 px down across the sampler)
+notes: Each unit is a hook: the line climbs the left upright (col 1), runs along the top, comes down the right side and spirals in (rows 3-7) and back out down col 3 to the foot, where it runs on under the 1-column gap into the next unit's upright: one continuous line. The foot row has a single gap (col 2) where the upright and the returning line stand side by side. At the far left the band turns up into a corner block (an L-shaped frame with a ladder of dashes holding a four-petal cross). Wool on coarse canvas, so the gaps look narrower than the lines in the photo; as charted, lines and gaps are each one cell.
+---
+period (11 x 9):
+##########.
+#........#.
+#.######.#.
+#.#....#.#.
+#.#.####.#.
+#.#.#....#.
+#.#.######.
+#.#........
+#.#########
+
+three repeats:
+##########.##########.##########.
+#........#.#........#.#........#.
+#.######.#.#.######.#.#.######.#.
+#.#....#.#.#.#....#.#.#.#....#.#.
+#.#.####.#.#.#.####.#.#.#.####.#.
+#.#.#....#.#.#.#....#.#.#.#....#.
+#.#.######.#.#.######.#.#.######.
+#.#........#.#........#.#........
+#.##########.##########.#########

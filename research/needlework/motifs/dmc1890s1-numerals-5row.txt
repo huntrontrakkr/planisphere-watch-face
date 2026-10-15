@@ -1,0 +1,104 @@
+title: Figures 1234567890 in 5 rows (tiny sampler figures, single crosses)
+section: Alphabets and numerals
+source: Thérèse de Dillmont, Album de broderies au point de croix, Ire Série, Planche No 32 "Page des enfants" (30 small subjects, nos. 245-274), the alphabet strip at the foot; Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie, 1890 (catalogue date); Smithsonian Libraries copy, archive.org item albumdebroderies01dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album I 1890, Pl. 32 Page des enfants (archive.org albumdebroderies01dill)
+page: archive.org albumdebroderies01dill page n70 (Planche No 32), the second alphabet strip at the bottom ("S T U V X Y Z . 1 2 3 4 5 6 7 8 9 0 ."): the figures; crop x1270-2460 y3510-3745 of the full page image (3008 x 4063), the figures between the two rules
+url: https://archive.org/details/albumdebroderies01dill
+image: https://archive.org/download/albumdebroderies01dill/page/n70.jpg
+size: 5 rows; 1 is 3 wide, the others 4 wide; the line 48 x 5 cells (one empty column between figures)
+symmetry: 1, 8 and 0 mirror left-right; 0 and 8 also top-bottom; the others none
+colours: # = cross stitch (one colour), . = canvas ground
+use: numerals (the smallest legible set: 5 rows, one-cell strokes; hour figures on a narrow ring or dates)
+status: VERIFIED
+verified: printed chart (cross symbols on a fine printed canvas grid); stitch lattice fitted to the symbols (pitch 20.88 x 20.73 px); a cell counts as inked when at least 15% of its inner area is very dark (/tmp/nw/printed/bin/vverify.py); the strip overlaid with its two rules (56 x 11 cells: the figures, a full stop, a small ornament): 616/616 cells agree (images/dmc1890s1-numerals-5row_ver.jpg, the line cut in two and stacked)
+notes: A children's sampler alphabet: figures 5 rows tall, every stroke one cell, curves made of single diagonal steps. The 1 is an I with forked serifs top and bottom (as in the 1596 album figures); the 2 has a flat 4-cell foot; the 3 a one-cell waist; the 4 is open with a 4-cell bar and a forked foot; the 5 and 6 begin with a flag at the top right; the 7 has a hooked bar; the 9 ends in a two-cell tail at the lower left. On the plate a full stop follows the 0, then a small 4 x 5 ornament (a stepped cross: #.#. / .### / ##.# / .### / #.#.) and further letters.
+---
+the line (48 x 5):
+#.#..##...##...##....##...##..###..##...##...##.
+.#..#..#.#..#.#.#...#....#...#..#.#..#.#..#.#..#
+.#....#....#..####...##.#.#....#...##...#.#.#..#
+.#...#...#..#...#..#..#.#..#..#...#..#...#..#..#
+#.#.####..##...#.#..##...##..#.....##..##....##.
+
+1 (3 wide):
+#.#
+.#.
+.#.
+.#.
+#.#
+
+2 (4 wide):
+.##.
+#..#
+..#.
+.#..
+####
+
+3 (4 wide):
+.##.
+#..#
+..#.
+#..#
+.##.
+
+4 (4 wide):
+.##.
+#.#.
+####
+..#.
+.#.#
+
+5 (4 wide):
+..##
+.#..
+..##
+#..#
+.##.
+
+6 (4 wide):
+..##
+.#..
+#.#.
+#..#
+.##.
+
+7 (4 wide):
+.###
+#..#
+..#.
+.#..
+#...
+
+8 (4 wide):
+.##.
+#..#
+.##.
+#..#
+.##.
+
+9 (4 wide):
+.##.
+#..#
+.#.#
+..#.
+##..
+
+0 (4 wide):
+.##.
+#..#
+#..#
+#..#
+.##.
+
+as printed between the rules (56 x 11, with the full stop and the ornament):
+........................................................
+########################################################
+........................................................
+.#.#..##...##...##....##...##..###..##...##...##....#.#.
+..#..#..#.#..#.#.#...#....#...#..#.#..#.#..#.#..#....###
+..#....#....#..####...##.#.#....#...##...#.#.#..#...##.#
+..#...#...#..#...#..#..#.#..#..#...#..#...#..#..#....###
+.#.#.####..##...#.#..##...##..#.....##..##....##..#.#.#.
+........................................................
+########################################################
+........................................................

@@ -1,0 +1,46 @@
+title: Bracket band: pairs of blue brackets with black corner blocks, red crosses between, dotted orange rules (four colours)
+section: Narrow bands
+source: Manuscript album of designs for lace and embroidery, German, c. 1596 (woodcut grid paper, designs inked and painted by hand); The Met 53.566.7(1-69), Public Domain
+short-source: German album c.1596 (Met DP356737)
+page: image DP356737, third motif from the top (under the coloured star); crop x1440-2300 y2060-2390 of the full scan
+url: https://www.metmuseum.org/art/collection/search/368249
+image: https://images.metmuseum.org/CRDImages/dp/original/DP356737.jpg
+size: period 10 cells x 14 rows (10 rows between the dotted rules)
+symmetry: mirror left-right (about the gap between the brackets and about the red cross) and top-bottom
+colours: o = orange, k = black ink, b = pale blue, r = red, . = paper. Face palette: o gold, k ink, b window blue, r red
+use: ring band (a wide, rich band; rows 1-2 alone, orange over orange-and-black dots, are a 2-row beaded rule)
+status: VERIFIED
+verified: grid-paper reader for the cell centres, median colour per cell classified to five reference colours; the period tiled over the drawn band (38 x 14) matches 518/532 cells. The 14 others: 11 cells of the orange rules painted darker (RGB about 150,105,60, read as red; they are orange, not the red of the crosses at 160,80,75), 2 cells at the band's cut left end (the first cross is drawn without its middle), 1 orange drip below a bracket. Overlay: images/album1596-bracket-cross-band_ver.jpg
+notes: Each bracket pair is ] [ in blue (single-cell lines) with a black L-shaped block tucked into each inner corner; between pairs, a red cross: a 3-cell bar at top and bottom and a 3x2 block in the middle. Bold and heraldic; at 14 rows it suits a wide card border more than the narrow ring.
+---
+period (10 x 14):
+oooooooooo
+okokokokok
+.......rrr
+bbb.bbb...
+k.b.b.k...
+kkbkbkk...
+..b.b..rrr
+..b.b..rrr
+kkbkbkk...
+k.b.b.k...
+bbb.bbb...
+.......rrr
+okokokokok
+oooooooooo
+
+three repeats:
+oooooooooooooooooooooooooooooo
+okokokokokokokokokokokokokokok
+.......rrr.......rrr.......rrr
+bbb.bbb...bbb.bbb...bbb.bbb...
+k.b.b.k...k.b.b.k...k.b.b.k...
+kkbkbkk...kkbkbkk...kkbkbkk...
+..b.b..rrr..b.b..rrr..b.b..rrr
+..b.b..rrr..b.b..rrr..b.b..rrr
+kkbkbkk...kkbkbkk...kkbkbkk...
+k.b.b.k...k.b.b.k...k.b.b.k...
+bbb.bbb...bbb.bbb...bbb.bbb...
+.......rrr.......rrr.......rrr
+okokokokokokokokokokokokokokok
+oooooooooooooooooooooooooooooo

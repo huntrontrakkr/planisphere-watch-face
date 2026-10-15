@@ -1,0 +1,28 @@
+title: Bunch of grapes (eight berries), blue cross stitch
+section: Seasons and plants
+source: Sampler, Germany, 18th century, silk embroidery on linen, 23.5 x 8.3 cm; Cooper Hewitt, Smithsonian Design Museum 1981-28-286 (object 18616709), Bequest of Gertrude M. Oppenheimer; image via Wikimedia Commons "Sampler (Germany), 18th century (CH 18616709).jpg", public domain
+short-source: German sampler, 18th c. (Cooper Hewitt 1981-28-286)
+page: third panel, the vine in the middle: two bunches hang from the stem under a large flower; crop x395-720 y1592-1760 of the full CH image (1106 x 3000); left bunch x395-560, right bunch x565-720
+url: https://collection.cooperhewitt.org/objects/18616709/
+image: https://images.collection.cooperhewitt.org/41132_9599915f565ef19b_x.jpg
+size: 11 x 13 cells
+symmetry: mirror left-right
+colours: # = dark blue (slate) cross stitch, . = linen ground
+use: season (autumn / vintage: grapes for September-October on the ring or a corner)
+status: VERIFIED
+verified: lattice fitted to the stitches (blue channel, pitch about 11.2 x 10.8 px): right bunch 143/143 cells agree; left bunch 142/143 (one difference: the stitcher filled the hole between the first two berries of the middle row, chart row 5, column 4 counting from 1, which is ground in the right bunch and in the chart); images/ch-18616709-grape-bunch_ver.jpg (left and right overlays)
+notes: The canonical counted grape bunch: eight round berries in rows of 2, 3, 2 and 1, each berry a 3 x 2 block with a single cell above and below, so neighbouring berries touch only at their tips and a ground cell is left between them (the holes read as the highlights between the grapes). The two bunches on the sampler hang from tendrilled green stalks on either side of a central vine stem. At 1x it reads at once as grapes; for a smaller bunch drop the top row of berries.
+---
+...#...#...
+..###.###..
+..###.###..
+.#.#.#.#.#.
+###.###.###
+###.###.###
+.#.#.#.#.#.
+..###.###..
+..###.###..
+...#.#.#...
+....###....
+....###....
+.....#.....

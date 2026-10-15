@@ -1,0 +1,23 @@
+title: Small dog (or cat) with a white collar, tail curled up (Maria Lalor, New York, 1793)
+section: Creatures
+source: Maria Lalor, sampler ("Maria Lalor Her sampler New York March 3 1793"), American, silk embroidery on linen; The Met 1993.100, Gift of Elizabeth M. Riley, 1993; Public Domain (Open Access, CC0)
+short-source: Maria Lalor 1793 (Met 1993.100, DP363125)
+page: image DP363125, the line "March 3 [dog] 1793", between the 3 and the 1793; crop x1520-1830 y1960-2150 (full scan 3178 x 3861)
+url: https://www.metmuseum.org/art/collection/search/13472
+image: https://images.metmuseum.org/CRDImages/ad/original/DP363125.jpg
+size: 12 x 8 cells
+symmetry: none (faces left)
+colours: K = black silk, W = white silk (collar and face), . = linen ground (cross stitch over 2x2 threads)
+use: creature (a farm or village dog for the horizon; a stop between date figures, as on the sampler)
+status: VERIFIED
+verified: lattice from the linen weave (phase demodulation, /tmp/nw/metsamplers/phaselat.py, about 9 px per thread, stitches over 2 threads); black read on darkness (threshold 0.5): 140/140 cells of the chart with a 1-cell empty margin agree; white read on a whiteness channel (light and unsaturated, threshold 0.6) on the same lattice: 140/140 agree. Checked by eye on 4x and 8x zooms and on the overlays (images/met-1993-100-dog_ver.jpg: left black, right white). Caveat: the head and collar are worked one thread lower than the body's grid (half a stitch), so the snout (a horizontal stroke in the original) falls between rows and reads as the diagonal pair K at row 2 col 1 and row 3 col 0; the collar's lower row (two W) is a half-covered row (whiteness 0.6).
+notes: A long, low black dog (or cat) with pricked ears, a white bib/collar, four legs and a tail curling up and back over the rump; the sampler has a second, similar animal after the lowercase alphabet (not charted: its frame is crowded by letters and the border). Legible at 1x as a silhouette; for one ink drop the W cells (or make them ground) and it still reads.
+---
+..K.........
+.KWK.....KK.
+K.WWW......K
+...WW......K
+..KKKKKKKKK.
+...KKKKKKKK.
+..K.KKKKKKK.
+.K.K.....K.K

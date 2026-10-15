@@ -1,0 +1,36 @@
+title: Open lozenges on broken rules (two tones), 9 rows
+section: Narrow bands
+source: Thérèse de Dillmont, Album de broderies au point de croix, Ire Série, Planche No 3 (narrow borders 13-57); Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie, 1890 (catalogue date); Smithsonian Libraries copy, archive.org item albumdebroderies01dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album I 1890, Pl. 3 no. 26 (archive.org albumdebroderies01dill)
+page: archive.org albumdebroderies01dill page n12 (Planche No 3), item 26, left column; crop x318-1082 y3042-3283 of the full page image (3008 x 4063)
+url: https://archive.org/details/albumdebroderies01dill
+image: https://archive.org/download/albumdebroderies01dill/page/n12.jpg
+size: period 12 cells x 9 rows
+symmetry: mirror left-right (axes at columns 0 and 6 of the period), mirror top-bottom, rot180 (bandsym.py)
+colours: D = dark cross symbol (the lozenge outlines), L = light (hatched) cross symbol (the rule pieces and the inner lattice), . = canvas ground
+use: ring band (9 rows: a row of open diamonds with a saltire inside, on broken rules; the lozenge alone is a 9 x 9 spot motif)
+status: VERIFIED
+verified: printed chart (cross symbols on a fine printed canvas grid); stitch lattice fitted to the symbols (pitch about 20.8 px); a cell counts as inked when at least 30% of its inner area is very dark (/tmp/nw/printed/bin/bandauto.py + vverify.py); the 12-cell period tiled over the whole band (36 x 9): 324/324 cells agree (images/dmc1890s1-lozenge-chain-band_ver.jpg). Tones: two groups (0.50-0.70 and 0.73-0.86); split at 0.72 the tiled letters agree in 317/324 cells, the 7 others light cells reading 0.72-0.78; the first unit checked by eye on a 4x zoom, every cell's tone as in the period
+notes: Each unit is a lozenge 9 cells wide and 9 tall outlined by a continuous diagonal line of dark single crosses (touching corner to corner), with a light saltire (an X of 5 cells) at its centre; its top and bottom points sit in gaps of the rule lines, which are broken into light 5-cell pieces, each piece joined to the neighbouring lozenges' sides by one light diagonal cell. At 1x a row of open diamonds on a broken line; the lozenge alone (columns 2-10 of the period) is a 9 x 9 diamond spot motif.
+---
+period (12 x 9):
+LLL...D...LL
+...L.D.D.L..
+....D...D...
+...D.L.L.D..
+..D...L...D.
+...D.L.L.D..
+....D...D...
+...L.D.D.L..
+LLL...D...LL
+
+three repeats:
+LLL...D...LLLLL...D...LLLLL...D...LL
+...L.D.D.L.....L.D.D.L.....L.D.D.L..
+....D...D.......D...D.......D...D...
+...D.L.L.D.....D.L.L.D.....D.L.L.D..
+..D...L...D...D...L...D...D...L...D.
+...D.L.L.D.....D.L.L.D.....D.L.L.D..
+....D...D.......D...D.......D...D...
+...L.D.D.L.....L.D.D.L.....L.D.D.L..
+LLL...D...LLLLL...D...LLLLL...D...LL

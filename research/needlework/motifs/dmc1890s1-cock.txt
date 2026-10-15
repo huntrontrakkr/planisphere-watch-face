@@ -1,0 +1,40 @@
+title: Cock with a lacy curled tail (comb and wattles in a second colour), 27 x 25
+section: Creatures
+source: Thérèse de Dillmont, Album de broderies au point de croix, Ire Série, Planche No 32 "Page des enfants" (30 small subjects, nos. 245-274); Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie, 1890 (catalogue date); Smithsonian Libraries copy, archive.org item albumdebroderies01dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album I 1890, Pl. 32 Page des enfants (archive.org albumdebroderies01dill)
+page: archive.org albumdebroderies01dill page n70 (Planche No 32), second row, left: the cock; crop x300-900 y1110-1700 of the full page image (3008 x 4063)
+url: https://archive.org/details/albumdebroderies01dill
+image: https://archive.org/download/albumdebroderies01dill/page/n70.jpg
+size: 27 x 25 cells
+symmetry: none (faces right)
+colours: D = dark-shaded cross (the bird), L = light-shaded cross (comb, wattles, and a band of light stitches under the belly), . = canvas ground (the eye is an empty cell)
+use: creature (a cock: morning, or a weathercock on the village steeple; larger than the 15-cell ideal, so for a corner or a 2x reference)
+status: VERIFIED
+verified: printed chart (cross symbols on a fine printed canvas grid); stitch lattice fitted to the symbols (pitch 20.85 x 20.82 px); a cell counts as inked when at least 15% of its inner area is very dark (/tmp/nw/printed/bin/vverify.py); chart overlaid: 675/675 cells agree; tones: 244/244 lettered cells match (L 0.22-0.33, D 0.39-0.69) (images/dmc1890s1-cock_ver.jpg)
+notes: A cock facing right with a three-pointed comb of light crosses on top, an empty cell for the eye, a light wattle hanging at the throat, a solid breast and body, and a tail drawn as an open lace of curls (single and paired cells winding back on themselves, with holes) sweeping up behind; legs of single cells, three-toed feet. A light row under the belly marks the fluff above the legs. At 1x it reads as a sampler cock; for a weathercock silhouette fill the tail's holes.
+---
+.................L.L.......
+................LLLL.L.L...
+................LLLLLLL....
+.................LL.DDDD...
+...................DDDDD...
+.......DD.........DDD.DDLL.
+...DD....D........DDDDDDDDD
+.DD..DD..D........DDDDDDL..
+DD.DD..D.D.........DDDDLLL.
+DD...DD.D.D........DDDDDLL.
+...DD.DD.DD........DDDDDL..
+..DD.DD.DDDD......DDDDDDDD.
+..DD..DDDDD..DD.DDDDDDDDDD.
+...DD...DDDDDDDDDDDDDDDDDD.
+.......DDDDDDDDDDDDDDDDDD..
+........DDDDDDDDDDDDDDDDD..
+.........DDDDDDDDDDDDDDD...
+..........DDDDDDDDDDDDD....
+............D.DDDDDDDD.....
+...............LLLLLD......
+................D....D.....
+................D.....D....
+................D......D...
+...............D.D.D..D.D.D
+..................D......D.

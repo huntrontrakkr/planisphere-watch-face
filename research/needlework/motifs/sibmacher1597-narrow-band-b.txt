@@ -1,0 +1,30 @@
+title: Framed squares and T-crosses (three-colour narrow band)
+section: Narrow bands
+source: Johann Sibmacher, Schön Neues Modelbuch, Nuremberg 1597; The Met 20.16(1-43), Public Domain
+short-source: Sibmacher 1597 p.25 (Met DP363498)
+page: image DP363498 (page 25), left column, second band; crop x300-760 y320-470
+url: https://www.metmuseum.org/art/collection/search/357195
+image: https://images.metmuseum.org/CRDImages/dp/original/DP363498.jpg
+size: period 5 cells x 6 rows
+symmetry: mirror left-right (about the T-cross column and about the square's centre) and top-bottom
+colours: * = four-point-star symbol, H = vertically hatched cell, x = diagonal-cross symbol (the 2x2 centre of each framed square), . = ground
+use: ring band
+status: VERIFIED
+verified: lattice fitted to the etched grid lines; 4 tiled periods overlaid: 104/120 cells agree on ink, and the 16 others are the thin x symbols (too little ink for the threshold), confirmed by eye on the overlay (images/sibmacher1597-narrow-band-b_ver.jpg)
+notes: Each square is a 2x2 centre framed by hatched cells, with the corners left open; T-crosses of stars point in from top and bottom between the squares. Binary version: ###.. / .#.## / #.### / #.### / .#.## / ###..
+---
+period (5 x 6):
+***..
+.*.HH
+H.Hxx
+H.Hxx
+.*.HH
+***..
+
+three repeats:
+***..***..***..
+.*.HH.*.HH.*.HH
+H.HxxH.HxxH.Hxx
+H.HxxH.HxxH.Hxx
+.*.HH.*.HH.*.HH
+***..***..***..

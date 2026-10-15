@@ -1,0 +1,35 @@
+title: Diagonal stroke band (slanting single-cell strokes, a twill)
+section: Narrow bands
+source: Peter Quentel, Eyn New Kunstlichboich, Cologne 1529; The Met 20.50.2(1-49), Public Domain
+short-source: Quentel 1529 (Met DP361383)
+page: image DP361383, second band from the top (the narrow band under the big zigzag band), between two solid rules; crop x470-1100 y570-700; read from x470-1720 y586-684 at pitch 15.5
+url: https://www.metmuseum.org/art/collection/search/354657
+image: https://images.metmuseum.org/CRDImages/dp/original/DP361383.jpg
+size: period 5 cells x 4 rows (on the page: a solid rule above, the 4 rows, one white row and a solid rule below)
+symmetry: none (a diagonal: each row is the one above shifted one cell right); rotated 180 it is the same band
+colours: # = black cell, . = white cell
+use: ring band (a cord or twill edge: at 1x a row of slanting dashes; mirror it for the opposite edge)
+status: VERIFIED
+verified: 15 tiled periods (75 x 4) overlaid on the band: darkness at the white-cell-lattice sites (g3check.py) 300/300 agree; white-cell lattice reader (nwtool verify --g3) 299/300, the one difference a merged double white cell. The period holds across all 80 columns of the band. Overlay: images/quentel1529-diagonal-stroke-band_ver.jpg
+notes: The simplest of the page's bands: four-cell diagonal strokes, one column apart. Two copies, one mirrored, make a herringbone. With the page's rules (a black row above, a white row and a black row below) it is a 7-row band.
+---
+period (5 x 4):
+.#...
+..#..
+...#.
+....#
+
+three repeats:
+.#....#....#...
+..#....#....#..
+...#....#....#.
+....#....#....#
+
+as printed, with the rules (7 rows):
+###############
+.#....#....#...
+..#....#....#..
+...#....#....#.
+....#....#....#
+...............
+###############

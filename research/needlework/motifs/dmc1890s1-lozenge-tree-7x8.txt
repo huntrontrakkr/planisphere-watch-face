@@ -1,0 +1,23 @@
+title: Little tree with a lozenge crown, 7 x 8 (chequered crown, trunk, base)
+section: Village
+source: Thérèse de Dillmont, Album de broderies au point de croix, Ire Série, Planche No 32 "Page des enfants" (30 small subjects, nos. 245-274); Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie, 1890 (catalogue date); Smithsonian Libraries copy, archive.org item albumdebroderies01dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album I 1890, Pl. 32 Page des enfants (archive.org albumdebroderies01dill)
+page: archive.org albumdebroderies01dill page n70 (Planche No 32), right side, second row: the little tree between two small animals; crop x2060-2770 y1100-1310 of the full page image (3008 x 4063) (the same crop as dmc1890s1-small-dog)
+url: https://archive.org/details/albumdebroderies01dill
+image: https://archive.org/download/albumdebroderies01dill/page/n70.jpg
+size: 7 x 8 cells
+symmetry: mirror left-right (sym.py)
+colours: # = light-shaded cross (one colour), . = canvas ground
+use: village (the smallest tree: a lozenge crown of 12 single cells in chequer on a 3-cell trunk and a 5-cell base; a row of them makes an avenue or an orchard at 1x)
+status: VERIFIED
+verified: read with the group it stands in (dmc1890s1-small-dog): lattice pitch 20.94 x 20.64 px, very-dark rule; the group overlaid 248/248 cells agree, the tree's 20 cells all confirmed (images/dmc1890s1-lozenge-tree-7x8_ver.jpg, a copy of that overlay)
+notes: The crown is a diamond of single crosses on alternate cells (2, 3, 4, 3 cells in rows 1-4), so at 1x it reads as a dotted, airy crown; the trunk is one cell wide, 3 rows, on a 5-cell ground line. Compare quentel1529-tree-15 (a 15-cell tree of life) for a larger tree.
+---
+..#.#..
+.#.#.#.
+#.#.#.#
+.#.#.#.
+...#...
+...#...
+...#...
+.#####.

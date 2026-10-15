@@ -1,0 +1,25 @@
+title: Broken lozenge with centre block (the fleuron after Z)
+section: Corners and spot motifs
+source: Peter Quentel, Eyn New Kunstlichboich, Cologne 1529; The Met 20.50.2(1-49), Public Domain
+short-source: Quentel 1529 (Met DP361407)
+page: image DP361407 (alphabet page, printed folio 51), last line, the small motif right of Z; crop x1400-1640 y1920-2160
+url: https://www.metmuseum.org/art/collection/search/354657
+image: https://images.metmuseum.org/CRDImages/dp/original/DP361407.jpg
+size: 10 x 10 cells
+symmetry: full square symmetry (both mirrors, both diagonals, quarter turn)
+colours: # = black cell, . = white cell
+use: corner / star (a small four-armed sparkle; a stop or separator between words on the ring)
+status: VERIFIED
+verified: overlay on the scan (lattice from the white cells): 100/100 cells agree; images/quentel1529-lozenge-10_ver.jpg
+notes: A printer's ornament used as a full stop after the alphabet. Four chevrons round a 2x2 centre. At 1x reads as a sparkle or a compass rose; the 2x2 centre can be red.
+---
+...#..#...
+.###..###.
+.###..###.
+###....###
+....##....
+....##....
+###....###
+.###..###.
+.###..###.
+...#..#...

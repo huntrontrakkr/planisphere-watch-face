@@ -1,0 +1,113 @@
+title: Figures 1234567890, red cross stitch, 7 rows (Dutch sampler, c. 1895)
+section: Alphabets and numerals
+source: Sampler and darning sampler with red embroidery ("Merklap en stoplap met rood borduurwerk"), Tryntje de Gra, Dutch, c. 1895; Rijksmuseum BK-1974-26, public domain (CC0)
+short-source: Tryntje de Gra sampler (Rijksmuseum BK-1974-26)
+page: third line of the alphabet block, "YZ.1234567890."; crop x2075-4440 y2250-2680 of the full Commons image (6844 x 6119); digits at about x2117 (1) to x4365 (0), rows y2300-2610
+url: https://www.rijksmuseum.nl/en/collection/BK-1974-26
+image: https://commons.wikimedia.org/wiki/File:Merklap_en_stoplap_met_rood_borduurwerk.,_BK-1974-26.jpg
+size: 7 rows; 1 is 3 wide, 4 and 7 are 6 wide, the rest 4 wide; the line 1234567890 is 52 x 7 (one empty column between digits)
+symmetry: 1, 8 and 0 mirror left-right and top-bottom; the others none (the 6 and 9 are not rotations of each other)
+colours: # = red cross stitch, . = linen ground
+use: numerals (ring hours, dates; a 7-row figure set that sits on one baseline)
+status: VERIFIED
+verified: lattice fitted to the weave per digit (red channel; the open linen is uneven, the pitch drifts from 41 to 45 px along the line, so each digit and each window got its own lattice). Every digit 100% (1: 21/21, 2: 28/28, 3: 28/28, 4: 42/42, 5: 28/28, 6: 28/28, 7: 42/42, 8: 28/28, 9: 28/28, 0: 28/28); the line checked in overlapping windows, which fixes the spacing: 123 91/91, 345 112/112, 567 112/112, 78 77/77, 890 98/98 (images/tryntje-numerals_ver.jpg shows the five windows)
+notes: Late-19th-century school-sampler figures, all on one 7-row baseline, single-cell strokes. The 1 is an I with forked serifs top and bottom; the 5 has a flag above the right end of its bar and a dipped bowl; the 7 has a short left drop from the bar and a long diagonal to the lower left; the 4 is open at the top and its crossbar passes the stem with a one-cell gap (the stem cell is empty, the bar resumes one cell to the right), as stitched. A full stop follows the 0 on the sampler. One row of stitches (the field rule) runs two rows under the figures. For a tighter face set, the album1596 figures are 6 rows.
+---
+1 (3 wide):
+#.#
+.#.
+.#.
+.#.
+.#.
+.#.
+#.#
+
+2 (4 wide):
+.##.
+#..#
+#..#
+...#
+..#.
+.#..
+####
+
+3 (4 wide):
+.##.
+#..#
+#..#
+..#.
+...#
+#..#
+.##.
+
+4 (6 wide):
+....#.
+...##.
+..#.#.
+.#..#.
+####.#
+....#.
+....#.
+
+5 (4 wide):
+...#
+####
+#...
+#.#.
+.#.#
+...#
+###.
+
+6 (4 wide):
+.##.
+#..#
+#...
+###.
+#..#
+#..#
+.##.
+
+7 (6 wide):
+.#####
+.#...#
+....#.
+...#..
+..#...
+.#....
+#.....
+
+8 (4 wide):
+.##.
+#..#
+#..#
+.##.
+#..#
+#..#
+.##.
+
+9 (4 wide):
+.##.
+#..#
+#..#
+#.##
+.#.#
+...#
+.##.
+
+0 (4 wide):
+.##.
+#..#
+#..#
+#..#
+#..#
+#..#
+.##.
+
+as a line, 1234567890 (one empty column between digits, as stitched):
+#.#..##...##......#.....#..##...#####..##...##...##.
+.#..#..#.#..#....##..####.#..#..#...#.#..#.#..#.#..#
+.#..#..#.#..#...#.#..#....#........#..#..#.#..#.#..#
+.#.....#...#...#..#..#.#..###.....#....##..#.##.#..#
+.#....#.....#.####.#..#.#.#..#...#....#..#..#.#.#..#
+.#...#...#..#.....#.....#.#..#..#.....#..#....#.#..#
+#.#.####..##......#..###...##..#.......##...##...##.

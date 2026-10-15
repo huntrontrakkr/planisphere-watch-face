@@ -1,0 +1,34 @@
+title: Small dog with a raised tail (one of a pair facing a little tree), 10 x 8
+section: Creatures
+source: Thérèse de Dillmont, Album de broderies au point de croix, Ire Série, Planche No 32 "Page des enfants" (30 small subjects, nos. 245-274); Mulhouse-Belfort-Paris: Dollfus-Mieg & Cie, 1890 (catalogue date); Smithsonian Libraries copy, archive.org item albumdebroderies01dill; public domain (published 1890; Dillmont died 1890)
+short-source: DMC Album I 1890, Pl. 32 Page des enfants (archive.org albumdebroderies01dill)
+page: archive.org albumdebroderies01dill page n70 (Planche No 32), right side, second row: two small animals facing a little tree; crop x2060-2770 y1100-1310 of the full page image (3008 x 4063)
+url: https://archive.org/details/albumdebroderies01dill
+image: https://archive.org/download/albumdebroderies01dill/page/n70.jpg
+size: one animal 10 x 8 cells (the group 31 x 8: animal, tree, mirrored animal)
+symmetry: the animal none (it faces right); the group mirror left-right about the tree trunk (sym.py)
+colours: D = dark-shaded cross (the animal), L = light-shaded cross (two head cells, the throat, and the tree), . = canvas ground
+use: creature (a tiny dog for the village; at 1x a 10 x 8 silhouette with a pricked ear, raised tail and four legs; a mirrored pair flanks a tree)
+status: VERIFIED
+verified: printed chart (cross symbols on a fine printed canvas grid); stitch lattice fitted to the symbols (pitch 20.94 x 20.64 px); a cell counts as inked when at least 15% of its inner area is very dark (/tmp/nw/printed/bin/vverify.py); the whole group overlaid (31 x 8): 248/248 cells agree; tones: 84/84 lettered cells match (D >= 0.5, L 0.27-0.45) (images/dmc1890s1-small-dog_ver.jpg). The right-hand animal is the left one mirrored cell for cell (tones included)
+notes: A small quadruped in profile: a head of 3 x 3 with a one-cell pricked ear on top, a light eye cell and a light nose cell, a light throat of two cells, a 7 x 2 body, legs drawn as single cells stepping out (front and hind legs apart), and a tail of two diagonal cells raised behind. Read as a little dog (a spitz with its tail up); it could also pass for a lamb. The plate leaves it unnamed among its 30 "petits sujets". The tree between the pair is dmc1890s1-lozenge-tree-7x8.
+---
+animal facing right (10 x 8):
+.......D..
+......DLDL
+.D....DDD.
+D.....LL..
+.DDDDDDD..
+.DDDDDDD..
+..D...D...
+.D.D.D.D..
+
+the group as printed (31 x 8): animal, tree, mirrored animal:
+.......D......L.L......D.......
+......DLDL...L.L.L...LDLD......
+.D....DDD...L.L.L.L...DDD....D.
+D.....LL.....L.L.L.....LL.....D
+.DDDDDDD.......L.......DDDDDDD.
+.DDDDDDD.......L.......DDDDDDD.
+..D...D........L........D...D..
+.D.D.D.D.....LLLLL.....D.D.D.D.

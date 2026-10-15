@@ -1,0 +1,38 @@
+title: Running wave band (chain of slanted hollow links leaving a white wave)
+section: Narrow bands
+source: Bernhard Jobin, Neu kuenstlich Modelbuch, Strasbourg 1598; The Met 53.566.1(1-47), Public Domain
+short-source: Jobin 1598 (Met DP364181)
+page: image DP364181 (signature B3), the narrow band between the upper picture (two hinds flanking a vase) and the lower band; band rows x230-2760 y890-1075 of the full scan (verified over 10 repeats); library crop x230-1330 y860-1100
+url: https://www.metmuseum.org/art/collection/search/352224
+image: https://images.metmuseum.org/CRDImages/dp/original/DP364181.jpg
+size: period 14 cells x 10 rows (6-row pattern between two solid rows above and below)
+symmetry: half-turn (rot180) symmetric with a 1-cell shift, no mirror (the links lean one way); the 1600 reissue of the page is DP363409 in Jobin's New Kuenstlichs Modelbuch
+colours: # = black cell of the woodcut (worked), . = white cell (ground). In the woodcut the band is mostly black, so it reads as a white wave on ink
+use: ring band (an 8-row band if the solid rows are cut to one each: a white running wave on the deep blue or ink)
+status: VERIFIED
+verified: read with the white-cell lattice reader (g3) over the whole band: period 14 holds in all 11 repeats; 10 tiled periods overlaid: 1398/1400 cells agree; the darkness-at-site reading (g3check, Otsu) gives the same 1398/1400. The 2 mismatches are the same cell (row 7, 12th column of the period) in two repeats, where the woodcutter left a narrow or closed white cell; the other 8 repeats have it white. Overlay of 4 repeats (559/560): images/jobin1598-wave-band_ver.jpg. Cross-check on the 1600 reissue (Met 352225, DP363409, x314-1355 y915-1140): the same chart over 4 repeats agrees 558/560 (darkness) and 555/560 (blobs)
+notes: Each black link is a slanted parallelogram outline (an 8-cell bar on top and bottom, one-cell diagonal sides) enclosing a 6x2 white slot; the links stand side by side with white between them, so the white reads as a continuous breaking wave (or running dog). At 1x on the face the 6-row core with one solid row each side is a clean, dense filigree band.
+---
+period (14 x 10):
+##############
+##############
+........######
+.....########.
+....#......#..
+...#......#...
+..########....
+.######.......
+##############
+##############
+
+three repeats:
+##########################################
+##########################################
+........######........######........######
+.....########......########......########.
+....#......#......#......#......#......#..
+...#......#......#......#......#......#...
+..########......########......########....
+.######........######........######.......
+##########################################
+##########################################
