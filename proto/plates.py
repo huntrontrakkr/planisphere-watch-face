@@ -489,26 +489,6 @@ def real_range(dial, edge_, sky, most=2.0, room=12.0, least=3.0):
         return None
     return {dx: int(round(v * mag)) for dx, v in true.items()}
 
-def shoulder_spot(dial, inside, inner, below, fleur_box):
-    """Where the season's pieces go: the point of the cream between the window and the ring with most room round
-    it, below the almanac's lines and clear of the rules, the window's rims and its ornaments, on the left (the
-    right is its mirror). (x, y, room in pixels); the same at every hour, so kept."""
-    key = (int(below), fleur_box)
-    cache = dial.__dict__.setdefault("_shoulders", {})
-    if key not in cache:
-        H, W = inner.shape
-        free = inner & ~grow(~inner, 4) & ~grow(inside, 6)
-        free[: int(below)] = False
-        x0, y0, x1, y1 = fleur_box
-        free[max(0, y0 - 3): y1 + 3, max(0, x0 - 3): x1 + 3] = False
-        room = clear_distance(~free, most=16)
-        left = room.copy()
-        left[:, int(dial.cx) - 2:] = 0
-        j, i = np.unravel_index(np.argmax(left), left.shape)
-        cache[key] = (int(i), int(j), int(left[j, i]))
-    return cache[key]
-
-
 _WIDEST = {}
 
 
@@ -1269,18 +1249,29 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         for j, i in zip(*np.nonzero(m)):
             if 0 <= y0_ + j < H and 0 <= x0_ + i < W:
                 img[y0_ + j, x0_ + i] = P["ink"]
-        # a printer's flower either side, as a title is set off: each midway between the ring and the widest the time
-        # can be, so they stay put as the minutes change
+        # the flowers either side, as a title is set off: charted needlework from the library, changing on the hour
+        # (half the hours the season's, or the snow's, half a piece for any time, the Moon among them at night), each
+        # midway between the ring and the widest the time can be, so they stay put as the minutes change; where the
+        # hour's piece will not fit (the Round 2 is narrow there), the next of the cycle that will
         widest = widest_time(P.get("figures", "modern"), "time2" if rect else "round2", clock24)
-        fl_ = sprites.QUENTEL_FLOWER
         yc_ = int(round(cy_))
-        row_ = np.nonzero(inner[yc_ - fl_.shape[0] // 2: yc_ + fl_.shape[0] // 2 + 1].all(axis=0))[0]
-        if len(row_) and widest:
-            room_l = (dial.cx - widest / 2 - 2) - (row_.min() + 2)
-            if room_l >= fl_.shape[1] + 2:
-                for sgn in (-1, 1):
-                    fx = dial.cx + sgn * (dial.cx - (row_.min() + 2) + widest / 2 + 2) / 2
-                    sprites.paint(img, fl_, fx - 0.5, cy_ - 0.5, {2: P["accent"]})
+        snow_now = wsky is not None and (wsky.snow_lying or wsky.frost)
+        for name in sprites.flank_pieces(season, local.toordinal() * 24 + local.hour, s_eff < -6, snow_now):
+            a_ = sprites.needlework(name)
+            h_, w_ = a_.shape
+            rows_ = np.nonzero(inner[yc_ - h_ // 2: yc_ + h_ // 2 + 1].all(axis=0))[0]
+            if not len(rows_) or not widest:
+                break
+            lo_, hi_ = rows_.min() + 2, dial.cx - widest / 2 - 2
+            if hi_ - lo_ < w_ + 2:
+                continue
+            x0_ = int(round((lo_ + hi_) / 2 - (w_ - 1) / 2))
+            y0_ = int(round(cy_ - (h_ - 1) / 2))
+            for xs_, art_ in ((x0_, a_), (W - x0_ - w_, a_[:, ::-1])):
+                for j, i in zip(*np.nonzero(art_)):
+                    if 0 <= y0_ + j < H and 0 <= xs_ + i < W:
+                        img[y0_ + j, xs_ + i] = P["accent"]
+            break
     else:
         ink(img, astro_time(str(hour(local.hour)), f"{local.minute:02d}", fn, big, fw, feats=("onum",)), dial.cx,
             ring_in + span * rows_at[0], P["ink"])
@@ -1312,21 +1303,6 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     if fits:
         stamp(img, fits[0], dial.cx, ring_in + span * rows_at[2], P["accent"])
 
-    # the season's pieces, charted needlework stitch for stitch, a pair in the cream between the window and the
-    # ring, one each side, mirrored, worked in the card's own quiet tone (the hatching's) so they sit back like
-    # whitework: the season's emblem, or an ice crystal in snow or frost
-    piece = sprites.season_piece(season, snow=wsky is not None and wsky.snow_lying,
-                                 frost=wsky is not None and wsky.frost)
-    art_ = sprites.needlework(piece)
-    sx_, sy_, sroom = shoulder_spot(dial, inside, inner, ring_in + span * rows_at[2] + 7,
-                                    (fx0, fy0, fx0 + fl.shape[1], fy0 + fl.shape[0]))
-    if max(art_.shape) / 2 + 1 <= sroom:
-        for side, a_ in ((-1, art_), (1, art_[:, ::-1])):
-            cx_ = sx_ if side < 0 else W - 1 - sx_
-            x0_, y0_ = int(round(cx_ - (a_.shape[1] - 1) / 2)), int(round(sy_ - (a_.shape[0] - 1) / 2))
-            for j, i in zip(*np.nonzero(a_)):
-                if 0 <= y0_ + j < H and 0 <= x0_ + i < W:
-                    img[y0_ + j, x0_ + i] = tint_of(P)
     if round_screen:
         img[np.hypot(xx + 0.5 - dial.cx, yy + 0.5 - dial.cy) > W / 2] = 0
     return nearest(img)

@@ -121,13 +121,7 @@ The village keeps the year, as an almanac's cuts of the months do. The season co
 - The trees come into blossom in April, stand in full leaf through the summer, turn gold in October and stand bare through the winter. The firs stay green.
 - The house's windows are lit of an evening.
 - The Time 2's corner sprigs follow the season.
-- In the cream between the window and the ring, one each side where there is most room, stands a pair of the season's pieces. They are charted needlework, copied stitch for stitch from the pattern books and samplers in `research/needlework/`, and worked in the card's own quiet tone so they sit back:
-  - spring: Quentel's blossom rosette (Cologne, 1529);
-  - summer: a tree in leaf from Vosterman's book (Antwerp, c. 1527);
-  - September: a bunch of grapes from an 18th-century German sampler;
-  - October and November: an acorn from Dillmont's DMC album (1890);
-  - winter: a fir from Quentel's band of firs (1544);
-  - in snow or frost, whatever the season: the ice crystal from the *Petit nécessaire des jeunes demoiselles* (Paris, 1819).
+- The flowers beside the time keep the season too (below).
 
 ![The year at eleven in the morning: blossom in April, leaf in July, gold in October, snow in January; below, the village up close: blossom, high summer, autumn leaves, frost and snow; a frosty evening with chimney smoke and lit windows, fog, a summer gale, a snowy night](docs/seasons.png)
 
@@ -139,7 +133,10 @@ And the filigree, all drawn by hand:
 - studs on the inner rule at the numbered hours;
 - a star at the south point, clasping the window's two rules, to go with the fleur-de-lis at the north and the lozenges east and west;
 - a sprig turning into each of the Time 2's corners, in the season's dress;
-- a printer's flower either side of the time, as a title is set off: the small broken lozenge from Peter Quentel's pattern book (*Eyn New Kunstlich Boich*, Cologne, 1529), stitch for stitch. Charted needlework is the period's own pixel art. Each flower stands midway between the ring and the widest the time can be, so it stays put as the minutes change;
+- a printer's flower either side of the time, as a title is set off, changing on the hour. The flowers are charted needlework, the period's own pixel art, copied stitch for stitch from the pattern books and samplers in `research/needlework/`.
+  - Half the hours bring a piece for the season: a rosette, tulip, lily or buds in spring; a strawberry in summer; grapes, an acorn or an oak leaf in autumn; a fir or snowflakes in winter. In snow or frost it is an ice crystal or a snowflake.
+  - The other hours bring a piece for any time of year: Quentel's broken lozenge (Cologne, 1529), stars from an Italian sampler of 1802, a chequered lozenge, a ship's globe, a quatrefoil, small birds, an anchor, a little tree. After dark the man in the Moon joins them, from Dillmont's DMC album.
+  - Each flower stands midway between the ring and the widest the time can be, so it stays put as the minutes change. Where the hour's piece will not fit (the Round 2 is narrow there), the next of the cycle that will takes its place;
 - a face on the full Moon, as the almanacs give it.
 
 ![At the Orionids' peak, at an eclipse of the Moon, at an eclipse of the Sun, and as Venus meets Jupiter; below, Jupiter's moons, the village by day, and the glory on Flamsteed's plate](docs/almanac.png)
@@ -237,7 +234,7 @@ The pieces are drawn by hand, pixel by pixel, not generated from shapes. Each is
   - the fleur-de-lis standing on the window at the north, the lozenges and the south star;
   - the studs;
   - the corner sprigs through the year;
-  - Quentel's flowers beside the time;
+  - the hour's flowers beside the time;
   - the engraved glory;
   - the village on the horizon.
 - **The distant hills** are drawn as straight ridges between hand-placed points: a long ridge rising to a summit on either side, with the steeple against the sky between.
