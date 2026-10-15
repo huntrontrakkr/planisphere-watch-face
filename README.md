@@ -15,8 +15,10 @@ The variations: each frame another plate, clock, place, sky and the labours or n
 
 ![The variations](docs/gallery-variations.gif)
 
-Anywhere: the window is cut for the latitude, from the tropics to the Arctic and the far south (on the Round 2 it
-shrinks nearer the poles than 56 degrees, keeping the almanac's room).
+Anywhere: the window is cut for the latitude, from the equator to either pole. The Time 2 keeps one scale and moves
+its pole; the Round 2, its pole at the centre of its round ring of hours, has one star disc for every place, fitted to
+a 40-degree window as the commonest planispheres are: nearer the equator the ring's edge hides the farthest sky, as a
+star disc's edge does, and nearer a pole the card covers the window's top, where the almanac keeps its room.
 
 ![The sky anywhere](docs/gallery-anywhere.gif)
 

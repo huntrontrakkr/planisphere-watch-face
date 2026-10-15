@@ -114,6 +114,7 @@ typedef struct {
   bool rect;                   /* the Time 2's cushion ring, else the Round 2's circle */
   float lat_key;               /* the latitude the window was worked out for */
   float cx, cy, k, r_disc, R;
+  float ceiling;               /* the window's top, at most, above the pole (the Round 2's almanac keeps its room) */
   int16_t wx0[MAX_H], wx1[MAX_H];      /* the window's span in each row (wx0 > wx1: none) */
   int16_t win_top, win_bottom;
   /* the ring for the latitude: the hours' rays leave the pole, which on the Time 2 moves with it */

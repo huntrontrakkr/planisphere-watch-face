@@ -200,16 +200,18 @@ class RectDial(Dial):
 
 class RoundDial(Dial):
     """The Round 2's layout: the ring round the screen's edge, the window inside it, clear of its inner rule
-    by the window's own two rims. The scale grows with the latitude, the window's southern edge on the ring's, until
-    CAP degrees; nearer a pole it is held there and the window shrinks instead, toward a round one about the pole,
-    so it never rises into the almanac above it (its type keeps the room it has at CAP)."""
-    CAP = 56.0
+    by the window's own two rims. One scale for every place, as one planisphere's star disc: the disc fits a FIT
+    degrees window to the ring (the commonest planisphere's), so nearer the equator the ring's edge hides the farthest
+    sky, as a star disc's edge does, and nearer a pole than about 63 degrees the card hides the window's top, where
+    the almanac keeps its room. North and south alike: the chart turns to whichever pole is up."""
+    FIT = 40.0                  # the latitude whose whole window the disc fits to the ring
+    ROOM = 56.0 / 124.0         # the window's top above the pole, at most, as a part of the disc's radius
 
     def __init__(self, w, h, lat, lon):
         super().__init__(w, h, lat, lon)
-        r = self.R - ring_params(self)["in"] - 6
-        self.k = r / max(self.reach, (180 - self.CAP) * abs(lat) / self.CAP)
-        self.r_disc = self.reach * self.k
+        self.r_disc = self.R - ring_params(self)["in"] - 6
+        self.k = self.r_disc / (180 - self.FIT)
+        self.ceiling = self.r_disc * self.ROOM
 
 
 def ring_params(dial):
@@ -437,7 +439,8 @@ def window_mask(dial, SS=4):
         rho = np.hypot(dx, dy)
         dec = (90 - rho / dial.k) * astro.D2R
         sin_alt = np.sin(lat) * np.sin(dec) + np.cos(lat) * np.cos(dec) * np.cos(np.arctan2(dx, dy))
-        win = ((sin_alt > 0) & (rho <= dial.r_disc)).astype(np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3))
+        win = ((sin_alt > 0) & (rho <= dial.r_disc) & (dy >= -getattr(dial, "ceiling", np.inf)))
+        win = win.astype(np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3))
         dial._window = win > 0.5
     return dial._window
 

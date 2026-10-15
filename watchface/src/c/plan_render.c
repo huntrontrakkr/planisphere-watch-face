@@ -348,7 +348,7 @@ static int window_cover(const Plan *p, int x, int y, float sl, float cl) {
     for (int i = 0; i < 4; i++) {
       float dx = (4 * x + i + 0.5f) / 4 - p->cx, dy = (4 * y + j + 0.5f) / 4 - p->cy;
       float rho = f_sqrt(dx * dx + dy * dy);
-      if (rho > p->r_disc) continue;
+      if (rho > p->r_disc || dy < -p->ceiling) continue;
       float dec = 90.0f - rho / p->k;
       float ch = rho > 0 ? dy / rho : 1.0f;
       if (sl * f_sind(dec) + cl * f_cosd(dec) * ch > 0) n++;
@@ -429,7 +429,8 @@ void plan_init(Plan *p, int w, int h, const uint8_t *data, const uint8_t *geom) 
   p->feast_day = -1, p->show_hour = -1;
 }
 
-#define WINDOW_CAP 56.0f                  /* the Round 2's window shrinks nearer the poles than this (see below) */
+#define WINDOW_FIT 40.0f                  /* the Round 2's star disc fits this latitude's whole window to the ring */
+#define WINDOW_ROOM (56.0f / 124.0f)       /* and its window rises at most this part of the disc above the pole */
 void plan_window(Plan *p, float lat) {
   if (p->lat_key == lat) return;
   p->lat_key = lat;
@@ -443,15 +444,17 @@ void plan_window(Plan *p, float lat) {
     p->cx = W / 2.0f, p->cy = (float)(top + alat * p->k);
     p->r_disc = (float)(reach * p->k);
     p->R = (W < H ? W : H) / 2.0f;
+    p->ceiling = 1e9f;
   } else {
-    /* the scale grows with the latitude, the window's southern edge on the ring's, until WINDOW_CAP degrees; nearer a
-     * pole it is held and the window shrinks instead, toward a round one about the pole, so it never rises into the
-     * almanac (proto/plates.py RoundDial) */
+    /* one scale for every place, as one planisphere's star disc: the disc fits WINDOW_FIT degrees' whole window to
+     * the ring (the commonest planisphere's), so nearer the equator the ring's edge hides the farthest sky, as a star
+     * disc's edge does, and nearer a pole than about 63 degrees the card hides the window's top, where the almanac
+     * keeps its room; north and south alike (proto/plates.py RoundDial) */
     p->R = (W < H ? W : H) / 2.0f;
     p->cx = W / 2.0f, p->cy = H / 2.0f;
-    float far = (180.0f - WINDOW_CAP) * alat / WINDOW_CAP;
-    p->k = (p->R - 18.0f - 6.0f) / (reach > far ? reach : far);
-    p->r_disc = reach * p->k;
+    p->r_disc = p->R - 18.0f - 6.0f;
+    p->k = p->r_disc / (180.0f - WINDOW_FIT);
+    p->ceiling = p->r_disc * WINDOW_ROOM;
   }
   float sl = f_sind((float)alat), cl = f_cosd((float)alat);
   p->win_top = -1, p->win_bottom = -1;

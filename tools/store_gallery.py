@@ -5,7 +5,8 @@ as the store expects (docs/screenshots/store), and the same reels for the README
   1  a day: the planisphere over New York from noon to noon, twenty minutes a frame
   2  the almanac's days: feasts of the twelve calendars, each on its own plate, with the labours of the months
   3  the variations: the options together, each frame another plate, clock, names, labours, place and sky
-  4  anywhere: the place moving north to the Arctic and back, then south, the window cut again for each latitude
+  4  anywhere: the place moving from the equator to the north pole and back, then to the south pole, the window
+     cut again for each latitude
   5  the weather: fair, cirrus, cloudy, overcast, rain, snow, fog, frost, a gale, thunder
   6  a fireworks display at the top of an evening hour, as the watch plays it: Independence Day in New York
   7  the ten plates at half past nine in the evening
@@ -144,10 +145,11 @@ def main():
                                 for plate, when, place, off in FEASTS], 2000)
         reels["variations", p] = ([frame(p, plate, when, place, off, city=city, **opts)
                                    for plate, when, place, off, city, opts in VARIATIONS], 1800)
-        # anywhere: north from 10 degrees to 68 and back, then south to 56; held a little at the ends
+        # anywhere: from the equator north to the pole and back, then south to the pole and back, held a little at
+        # the turns
         night = datetime(2026, 10, 15, 22, 0, tzinfo=timezone.utc)
-        lats = list(range(10, 69, 2)) + [68] * 6 + list(range(66, 9, -2)) + [10] * 4
-        lats += list(range(-10, -57, -2)) + [-56] * 6 + list(range(-54, -9, 2)) + [-10] * 4
+        lats = [0] * 4 + list(range(2, 89, 2)) + [88] * 6 + list(range(86, -1, -2)) + [0] * 4
+        lats += list(range(-2, -89, -2)) + [-88] * 6 + list(range(-86, 1, 2))
         reels["anywhere", p] = ([frame(p, "planisphere", night, (lat, 0.0), 0) for lat in lats], 110)
         dusk = local(2026, 10, 15, 18, 40, -240)
         reels["weather", p] = ([frame(p, "planisphere", dusk, NY, -240, weather=w) for w in
