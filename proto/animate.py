@@ -2,12 +2,10 @@
 
   meteors      now and then at night a falling star; at a shower's peak, many, streaking out from its radiant
   birds        now and then by day a little flock crossing the sky, wings beating
-  the village  the hour and the season's passers-by: swallows on summer mornings, a bat at dusk, the owl on
-               the church roof by night (fireflies on summer nights), leaves and geese in autumn
-  the weather  rain and snow falling, the clouds drifting downwind, the mill's sails turning, chimney smoke
-  the village  the hour and the season's passers-by: swallows on summer mornings, a bat at dusk, the owl on
-               the church roof by night (fireflies on summer nights), leaves and geese in autumn
-  the weather  rain and snow falling, the clouds drifting downwind, the mill's sails turning, chimney smoke
+  the village  the hour and the season's passers-by: swallows on summer mornings, a bat out of the belfry at
+               dusk, the owl on the church's ridge by night (fireflies on summer nights), leaves and geese in
+               autumn, jackdaws round the tower in winter
+  the weather  rain and snow falling, the clouds drifting downwind, chimney smoke
   the hour     at the top of the hour, one of two, as the owner chooses:
                  the constellations  the figures in the window traced one by one, star to star, each over a
                                      second, without their names (the ones just risen first), then fading back
@@ -105,259 +103,151 @@ def birds(img, inside, colour, frame, y0, x_from, x_to, frames, wing=3):
 
 
 # ---- the hours and the seasons: what passes over the village ------------------------------------------------------
-def village_top(ctx, i):
-    """The screen point just above the skyline's column `i` (its first drawn pixel), or None outside the window."""
-    land, bottoms = ctx["land"], ctx["bottoms"]
-    if i not in bottoms:
-        return None
-    rows = np.nonzero(land[:, i])[0]
-    j = int(rows.min()) if len(rows) else land.shape[0] - 1
-    return ctx["land_x0"] + i, bottoms[i] - (land.shape[0] - 1 - j) - 1
+def at_village(ctx, name):
+    """A village anchor (the church's mast, ridge or belfry, the house's peak or chimney) on the screen."""
+    a = ctx["anchors"].get(name)
+    return None if a is None else (ctx["col"] + a[0], a[1])
 
 
-def window_box(inside):
-    ys, xs = np.nonzero(inside)
-    return xs.min(), xs.max(), ys.min(), ys.max()
+def ground_top(ctx, x):
+    """The highest drawn row of the village in screen column `x` (or the window's lowest row there)."""
+    rows = np.nonzero(ctx["village"][:, x])[0] if 0 <= x < ctx["village"].shape[1] else []
+    if len(rows):
+        return int(rows.min())
+    e = ctx["edge"].get(x - ctx["col"])
+    return e
 
 
-def paint_in(img, inside, drawing, x, y, colours):
-    sprites.paint(img, drawing, int(round(x)), int(round(y)), colours, where=inside)
+def paint_in(img, ctx, drawing, x, y, colours):
+    sprites.paint(img, drawing, int(round(x)), int(round(y)), colours, where=ctx["inside"])
+
+
+def ink(ctx):
+    return c8(0, 0, 0) if ctx["night_land"] else c8(0, 0, 1)
 
 
 def swallows(img, ctx, frame):
-    """Two swallows hawking low over the fields at dawn, in long swooping curves."""
-    inside = ctx["inside"]
-    x0, x1, y0, y1 = window_box(inside)
-    cx = (x0 + x1) / 2
-    colour = c8(0, 0, 0) if ctx["night_land"] else c8(0, 0, 1)
-    for j, (ph, amp, spd) in enumerate(((0.0, 46, 1.0), (2.4, 38, 1.25))):
+    """A pair of swallows hawking low over the fields at dawn, swooping round the church tower and back."""
+    tower = at_village(ctx, "mast")
+    if tower is None:
+        return
+    cx = tower[0]
+    base = ctx["edge"][0]                                # the window's lowest row, at the south point
+    for j, (ph, amp, spd) in enumerate(((0.0, 44, 1.0), (2.6, 36, 1.2))):
         t = frame / FPS * spd + ph
-        x = cx + amp * math.sin(t * 1.05)
-        y = y1 - 17 - 7 * math.sin(t * 2.2 + j) - 3 * math.cos(t * 0.7)
-        paint_in(img, inside, sprites.SWALLOW[(frame // 2 + j) % 2], x, y, {1: colour})
+        x = cx + amp * math.sin(t * 1.1)
+        y = base - 24 - 6 * math.sin(t * 2.2 + j) - 3 * math.cos(t * 0.7)
+        speed = abs(math.cos(t * 1.1))
+        drawing = sprites.SWALLOW[0 if speed > 0.6 else 1 + (frame // 2 + j) % 2]   # gliding fast, beating slow
+        paint_in(img, ctx, drawing, x, y, {1: ink(ctx)})
 
 
 def bat(img, ctx, frame):
-    """A bat at dusk, jinking above the roofs."""
-    inside = ctx["inside"]
-    x0, x1, y0, y1 = window_box(inside)
-    cx = (x0 + x1) / 2
-    t = frame / FPS
-    x = cx + 30 * math.sin(0.9 * t) + 6 * math.sin(5.3 * t)
-    y = y1 - 21 + 6 * math.sin(1.7 * t) + 3 * math.sin(7.1 * t)
-    paint_in(img, inside, sprites.BAT[frame % 2], x, y, {1: c8(0, 0, 0)})
-
-
-def owl(img, ctx, frame, perch=51):
-    """The owl on the church's roof by night, blinking now and then."""
-    at = village_top(ctx, perch)
-    if at is None:
+    """A bat out of the belfry at dusk: it drops from the tower and flits in jinking loops over the roofs."""
+    belfry = at_village(ctx, "belfry")
+    if belfry is None:
         return
-    x, y = at
-    drawing = sprites.OWL[1 if frame % 40 in (26, 27, 28) else 0]
-    sprites.paint(img, drawing, x - 1, y - drawing.shape[0] + 1, {1: ctx["silhouette"], 3: c8(3, 3, 1)}, anchor="corner",
+    bx, by = belfry
+    t = frame / FPS
+    out = min(1.0, t / 1.2)                              # leaving the tower over its first second
+    x = bx + out * (24 * math.sin(0.9 * t) + 5 * math.sin(4.7 * t))
+    y = by - out * (10 - 6 * math.sin(1.4 * t) - 2 * math.sin(6.3 * t))
+    paint_in(img, ctx, sprites.BAT[(0, 1, 2, 1)[frame % 4]], x, y, {1: c8(0, 0, 0)})
+
+
+def owl(img, ctx, frame):
+    """The owl on the church's ridge by night: blinking now and then, looking east and west."""
+    ridge = at_village(ctx, "ridge")
+    if ridge is None:
+        return
+    x, y = ridge
+    k = frame % 96
+    pose = 1 if k in (20, 21, 60, 61) else 2 if 34 <= k < 46 else 3 if 72 <= k < 84 else 0
+    drawing = sprites.OWL[pose]
+    sprites.paint(img, drawing, x - 2, y - drawing.shape[0], {1: ctx["silhouette"], 3: c8(3, 3, 1)}, anchor="corner",
                   where=ctx["inside"])
 
 
-def fireflies(img, ctx, frame, n=12, seed=5):
-    """Fireflies over the fields on a summer night: points of light low over the land, each glowing and going out
-    in its own time, drifting a little."""
-    inside, bottoms = ctx["inside"], ctx["bottoms"]
+def fireflies(img, ctx, frame, n=22, seed=5):
+    """Fireflies on a summer night, among the trees and over the grass: each flashes in its own time, a bright
+    point in a glow, fading, then dark a while, drifting a little."""
     rng = np.random.default_rng(seed)
-    keys = sorted(bottoms)
+    cols = sorted(ctx["edge"])
     for k in range(n):
-        i = keys[int(rng.integers(len(keys)))]
-        ph, period = int(rng.integers(0, 30)), int(rng.integers(16, 26))
-        rise = rng.uniform(3, 12)
+        dx = cols[int(rng.integers(len(cols)))]
+        ph, period = int(rng.integers(0, 40)), int(rng.integers(18, 30))
+        rise = rng.uniform(2, 9)
         on = (frame + ph) % period
         if on >= 5:
             continue
-        x = ctx["land_x0"] + i + 1.5 * math.sin(frame / 9 + k)
-        y = bottoms[i] - ctx["land"].shape[0] + 2 - rise + math.sin(frame / 7 + 2 * k)
-        X, Y = int(round(x)), int(round(y))
-        if 0 <= Y < inside.shape[0] and 0 <= X < inside.shape[1] and inside[Y, X]:
-            img[Y, X] = c8(3, 3, 1) if on in (1, 2, 3) else c8(2, 2, 0)
+        x = ctx["col"] + dx + 1.5 * math.sin(frame / 9 + k)
+        ground = ground_top(ctx, int(round(x)))
+        if ground is None:
+            continue
+        y = ground - rise + math.sin(frame / 7 + 2 * k)
+        drawing = sprites.FIREFLY[0 if on in (1, 2) else 1 if on == 3 else 2]
+        paint_in(img, ctx, drawing, x, y, {3: c8(3, 3, 1), 4: c8(2, 2, 0)})
 
 
-def falling_leaves(img, ctx, frame, n=7, seed=3):
-    """Leaves loosed from the trees on an autumn day, tumbling, carried off by the wind."""
-    inside = ctx["inside"]
+def falling_leaves(img, ctx, frame, n=8, seed=3):
+    """Leaves loosed from the trees on an autumn day, tumbling, carried downwind, coming to rest on the ground."""
     wsky = ctx["wsky"]
     push = -math.sin(math.radians(wsky.wind_from)) if wsky is not None else -0.6    # downwind, east to the left
     push *= 1.0 + (wsky.wind / 15 if wsky is not None else 0.6)
     rng = np.random.default_rng(seed)
-    trees = [9, 39, 65, 85]
+    trees = [t for t in ctx["anchors"]["trees"] if t[2] != "fir"]
     colour = c8(3, 1, 0) if not ctx["night_land"] else ctx["silhouette"]
     for k in range(n):
-        at = village_top(ctx, trees[k % len(trees)] + int(rng.integers(-1, 2)))
-        if at is None:
-            continue
-        start = int(rng.integers(0, 40))
+        dx, y0, _ = trees[k % len(trees)]
+        start = int(rng.integers(0, 36))
         t = (frame - start) / FPS
         if t < 0:
             continue
-        x = at[0] - push * 9 * t + 2 * math.sin(3 * t + k)
-        y = at[1] - 6 * math.sin(min(t, 1.2) * 1.3) + 5 * max(0, t - 1.2)
-        paint_in(img, inside, sprites.FALLING_LEAF[(frame // 2 + k) % 4], x, y, {2: colour})
+        x = ctx["col"] + dx + rng.uniform(-3, 3) - push * 7 * t + 2 * math.sin(3 * t + k)
+        y = y0 + 3 + 4.5 * t
+        ground = ground_top(ctx, int(round(x)))
+        if ground is None:
+            continue
+        y = min(y, ground - 1)
+        resting = y >= ground - 1
+        paint_in(img, ctx, sprites.FALLING_LEAF[3 if resting else (frame // 2 + k) % 4], x, y, {2: colour})
 
 
-def geese(img, ctx, frame, frames, southward=True):
-    """Geese in a long V on their way south in autumn (north in spring), their wings slow."""
-    inside = ctx["inside"]
-    x0, x1, y0, y1 = window_box(inside)
-    f = frame / frames
-    if southward:
-        x, y = x0 - 20 + (x1 - x0 + 40) * f, y0 + 14 + (y1 - y0) * 0.45 * f
-    else:
-        x, y = x1 + 20 - (x1 - x0 + 40) * f, y1 - 30 - (y1 - y0) * 0.45 * f
-    colour = c8(0, 0, 1)
-    d = 1 if southward else -1
-    for j in range(7):
-        side = 1 if j % 2 else -1
-        rank = (j + 1) // 2
-        bx, by = x - d * 6 * rank, y + side * 4 * rank - d * 2 * rank
-        paint_in(img, inside, sprites.BIRD[((frame // 4) + j) % 2], bx, by, {5: colour})
-
-
-def passing(local, sun_alt, sun_rising, season, wsky):
-    """Which of the passing things the hour and the season bring (the watch plays one now and then): swallows on
-    summer mornings, bats on warm evenings, by night the owl (and fireflies on warm summer nights), by day birds,
-    in autumn falling leaves and geese going south, in spring geese going north."""
-    warm = wsky is None or wsky.wind < 40
-    if sun_alt < -12:
-        mild = wsky is None or True
-        return ["owl"] + (["fireflies"] if season in ("leaf", "harvest") and warm else [])
-    if -8 <= sun_alt < 8 and sun_rising and season in ("blossom", "leaf", "harvest"):
-        return ["swallows"]
-    if -10 <= sun_alt < 3 and not sun_rising and season in ("blossom", "leaf", "harvest", "turning"):
-        return ["bat"]
-    out = ["birds"]
-    if season in ("turning", "autumn"):
-        out += ["leaves", "geese south"]
-    if season == "bare" and local.month in (2, 3) or season == "blossom" and local.month == 4:
-        out += ["geese north"]
-    return out
-
-
-# ---- the hours and the seasons: what passes over the village ------------------------------------------------------
-def village_top(ctx, i):
-    """The screen point just above the skyline's column `i` (its first drawn pixel), or None outside the window."""
-    land, bottoms = ctx["land"], ctx["bottoms"]
-    if i not in bottoms:
-        return None
-    rows = np.nonzero(land[:, i])[0]
-    j = int(rows.min()) if len(rows) else land.shape[0] - 1
-    return ctx["land_x0"] + i, bottoms[i] - (land.shape[0] - 1 - j) - 1
-
-
-def window_box(inside):
-    ys, xs = np.nonzero(inside)
-    return xs.min(), xs.max(), ys.min(), ys.max()
-
-
-def paint_in(img, inside, drawing, x, y, colours):
-    sprites.paint(img, drawing, int(round(x)), int(round(y)), colours, where=inside)
-
-
-def swallows(img, ctx, frame):
-    """Two swallows hawking low over the fields at dawn, in long swooping curves."""
-    inside = ctx["inside"]
-    x0, x1, y0, y1 = window_box(inside)
-    cx = (x0 + x1) / 2
-    colour = c8(0, 0, 0) if ctx["night_land"] else c8(0, 0, 1)
-    for j, (ph, amp, spd) in enumerate(((0.0, 46, 1.0), (2.4, 38, 1.25))):
-        t = frame / FPS * spd + ph
-        x = cx + amp * math.sin(t * 1.05)
-        y = y1 - 17 - 7 * math.sin(t * 2.2 + j) - 3 * math.cos(t * 0.7)
-        paint_in(img, inside, sprites.SWALLOW[(frame // 2 + j) % 2], x, y, {1: colour})
-
-
-def bat(img, ctx, frame):
-    """A bat at dusk, jinking above the roofs."""
-    inside = ctx["inside"]
-    x0, x1, y0, y1 = window_box(inside)
-    cx = (x0 + x1) / 2
-    t = frame / FPS
-    x = cx + 30 * math.sin(0.9 * t) + 6 * math.sin(5.3 * t)
-    y = y1 - 21 + 6 * math.sin(1.7 * t) + 3 * math.sin(7.1 * t)
-    paint_in(img, inside, sprites.BAT[frame % 2], x, y, {1: c8(0, 0, 0)})
-
-
-def owl(img, ctx, frame, perch=51):
-    """The owl on the church's roof by night, blinking now and then."""
-    at = village_top(ctx, perch)
-    if at is None:
+def jackdaws(img, ctx, frame, n=4):
+    """Jackdaws round the church tower on a winter's day, wheeling about the spire."""
+    mast = at_village(ctx, "mast")
+    if mast is None:
         return
-    x, y = at
-    drawing = sprites.OWL[1 if frame % 40 in (26, 27, 28) else 0]
-    sprites.paint(img, drawing, x - 1, y - drawing.shape[0] + 1, {1: ctx["silhouette"], 3: c8(3, 3, 1)}, anchor="corner",
-                  where=ctx["inside"])
-
-
-def fireflies(img, ctx, frame, n=12, seed=5):
-    """Fireflies over the fields on a summer night: points of light low over the land, each glowing and going out
-    in its own time, drifting a little."""
-    inside, bottoms = ctx["inside"], ctx["bottoms"]
-    rng = np.random.default_rng(seed)
-    keys = sorted(bottoms)
-    for k in range(n):
-        i = keys[int(rng.integers(len(keys)))]
-        ph, period = int(rng.integers(0, 30)), int(rng.integers(16, 26))
-        rise = rng.uniform(3, 12)
-        on = (frame + ph) % period
-        if on >= 5:
-            continue
-        x = ctx["land_x0"] + i + 1.5 * math.sin(frame / 9 + k)
-        y = bottoms[i] - ctx["land"].shape[0] + 2 - rise + math.sin(frame / 7 + 2 * k)
-        X, Y = int(round(x)), int(round(y))
-        if 0 <= Y < inside.shape[0] and 0 <= X < inside.shape[1] and inside[Y, X]:
-            img[Y, X] = c8(3, 3, 1) if on in (1, 2, 3) else c8(2, 2, 0)
-
-
-def falling_leaves(img, ctx, frame, n=7, seed=3):
-    """Leaves loosed from the trees on an autumn day, tumbling, carried off by the wind."""
-    inside = ctx["inside"]
-    wsky = ctx["wsky"]
-    push = -math.sin(math.radians(wsky.wind_from)) if wsky is not None else -0.6    # downwind, east to the left
-    push *= 1.0 + (wsky.wind / 15 if wsky is not None else 0.6)
-    rng = np.random.default_rng(seed)
-    trees = [9, 39, 65, 85]
-    colour = c8(3, 1, 0) if not ctx["night_land"] else ctx["silhouette"]
-    for k in range(n):
-        at = village_top(ctx, trees[k % len(trees)] + int(rng.integers(-1, 2)))
-        if at is None:
-            continue
-        start = int(rng.integers(0, 40))
-        t = (frame - start) / FPS
-        if t < 0:
-            continue
-        x = at[0] - push * 9 * t + 2 * math.sin(3 * t + k)
-        y = at[1] - 6 * math.sin(min(t, 1.2) * 1.3) + 5 * max(0, t - 1.2)
-        paint_in(img, inside, sprites.FALLING_LEAF[(frame // 2 + k) % 4], x, y, {2: colour})
+    mx, my = mast
+    for j in range(n):
+        a = frame / FPS * 1.6 + j * 2 * math.pi / n + 0.4 * math.sin(frame / 11 + j)
+        x = mx + 13 * math.cos(a)
+        y = my - 3 + 5 * math.sin(a) + 1.5 * math.sin(frame / 5 + j)
+        paint_in(img, ctx, sprites.JACKDAW[(frame // 2 + j) % 2], x, y, {1: ink(ctx)})
 
 
 def geese(img, ctx, frame, frames, southward=True):
     """Geese in a long V on their way south in autumn (north in spring), their wings slow."""
-    inside = ctx["inside"]
-    x0, x1, y0, y1 = window_box(inside)
+    ys, xs = np.nonzero(ctx["inside"])
+    x0, x1, y0, y1 = xs.min(), xs.max(), ys.min(), ys.max()
     f = frame / frames
     if southward:
-        x, y = x0 - 20 + (x1 - x0 + 40) * f, y0 + 14 + (y1 - y0) * 0.45 * f
+        x, y = x0 - 20 + (x1 - x0 + 40) * f, y0 + 14 + (y1 - y0) * 0.4 * f
     else:
-        x, y = x1 + 20 - (x1 - x0 + 40) * f, y1 - 30 - (y1 - y0) * 0.45 * f
-    colour = c8(0, 0, 1)
+        x, y = x1 + 20 - (x1 - x0 + 40) * f, y1 - 40 - (y1 - y0) * 0.4 * f
     d = 1 if southward else -1
     for j in range(7):
         side = 1 if j % 2 else -1
         rank = (j + 1) // 2
-        bx, by = x - d * 6 * rank, y + side * 4 * rank - d * 2 * rank
-        paint_in(img, inside, sprites.BIRD[((frame // 4) + j) % 2], bx, by, {5: colour})
+        paint_in(img, ctx, sprites.BIRD[((frame // 4) + j) % 2], x - d * 6 * rank, y + side * 4 * rank - d * 2 * rank,
+                 {5: c8(0, 0, 1)})
 
 
 def passing(local, sun_alt, sun_rising, season, wsky):
     """Which of the passing things the hour and the season bring (the watch plays one now and then): by night the
-    owl (and fireflies on warm summer nights), swallows on summer mornings, bats on warm evenings, by day birds,
-    in autumn falling leaves and geese going south, in late winter and spring geese going north."""
+    owl (and fireflies on warm summer nights), swallows on summer mornings, a bat on mild evenings, by day birds;
+    in autumn falling leaves and geese going south, in winter jackdaws round the tower, in late winter and spring
+    geese going north."""
     if sun_alt < -12:
         warm = wsky is None or wsky.temp >= 15                      # fireflies fly on warm nights
         return ["owl"] + (["fireflies"] if season in ("leaf", "harvest") and warm else [])
@@ -369,6 +259,8 @@ def passing(local, sun_alt, sun_rising, season, wsky):
     out = ["birds"]
     if season in ("turning", "autumn"):
         out += ["leaves", "geese south"]
+    if season == "bare":
+        out += ["jackdaws"]
     if (season == "bare" and local.month in (2, 3)) or (season == "blossom" and local.month == 4):
         out += ["geese north"]
     return out
@@ -524,44 +416,16 @@ def main():
     save(frames, ROOT / "docs" / "anim-weather.gif", (400, 456))
 
     # the hours and seasons over the village: swallows on a June morning, a bat on an August evening, the owl on
-    # an October night, fireflies on a July night, leaves and geese on an October afternoon
+    # an October night, fireflies on a July night, leaves and geese on an October afternoon, jackdaws round the
+    # tower on a January afternoon
     film = [(datetime(2026, 6, 21, 5, 40, tzinfo=NY), "fair", lambda img, ctx, k: swallows(img, ctx, k), 36),
             (datetime(2026, 8, 12, 20, 25, tzinfo=NY), "fair", lambda img, ctx, k: bat(img, ctx, k), 36),
-            (datetime(2026, 10, 14, 22, 30, tzinfo=NY), "frost", lambda img, ctx, k: owl(img, ctx, k), 48),
-            (datetime(2026, 7, 10, 22, 30, tzinfo=NY), "fair", lambda img, ctx, k: (owl(img, ctx, k), fireflies(img, ctx, k)), 48),
-            (datetime(2026, 10, 24, 15, 0, tzinfo=NY), "cloudy",
-             lambda img, ctx, k: (falling_leaves(img, ctx, k), geese(img, ctx, k, 48)), 48)]
-    frames = []
-    for when, w, fn, n in film:
-        u = when.astimezone(timezone.utc)
-        s0 = when.hour * 3600 + when.minute * 60
-        frames += [render(u + timedelta(seconds=k / FPS), t2, sky, NY, "planisphere", False, weather=wx.SAMPLES[w],
-                          fahrenheit=True, weather_clock=(s0 + k / FPS, s0 + k / FPS),
-                          extras=lambda img, ctx, k=k, fn=fn: fn(img, ctx, k)) for k in range(n)]
-    save(frames, ROOT / "docs" / "anim-village.gif", (400, 456))
-
-    # the weather in motion: rain at noon, snow falling at dusk with smoke from the chimney, fair-weather clouds
-    # hurried across an evening sky (the clouds a few seconds a frame, the rest at its own pace)
-    import weather as wx
-    frames = []
-    for when, w, hurry, n in ((datetime(2026, 10, 14, 12, 15, tzinfo=NY), "rain", 6, 36),
-                              (datetime(2027, 1, 20, 16, 40, tzinfo=NY), "snow", 6, 48),
-                              (datetime(2026, 10, 14, 18, 5, tzinfo=NY), "cloudy", 15, 48)):
-        u = when.astimezone(timezone.utc)
-        s0 = when.hour * 3600 + when.minute * 60
-        frames += [render(u + timedelta(seconds=k / FPS), t2, sky, NY, "planisphere", False, weather=wx.SAMPLES[w],
-                          fahrenheit=True, weather_clock=(s0 + k * hurry, s0 + k / FPS)) for k in range(n)]
-    save(frames, ROOT / "docs" / "anim-weather.gif", (400, 456))
-
-    # the hours and seasons over the village: swallows on a June morning, a bat on an August evening, the owl on
-    # an October night, fireflies on a July night, leaves and geese on an October afternoon
-    film = [(datetime(2026, 6, 21, 5, 40, tzinfo=NY), "fair", lambda img, ctx, k: swallows(img, ctx, k), 36),
-            (datetime(2026, 8, 12, 20, 25, tzinfo=NY), "fair", lambda img, ctx, k: bat(img, ctx, k), 36),
-            (datetime(2026, 10, 14, 22, 30, tzinfo=NY), "frost", lambda img, ctx, k: owl(img, ctx, k), 48),
+            (datetime(2026, 10, 14, 22, 30, tzinfo=NY), "frost", lambda img, ctx, k: owl(img, ctx, k), 96),
             (datetime(2026, 7, 10, 22, 30, tzinfo=NY), "fair",
-             lambda img, ctx, k: (owl(img, ctx, k), fireflies(img, ctx, k)), 48),
+             lambda img, ctx, k: (owl(img, ctx, k + 30), fireflies(img, ctx, k)), 48),
             (datetime(2026, 10, 24, 15, 0, tzinfo=NY), "cloudy",
-             lambda img, ctx, k: (falling_leaves(img, ctx, k), geese(img, ctx, k, 48)), 48)]
+             lambda img, ctx, k: (falling_leaves(img, ctx, k), geese(img, ctx, k, 48)), 48),
+            (datetime(2027, 1, 20, 14, 0, tzinfo=NY), "frost", lambda img, ctx, k: jackdaws(img, ctx, k), 48)]
     frames = []
     for when, w, fn, n in film:
         u = when.astimezone(timezone.utc)

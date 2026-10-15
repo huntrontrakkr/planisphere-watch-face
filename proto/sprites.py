@@ -399,36 +399,88 @@ BIRD = [art(["W...W",           # a bird crossing the day sky, its wings up
         art([".WWW.",           # and down
               "W...W",
               "....."])]
-SWALLOW = [art(["K...K",        # a swallow over the fields at dawn, its forked tail below: wings up
-                 ".K.K.",
-                 "..K..",
-                 ".K.K."]),
-           art([".KKK.",        # and down
+SWALLOW = [art(["K.....K",      # a swallow hawking over the fields: gliding, its wings swept back, its tail forked
+                 ".K...K.",
+                 "..KKK..",
+                 "...K...",
+                 "..K.K.."]),
+           art([".K...K.",      # wings up
+                "..K.K..",
+                "..KKK..",
+                "...K...",
+                "..K.K.."]),
+           art([".......",      # wings down
+                "..KKK..",
+                ".K.K.K.",
+                "K..K..K",
+                "..K.K.."])]
+BAT = [art(["K.......K",            # a bat out of the belfry at dusk: wings up
+            ".KK.K.KK.",
+            "..KKKKK..",
+            "....K...."]),
+       art([".........",            # level, its ears up
+            "KKK.K.KKK",
+            ".KKKKKKK.",
+            "K.K...K.K"]),
+       art([".........",            # down, the scalloped edges hanging
+            "...K.K...",
+            ".KKKKKKK.",
+            "K..K.K..K"])]
+OWL = [art([".K.K.",              # the owl on the church's ridge by night: an egg with two tufts, its eyes gold
+            ".KKK.",
+            "KYKYK",
+            "KKKKK",
+            "KKKKK",
+            ".KKK.",
+            ".K.K."]),
+       art([".K.K.",              # blinking
+            ".KKK.",
+            "KKKKK",
+            "KKKKK",
+            "KKKKK",
+            ".KKK.",
+            ".K.K."]),
+       art([".K.K.",              # looking east
+            ".KKK.",
+            "YKYKK",
+            "KKKKK",
+            "KKKKK",
+            ".KKK.",
+            ".K.K."]),
+       art([".K.K.",              # looking west
+            ".KKK.",
+            "KKYKY",
+            "KKKKK",
+            "KKKKK",
+            ".KKK.",
+            ".K.K."])]
+JACKDAW = [art(["K...K",          # jackdaws round the church tower on a winter's day: wings up
+                ".KKK.",
+                "..K.."]),
+           art([".KKK.",          # and down
                 "K.K.K",
-                ".K.K.",
                 "....."])]
-BAT = [art(["K.....K",          # a bat at dusk: wings up
-            ".KK.KK.",
-            "..KKK.."]),
-       art([".......",          # and down, their scalloped edges hanging
-            ".KKKKK.",
-            "K.KKK.K"])]
-OWL = [art(["K.K",              # the owl on the church roof by night, its ears up and its eyes gold
-            "YKY",
-            "KKK",
-            "KKK"]),
-       art(["K.K",              # blinking
-            "KKK",
-            "KKK",
-            "KKK"])]
-FALLING_LEAF = [art(["R.",      # a leaf coming down, tumbling a quarter turn a frame
-                     ".R"]),
-                art(["RR",
-                     ".."]),
-                art([".R",
-                     "R."]),
-                art(["R.",
-                     "R."])]
+FALLING_LEAF = [art(["R..",       # a leaf coming down, tumbling an eighth of a turn a frame
+                     ".R.",
+                     "..R"]),
+                art([".R.",
+                     ".R.",
+                     ".R."]),
+                art(["..R",
+                     ".R.",
+                     "R.."]),
+                art(["...",
+                     "RRR",
+                     "..."])]
+FIREFLY = [art([".O.",            # a firefly's flash: bright with a glow round it, then a point, then a dim point
+                "OYO",
+                ".O."]),
+           art(["...",
+                ".Y.",
+                "..."]),
+           art(["...",
+                ".O.",
+                "..."])]
 DIAMOND = art([                 # the diamond ring's diamond: the Sun's last light at the Moon's edge
     "....W....",
     "....W....",
@@ -536,78 +588,74 @@ def glory():
     return a
 
 
-# ---- the southern horizon's skyline: hills, trees, a house, the church, a windmill, drawn as pieces and set on
-# hills of hand-chosen height; the faces bend it along the window's lower edge. The village keeps the year and
-# reports the weather, as an almanac's cuts of the months do: its trees in bud, blossom, leaf, turning or bare,
-# stooks in the fields at harvest, the church's vane turned into the wind, the mill's sails, a lit window at
-# night. Roles: K the silhouette, R blossom or turning leaves (coloured by day), Y a window lit at night ----------
-_LAND_PIECES = {                # kept low: at the chart's scale a pixel is a degree and a half of sky
-    "church": [".#......",      # the tower and nave; the vane (below) stands on the tower's mast
-               "###.....",
-               "###.###.",
-               "########"],
-    "mill":   ["#...#",         # its sails at rest, in a saltire, as millers leave them for a long stop
-               ".#.#.",
-               "..#..",
-               ".###.",
-               ".###.",
-               "#####"],
-    "mill+":  ["..#..",         # and upright, a quarter turn on: the two together turn the sails
-               "..#..",
-               "#####",
-               ".###.",
-               ".###.",
-               "#####"],
-    "tree":   [".###.",
-               "#####",
-               ".###.",
-               "..#.."],
-    "tree:blossom": [".R#R.",
-                     "#R#R#",
-                     ".#R#.",
-                     "..#.."],
-    "tree:turning": [".#R#.",
-                     "R###R",
-                     ".#R#.",
-                     "..#.."],
-    "tree:autumn": [".#.R.",
-                    "R#.##",
-                    ".#R#.",
-                    "..#.."],
-    "tree:bare": ["#.#.#",
-                  ".#.#.",
-                  "..#..",
-                  "..#.."],
-    "mound":  [".##.",
-               "####"],
-    "stook":  [".#.",           # sheaves stood together to dry in the field at harvest
-               "###",
-               "#.#"],
-    "poplar": [".#.",
-               "###",
-               "###",
-               "###",
-               ".#."],
-    "poplar:turning": [".#.",
-                       "#R#",
-                       "###",
-                       "R##",
-                       ".#."],
-    "poplar:autumn": [".#.",
-                      "#R.",
-                      ".##",
-                      "R#.",
-                      ".#."],
-    "poplar:bare": [".#.",
-                    "#.#",
-                    ".#.",
-                    "#.#",
-                    ".#."],
-    "house":  ["...#.",         # a chimney on the roof, the door below, lit of an evening
-               "..##.",
-               ".###.",
-               "##Y##"],
+# ---- the southern horizon: a church and a house among trees, after the cuts of a village on an almanac's page.
+# The church stands at the south point, its spire on the meridian and a weather vane on its mast; the house beside
+# it has a chimney and windows lit of an evening. The trees keep the year: in blossom, in leaf, turning, gold, bare
+# (the firs stay green). Each piece is drawn whole and stood on the ground the faces bend along the window's lower
+# edge: a tree where its trunk meets the ground, a building as low as the ground under it goes (the hillside laps
+# its uphill side). Roles: K the silhouette, R blossom or turning leaves (coloured by day), Y a window lit at night
+VILLAGE_PIECES = {
+    "church": [".....#...................",       # the mast (the vane stands on it), the spire, pinnacles at the
+               ".....#...................",       # tower's corners, the belfry's opening; the nave's ridge and eaves,
+               "....###..................",       # three lancet windows; the west door
+               "....###..................",
+               "...#####.................",
+               "..#.###.#................",
+               "..#######................",
+               "..#######................",
+               "..###.###................",
+               "..###.###..############..",
+               "..#######.##############.",
+               "..#######################",
+               "..#######################",
+               "..##########.###.###.###.",
+               "..##########.###.###.###.",
+               "..###.##################.",
+               "..###.##################."],
+    "house": ["......#...#..",                    # a gable end with a chimney, two windows up and two down, a door
+              ".....###..#..",
+              "....#####.#..",
+              "...########..",
+              "..#########..",
+              ".###########.",
+              "#############",
+              ".##Y#####Y##.",
+              ".###########.",
+              ".##Y##.##Y##.",
+              ".#####.#####.",
+              ".#####.#####."],
+    "tree": ["...##.##...", "..#######..", ".#########.", "###########", ".##########", "###########",
+             ".#########.", "..###.###..", "....#.#....", ".....#.....", ".....#....."],
+    "tree:blossom": ["...#R.R#...", "..#R###R#..", ".R###R###R.", "##R#####R##", ".###R#R####", "#R#######R#",
+                     ".##R###R##.", "..###.###..", "....#.#....", ".....#.....", ".....#....."],
+    "tree:turning": ["...##.R#...", "..##R####..", ".#####R###.", "#R#######R#", ".####R#####", "###R####R##",
+                     ".######R##.", "..##R.###..", "....#.#....", ".....#.....", ".....#....."],
+    "tree:autumn": ["...#..R#...", "..#R#.##...", ".#.##R#.#R.", "#R#.###R#.#", ".#.##R#.##.", "R##.#.##R##",
+                    ".#R##.#R#..", "..##..#.#..", "....#.#....", ".....#.....", ".....#....."],
+    "tree:bare": [".#..#.#..#.", "..#.#.#.#..", "#..##.##..#", ".#..###..#.", "..#..#..#..", "...#.#.#...",
+                  "....###....", ".....#.....", ".....#.....", ".....#.....", ".....#....."],
+    "poplar": ["..#..", "..#..", ".###.", ".###.", ".###.", "#####", "#####", "#####", "#####", ".###.", ".###.",
+               "..#..", "..#.."],
+    "poplar:turning": ["..#..", "..#..", ".#R#.", ".###.", ".##R.", "#####", "R####", "##R##", "####R", ".###.",
+                       ".R##.", "..#..", "..#.."],
+    "poplar:autumn": ["..#..", "..R..", ".#.#.", ".R##.", ".#.R.", "#.###", "R#.#.", "##R.#", ".#.#R", ".##..",
+                      ".R#..", "..#..", "..#.."],
+    "poplar:bare": ["..#..", "..#..", ".#.#.", "..#..", ".#.#.", "#.#.#", ".###.", "#.#.#", ".###.", "..#..",
+                    "..#..", "..#..", "..#.."],
+    "fir": ["...#...", "...#...", "..###..", "..###..", ".#####.", "..###..", ".#####.", "#######", "..###..",
+            "#######", "...#...", "...#..."],
+    "small": ["..###..", ".#####.", "#######", "#######", ".#####.", "...#...", "...#..."],
+    "small:blossom": ["..#R#..", ".R###R.", "##R#R##", "#R###R#", ".##R##.", "...#...", "...#..."],
+    "small:turning": ["..##R..", ".#R###.", "####R##", "#R#####", ".###R#.", "...#...", "...#..."],
+    "small:autumn": ["..#.R..", ".R.##..", "#.#R#.#", "R##.#R#", ".#.#.#.", "...#...", "...#..."],
+    "small:bare": ["#..#..#", ".#.#.#.", "..###..", "#..#..#", ".#.#.#.", "...#...", "...#..."],
 }
+VILLAGE_TREES = ("tree", "poplar", "fir", "small")
+# where each piece stands, its middle column this many pixels from the south point, and the hills' heights
+VILLAGE_LAYOUT = [("small", -53), ("fir", -46), ("tree", -36), ("small", -29), ("house", -18), ("church", 7),
+                  ("tree", 20), ("poplar", 29), ("tree", 37), ("fir", 46), ("small", 53)]
+VILLAGE_HILLS = [(-62, 1), (-48, 2), (-36, 3), (-24, 2), (-10, 1), (0, 1), (12, 2), (26, 3), (40, 2), (52, 2), (62, 1)]
+VILLAGE_SEASON = {"blossom": "blossom", "turning": "turning", "autumn": "autumn", "bare": "bare"}
 VANE = {                        # the church's weather vane on its mast, the arrow pointing where the wind comes from
     "left": [".#..#",           # (seen from the north, looking south: east is to the left), its barb and its tail
              "#####",           # standing up; end on, a cross
@@ -619,17 +667,11 @@ VANE = {                        # the church's weather vane on its mast, the arr
             ".###.",
             "..#.."],
 }
-_LAND_HILLS = [(0, 1), (8, 2), (16, 2), (24, 1), (32, 1), (40, 2), (48, 2), (56, 1), (64, 2), (72, 2), (80, 2),
-               (88, 1), (99, 1)]
-_LAND_PLACES = [("tree", 7), ("poplar", 14), ("house", 23), ("mound", 31), ("tree", 37), ("church", 46),
-                ("mound", 57), ("tree", 63), ("mill", 73), ("tree", 83), ("poplar", 91)]
-_STOOKS = [2, 19, 69, 79]      # where the stooks stand at harvest, in the open fields between the pieces
-CHIMNEY = 26                    # the house's chimney, its column in the skyline
 
 
 def season_of(sun_lon, lat):
-    """The village's season from the Sun's place in the zodiac (spring's equinox at 0 degrees), turned half a
-    year for the southern hemisphere: bare, bud, blossom, leaf, harvest (leaf with stooks), turning, autumn."""
+    """The village's season from the Sun's place in the zodiac (spring's equinox at 0 degrees), turned half a year
+    for the southern hemisphere: bare, blossom, leaf, harvest, turning, autumn."""
     lam = (sun_lon + (180.0 if lat < 0 else 0.0)) % 360
     for upto, name in ((15, "bare"), (45, "blossom"), (120, "leaf"), (165, "harvest"), (195, "turning"),
                        (240, "autumn"), (360, "bare")):
@@ -638,47 +680,64 @@ def season_of(sun_lon, lat):
     return "bare"
 
 
-def landscape(season="leaf", snow=False, vane="end", sails="x", lit=False):
-    """The skyline as roles, 100 wide; its bottom row stands on the horizon, its middle column at the south.
-    `vane` is "left", "right" or "end"; `sails` "x" or "+"; snow lies on every top."""
-    W, H = 100, 10
-    g = np.zeros((H, W), np.uint8)
-    xs, hs = zip(*_LAND_HILLS)
-    ground = np.round(np.interp(np.arange(W), xs, hs)).astype(int)
-    for x in range(W):
-        g[H - ground[x]:, x] = ROLE["K"]
-    leaves = {"blossom": ":blossom", "turning": ":turning", "autumn": ":autumn", "bare": ":bare"}.get(season, "")
-    places = list(_LAND_PLACES) + ([("stook", x) for x in _STOOKS] if season == "harvest" else [])
-    tops = []
-    for name, x0 in places:
-        key = name + leaves if name + leaves in _LAND_PIECES else name
-        if name == "mill" and sails == "+":
-            key = "mill+"
-        rows = _LAND_PIECES[key]
+def village(edge, season="leaf", snow=False, vane="end", lit=False):
+    """The village set on the window's lower edge: `edge` maps a column's offset from the south point to the
+    window's lowest row there. Returns ({(dx, y): role}, anchors), the anchors being where things perch or rise:
+    the vane's top, the church's ridge and belfry, the house's roof peak and chimney, the trees' crowns."""
+    xs_, hs_ = zip(*VILLAGE_HILLS)
+    top = {dx: e - int(round(np.interp(dx, xs_, hs_))) for dx, e in edge.items()}   # the ground's top row
+    px = {}
+    for dx, e in edge.items():
+        for y in range(top[dx] + 1, e + 1):
+            px[(dx, y)] = ROLE["K"]
+    anchors = {"trees": []}
+    variant = VILLAGE_SEASON.get(season, "")
+    for name, at in VILLAGE_LAYOUT:
+        key = f"{name}:{variant}" if f"{name}:{variant}" in VILLAGE_PIECES else name
+        rows = VILLAGE_PIECES[key]
         h, w = len(rows), len(rows[0])
-        base = H - ground[x0 + w // 2]
+        x0 = at - w // 2
+        cols = [x0 + i for i in range(w)]
+        if any(c not in top for c in cols):
+            continue                                       # off the window's edge
+        base = top[at] if name in VILLAGE_TREES else max(top[c] for c in cols)
         for j, r in enumerate(rows):
             for i, ch in enumerate(r):
-                if ch != ".":
-                    g[base - h + j, x0 + i] = ROLE["K" if ch == "#" else ch] if ch != "Y" else (ROLE["Y"] if lit else 0)
+                if ch == ".":
+                    continue
+                role = ROLE["K"] if ch == "#" else ROLE[ch]
+                if ch == "Y" and not lit:
+                    role = ROLE["K"]
+                px[(x0 + i, base - h + 1 + j)] = role
+        if name not in VILLAGE_TREES:                      # the ground runs on under a building
+            for c in cols:
+                for y in range(base + 1, edge[c] + 1):
+                    px[(c, y)] = ROLE["K"]
+        y0 = base - h + 1
         if name == "church":
-            tops.append((x0 + 1, base - h))
-    vane_px = np.zeros_like(g, bool)
-    for mx, top in tops:                           # the vane on the mast, its pivot over the mast
-        rows = VANE[vane]
-        for j, r in enumerate(rows):
+            anchors["mast"] = (x0 + 5, y0)
+            anchors["ridge"] = (x0 + 16, y0 + 9)
+            anchors["belfry"] = (x0 + 5, y0 + 8)
+        elif name == "house":
+            anchors["peak"] = (x0 + 6, y0)
+            anchors["chimney"] = (x0 + 10, y0)
+        else:
+            anchors["trees"].append((at, y0, name))
+    vane_px = set()
+    if "mast" in anchors:                                  # the vane on the mast, its pivot over the mast
+        mx, my = anchors["mast"]
+        for j, r in enumerate(VANE[vane]):
             for i, ch in enumerate(r):
                 if ch == "#":
-                    g[top - 3 + j, mx - 2 + i] = ROLE["K"]
-                    vane_px[top - 3 + j, mx - 2 + i] = True
-    snowy = np.zeros_like(g, bool)
-    if snow:                                       # snow on every top: the first ink down each column (not the vane)
-        for x in range(W):
-            col = np.nonzero(g[:, x] == ROLE["K"])[0]
-            if len(col) and not vane_px[col[0], x]:
-                snowy[col[0], x] = True
-    g[snowy] = ROLE["W"]
-    return g
+                    px[(mx - 2 + i, my - 3 + j)] = ROLE["K"]
+                    vane_px.add((mx - 2 + i, my - 3 + j))
+        anchors["vane"] = (mx, my - 3)
+    if snow:                                               # snow on every top: the first ink down each column
+        for dx in {p[0] for p in px}:
+            ys = sorted(y for (x, y) in px if x == dx)
+            if ys and (dx, ys[0]) not in vane_px:
+                px[(dx, ys[0])] = ROLE["W"]
+    return px, anchors
 
 
 # ---- the weather's clouds, after Howard (1803): cumulus, "convex or conical heaps, increasing upward from a
@@ -957,18 +1016,23 @@ if __name__ == "__main__":
         [mask_block(sign(d), red, cream) for d in DAY_SIGNS]
         + [block(a, gold, cream) for a in (SOUTH_STAR, STUD, CORNER_LEAF, QUENTEL_FLOWER)]
         + [block(ZENITH, {1: (170, 170, 255)}, sky), block(RADIANT, {2: (255, 85, 85)}, sky)],
-        [block(glory(), {1: (170, 85, 85)}, (255, 255, 255)), mask_block(landscape() > 0, (0, 0, 85), (85, 170, 255))],
-        [block(landscape(*args), {1: (0, 0, 85), 2: (255, 85, 0) if args[0] != "blossom" else (255, 170, 255),
-                                  3: (255, 255, 85), 5: (255, 255, 255)}, (85, 170, 255))
-         for args in (("blossom", False, "left", "x", False), ("harvest", False, "end", "+", False),
-                      ("autumn", False, "right", "x", False), ("bare", True, "end", "x", True))],
+        [block(glory(), {1: (170, 85, 85)}, (255, 255, 255))]
+        + [block(art([r.replace("#", "K") for r in VILLAGE_PIECES[k]]), {1: (0, 0, 85), 3: (255, 255, 85)}, (85, 170, 255))
+           for k in ("church", "house")],
+        [block(art([r.replace("#", "K") for r in VILLAGE_PIECES[k]]), {1: (0, 0, 85), 2: (255, 170, 255) if "blossom" in k else (255, 85, 0)},
+               (85, 170, 255))
+         for k in ("tree", "tree:blossom", "tree:turning", "tree:autumn", "tree:bare", "poplar", "poplar:turning",
+                   "poplar:autumn", "poplar:bare", "fir", "small", "small:blossom", "small:turning", "small:autumn",
+                   "small:bare")]
+        + [block(art([r.replace("#", "K") for r in VANE[k]]), {1: (0, 0, 85)}, (85, 170, 255)) for k in ("left", "end", "right")],
         [block(CORNER_SEASONS[k], gold, cream) for k in ("blossom", "leaf", "autumn", "bare")]
         + [block(cloud(c), {1: (255, 255, 255), 5: (255, 255, 255), 7: (170, 170, 255)}, (85, 170, 255))
            for c in CUMULUS + STRATUS]
         + [block(stroke(c), {1: (255, 255, 255)}, (85, 170, 255)) for c in CIRRUS],
-        [block(f, {1: (0, 0, 85)}, (85, 170, 255)) for f in SWALLOW + BAT]
+        [block(f, {1: (0, 0, 85)}, (85, 170, 255)) for f in SWALLOW + BAT + JACKDAW]
         + [block(f, {1: (0, 0, 0), 3: (255, 255, 85)}, (0, 0, 85)) for f in OWL]
         + [block(f, {2: (255, 85, 0)}, (85, 170, 255)) for f in FALLING_LEAF]
+        + [block(f, {3: (255, 255, 85), 4: (170, 170, 0)}, (0, 0, 85)) for f in FIREFLY]
         + [block(SNOWFLAKE, {5: (255, 255, 255)}, (170, 170, 170))],
         [mask_block(word_art(w, 200, 228)[0], red, cream) for w in ("MIDNIGHT", "NOON")],
         [mask_block(word_art(w, 260, 260)[0], red, cream) for w in ("MIDNIGHT", "NOON")],
@@ -977,10 +1041,10 @@ if __name__ == "__main__":
               "The Moon through a month, the stars by brightness, Saturn, Jupiter, Mars, Venus, Mercury",
               "The signs of the zodiac, set along the ecliptic",
               "The days' planets (Monday's Moon to Sunday's Sun), the south star, a stud, a corner leaf, Quentel's flower (1529), the zenith, a radiant",
-              "The engraved glory round the Sun on the printed charts, and the village on the southern horizon",
-              "The village through the year: blossom (the vane to the east), harvest (the sails turning), gold, bare in the snow with a lit window",
+              "The engraved glory round the Sun on the printed charts; the church (its spire on the meridian) and the house, its windows lit",
+              "The trees through the year (in leaf, blossom, turning, gold, bare; the fir stays green), and the vane: wind from the east, north or south, west",
               "The corner sprigs through the year, Howard's cumulus heaps and banks (lit tops, shaded bases), cirrus",
-              "The passers-by: a swallow and a bat (wings up and down), the owl (and blinking), a falling leaf tumbling, a snowflake",
+              "The passers-by: a swallow, a bat and a jackdaw on the wing, the owl (blinking, looking about), a leaf tumbling, a firefly's flash, a snowflake",
               "MIDNIGHT and NOON along the Time 2's ring", "MIDNIGHT and NOON along the Round 2's ring"]
     tiles = []
     for r, label in zip(rows, labels):

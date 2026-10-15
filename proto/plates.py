@@ -787,48 +787,43 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     if lay.falls:
         skies.paint_falls(img, inside, lay, ccol)
 
-    # the southern horizon's skyline: a village against the sky, bent along the window's lower edge. It keeps the
-    # season (its trees in blossom, leaf, turning or bare, stooks at harvest) and the weather: the church's vane
-    # turned into the wind, the mill's sails turning in a working wind (stopped in a calm or a gale), snow on its
-    # tops, smoke from the chimney on a cold day, a window lit of an evening
+    # the southern horizon: a church and a house among trees, stood on the window's lower edge. They keep the season
+    # (the trees in blossom, leaf, turning, gold or bare) and the weather: the church's vane turned into the wind,
+    # snow on every top, smoke from the chimney on a cold day; the house's windows are lit of an evening
     season = sprites.season_of(pos["sun_lon"], dial.lat)
-    vane, sails, snow_ = "end", "x", False
+    vane, snow_ = "end", False
     if wsky is not None:
         e_ = math.sin(math.radians(wsky.wind_from))      # the wind's source east (+) or west (-) of the meridian
         vane = "end" if wsky.wind < 2 or abs(e_) < 0.38 else ("left" if e_ > 0 else "right")
-        if 8 <= wsky.wind <= 60 and int(secs * wsky.wind / 12.0) % 2:
-            sails = "+"
         snow_ = wsky.snow_lying
     lit_ = sun_alt < -4 and (17 <= local.hour <= 22 or 5 <= local.hour <= 7)
-    land = sprites.landscape(season, snow_, vane, sails, lit_)
-    lh, lw = land.shape
+    edge_ = {}
+    for dx_ in range(-64, 65):
+        x = col + dx_
+        if 0 <= x < W and inside[:, x].any():
+            edge_[dx_] = int(np.nonzero(inside[:, x])[0].max())
+    village_px, anchors = sprites.village(edge_, season, snow_, vane, lit_)
     night_land = sun_alt < -6 or P["window"] == "red"
     silhouette = P["line"] if paper else (c8(0, 0, 0) if night_land else c8(0, 0, 1))
-    if wsky is not None and wsky.fog and live and not night_land:
+    if wsky is not None and wsky.fog and live and sun_alt > 4:
         silhouette = c8(1, 1, 1)                         # in fog by day the village is a ghost of itself
     foggy = wsky is not None and wsky.fog and live
     leaf = silhouette if (paper or night_land or foggy) else (c8(3, 2, 3) if season == "blossom" else c8(3, 1, 0))
     snow_c = (P["night"] if light_paper else c8(3, 3, 3)) if (paper or not night_land) else c8(2, 2, 2)
     land_c = {1: silhouette, 2: leaf, 3: c8(3, 3, 1), 5: snow_c}
-    bottoms = {}
-    for i in range(lw):
-        x = col - lw // 2 + i
-        if not (0 <= x < W) or not inside[:, x].any():
-            continue
-        bottom = int(np.nonzero(inside[:, x])[0].max())
-        bottoms[i] = bottom
-        for j in range(lh):
-            y = bottom - (lh - 1 - j)
-            if land[j, i] and 0 <= y < H and inside[y, x]:
-                img[y, x] = land_c[int(land[j, i])]
-                blocked[y, x] = True
-    if wsky is not None and wsky.smoke and sprites.CHIMNEY in bottoms:
-        i0 = sprites.CHIMNEY
-        j0 = int(np.nonzero(land[:, i0])[0].min())
-        x_c, y_c = col - lw // 2 + i0, bottoms[i0] - (lh - 1 - j0)
+    village_mask = np.zeros((H, W), bool)
+    for (dx_, y), role in village_px.items():
+        x = col + dx_
+        if 0 <= y < H and 0 <= x < W and inside[y, x]:
+            img[y, x] = land_c[role]
+            blocked[y, x] = True
+            village_mask[y, x] = True
+    if wsky is not None and wsky.smoke and "chimney" in anchors:
+        cx_, cy_ = anchors["chimney"]
+        x_c, y_c = col + cx_, cy_
         lean_ = math.sin(math.radians(wsky.wind_from)) * min(1.6, wsky.wind / 12.0)
         smoke_c = (P["line"] if paper else c8(1, 1, 1) if night_land else c8(2, 2, 2))
-        for h_ in range(1, 8):
+        for h_ in range(1, 9):
             if (h_ + int(secs * 2)) % 4 == 0:
                 continue                                 # the puffs, rising
             wob = 0.6 * math.sin(h_ * 1.3 + secs * 1.5) * (1 - min(1, wsky.wind / 20))
@@ -837,12 +832,11 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                 img[Y_, X_] = smoke_c
     if wsky is not None and wsky.fog:                    # fog lying over the hills in three ruled lines, behind the roofs
         fog_c = c8(1, 0, 0) if P["window"] == "red" else (P["line"] if paper else c8(1, 1, 1) if night_land else c8(2, 2, 2))
-        for l_, frac in enumerate((0.46, 0.4, 0.3)):
-            for i in bottoms:
-                if abs(i - lw / 2) <= frac * lw:
-                    y = bottoms[i] - 2 - 2 * l_
-                    x = col - lw // 2 + i
-                    if 0 <= y < H and inside[y, x] and not land[lh - 1 - (bottoms[i] - y), i]:
+        for l_, frac in enumerate((46, 40, 30)):
+            for dx_, e in edge_.items():
+                if abs(dx_) <= frac:
+                    y, x = e - 3 - 2 * l_, col + dx_
+                    if 0 <= y < H and inside[y, x] and not village_mask[y, x]:
                         img[y, x] = fog_c
     blocked = grow(blocked, 1)
 
@@ -934,8 +928,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     # passing things in the sky (meteors, birds): a flash across everything in the window, names too
     if extras is not None:
         extras(img, dict(inside=inside, ground=ground, dial=dial, lst=lst, pos=pos, sun_alt=sun_alt, dark=dark,
-                         paper=paper, P=P, shower=shower, blocked=blocked, land=land, land_x0=col - lw // 2,
-                         bottoms=bottoms, season=season, wsky=wsky, secs=secs, local=local, night_land=night_land,
+                         paper=paper, P=P, shower=shower, blocked=blocked, village=village_mask, anchors=anchors,
+                         col=col, edge=edge_, season=season, wsky=wsky, secs=secs, local=local, night_land=night_land,
                          silhouette=silhouette))
 
     # the window's edge: a clean rule round it and a second a little way out, as a printed neatline

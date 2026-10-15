@@ -91,25 +91,23 @@ With the weather, the face shows the place's own sky, drawn as an engraver would
 - **Fog** lies over the hills in three ruled lines, and the village fades to a ghost of itself.
 - **The village reports the weather too:**
   - the church's vane points into the wind;
-  - the mill's sails turn in a working wind, and rest in a calm or a gale;
-  - smoke rises from the chimney on a cold day and leans downwind;
-  - snow lies on every roof and hilltop.
+  - smoke rises from the house's chimney on a cold day and leans downwind;
+  - snow lies on every roof, treetop and hilltop.
 
 ![Fair at noon, broken cloud at dusk, overcast, rain; snow, fog, the Moon's halo in thin high cloud, and a frosty night with snow lying](docs/weather.png)
 
 ### The year
 
 The village keeps the year, as an almanac's cuts of the months do. The season comes from the Sun's place in the zodiac, turned half a year for the southern hemisphere.
-- The trees come into blossom in April, stand in full leaf through the summer, turn gold in October and stand bare through the winter.
-- Stooks stand in the fields at harvest.
-- A window is lit of an evening.
+- The trees come into blossom in April, stand in full leaf through the summer, turn gold in October and stand bare through the winter. The firs stay green.
+- The house's windows are lit of an evening.
 - The Time 2's corner sprigs follow the season.
 
-![The year at eleven in the morning: blossom in April, leaf in July, gold in October, snow in January; below, the village up close: blossom, harvest, autumn leaves, frost and snow; a frosty evening with chimney smoke and a lit window, fog, a summer gale, a snowy night](docs/seasons.png)
+![The year at eleven in the morning: blossom in April, leaf in July, gold in October, snow in January; below, the village up close: blossom, high summer, autumn leaves, frost and snow; a frosty evening with chimney smoke and lit windows, fog, a summer gale, a snowy night](docs/seasons.png)
 
 And the filigree, all drawn by hand:
 
-- a village on the southern horizon (hills, trees, a house, the church, a windmill), bent along the window's lower edge, keeping the season and the weather;
+- on the southern horizon, a church and a house among trees, after the cuts of a village on an almanac's page. The church stands at the south point, its spire on the meridian and a weather vane on its mast. Each piece is drawn whole and stood on the ground along the window's lower edge: a tree where its trunk meets the ground, a building as low as the ground under it goes. They keep the season and the weather;
 - the engraver's glory of fine rays round the Sun on the printed charts;
 - a beaded rule inside the ring's outer rule, as on a clock's chapter ring;
 - studs on the inner rule at the numbered hours;
@@ -127,11 +125,12 @@ Each plays for a moment, then the face is still again: a watch has no battery fo
 - **Falling stars.** Now and then at night a meteor streaks across the window, its head a small cross of white, its trail fading through cream and grey into the sky. On a shower's peak night they come often, and all streak out from the shower's radiant.
 - **Birds.** Now and then by day a little flock crosses the sky in a loose V, wings beating, in the village's dark ink.
 - **The village.** The hour and the season bring their own passers-by:
-  - swallows hawking low over the fields on summer mornings;
-  - a bat jinking above the roofs on a mild evening;
-  - by night the owl on the church roof, blinking its gold eyes, with fireflies over the fields on warm summer nights;
-  - in autumn, leaves loosed from the trees and geese going south in a long V.
-- **The weather.** Rain and snow fall, the clouds drift downwind, the mill's sails turn and the chimney smoke rises.
+  - swallows hawking low over the fields on summer mornings, swooping round the church tower;
+  - on a mild evening, a bat dropping out of the belfry and flitting over the roofs;
+  - by night the owl on the church's ridge, blinking its gold eyes and looking east and west, with fireflies flashing among the trees on warm summer nights;
+  - in autumn, leaves loosed from the trees, tumbling downwind to the ground, and geese going south in a long V;
+  - in winter, jackdaws wheeling round the church tower.
+- **The weather.** Rain and snow fall, the clouds drift downwind and the chimney smoke rises.
 - **The hour.** At the top of each hour, one of two animations, as you choose:
   - **The constellations** (the default). The figures in the window are traced one by one, without their names, each over a second. A cream line runs star to star like an engraver's pen, with its tip white, and each star flashes as the line reaches it. The figure holds a moment, then fades back as the next begins. Those that came into the window during the hour go first, east to west, then the highest in the sky; five at most. By day the figures that are up behind the blue are sketched faintly in white, then fade.
   - **The turn.** The star disc spins through a whole day in a few seconds, then settles back to now, as a planisphere turns in the hand. The window races from night through dawn, the day and dusk, while the Sun's pointer sweeps round the ring. The clock keeps its time throughout.
@@ -140,7 +139,7 @@ Each plays for a moment, then the face is still again: a watch has no battery fo
 
 ![A flock crossing the morning sky](docs/anim-birds.gif)
 
-![Swallows on a June morning, a bat on an August evening, the owl on an October night, fireflies on a July night, leaves and geese on an October afternoon](docs/anim-village.gif)
+![Swallows on a June morning, a bat on an August evening, the owl on an October night, fireflies on a July night, leaves and geese on an October afternoon, jackdaws on a January afternoon](docs/anim-village.gif)
 
 ![Rain at noon, snow falling at dusk with smoke from the chimney, and broken cloud hurried across an evening sky](docs/anim-weather.gif)
 
@@ -215,13 +214,7 @@ The pieces are drawn by hand, pixel by pixel, not generated from shapes. Each is
   - Quentel's flowers beside the time;
   - the engraved glory;
   - the village on the horizon.
-- **The village** is drawn in pieces for each state:
-  - trees in leaf, blossom, turning, gold and bare;
-  - stooks for the harvest;
-  - the church's vane three ways;
-  - the mill's sails two ways.
-
-  Its passers-by are drawn too: a swallow, a bat, an owl and a falling leaf.
+- **The village** is a church (tower, pinnacles, spire, nave with lancet windows), a two-storey house with a chimney, and trees: a broad tree, a poplar and a small tree, each in leaf, blossom, turning, gold and bare, and a fir. The church's vane is drawn three ways. Its passers-by are drawn too: a swallow, a bat and a jackdaw on the wing, the owl blinking and looking about, a tumbling leaf, a firefly's flash.
 - **The clouds** are Howard's: cumulus heaps and banks drawn as silhouettes, whose tops and bases the face lights for the hour, and cirrus in hair strokes.
 - **The almanac's signs** are the zodiac and the planets that rule the days.
 - **The ring's hours** are hand-drawn too: roman numerals on the 12-hour clock, figures on the 24-hour clock.
