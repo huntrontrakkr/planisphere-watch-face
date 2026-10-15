@@ -523,6 +523,84 @@ def real_range(dial, edge_, sky, most=2.0, room=12.0, least=3.0):
         return None
     return {dx: int(round(v * mag)) for dx, v in true.items()}
 
+LABOUR_TONE = "pale"                                     # "pale" (barely there) or "hatch" (the ring hatching's tone)
+
+
+def faint_tone(P, how=None):
+    """A tone a single step from the card's own, for what is drawn faint in it."""
+    how = how or LABOUR_TONE
+    j = P["jacket"]
+    if how == "hatch":
+        return tint_of(P)
+    if (j == c8(3, 3, 2)).all():
+        return c8(3, 3, 1)
+    if j.sum() == 0:
+        return c8(0, 0, 1)
+    return np.minimum(j + np.array([0, 0, 85]), 255) if j[2] < 255 else j - np.array([0, 0, 85])
+
+
+def labour_scene(img, dial, inside, inner, P, month):
+    """The month's labour, faint in the card between the window and the ring: its field runs on behind the window
+    (furrows from a point hidden behind the oval's top, a far line of hills), the labourer standing in the left of it,
+    the month's creatures in the right. Drawn only on the card, so the window covers what lies behind it."""
+    scene = LABOURS_OF.get(month)
+    if scene is None:
+        return
+    H, W = inside.shape
+    tone = faint_tone(P)
+    card = inner & ~grow(inside, 3) & ~grow(~inner, 3)
+    col = int(dial.cx)
+    top = int(np.argmax(inside[:, col]))
+    vx, vy = dial.cx, top + 6
+    mask = np.zeros((H, W), bool)
+    # the far hills, a gentle line across behind the window's top
+    for x in range(W):
+        y = int(round(vy - 3 + 1.5 * math.sin(x / 7.0) + math.sin(x / 3.1)))
+        if 0 <= y < H:
+            mask[y, x] = True
+    # the furrows, drawn every other pixel, running out from behind the window
+    if scene["ground"] == "furrows":
+        for a in np.arange(-84, 85, 7):
+            ex, ey = vx + 260 * math.sin(math.radians(a)), vy + 260 * math.cos(math.radians(a))
+            for k, (px, py) in enumerate(line_pixels(vx, vy, ex, ey)):
+                if k % 2 == 0 and 0 <= px < W and 0 <= py < H:
+                    mask[py, px] = True
+    # the labourer and the creatures, in the widest room either side
+    room = clear_distance(~(card & (yy_grid(H, W) > vy + 2)), most=14)
+    for side in ("left", "right"):
+        name = scene.get(side)
+        if not name:
+            continue
+        r = room.copy()
+        if side == "left":
+            r[:, col:] = 0
+        else:
+            r[:, :col] = 0
+        j, i = np.unravel_index(np.argmax(r), r.shape)
+        fig = sprites.labour_figure(name)
+        if side == "right":
+            fig = fig[:, ::-1]
+        h, w = fig.shape
+        copies = [(0, 0)] if name != "crow" else [(0, 0), (-7, 5), (6, 8)]
+        for dx, dy in copies:
+            y0, x0 = j - h // 2 + dy, i - w // 2 + dx
+            for jj, ii in zip(*np.nonzero(fig)):
+                if 0 <= y0 + jj < H and 0 <= x0 + ii < W:
+                    mask[y0 + jj, x0 + ii] = True
+            # the figure stands clear of the furrows round it
+            clear = grow(np.pad(fig, 1), 0)
+            for jj, ii in zip(*np.nonzero(~np.pad(fig, 1) & grow(np.pad(fig, 1), 1))):
+                Y, X = y0 - 1 + jj, x0 - 1 + ii
+                if 0 <= Y < H and 0 <= X < W:
+                    mask[Y, X] = False
+    img[mask & card] = tone
+
+
+def yy_grid(H, W):
+    return np.mgrid[0:H, 0:W][0]
+
+
+LABOURS_OF = sprites.LABOURS
 _WIDEST = {}
 
 
@@ -642,6 +720,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                                                                        for l_ in np.arange(0, 361, 1))], fill=255, width=4)
             img[(np.asarray(line_, np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3)) > 110) & zband] = P["accent"]
     ground = img.copy()
+    labour_scene(img, dial, inside, inner_region(dial), P, local.month)   # the month's labour, faint behind the window
     faint = float(np.interp(s_eff, [-16, -10, -5, -1.5], [4.6, 3.4, 2.0, 0.4])) if not paper else 4.6
     if not paper and s_eff > -1.5:
         faint = -9

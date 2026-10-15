@@ -582,6 +582,37 @@ PEARL = art([".S.",
              ".S."])
 
 
+# ---- the labours of the months, drawn faint in the card behind the window as a calendar's cuts show them: the month's
+# work in a field that runs on behind the oval. October: the sower, crows following
+LABOUR_FIGURES = {
+    "sower": [".......##.......",          # striding, the seed flung from his hand
+              "......####......",
+              ".......##.......",
+              "......####......",
+              ".#...######.....",
+              "..#.###.###.....",
+              "...##...####....",
+              ".......#####....",
+              ".......####.#...",
+              "......####..#...",
+              "......####......",
+              ".....##.###.....",
+              "....##....##....",
+              "...##......##...",
+              "..##........#...",
+              ".##.........##.."],
+    "crow": ["..##..",
+             ".####.",
+             "####..",
+             "..#..."],
+}
+LABOURS = {10: dict(left="sower", right="crow", ground="furrows")}
+
+
+def labour_figure(name):
+    return np.array([[c == "#" for c in r] for r in LABOUR_FIGURES[name]])
+
+
 # ---- small marks: the south point's star, the studs on the ring at every third hour, a meteor shower's radiant
 SOUTH_STAR = art([
     "..R..",

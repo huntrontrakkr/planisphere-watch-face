@@ -134,6 +134,7 @@ The village keeps the year, as an almanac's cuts of the months do. The season co
 - The house's windows are lit of an evening.
 - The Time 2's corner sprigs follow the season.
 - The flowers beside the time keep the season too (below).
+- The month's labour, as the calendars of the Books of Hours show the year's work, is drawn faint in the card behind the window, a single step from the card's own colour, so it is felt more than seen. Its field runs on behind the oval: the furrows come out from a point hidden behind the window's top, and a far line of hills crosses behind it. The labourer stands in the cream on the left, the month's creatures on the right. So far only October is drawn, the sower with crows following, as a trial.
 
 ![The year at eleven in the morning: blossom in April, leaf in July, gold in October, snow in January; below, the village up close: blossom, high summer, autumn leaves, frost and snow; a frosty evening with chimney smoke and lit windows, fog, a summer gale, a snowy night](docs/seasons.png)
 
