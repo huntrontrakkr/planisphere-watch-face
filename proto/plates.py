@@ -6,8 +6,8 @@ the type of its time, the way Groundtrack's plates follow real charts:
                 (Old Standard, a revival of the period's scientific type)
   burritt       Burritt's Geography of the Heavens (1835): white stars and
                 figures on a blue ground (Playfair, after copperplate lettering)
-  flamsteed     Flamsteed's Atlas Coelestis (London, 1729): engraved stars and
-                figures, ink on paper (Libre Caslon: Caslon cut his type in
+  flamsteed     Flamsteed's Atlas Coelestis (London, 1729): copper engraving,
+                black ink on white paper (Libre Caslon: Caslon cut his type in
                 London in the same decade)
   observatory   red light for eyes adapted to the dark (Old Standard)
   astrolabe     a brass astrolabe, after the Sloane astrolabe (c. 1300) and Arsenius's gilt instruments: the
@@ -68,9 +68,9 @@ PLATES = {
                     star=c8(3, 3, 3), glyph="rays", line=c8(2, 2, 3), milky=c8(1, 2, 3), label=c8(3, 3, 3),
                     const=c8(3, 3, 2), planet=c8(3, 3, 1), rule=c8(3, 3, 2), font=("PlayfairDisplay[wght].ttf", 450),
                     italic=("PlayfairDisplay-Italic[wght].ttf", 450), ring="roman", figures="copperplate"),
-    "flamsteed": dict(jacket=c8(3, 3, 2), ink=c8(1, 0, 0), accent=c8(2, 0, 0), window="paper", night=c8(3, 3, 3),
-                      star=c8(0, 0, 0), glyph="rays", line=c8(2, 1, 1), milky=c8(2, 2, 2), label=c8(1, 0, 0),
-                      const=c8(2, 0, 0), planet=c8(2, 0, 0), rule=c8(1, 0, 0), font=("LibreCaslonText[wght].ttf", 450),
+    "flamsteed": dict(jacket=c8(3, 3, 3), ink=c8(0, 0, 0), accent=c8(0, 0, 0), window="paper", night=c8(3, 3, 3),
+                      star=c8(0, 0, 0), glyph="rays", line=c8(1, 1, 1), milky=c8(2, 2, 2), label=c8(0, 0, 0),
+                      const=c8(1, 1, 1), planet=c8(0, 0, 0), rule=c8(0, 0, 0), font=("LibreCaslonText[wght].ttf", 450),
                       italic=("LibreCaslonText-Italic[wght].ttf", 450), ring="roman", figures="caslon"),
     "observatory": dict(jacket=c8(0, 0, 0), ink=c8(2, 0, 0), accent=c8(3, 0, 0), window="red", night=c8(0, 0, 0),
                         star=c8(3, 0, 0), glyph="cross", line=c8(1, 0, 0), milky=c8(1, 0, 0), label=c8(2, 0, 0),
@@ -83,7 +83,7 @@ PLATES = {
     "hours": dict(jacket=c8(3, 3, 2), ink=c8(0, 0, 0), accent=c8(3, 1, 0), window="paper", night=c8(0, 0, 2),
                   star=c8(3, 2, 0), glyph="rays", line=c8(1, 1, 3), milky=c8(0, 1, 2), label=c8(3, 2, 0),
                   const=c8(3, 2, 0), planet=c8(3, 3, 1), rule=c8(3, 2, 0), font=(OLD, None), italic=(OLD_I, None),
-                  ring="minuscule", figures="caslon", corner="ivy"),
+                  ring="minuscule", figures="caslon", corner="ivy", ringfill=c8(0, 0, 2), ring_ink=c8(3, 2, 0)),
     "orloj": dict(jacket=c8(0, 0, 0), ink=c8(3, 2, 0), accent=c8(3, 1, 0), window="orloj", night=c8(0, 0, 0),
                   star=c8(3, 2, 0), glyph="rays", line=c8(2, 1, 0), milky=c8(1, 1, 0), label=c8(3, 2, 0),
                   const=c8(3, 2, 0), planet=c8(3, 3, 1), rule=c8(3, 2, 0), font=(OLD, None), italic=(OLD_I, None),
@@ -95,7 +95,8 @@ PLATES = {
     "apian": dict(jacket=c8(3, 3, 2), ink=c8(0, 0, 0), accent=c8(3, 1, 0), window="paper", night=c8(1, 2, 3),
                   star=c8(3, 3, 1), glyph="woodcut", line=c8(0, 0, 0), milky=c8(2, 3, 3), label=c8(0, 0, 0),
                   const=c8(3, 1, 0), planet=c8(3, 1, 0), rule=c8(0, 0, 0), font=(OLD, None), italic=(OLD_I, None),
-                  ring="roman", figures="caslon", woodcut=True, ringwash=c8(3, 3, 1), dragon=True, hand="thread"),
+                  ring="roman", figures="caslon", woodcut=True, ringwash=c8(3, 3, 1), dragon=True, hand="thread",
+                  foxing=(c8(3, 2, 1), 0.04)),
     "night": dict(jacket=c8(0, 0, 0), ink=c8(3, 3, 3), accent=c8(3, 2, 0), window="sky", night=c8(0, 0, 1),
                   star=c8(3, 3, 3), glyph="cross", line=c8(0, 1, 2), milky=c8(1, 1, 2), label=c8(2, 2, 2),
                   const=c8(1, 1, 2), planet=c8(3, 2, 1), rule=c8(1, 1, 1), font=(OLD, None), italic=(OLD_I, None),
@@ -276,6 +277,8 @@ def tint_of(P):
     jacket = P["jacket"]
     if (jacket == c8(2, 2, 1)).all():
         return c8(1, 1, 0)                              # on brass, the engraver's darker line
+    if (jacket == c8(3, 3, 3)).all():
+        return c8(2, 2, 2)                              # on white paper, an engraving's grey
     if jacket.sum() > 400:
         return c8(2, 2, 1)
     if P["window"] == "red":
@@ -698,6 +701,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     sdec, sha = pos["sun"][1] * astro.D2R, (lst - pos["sun"][0]) * astro.D2R
     gamma = np.degrees(np.arccos(np.clip(np.sin(pdec) * np.sin(sdec) + np.cos(pdec) * np.cos(sdec) * np.cos(pha - sha), -1, 1)))
     tt = bn_tile(H, W)
+    if P.get("foxing") is not None:                      # old rag paper, foxed: a sparse speckle of buff in the card
+        fox_c, fox_f = P["foxing"]
+        img[(tt[::-1, ::-1] < fox_f) & ~inside] = fox_c
     paper = P["window"] == "paper"
     closed_sky = False
     if P["window"] == "sky":
@@ -1282,18 +1288,23 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     ang = np.degrees(np.arctan2(xx + 0.5 - dial.cx, yy + 0.5 - dial.cy))
     s_alt = np.degrees(np.arcsin(np.sin(lat) * np.sin(sdec) + np.cos(lat) * np.cos(sdec) * np.cos(np.radians(ang))))
     step = np.select([s_alt > -0.833, s_alt > -6, s_alt > -12, s_alt > -18], [0] + list(HATCH[:3]), HATCH[3])
-    if P.get("ringwash") is not None:                    # a hand-coloured ring: washed, the night hatched over it in a
+    if isinstance(P.get("ringfill"), np.ndarray):        # a ring painted flat (the Hours' ultramarine, as the bands of
+        img[band] = P["ringfill"]                        # the Tres Riches Heures' calendar lunettes), the night hatched
+        hatch = band & (step > 0) & ((xx + yy) % np.maximum(step, 1) == 0)   # a shade darker
+        img[hatch] = np.maximum(P["ringfill"] - 85, 0)
+    elif P.get("ringwash") is not None:                  # a hand-coloured ring: washed, the night hatched over it in a
         img[band] = P["ringwash"]                        # quiet tone, so the lettering stays clear
         hatch = band & (step > 0) & ((xx + yy) % np.maximum(step, 1) == 0)
         img[hatch] = c8(2, 2, 1)
-    elif P.get("ringfill") == "zones":                   # the clock's zones round the Sun's path instead, the day
+    elif isinstance(P.get("ringfill"), str) and P["ringfill"] == "zones":   # the clock's zones round the Sun's path, the day
         img[band & (s_alt > -0.833)] = c8(0, 1, 2)       # a deep blue, as on the clock, so the gold reads on it
         img[band & (s_alt <= -0.833) & (s_alt > -18)] = c8(2, 1, 0)
     else:
         hatch = band & (step > 0) & ((xx + yy) % np.maximum(step, 1) == 0)
         img[hatch] = tint_of(P)
-    img[rule_in] = P["ink"]
-    img[rule_out] = P["ink"]
+    ring_ink = P.get("ring_ink", P["ink"])               # the ring's lettering and rules (gold on the Hours' blue)
+    img[rule_in] = ring_ink
+    img[rule_out] = ring_ink
     # a beaded rule just inside the outer one, as on a clock's chapter ring; on an astrolabe, beads at the unequal
     # hours instead: the day from sunrise to sunset in twelve and the night in twelve, crowding and spreading
     # with the seasons (equal at the equinoxes), as an astrolabe's plate engraves them
@@ -1311,12 +1322,12 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                 for ox_ in (0, 1):
                     X_, Y_ = int(math.floor(bx_ - 0.5)) + ox_, int(math.floor(by_ - 0.5)) + oy_
                     if 0 <= X_ < W and 0 <= Y_ < H:
-                        img[Y_, X_] = P["ink"]
+                        img[Y_, X_] = ring_ink
                         bead_px.append((Y_, X_))
     else:
         bead_px = bead_pixels(dial, rp["bead"])
         for by_, bx_ in bead_px:
-            img[by_, bx_] = P["ink"]
+            img[by_, bx_] = ring_ink
     words = {0: "MIDNIGHT", 12: "NOON"}
     # the hours every three: on the 12-hour clock twelve and twelve (III, VI, IX each morning and evening, or
     # figures on the plain plates); on the 24-hour clock, figures running on through the day
@@ -1343,13 +1354,13 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     for x, y in ticks:
         for xx_ in (x, W - 1 - x):                      # mirrored across the meridian: exactly symmetric
             if 0 <= xx_ < W and 0 <= y < H and not inside[y, xx_] and not inner[y, xx_]:
-                img[y, xx_] = P["ink"]
+                img[y, xx_] = ring_ink
     # studs on the inner rule at the numbered hours, half in the band and half out
     studs = np.zeros((H, W), bool)
     for hr in numerals:
         ex_, ey_ = edge_point(dial, (hr - 12) * 15)
         sx_, sy_ = int(math.floor(ex_)), int(math.floor(ey_))
-        sprites.paint(img, sprites.STUD, sx_, sy_, {1: P["ink"], 2: P["accent"]})
+        sprites.paint(img, sprites.STUD, sx_, sy_, {1: ring_ink, 2: P["accent"]})
         for j, i in zip(*np.nonzero(sprites.STUD)):
             if 0 <= sy_ - 2 + j < H and 0 <= sx_ - 2 + i < W:
                 studs[sy_ - 2 + j, sx_ - 2 + i] = True
@@ -1381,7 +1392,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             if best is None or key > best[0]:
                 best = (key, lx, ty)
         _, lx, ty = best
-        img[ty: ty + m.shape[0], lx: lx + m.shape[1]][m] = P["ink"]
+        img[ty: ty + m.shape[0], lx: lx + m.shape[1]][m] = ring_ink
         numeral_px[ty: ty + m.shape[0], lx: lx + m.shape[1]] |= m
     # MIDNIGHT and NOON, lettered along the ring (hand-finished art; drafts where none is finished yet),
     # a lozenge either side
@@ -1400,7 +1411,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         half_w = (sum(len(sprites.CAPS9[ch][0]) for ch in word) + 2 * (len(word) - 1)) / 2
         for sgn in (-1, 1):
             lx, ly, _ = curve(sgn * (half_w + 6))
-            sprites.paint(img, sprites.LOZENGE, lx - 0.5, ly - 0.5, {2: P["accent"], 1: P["ink"]})
+            sprites.paint(img, sprites.LOZENGE, lx - 0.5, ly - 0.5, {2: P["accent"], 1: ring_ink})
     # the place, as a map's border gives it: its city and country either side of MIDNIGHT, its latitude and
     # longitude either side of NOON, in small capitals along the ring, each centred in the room the band has
     # there; a city too long for its room is shortened, its leading words to their initials, then all of it
@@ -1443,7 +1454,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             x0_, y0_ = int(round(gx)), int(round(y_ - 2.5))
             for j, i in zip(*np.nonzero(g)):
                 if 0 <= y0_ + j < H and 0 <= x0_ + i < W:
-                    img[y0_ + j, x0_ + i] = P["ink"]
+                    img[y0_ + j, x0_ + i] = ring_ink
             gx += g.shape[1] + track
     # the Time 2's corners, outside the ring: a sprig turning into each, where the corner has most room, in the
     # season's dress (blossom, leaf, gold leaf, bare twig)
