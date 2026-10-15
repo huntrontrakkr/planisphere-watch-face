@@ -318,7 +318,14 @@ Open-Meteo every half hour; the watch keeps them and draws the face once a minut
 as you set it, at any time and date: the watch's own C built to WebAssembly (`preview/`) draws the preview and each
 plate's thumbnail.
 
+The page is set like a page of the chart: Old Standard (the type the plate's large time follows), letter-spaced
+red titles under the face's own fleur-de-lis, the engraver's double rules, the gilded Sun riding the clock's scale, the
+plates captioned as in an atlas, the face's blue noise as the paper's grain. It takes the colours of the plate chosen:
+vellum and ultramarine for the Book of Hours, black and gold for the Orloj, cobalt for the Cyanotype.
+
 ![The settings page: the live preview, and the plates as live thumbnails](docs/settings-page.png)
+
+![The page in the Planisphere's, the Book of Hours', the Orloj's, the Cyanotype's and Apian's colours](docs/settings-themes.png)
 
 The drawing is larger than PebbleOS lets an app's own code be (64 KB, from the way it records an app's size), so it
 is not linked into the app. `tools/build_blob.py` compiles it into one of the app's resources, and the app loads it at

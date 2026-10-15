@@ -4,6 +4,7 @@
   'use strict';
   var STATE = window.PLAN_STATE || {};
   var PLATES = window.PLAN_PLATES || [];
+  var ART = window.PLAN_ART || {};
   var returnTo = STATE.returnTo || 'pebblejs://close#';
   var owned = STATE.platform === 'gabbro' ? 'round2' : 'time2';
   var which = owned;
@@ -42,6 +43,32 @@
   }
   function fahrenheit() { return settings.UNITS === 2 || (settings.UNITS === 0 && fahrenheitHere()); }
 
+  // the page in the chosen plate's paper and inks (tools/build_page.py PLATES), the faded ink mixed here
+  function hex(c) { return [1, 3, 5].map(function (i) { return parseInt(c.substr(i, 2), 16); }); }
+  function mix(a, b, t) {
+    var x = hex(a), y = hex(b);
+    return 'rgb(' + x.map(function (v, i) { return Math.round(v * t + y[i] * (1 - t)); }).join(',') + ')';
+  }
+  var themed = -1;
+  function theme(i) {
+    var t = PLATES[i] && PLATES[i].theme;
+    if (!t || themed === i) return;
+    themed = i;
+    var root = document.documentElement;
+    ['paper', 'ink', 'accent', 'deep', 'rule'].forEach(function (k) { root.style.setProperty('--' + k, t[k]); });
+    root.style.setProperty('--dim', mix(t.ink, t.paper, 0.66));
+    root.style.setProperty('--faint', mix(t.ink, t.paper, 0.09));
+    root.classList.toggle('dark', !!t.dark);
+  }
+  function roman(n) {
+    var out = '', v = [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+    v.forEach(function (p) { while (n >= p[0]) out += p[1], n -= p[0]; });
+    return out;
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"]/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]; });
+  }
+
   // a name as the ring engraves it: capitals, without accents
   function engrave(s) {
     s = String(s || '');
@@ -51,10 +78,11 @@
 
   // ---- what can be set ----
   var SECTIONS = [
-    {title: 'Plate', items: [{type: 'plates'}]},
+    {title: 'The plate', items: [{type: 'plates'}]},
     {title: 'The clock', items: [
       {key: 'CLOCK', type: 'seg', options: [[0, 'As the watch'], [1, '12-hour'], [2, '24-hour']],
-       desc: 'The hours on the ring, and the time as an astronomer writes it: 9ʰ 30ᵐ, or 21ʰ 30ᵐ.'}
+       descHtml: 'The hours on the ring, and the time as an astronomer writes it: 9<sup>h</sup> 30<sup>m</sup>, or ' +
+                 '21<sup>h</sup> 30<sup>m</sup>.'}
     ]},
     {title: 'The sky', items: [
       {key: 'NAMES', type: 'switch', label: 'Names in the sky',
@@ -65,7 +93,7 @@
        desc: 'The month’s work, faint in the card round the window, as the old calendars’ woodcuts show it: ' +
              'January’s feast, the March pruning, October’s sowing. In the south, by the seasons there.'}
     ]},
-    {title: 'Weather', items: [
+    {title: 'The weather', items: [
       {key: 'WEATHER', type: 'switch', label: 'Show the weather',
        desc: 'The temperature on the almanac’s line and the weather in the sky and on the village, from ' +
              'Open-Meteo for where your phone is, every half hour while the phone is near.'},
@@ -73,7 +101,7 @@
        show: function (s) { return !!s.WEATHER; }},
       {type: 'trysky', label: 'Try a sky on the preview', show: function (s) { return !!s.WEATHER; }}
     ]},
-    {title: 'Place', items: [
+    {title: 'The place', items: [
       {key: 'PLACE', type: 'seg', options: [[0, 'Where my phone is'], [1, 'A place I choose']]},
       {type: 'phoneplace', show: function (s) { return s.PLACE === 0; }},
       {type: 'place', show: function (s) { return s.PLACE === 1; }}
@@ -83,7 +111,13 @@
   var dirty = [];
   function section(sec) {
     var s = el('section');
-    s.appendChild(el('h2', null, sec.title));
+    var h = el('h2');
+    var fleur = el('span', 'fleur'), title = el('span', 'title');
+    fleur.innerHTML = ART.fleur || '';
+    title.innerHTML = (ART.star || '') + '<span>' + escapeHtml(sec.title) + '</span>' + (ART.star || '');
+    h.appendChild(fleur);
+    h.appendChild(title);
+    s.appendChild(h);
     var body = el('div', 'body');
     sec.items.forEach(function (it) { body.appendChild(item(it)); });
     s.appendChild(body);
@@ -116,8 +150,10 @@
       PLATES.forEach(function (p, i) {
         var card = el('button', 'plate');
         card.type = 'button';
-        var cv = el('canvas');
-        card.appendChild(cv);
+        var frame = el('div', 'frame'), cv = el('canvas');
+        frame.appendChild(cv);
+        card.appendChild(frame);
+        card.appendChild(el('div', 'no', 'Plate ' + roman(i + 1)));
         card.appendChild(el('div', 'name', p.name));
         card.appendChild(el('div', 'words', p.words));
         card.onclick = function () { settings.PLATE = i; changed(); };
@@ -143,7 +179,8 @@
       var d = el('div', 'desc');
       dirty.push(function () {
         d.textContent = phonePlace
-          ? 'Your phone was last at ' + phonePlace.lat.toFixed(2) + '°, ' + phonePlace.lon.toFixed(2) + '°' +
+          ? 'Your phone was last at ' + Math.abs(phonePlace.lat).toFixed(2) + '° ' + (phonePlace.lat >= 0 ? 'N' : 'S') +
+            ', ' + Math.abs(phonePlace.lon).toFixed(2) + '° ' + (phonePlace.lon >= 0 ? 'E' : 'W') +
             (phonePlace.city ? ' (' + phonePlace.city + ')' : '') + '. The watch keeps up as you travel.'
           : 'The watch will ask your phone where it is (allow it the location). Until then it shows a northern sky.';
       });
@@ -186,6 +223,7 @@
       if (phonePlace) box.appendChild(use);
     }
     if (it.desc) box.appendChild(el('div', 'desc', it.desc));
+    if (it.descHtml) { var dh = el('div', 'desc'); dh.innerHTML = it.descHtml; box.appendChild(dh); }
     if (it.show) dirty.push(function () { box.classList.toggle('hidden', !it.show(settings)); });
     return box;
   }
@@ -297,9 +335,9 @@
     if (!M) return;
     paint($('screen'), settings.PLATE);
     var p = place();
-    $('caption').textContent = PLATES[settings.PLATE] ? PLATES[settings.PLATE].name + ' · ' +
-      Math.abs(p.lat).toFixed(1) + '°' + (p.lat >= 0 ? 'N' : 'S') + ' ' + Math.abs(p.lon).toFixed(1) + '°' +
-      (p.lon >= 0 ? 'E' : 'W') : '';
+    $('caption').innerHTML = PLATES[settings.PLATE] ? '<b>Plate ' + roman(settings.PLATE + 1) + '</b>' +
+      escapeHtml(PLATES[settings.PLATE].name) + ' · ' + Math.abs(p.lat).toFixed(1) + '° ' + (p.lat >= 0 ? 'N' : 'S') +
+      ', ' + Math.abs(p.lon).toFixed(1) + '° ' + (p.lon >= 0 ? 'E' : 'W') : '';
   }
   var thumbTimer = null;
   function refreshThumbs() {
@@ -307,7 +345,7 @@
     clearTimeout(thumbTimer);
     thumbTimer = setTimeout(function () { thumbs.forEach(function (t) { paint(t.canvas, t.plate); }); }, 30);
   }
-  function refresh() { dirty.forEach(function (f) { f(); }); }
+  function refresh() { theme(settings.PLATE); dirty.forEach(function (f) { f(); }); }
   function changed() { refresh(); draw(); refreshThumbs(); showTime(); }
 
   // the header shrinks as the settings scroll beneath it

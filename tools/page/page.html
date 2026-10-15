@@ -17,7 +17,10 @@
   <div id="controls">
     <div class="row clock">
       <button id="now" type="button" class="ghost">Now</button>
-      <input id="time" type="range" min="0" max="1439" step="1" aria-label="Time of day">
+      <div class="scale">
+        <input id="time" type="range" min="0" max="1439" step="1" aria-label="Time of day">
+        <div class="hours" aria-hidden="true"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div>
+      </div>
       <span id="timelabel">21:30</span>
       <button id="lapse" type="button" class="ghost" title="The sky turning through a day">Turn</button>
     </div>
@@ -33,7 +36,7 @@
   <button id="save" type="button" class="primary">Save to watch</button>
 </footer>
 <script>/*PREVIEW*/</script>
-<script>var PLAN_PLATES = /*PLATES*/[]; var PLAN_STATE = /*STATE*/null;</script>
+<script>var PLAN_PLATES = /*PLATES*/[]; var PLAN_ART = /*ART*/{}; var PLAN_STATE = /*STATE*/null;</script>
 <script>/*PAGE*/</script>
 </body>
 </html>
