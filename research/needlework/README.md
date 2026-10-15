@@ -26,7 +26,20 @@ cell for cell (the header says why).
 - How a band turns a corner: `tryntje-corner-battlement` (frame line, checker and battlement meeting at the corner, 25×18); `vinciolo1588-handkerchief-corner-71` (a lacis handkerchief corner, large).
 - Coloured ring bands, painted c. 1596 in verdigris, orange, rose and black: `album1596-flame-band` (4 rows, period 4), `album1596-oval-bead-band` (12 rows, period 8), `album1596-bracket-cross-band` (14 rows, period 10).
 - Ring bands, one-cell line work: `tryntje-battlement-band` (5 rows, period 8), `dmc1890-tee-fret-band` (5 rows, period 6), `tryntje-spiral-key-band` (7 rows, period 8), `bk-1968-11-greek-key-band` (9 rows, period 11), `quentel1529-triangle-band` (a 4-row dog-tooth from one tier), `quentel1529-acorn-band` (7 rows, period 6: autumn).
-- Seasons: spring `quentel1529-rosette-13`, `ostaus1567-blossom-tree-15`, `quentel1529-lily-11x9`; summer `vosterman1527-leafy-tree-15`; autumn `ch-18616709-grape-bunch` (11×13), `dmc1890-acorn-10`, `bk-1968-11-vine-leaf`; winter `petit1819-snowflake-7` (7×7 ice crystal), `quentel1544-fir-band` (a row of firs, 10 rows). Mignerak's four seasons (1605) are described with crops in `mignerak1605-four-seasons` (line drawings on net, not countable).
+- By season (the side pieces, one colour, up to about 15 cells; on the face now: spring rosette, summer tree, September grapes, October-November acorn, winter fir):
+  - Spring: `quentel1529-rosette-13` (on the face), `album1596-bud-sprig` (a young shoot, 16×13, c. 1596; the page draws it as a facing pair), `quentel1529-lily-11x9`, `ostaus1567-blossom-tree-15`, `dmc1890-four-ring-flower` (four buds, 13×15).
+  - Summer: `vosterman1527-leafy-tree-15` (on the face), `ch-18489537-strawberry` (11×12), `bk-1980-63-flower-head` (9×12). No wheat ear or sheaf found in a counted source (Mignerak's Autumn holds one, drawn on net: `mignerak1605-four-seasons`).
+  - September: `ch-18616709-grape-bunch` (11×13, on the face).
+  - October-November: `dmc1890-acorn-10` (on the face), `bk-1959-142-a-acorn` (5×8) with `bk-1959-142-a-oak-leaf` (13×6), `bk-1968-11-vine-leaf` (13×13).
+  - Winter: `quentel1544-fir-band` (a row of firs, 10 rows; on the face), `album1596-berry-cluster` (three berries, 9×8: holly or rowan berries without leaves). No holly leaf or mistletoe found.
+  - Christmas and new year: no crown or candle under 15 cells found. Use a star (`ch-18616385-star-11`, `quentel1529-star-15`) or the lit lantern `bk-1980-63-lantern` (15×21). Larger pointers: the crowns of the Rijksmuseum orphanage marking sampler BK-KOG-1649-A (1771, red, about 23×23) and the lantern and candlesticks of BK-KOG-66 (1749, about 17×23); not charted.
+- By weather (no counted rain, lightning, cloud or fog chart was found in the pattern books, samplers or museum catalogues searched; see `mignerak1605-four-elements` for what was checked):
+  - Snow or frost: `petit1819-snowflake-7` (7×7 ice crystal, on the face), `quentel1532-snowflake-9x7`, `dmc1890-snowflake-rosette-15`.
+  - Wind: `bk-1980-63-pennant` (a flag streaming from a masthead, its tail curling, 9×7, 1857; mirror it so the pair blows outward), `dillmont-alphabete-windmill` (the mill alone 14×15, c. 1900). Two periods of a running-wave scroll read as gusts: `cma-1943-113-running-wave-band` (period 9×8), `bk-1977-221-b-running-wave` (period 7×6, one-cell line).
+  - Rain, thunder: no counted piece. Draw them after Mignerak 1605 (`mignerak1605-four-elements`, crops in images/): his rain is a cloud of three or four scalloped puffs with a fan of straight slanting strokes below; his lightning is a burst of jagged forked strokes from a cloud's edge.
+  - Fog or mist: no counted piece. Stand-ins: a running-wave band laid flat (above), or Mignerak's cloud band from l'Air drawn open; the lit lantern `bk-1980-63-lantern` for a lamp in the murk.
+  - Sun (clear, hot): `quentel1544-wheel-15` and `quentel1532-wheel-15` (sun wheels). The rayed suns with faces on the c. 1596 album's SOL and LUNA pages are period suns but too loosely inked to chart cell for cell; Mignerak's Fire has a rayed sun with wavy flame rays.
+- Night and sky at 1x: stars `zoppino1529-rosette-5` (5×5), `petit1819-snowflake-7`, `bk-1968-11-four-petal-flower` (7×7), `ch-18616385-star-11`; moons `dmc1890s1-crescent-moon` (7×14, the only crescent found), `album1596-luna-moon-disc` (15×14).
 - Creatures: `dillmont-alphabete-owl` (owl on a branch, 9×13 + branch), `quentel1529-small-bird-11x9` with `quentel1529-lily-11x9` (a pair of birds facing a lily: a centre piece), `quentel1529-bird-11x15`, `bk-15282-cock`, `bk-1980-63-bird-on-post`.
 - Village: `dillmont-alphabete-windmill`, `quentel1529-tree-15`, `bk-1980-63-paling-fence`, `bk-1980-63-gate`, `bk-1980-63-anchor`.
 - Numerals: period sets on one baseline: `album1596-numerals` (c. 1596, 6 rows), `petit1819-numerals` (1819, 7 rows), `tryntje-numerals` (c. 1895, 7 rows), `dillmont-alphabete-numerals-7row`; old-style (hanging) figures: `met-57-122-348-numerals` (1799), `dillmont-alphabete-italic-numerals`.
@@ -37,6 +50,8 @@ cell for cell (the header says why).
 
 ### Seasons and plants
 
+- [album1596-berry-cluster](motifs/album1596-berry-cluster.txt): Cluster of three berries (two round berries over a smaller one), from a berry vine; 9 x 8 cells; German album c.1596 (Met DP356723); use: season (winter berries: holly or rowan berries without the leaves; or autumn fruit: currants, cherries) / corner (a tiny spot motif); **VERIFIED**
+- [album1596-bud-sprig](motifs/album1596-bud-sprig.txt): Bud sprig (a young shoot: a lozenge bud over two slanting leaves, the stem curling at the foot); 16 x 13 cells; German album c.1596 (Met DP356728); use: season (spring: a sprouting bud; the facing pair for the two sides of the window) / village (a garden seedling); **VERIFIED**
 - [bk-14683-a-leaf-sprig](motifs/bk-14683-a-leaf-sprig.txt): Leafy sprig: a cup flower over pairs of slanting leaves on a one-stitch stem; 15 x 22 cells (flower 7 x 4; each leaf pair 15 x 4, repeating every 8 rows); Dutch sampler 1874 (Rijksmuseum BK-14683-A); use: season (spring/summer growth; repeat the 8-row leaf unit for a taller plant; also a stylised poplar or young tree for the village); **VERIFIED**
 - [bk-1955-108-c-grape-vine-band](motifs/bk-1955-108-c-grape-vine-band.txt): Grape vine with hanging bunches (green and purple), period 20 x 19 rows; period 20 x 19 rows (an upper and a lower unit per period); Dutch sampler c. 1700-1725 (Rijksmuseum BK-1955-108-C); use: ring band / season (autumn: a running vine with hanging grapes; at 1x the bunches read as dark drops under green leaves); **VERIFIED**
 - [bk-1959-142-a-acorn](motifs/bk-1959-142-a-acorn.txt): Acorn (pink nut in a green cup), 5 x 8; 5 x 8 cells; A.C. van Duuren sampler c. 1810 (Rijksmuseum BK-1959-142-A); use: season (autumn: an acorn; one of eight on the oak tree); **VERIFIED**
@@ -130,6 +145,8 @@ cell for cell (the header says why).
 
 ### Weather
 
+- [bk-1980-63-pennant](motifs/bk-1980-63-pennant.txt): Pennant flying from a masthead, its tail curling down (with the yard below), 9 x 7; 9 x 7 cells (the flag 7 x 5 on its pole; the yard is the bottom row); Dutch sampler 1857 (Rijksmuseum BK-1980-63); use: weather (wind: a flag streaming from a masthead; with its mirror, flags blowing outward on both sides of the window) / village (a flag on a tower or a ship); **VERIFIED**
+- [mignerak1605-four-elements](motifs/mignerak1605-four-elements.txt): The Four Elements (Terre, Eau, Feu, Air), lacis squares of 66 mailles: the period's own rain, lightning, sun and clouds (description and crops, no chart); 66 x 66 mailles (meshes) each; the weather details are about 8-25 mailles across; Mignerak 1605 (Met DP358164-67); use: weather (period models for drawing rain, thunder, sun and cloud pieces in the face's own pixel art: no counted rain, lightning or cloud chart was found); **UNVERIFIED**
 - [petit1819-snowflake-7](motifs/petit1819-snowflake-7.txt): Snowflake star (ice crystal: a cross with forked arms and four corner sparks); 7 x 7 cells (on the plate each cell is drawn as a 2x2 block of stitches, i.e. the ornament is set at double size beside the letters); Petit nécessaire 1819, Marque No 3 (archive.org); use: weather (snowflake, winter) / star (a small sparkle) / corner; **VERIFIED**
 
 ### Narrow bands
@@ -238,4 +255,4 @@ cell for cell (the header says why).
 
 - [bk-1980-63-large-pieces](motifs/bk-1980-63-large-pieces.txt): Large pieces of the 1857 sampler (ship, tree of life, carnation pots, sentry boxes): described, not charted; ship about 85 x 40 large stitches; tree about 36 x 55; carnation pot about 60 x 75 small stitches; sentry box about 26 x 38 small stitches (plus its 13 x 16 crest); Dutch sampler 1857 (Rijksmuseum BK-1980-63); use: pointers for later work (village / creature / season), too large for the face at 1x; **UNVERIFIED**
 
-176 files in motifs/ (174 verified, 2 unverified or descriptive).
+180 files in motifs/ (177 verified, 3 unverified or descriptive).

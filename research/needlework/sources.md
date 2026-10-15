@@ -49,6 +49,7 @@ Only public-domain, CC0 or open-access scans are used. Met images are Open Acces
 - The Met, accession 20.50.1(1-78), Rogers Fund 1920. Public Domain (CC0). 81 images (DP358151–DP358252).
 - Lacis (darned net) designs, counted in "mailles": arms and cipher of the queen (60), Adam and Eve, Annunciation, Ecce Homo, Magdalene, the FOUR ELEMENTS (DP358164–67, 66 mailles), the FOUR SEASONS (DP358168 Printemps, DP358169 Esté, DP358170 Automne, DP358171 Hyver; 66 mailles), Roman Charity, Lucretia, Venus, Danaë (DP358172–75), fruit trees (DP358176–80, 64), pots of flowers (DP358181–87, 66), large squares with borders (DP358186–98, 60), middle squares (DP358213–31, 32), small squares (DP358232–37, 22), large borders (DP358238–41, 53), small borders (DP358242–43, 28), bobbin-lace edgings "Passements faicts au Fuseau" (DP358244–49).
 - Every plate is a white line drawing laid over a black mesh, the filled areas shown by a finer mesh: designs to be interpreted on the net, not counted charts. → `mignerak1605-four-seasons` (description and crops)
+- The Four Elements, viewed at full size (images about 2370 × 2950): DP358165 L'eau has two scalloped clouds shedding fans of straight rain strokes; DP358166 le Feu a rayed sun with a face and a cloud with jagged forked strokes (lightning); DP358167 l'Air a band of billowing clouds over a chequered sky, with birds; DP358164 la Terre no weather. → `mignerak1605-four-elements` (description and crops, the period's model for rain, lightning and cloud pieces)
 
 ### Manuscript album of designs for lace and embroidery, German, c. 1596
 - Object page: https://www.metmuseum.org/art/collection/search/368249
@@ -57,6 +58,10 @@ Only public-domain, CC0 or open-access scans are used. Met images are Open Acces
 - DP356670 MARS, DP356671 LUNA, DP356672 VENUS, DP356673 SOL, DP356675–78 the other planets: each a standing figure with its attributes and zodiac signs (rayed suns, a star, a moon disc, crab, scorpion, lion, bull, scales, ram, fishes, goat...).
 - DP356671 (LUNA): the Moon's disc with a face and a star on a flowering staff → `album1596-luna-moon-disc`, `album1596-luna-star-staff`; whole page `images/album1596-luna-page.jpg`. The rayed suns on the LUNA and SOL pages (DP356671, DP356673) are drawn too loosely, with ink spreading over the grid, for a cell-exact reading.
 - DP356719–33: flowers, sprigs and vases drawn in dots (one dot per cell: e.g. DP356726, a tall sprig with paired leaves and a small hexagonal ring).
+  - DP356728 (leaf 56): two small bud sprigs side by side at the top right, mirror images (→ `album1596-bud-sprig`); a tall sprig with paired leaves and a tulip in a vase below.
+  - DP356726: a rosette on a stem in an hourglass vase, a small jug (top right), an eight-petal star flower and a four-lobed flower (lower left), a leafy tree-sprig (lower right).
+  - DP356719: four solid carnation and flower heads; DP356721: tulip sprigs and bud chains; DP356723: an eight-petal rosette and a lattice of slanting stems and leaves with a three-berry cluster under each junction (→ `album1596-berry-cluster`); DP356725: a carnation sprig, a cross of four heart petals, a vase.
+- Read with a regular lattice snapped to the woodcut grid lines (the printed grid is slightly irregular, about 21.5 x 22.2 px per cell on these scans), each cell scored by dot contrast.
 - DP356734–35: alphabets; DP356735 has the figures 1–20. → `album1596-numerals`
 - DP356736: narrow bands and small motifs in ink. DP356737: COLOURED bands, painted in verdigris, orange, rose, red, yellow, green and black: a bead band (→ `album1596-oval-bead-band`), an eight-pointed star in red, orange and yellow outlined with black dots on a blue square (about 17 × 15; painted too irregularly for a sure reading), a bracket-and-cross band (→ `album1596-bracket-cross-band`), a band of green trefoil sprigs with white dots and black blocks over a rule (the green and white are painted off the cells: not charted), and a flame band (→ `album1596-flame-band`).
 
@@ -73,6 +78,7 @@ Only public-domain, CC0 or open-access scans are used. Met images are Open Acces
 - Object page: https://www.rijksmuseum.nl/en/collection/BK-1980-63
 - Full image (6844 × 6119): https://commons.wikimedia.org/wiki/File:Merklap_van_katoen_waarop_met_rode_zijde_A.DE.KAT.MDK.HAV.SDK.EDK.ZDK._ICK_MK,_ANNO_1857_en_een_aantal_voorstellingen_z,_BK-1980-63.jpg
 - One colour (red) throughout, so every piece is a ready two-tone chart. Initials across the top; two leaping stags over paling fences with flower posts; a wreath of flowers holding initials; a ship with a dog and a figure, flags; a lantern with an anchor on a rope; two sentry boxes with soldiers, each beside a paling fence with a crested bird on the gate post; a couple under a tree in a flowering arbour; two pots of carnations; AN 18 57 NO. → `bk-1980-63-anchor`, `bk-1980-63-bird-on-post`
+- The ship's flags: a plain three-row pennant on the main mast (over the crossed ring) and, on the next mast to the right, a flag streaming out with a curled tail (→ `bk-1980-63-pennant`, a wind sign).
 
 ### Met samplers (Open Access, CC0), pointers from the earlier pass
 - Quaker school sampler, 1799, 57.122.348 (object 228275), image DP363105: numerals 1–6, old-style.
@@ -84,6 +90,12 @@ Only public-domain, CC0 or open-access scans are used. Met images are Open Acces
 - BK-NM-9987, signed and dated linen sampler, 1701: beaded wave band at the top, small eight-pointed star (brown) with green crosses (11–13 stitches), large snowflake stars, a windmill, letters.
 - BK-1968-11 (19th c.): red grape-vine border with leaves and tendrils up the right side; vine with leaflets on the left; Greek key at the bottom; crowns, bees.
 - BK-KOG-2671 (1773): a double grape cluster ("dubbele druiventros"), alphabet, text round the border.
+- Weather and feast-day pointers (viewed 2026-10-15; the Rijksmuseum's 65 objects of type "merklap" were searched by description through https://data.rijksmuseum.nl/search/collection?type=merklap; none mentions sun, moon, cloud, rain or lightning):
+  - BK-NM-9987 (Gooitie Cornelis, Friesland, 1701): the windmill (brown upper sails, green lower sails and mound) is about 30 × 28 stitches, x1040-1400 y2770-3110 of the 2772 × 3868 Commons image; too large for the face, not charted.
+  - BK-NM-8233 (GCIC, 1709): a windmill in the bottom row of figures, about 19 × 16, too faded to read.
+  - BK-KOG-1649-A (orphanage marking sampler, ANNO 1771, red): two small crowns over initials (about 23 × 23 at x1500-2060 y2200-2730 of the 6844 × 6119 image), crowned cartouches, hearts with initials, ANNO 1771; crowns for a new-year (Epiphany) piece if redrawn smaller.
+  - BK-KOG-66 (1749): a lantern with two candles (about 17 × 23) and a group of seven candles in candlesticks (the candles in satin stitch), x950-2150 y2650-3350 of the 6844 × 6119 image.
+- V&A sampler with clouds (viewed via the V&A IIIF server, images © V&A, for research): T.168-1978 (Sara Low, France, 1746: clouds and a star over two cherubs); its clouds are in satin stitch, not counted. The V&A full images are about 1450-2500 px, too coarse for small counted motifs.
 
 ### Thérèse de Dillmont, *Encyclopedia of Needlework* (1886), Project Gutenberg #20776
 - https://www.gutenberg.org/ebooks/20776 (public domain). Figs. 319/320: Gothic border in cross stitch (tree of life); 332/333: stroke-stitch borders; fig. 214: numerals (blank). The Gutenberg images are low resolution (600 px).

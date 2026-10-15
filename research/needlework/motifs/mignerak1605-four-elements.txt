@@ -1,0 +1,21 @@
+title: The Four Elements (Terre, Eau, Feu, Air), lacis squares of 66 mailles: the period's own rain, lightning, sun and clouds (description and crops, no chart)
+section: Weather
+source: Matthias Mignerak, La Pratique de l'Aiguille Industrieuse, Paris: Jean Le Clerc, 1605; The Met 20.50.1(1-78), Rogers Fund 1920, Public Domain (CC0)
+short-source: Mignerak 1605 (Met DP358164-67)
+page: DP358164 "Premiere figure des 4. Elemens, la terre contenant 66. mailles en carré" (sig. C ij); DP358165 "Seconde figure de L'eau contenant 66. mailles" (sig. C iij); DP358166 "Troisiesme figure des Elemens contenant 66. mailles, le Feu" (sig. D); DP358167 "Quatriesme des 4. Elemens contenant 66. mailles, Lair" (sig. D ij). Crops: images/mignerak1605-four-elements.jpg (the top of the Water, Fire and Air squares, in that order: DP358165 x280-2150 y520-1000; DP358166 x300-2150 y480-1000; DP358167 x300-2300 y520-1060 of the full images, about 2370 x 2950); images/mignerak1605-four-elements_rain.jpg (DP358165 x280-1080 y520-1000, the left rain cloud); images/mignerak1605-four-elements_fire-cloud.jpg (DP358166 x1300-2150 y500-1100)
+url: https://www.metmuseum.org/art/collection/search/354009
+image: https://images.metmuseum.org/CRDImages/dp/original/DP358165.jpg (and DP358164, DP358166, DP358167)
+size: 66 x 66 mailles (meshes) each; the weather details are about 8-25 mailles across
+symmetry: none (pictures); each cloud is roughly symmetric about its own axis
+colours: (no chart) white line drawing over a black mesh; darned areas shown by a finer mesh inside the outlines
+use: weather (period models for drawing rain, thunder, sun and cloud pieces in the face's own pixel art: no counted rain, lightning or cloud chart was found)
+status: UNVERIFIED (description and crops only: the plates are line drawings over the net, to be interpreted when darning, not counted charts)
+verified: not a transcription. Viewed at full resolution (the three crops above); the descriptions below are of what the crops show.
+notes: Mignerak's Four Elements are the only rain, lightning and cloud imagery found in this search of the period's needlework. Checked without result: contact sheets of every plate of Sibmacher 1604 and Vinciolo 1588 and of DMC Albums I and III; the c.1596 album's planet and flower pages (which have rayed suns but no clouds or rain); catalogue searches of the Met (sampler objects tagged Clouds, Rainbows, Lightning, Umbrellas: none), the V&A (keyword search; the one sampler viewed with clouds, T.168-1978 of 1746, works them in satin stitch, not counted) and the Rijksmuseum's 65 merklappen (windmills, no weather). What each square shows, as a guide for redrawing:
+  EAU (Water): at the top, two clouds, each a row of three or four round puffs filled with the fine (darned) mesh and edged with a scalloped line; from the underside of each falls a fan of eight to ten long straight rain strokes, slanting slightly outward. This is the period's rain: scalloped cloud, straight streaks. Below them a nymph with streaming hair pours water from an urn among reeds.
+  FEU (Fire): top left of centre, a sun with a face and wavy, flame-like rays; top right, a scalloped cloud with a burst of jagged, forked strokes darting from its left edge (fire from the cloud: lightning); flames rise from a brazier below; the figure is wreathed in flames.
+  AIR: across the top, a band of billowing clouds, round puffs in a row with darned centres, over a chequered band (the sky); birds fly below and a figure floats among the clouds.
+  TERRE (Earth): a crowned figure with fruiting branches, animals and plants; no weather.
+  For the face at 7-15 cells: a cloud is a row of two or three round puffs on a flat base; rain is three to five straight slanting strokes under it; lightning is a forked zigzag leaving the cloud's edge; fog or wind can be a row of puffs drawn open (outline only), as Mignerak draws his clouds' edges.
+---
+(no chart: see notes)

@@ -1,0 +1,22 @@
+title: Pennant flying from a masthead, its tail curling down (with the yard below), 9 x 7
+section: Weather
+source: Sampler, red silk cross stitch on cotton, "A.DE.KAT.MDK.HAV.SDK.EDK.ZDK. ICK MK, ANNO 1857", Dutch, 1857; Rijksmuseum BK-1980-63, public domain (CC0)
+short-source: Dutch sampler 1857 (Rijksmuseum BK-1980-63)
+page: middle row, the ship: the flag on the next mast to the right of the main mast (whose pennant tops the crossed ring); crop x3730-4060 y2740-2980 of the full Commons image (6844 x 6119)
+url: https://www.rijksmuseum.nl/en/collection/BK-1980-63
+image: https://commons.wikimedia.org/wiki/File:Merklap_van_katoen_waarop_met_rode_zijde_A.DE.KAT.MDK.HAV.SDK.EDK.ZDK._ICK_MK,_ANNO_1857_en_een_aantal_voorstellingen_z,_BK-1980-63.jpg
+size: 9 x 7 cells (the flag 7 x 5 on its pole; the yard is the bottom row)
+symmetry: none (a flag blowing to the right); mirror it for the left-hand side, so the pair blows outward
+colours: # = red cross stitch, . = cotton ground
+use: weather (wind: a flag streaming from a masthead; with its mirror, flags blowing outward on both sides of the window) / village (a flag on a tower or a ship)
+status: VERIFIED
+verified: lattice fitted to the stitches (red channel, pitch 26.9 x 25.2 px; the sampler's pitch is 27.4 px elsewhere); overlay 63/63 cells agree, no uncharted stitch in the frame (images/bk-1980-63-pennant_ver.jpg)
+notes: The pole rises one cell above the flag; the flag widens from 5 to 7 cells over four rows (the fly slanting out as it streams), and its tail curls down and back in two steps at the right. Below it, a five-cell yard crosses the mast. The main mast's pennant (left of it, over the crossed ring of bk-1980-63-ship-globe) is a plainer three-row flag. Solid and legible at 1x: the clearest small wind sign found in the samplers.
+---
+..#......
+..#####..
+..######.
+..######.
+..#######
+..#....##
+#####...#

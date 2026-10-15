@@ -1,0 +1,23 @@
+title: Cluster of three berries (two round berries over a smaller one), from a berry vine
+section: Seasons and plants
+source: Manuscript album of designs for lace and embroidery, German, c. 1596 (woodcut grid paper, filled in by hand); The Met 53.566.7(1-69), Public Domain
+short-source: German album c.1596 (Met DP356723)
+page: image DP356723, left half: a lattice of slanting stems with leaves, a three-berry cluster hanging below each junction; the cluster at about x1145-1345 y1775-1945 of the full image (2968 x 4000); crop x1080-1420 y1600-1960 (with the stalk and leaves above it)
+url: https://www.metmuseum.org/art/collection/search/368249
+image: https://images.metmuseum.org/CRDImages/dp/original/DP356723.jpg
+size: 9 x 8 cells
+symmetry: mirror left-right
+colours: # = cell marked with an ink dot, . = empty cell
+use: season (winter berries: holly or rowan berries without the leaves; or autumn fruit: currants, cherries) / corner (a tiny spot motif)
+status: VERIFIED
+verified: regular-lattice reader on the woodcut grid lines (pitch 21.8 x 21.3 px), cells scored by the share of near-black pixels (ink dots); overlay 72/72 cells agree and no inked cell on the ring round the chart (images/album1596-berry-cluster_ver.jpg)
+notes: Two 4 x 4 round berries side by side with one empty column between them, and a smaller 3 x 4 berry (pointed top and bottom) centred below. On the page each cluster hangs from a stalk of single cells that rises diagonally (one empty row above the cluster) to a junction of two slanting four-cell leaves; with the stalk and leaves the unit is 17 x 15. Alone it reads at 1x as a cluster of berries.
+---
+.##...##.
+####.####
+####.####
+.##...##.
+....#....
+...###...
+...###...
+....#....
