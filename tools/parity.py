@@ -1,9 +1,10 @@
 """The watch's C (build/host) against the prototype (proto/plates.py), pixel for pixel: for each case, the two faces
 and where they differ, side by side in out/parity/, and the count of differing pixels, against the count last accepted
 (tools/parity-baseline.json). A case with more than before fails the run: the two are deterministic, so any rise is a
-change to look at (a small slip hides easily among a few hundred pixels). --accept takes the counts as the baseline.
+change to look at (a small slip hides easily among a few hundred pixels). --accept takes the counts as the baseline;
+--slack N lets a case rise by N pixels before it fails (CI, where another machine's arithmetic may land a pixel apart).
 
-    tools/build-host.sh && uv run python tools/parity.py [names...] [--accept]
+    tools/build-host.sh && uv run python tools/parity.py [names...] [--accept] [--slack N]
 """
 import json
 import subprocess
@@ -162,8 +163,12 @@ def py_render(screen, plate, when, place, opts, sky):
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     sky = load_sky(4.6)
-    accept = "--accept" in sys.argv[1:]
-    names = [a for a in sys.argv[1:] if a != "--accept"] or list(CASES)
+    args = sys.argv[1:]
+    accept = "--accept" in args
+    slack = int(args[args.index("--slack") + 1]) if "--slack" in args else 0
+    if "--slack" in args:
+        del args[args.index("--slack"): args.index("--slack") + 2]
+    names = [a for a in args if a != "--accept"] or list(CASES)
     base = json.loads(BASELINE.read_text()) if BASELINE.exists() else {}
     worse = []
     for name in names:
@@ -177,8 +182,8 @@ def main():
         S = np.concatenate([a, np.full((a.shape[0], 4, 3), 40, np.uint8), b, np.full((a.shape[0], 4, 3), 40, np.uint8), d], axis=1)
         Image.fromarray(S).resize((S.shape[1] * 2, S.shape[0] * 2), Image.NEAREST).save(OUT / f"{name}.png")
         n, was = int(diff.sum()), base.get(name)
-        note = "" if was is None or n == was else f"  (was {was}{', worse' if n > was else ''})"
-        if was is not None and n > was:
+        note = "" if was is None or n == was else f"  (was {was}{', worse' if n > was + slack else ''})"
+        if was is not None and n > was + slack:
             worse.append(name)
         print(f"{name:16s} {n:6d} pixels differ ({100 * diff.mean():.2f}%){note}", flush=True)
         base[name] = n

@@ -1,8 +1,10 @@
 # Planisphere
 
-A watch face for the Pebble Time 2 and Round 2: the sky as it is right now, on a planisphere. The Python prototype
-(`proto/`) is where it is designed; the watch runs the same drawing in C (`watchface/`), and its settings page shows
-the face live, the same C built to WebAssembly. See [On the watch](#on-the-watch).
+A watch face for the Pebble Time 2 and Round 2: a star chart and an almanac, the sky as it is right now on a
+planisphere and the year's days after the old calendars. **[Planisphere on the Pebble app store](https://apps.repebble.com/1f998f38a4cb48abb78f8e89)**.
+
+The Python prototype (`proto/`) is where it is designed; the watch runs the same drawing in C (`watchface/`), and its
+settings page shows the face live, the same C built to WebAssembly. See [On the watch](#on-the-watch).
 
 ## Plates
 

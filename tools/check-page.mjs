@@ -83,8 +83,14 @@ fire('showConfiguration');
 check(openedUrl && openedUrl.startsWith('data:text/html'), `the page opened (${(openedUrl.length / 1024).toFixed(0)} KB)`);
 
 // ---- the page, in Chromium ----
-const require = createRequire(path.join(process.env.HOME, 'code/groundtrack-watch-face/package.json'));
-const { chromium } = require('playwright');
+// Playwright from this repository's node_modules (CI: npm install --no-save playwright), else Groundtrack's
+const playwright = (() => {
+  for (const from of [import.meta.url, path.join(process.env.HOME, 'code/groundtrack-watch-face/package.json')]) {
+    try { return createRequire(from)('playwright'); } catch (e) { /* the next */ }
+  }
+  throw new Error('Playwright not found: npm install --no-save playwright');
+})();
+const { chromium } = playwright;
 const RETURN = 'http://page.return/?';
 const html = decodeURIComponent(openedUrl.replace(/^data:text\/html;charset=utf-8,/, '')).split('$$$RETURN_TO$$$').join(RETURN);
 const browser = await chromium.launch();

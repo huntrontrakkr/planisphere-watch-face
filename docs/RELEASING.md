@@ -1,38 +1,25 @@
 # Releasing Planisphere
 
-Nothing is published yet. The store listing is made once, by `tools/release.py create`, and is public from that
-moment, so it is made only with the owner's go-ahead.
+Planisphere is on the Pebble app store:
+[apps.repebble.com/1f998f38a4cb48abb78f8e89](https://apps.repebble.com/1f998f38a4cb48abb78f8e89) (developer
+Segfaultgolf). Version 0.1.0 was published 2026-10-15: the repository made public, the listing made once by
+`tools/release.py create` from CI's own package, then CI's publish job tagged v0.1.0, checked the store's public
+download byte for byte against that package and attached it to the GitHub release.
 
-## The first release
-
-1. Try the build on a real watch first (the emulator has run it, but the renderer is loaded from the app's
-   resources as code, which only a real Time 2 or Round 2 fully proves): install `watchface/build/watchface.pbw`
-   from the phone.
-2. Add the release notes at `releases/v0.1.0.md` (a draft is below).
-3. With the Pebble tool's Python, signed in to the developer account (`pebble login`):
-
-       cd watchface && pebble build && cd ..
-       python tools/release.py package
-       python tools/release.py check --tag v0.1.0
-       python tools/release.py create
-
-   `create` prints the listing's id. Record it here and in [STORE-LISTING.md](STORE-LISTING.md).
-4. For CI to publish later versions, set the repository variable `PLANISPHERE_STORE_APP_ID` to that id and the
-   secret `PEBBLE_FIREBASE_REFRESH_TOKEN` (the same Pebble account's sign-in, as for Morphogen 9 and Groundtrack).
-
-Draft notes for v0.1.0:
-
-> The first release: the sky over where you are on ten plates after the old star charts, with the weather from
-> Open-Meteo, the sky's news on the almanac's line, eclipses as they happen, and the labours of the months as an
-> option. For Pebble Time 2 and Pebble Round 2.
+CI has what it needs to publish: the repository variable `PLANISPHERE_STORE_APP_ID` (the listing's id) and the secret
+`PEBBLE_FIREBASE_REFRESH_TOKEN` (the Pebble account's sign-in, as for Morphogen 9 and Groundtrack; from the Pebble
+tool's `firebase_oauth_storage.json` after `pebble login`, piped to `gh secret set`, never printed). If the publish
+job reports that the sign-in could not be refreshed, `pebble login` again and set the secret again.
 
 ## Later versions
 
 1. Bump `version` in `watchface/package.json` (`pebble clean` before building so the new version is compiled in).
 2. Add release notes at `releases/vX.Y.Z.md`.
 3. Optionally refresh the gallery: `tools/build-host.sh && cd proto && uv run python ../tools/store_gallery.py`.
-4. Push to main. `.github/workflows/release.yml` builds and checks the face, tags the commit, publishes the package
-   to the Pebble store (verifying the public download byte for byte), and attaches it to a GitHub release.
+4. Push to main. `.github/workflows/release.yml` builds and checks the face (and the prototype job its parity), tags
+   the commit, publishes the package to the Pebble store (verifying the public download byte for byte), and attaches
+   it to a GitHub release. Nothing else is needed: a version that has release notes and no tag yet is released by
+   the push.
 
 By hand:
 
@@ -47,13 +34,14 @@ By hand:
 the 64 KB cap on the app's binary, that the renderer's code (`tools/build_blob.py`) is whole in each watch's
 resources, and that the store's copy is 1 to 1,600 characters with no third-party brand names. CI also runs
 `tools/stack_depth.py --budget 1000` (each code blob's deepest call chain, from the compiler: the watch's stack is
-2 KB) and `tools/check_memory.py` (every latitude's frame, the day's feast lookup and a fireworks display against the
-heap left after loading).
+2 KB), `tools/check_memory.py` (every latitude's frame, the day's feast lookup and a fireworks display against the
+heap left after loading), `tools/check-page.mjs` (the phone's side and the settings page in Chromium, its preview
+drawing and playing a fireworks display) and, in its prototype job, `tools/check_feasts.py` (the calendars, C against
+the prototype day by day) and `tools/parity.py` (the faces against the prototype, against the accepted counts in
+`tools/parity-baseline.json`). A release is published only when all of them pass.
 
-Before a release, also run the checks CI does not:
+By hand, after large changes: the heap in the emulator, to measure `tools/check_memory.py`'s baseline again, and for
+changes that should not move a pixel, `tools/same_frames.py <commit>`:
 
-    tools/build-host.sh && (cd proto && uv run python ../tools/parity.py)     # the C against the prototype (and its
-                                                                              # baseline, tools/parity-baseline.json)
-    (cd proto && uv run python ../tools/check_feasts.py)                      # the calendars, day by day
-    LD_LIBRARY_PATH=~/.local/lib/chromedeps node tools/check-page.mjs          # the settings page, in Chromium
-    <pebble-tool-python> tools/emulator.py emery shots --gdb g_heap_free g_heap_low
+    <pebble-tool-python> tools/emulator.py emery shots --set LABOURS=1 --gdb g_heap_free g_heap_low
+    tools/build-host.sh && python3 tools/same_frames.py <commit>

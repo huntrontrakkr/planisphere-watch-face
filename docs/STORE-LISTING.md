@@ -6,8 +6,9 @@ Platforms: **Pebble Time 2 (emery), Pebble Round 2 (gabbro)**
 
 ## Listing
 
-Not made yet. `tools/release.py create` makes it, and a listing is public as soon as it exists, so it waits for the
-owner's go-ahead. See [RELEASING.md](RELEASING.md).
+[apps.repebble.com/1f998f38a4cb48abb78f8e89](https://apps.repebble.com/1f998f38a4cb48abb78f8e89), under the developer
+Segfaultgolf, made 2026-10-15 with version 0.1.0 (`tools/release.py create`). The repository variable
+`PLANISPHERE_STORE_APP_ID` holds its id; CI publishes each new version to it. See [RELEASING.md](RELEASING.md).
 
 The description below is what the store shows (`tools/release.py` reads it and refuses third-party brand names).
 Gallery: `docs/screenshots/store/`, made by `tools/store_gallery.py` with the watch's own drawing code.

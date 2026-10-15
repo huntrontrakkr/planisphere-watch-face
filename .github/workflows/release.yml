@@ -68,6 +68,11 @@ jobs:
           python tools/check_memory.py
           python tools/release.py package
           python tools/release.py check
+      - name: The settings page in Chromium (the phone's side, the page and its live preview)
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.1
+          npx playwright install --with-deps chromium
+          node tools/check-page.mjs
       - name: Decide whether this push is a release
         id: release
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'release'
@@ -115,8 +120,34 @@ jobs:
           path: release-artifacts/
           if-no-files-found: error
 
+  # The watch's C against the Python prototype it follows: the calendars day by day, and the faces pixel for pixel
+  # against their accepted counts (tools/parity-baseline.json)
+  prototype:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.event.release.tag_name || github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: The calendars day by day, and the faces against the prototype
+        run: |
+          pip install uv
+          sh tools/build-host.sh
+          cd proto
+          uv run python ../tools/check_feasts.py
+          uv run python ../tools/parity.py --slack 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: parity
+          path: out/parity/
+          if-no-files-found: ignore
+
   publish:
-    needs: verify
+    needs: [verify, prototype]
     if: needs.verify.outputs.tag != '' && github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
