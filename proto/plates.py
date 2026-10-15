@@ -50,6 +50,7 @@ import events
 import figures
 import frame
 import horizon
+from rng import Rng
 import lunar
 import skies
 import sprites
@@ -571,7 +572,7 @@ def labour_scene(img, dial, inside, inner, P, month):
     top = int(np.argmax(inside[:, col]))
     vx, vy = dial.cx, top + 6
     mask = np.zeros((H, W), bool)
-    rng = np.random.default_rng(month)
+    rng = Rng(month)                                     # the watch's own generator, so it scatters alike
     for x in range(W):                                   # the far hills, a gentle line across behind the window's top
         y = int(round(vy - 3 + 1.5 * math.sin(x / 7.0) + math.sin(x / 3.1)))
         if 0 <= y < H:
@@ -625,7 +626,7 @@ def labour_scene(img, dial, inside, inner, P, month):
         if side == "right":
             fig = fig[:, ::-1]
         h, w = fig.shape
-        copies = {"crow": [(0, 0), (-7, 5), (6, 8)], "pig": [(-4, -3), (5, 4)]}.get(name, [(0, 0)])
+        copies = sprites.LABOUR_COPIES.get(name, [(0, 0)])
         for dx, dy in copies:
             y0, x0 = j - h // 2 + dy, i - w // 2 + dx
             padded = np.pad(fig, 1)

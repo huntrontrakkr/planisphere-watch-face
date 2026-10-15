@@ -59,6 +59,14 @@ CASES = {
     "orionids-t2": ("emery", "planisphere", datetime(2026, 10, 22, 6, 0, tzinfo=timezone.utc), NY, {}),
     "conjunction-t2": ("emery", "planisphere", datetime(2023, 3, 2, 0, 20, tzinfo=timezone.utc), NY, {}),
     "weather-t2": ("emery", "planisphere", datetime(2026, 10, 14, 20, 10, tzinfo=timezone.utc), NY, {"weather": "cloudy"}),
+    # the labours of the months: each kind of field, the figures drawn more than once, the south, the Round 2
+    "labours-jan-t2": ("emery", "planisphere", datetime(2026, 1, 16, 2, 30, tzinfo=timezone.utc), NY, {"labours": True}),
+    "labours-mar-r2": ("gabbro", "burritt", datetime(2026, 3, 16, 1, 30, tzinfo=timezone.utc), NY, {"labours": True}),
+    "labours-jul-t2": ("emery", "hours", datetime(2026, 7, 16, 1, 30, tzinfo=timezone.utc), NY, {"labours": True}),
+    "labours-oct-t2": ("emery", "planisphere", datetime(2026, 10, 15, 1, 30, tzinfo=timezone.utc), NY, {"labours": True}),
+    "labours-nov-r2": ("gabbro", "apian", datetime(2026, 11, 16, 2, 30, tzinfo=timezone.utc), NY, {"labours": True}),
+    "labours-sydney-t2": ("emery", "flamsteed", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc), (-33.87, 151.21, 660),
+                          {"labours": True}),
 }
 
 
@@ -68,6 +76,8 @@ def c_render(screen, plate, when, place, opts, path):
             str(off), str(path)]
     if opts.get("clock24"):
         args.append("--24")
+    if opts.get("labours"):
+        args.append("--labours")
     city, country = plates.place_name(lat, lon)
     if city:
         args += ["--city", city, "--country", country]
@@ -87,7 +97,7 @@ def py_render(screen, plate, when, place, opts, sky):
     tz = timezone(timedelta(minutes=off))
     w = meteo.SAMPLES[opts["weather"]] if opts.get("weather") else None
     return plates.render(when, dial, sky, tz, plate, round_screen=screen == "gabbro", clock24=opts.get("clock24", False),
-                         weather=w).astype(np.uint8)
+                         weather=w, labours=opts.get("labours", False)).astype(np.uint8)
 
 
 def main():

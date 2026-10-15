@@ -15,7 +15,7 @@
     return e;
   }
 
-  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0,
+  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0,
                   PLACE_CITY: '', PLACE_COUNTRY: ''};
   var settings = {};
   function reset(from) {
@@ -59,6 +59,11 @@
     {title: 'The sky', items: [
       {key: 'NAMES', type: 'switch', label: 'Names in the sky',
        desc: 'The Moon and the planets, the brightest stars and three constellations, set where there is room.'}
+    ]},
+    {title: 'The card', items: [
+      {key: 'LABOURS', type: 'switch', label: 'The labours of the months',
+       desc: 'The month’s work, faint in the card round the window, as the old calendars’ woodcuts show it: ' +
+             'January’s feast, the March pruning, October’s sowing. In the south, by the seasons there.'}
     ]},
     {title: 'Weather', items: [
       {key: 'WEATHER', type: 'switch', label: 'Show the weather',
@@ -257,7 +262,7 @@
   function setup(plate) {
     var p = place();
     M._pv_face(plate, settings.CLOCK === 2 || (settings.CLOCK === 0 && clock24Here()) ? 1 : 0, settings.NAMES ? 1 : 0,
-               fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0);
+               fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0, settings.LABOURS ? 1 : 0);
     M.stringToUTF8(p.city || '', M._pv_city(), 32);
     M.stringToUTF8(p.country || '', M._pv_country(), 32);
     var w = !settings.WEATHER ? null : trySky === 'phone' ? phoneWeather && [phoneWeather.code, phoneWeather.temp10,

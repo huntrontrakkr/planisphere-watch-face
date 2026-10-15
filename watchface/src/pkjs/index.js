@@ -48,6 +48,7 @@ function settingsMessage(s) {
   m[keys.PLATE] = s.PLATE | 0;
   m[keys.CLOCK] = s.CLOCK | 0;
   m[keys.NAMES] = s.NAMES ? 1 : 0;
+  m[keys.LABOURS] = s.LABOURS ? 1 : 0;
   m[keys.WEATHER] = s.WEATHER ? 1 : 0;
   m[keys.UNITS] = (s.UNITS | 0) === 0 ? (fahrenheitHere() ? 2 : 1) : s.UNITS | 0;
   m[keys.PLACE] = s.PLACE | 0;

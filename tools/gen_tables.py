@@ -240,6 +240,8 @@ def shared(h):
         masks.append((f"TINY{i}", sprites.tiny(c, 1)))
     for k in ("left", "right", "end"):
         masks.append((f"VANE_{k.upper()}", sprites.sign(sprites.VANE[k])))
+    for k in sprites.LABOUR_FIGURES:
+        masks.append((f"LABOUR_{ident(k)}", sprites.labour_figure(k)))
     index, flat = bytearray(), []
     bit = 0
     for name, m in masks:
@@ -253,6 +255,23 @@ def shared(h):
     tiny_map = "".join(c if c != "°" else "\\x01" for c in tiny_chars)
     h.append(f'static const char TINY_CHARS[] = "{tiny_map}";  /* \\x01 the degree sign; M_TINY0 onward */')
     h.append("enum { " + ", ".join(f"NW_{ident(k)}" for k in needle) + ", NW_COUNT };")
+    # the labours of the months: each side's figure (a mask) and where its copies stand, and the field behind
+    grounds = ["snow", "vines", "grass", "stubble", "furrows"]
+    h.append("enum { " + ", ".join(f"FIELD_{g.upper()}" for g in grounds) + " };")
+    h.append("typedef struct { uint8_t mask, n; int8_t at[3][2]; } LabourFigure;   /* at: dx, dy */")
+    h.append("typedef struct { LabourFigure side[2]; uint8_t field; } Labour;      /* left, right */")
+    rows = []
+    for month in range(1, 13):
+        scene = sprites.LABOURS[month]
+        sides = []
+        for side in ("left", "right"):
+            name = scene[side]
+            at = sprites.LABOUR_COPIES.get(name, [(0, 0)])
+            assert len(at) <= 3
+            cells = ", ".join(f"{{{dx}, {dy}}}" for dx, dy in at)
+            sides.append(f"{{M_LABOUR_{ident(name)}, {len(at)}, {{{cells}}}}}")
+        rows.append(f"  {{{{{sides[0]}, {sides[1]}}}, FIELD_{scene['ground'].upper()}}},")
+    h.append("static const Labour LABOURS[12] = {\n" + "\n".join(rows) + "\n};")
 
     def ids(lst):
         return "{" + ", ".join(f"NW_{ident(k)}" for k in lst) + "}"

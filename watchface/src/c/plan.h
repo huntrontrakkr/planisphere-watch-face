@@ -93,6 +93,8 @@ typedef struct {
   int8_t num_style;                    /* the numerals placed for this style (-1: not yet) */
   int16_t numerals[6][2];              /* their top-left corners */
   int16_t ins_lo[4], ins_hi[4];        /* the inscriptions' room along the band (1/16 px) */
+  bool lab_ok;                         /* the labours' places worked out for this window: */
+  int16_t lab_at[2][2];                /* the labourer's (left) and the month's thing's (right) middles */
   /* the Sun's next rising or setting, kept until it passes (or the place changes) */
   int64_t ev_from, ev_at;
   int ev_kind;                         /* 1 rising, 2 setting, 0 none within a day; -1 not yet worked out */

@@ -896,6 +896,10 @@ LABOURS = {1: dict(left="feaster", right="table", ground="snow"),
            12: dict(left="baker", right="oven", ground="snow")}
 
 
+# the figures drawn more than once, at these offsets: a flock of crows over the sowing, the swine under the oaks
+LABOUR_COPIES = {"crow": [(0, 0), (-7, 5), (6, 8)], "pig": [(-4, -3), (5, 4)]}
+
+
 def labour_figure(name):
     return np.array([[c == "#" for c in r] for r in LABOUR_FIGURES[name]])
 

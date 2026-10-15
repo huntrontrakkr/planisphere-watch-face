@@ -102,7 +102,7 @@ static void face_of(Face *f) {
   memset(f, 0, sizeof *f);
   f->plate = s_settings.plate < PLATE_COUNT ? s_settings.plate : 0;
   f->clock24 = s_settings.clock == 0 ? clock_is_24h_style() : s_settings.clock == 2;
-  f->names = s_settings.names;
+  f->names = s_settings.names, f->labours = s_settings.labours;
   f->fahrenheit = s_settings.units == 2;
   if (s_settings.place == 1) {
     f->lat = (float)s_settings.lat_e4 * 1e-4f, f->lon = (float)s_settings.lon_e4 * 1e-4f;
