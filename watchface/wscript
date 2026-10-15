@@ -3,6 +3,7 @@
 # (src/c/plan_*.c) is built by tools/build_blob.py into a code resource, which main.c loads at start.
 #
 import os
+import shutil
 import subprocess
 import sys
 
@@ -19,9 +20,12 @@ def configure(ctx):
 
 
 def build(ctx):
-    # the renderer's code first, with the SDK's compiler: the resources are packed from it
-    subprocess.check_call([sys.executable, os.path.join(ctx.path.abspath(), '..', 'tools', 'build_blob.py')])
     ctx.load('pebble_sdk')
+    # the renderer's code first, with the compiler the SDK builds the app with: the resources are packed from it
+    cc = ctx.all_envs[ctx.env.TARGET_PLATFORMS[0]].CC
+    cc = shutil.which(cc[0] if isinstance(cc, list) else cc) or ''
+    subprocess.check_call([sys.executable, os.path.join(ctx.path.abspath(), '..', 'tools', 'build_blob.py')] +
+                          (['--cc', cc] if cc else []))
     binaries = []
     cached_env = ctx.env
     for platform in ctx.env.TARGET_PLATFORMS:

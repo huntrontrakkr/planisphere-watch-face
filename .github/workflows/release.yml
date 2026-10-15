@@ -1,0 +1,170 @@
+name: Release watch face
+
+# Builds, checks and packages Planisphere on every change. A push to main
+# releases a new version when watchface/package.json names one that has
+# release notes (releases/vX.Y.Z.md) and no tag yet; a pushed version tag
+# releases that tag; publishing a GitHub release (or running this by hand
+# with a tag) publishes that release's own downloads. After Morphogen 9's and
+# Groundtrack's release workflows. See docs/RELEASING.md.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing GitHub release tag to publish to Pebble again
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag || github.event.release.tag_name || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned build tools
+        run: |
+          pip install pebble-tool==5.0.40
+          pebble sdk install 4.33.1
+      - name: Host build and smoke renders (the watch's renderer on the runner)
+        run: |
+          sh tools/build-host.sh
+          mkdir -p out
+          for p in emery gabbro; do
+            for plate in 0 1 2 3 4 5 6 7 8 9; do
+              build/host $p $plate 1792027800 40.71 -74.01 -240 out/$p-$plate.ppm --labours
+            done
+            build/host $p 0 1712601720 32.7767 -96.797 -300 out/$p-eclipse.ppm
+            build/host $p 0 1768494600 40.71 -74.01 -300 out/$p-snow.ppm --weather -20,73,90,60,20,12,20,1003,80,250
+          done
+      - name: Clean watch build and package
+        run: |
+          cd watchface
+          pebble build
+          cd ..
+          python tools/release.py package
+          python tools/release.py check
+      - name: Decide whether this push is a release
+        id: release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'release'
+        env:
+          REQUESTED_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || [ "$GITHUB_EVENT_NAME" = release ]; then
+            tag="$REQUESTED_TAG"
+          elif [ "$GITHUB_REF_TYPE" = tag ]; then
+            tag="$GITHUB_REF_NAME"
+          else
+            tag="v$(python -c "import json;print(json.load(open('watchface/package.json'))['version'])")"
+            if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null || [ ! -f "releases/$tag.md" ]; then
+              tag=""
+            fi
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Release: ${tag:-none}"
+      # A tag that already has a GitHub release is published from that
+      # release's own downloads, so the store gets exactly the package users
+      # already have, not a rebuild (builds are not byte-reproducible).
+      - name: Use the existing release package
+        if: steps.release.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
+            gh release download "$RELEASE_TAG" --dir release-artifacts --pattern 'planisphere.pbw' --pattern SHA256SUMS --clobber
+            (cd release-artifacts && sha256sum --check SHA256SUMS)
+          elif [ "$GITHUB_EVENT_NAME" != push ]; then
+            echo "::error::No GitHub release $RELEASE_TAG to publish from."
+            exit 1
+          fi
+      - name: Verify the release tag belongs to main
+        if: steps.release.outputs.tag != ''
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          git merge-base --is-ancestor HEAD origin/main
+          python tools/release.py check --tag "$RELEASE_TAG"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: planisphere-release
+          path: release-artifacts/
+          if-no-files-found: error
+
+  publish:
+    needs: verify
+    if: needs.verify.outputs.tag != '' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: pebble-store-publish
+      cancel-in-progress: false
+    env:
+      RELEASE_TAG: ${{ needs.verify.outputs.tag }}
+      PLANISPHERE_STORE_APP_ID: ${{ vars.PLANISPHERE_STORE_APP_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name != 'push' && needs.verify.outputs.tag || github.sha }}
+      - name: Require the store listing and publishing credentials
+        env:
+          PEBBLE_FIREBASE_REFRESH_TOKEN: ${{ secrets.PEBBLE_FIREBASE_REFRESH_TOKEN }}
+        run: |
+          for name in PLANISPHERE_STORE_APP_ID PEBBLE_FIREBASE_REFRESH_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Store publishing requires $name. Configure the repository variable or secret before releasing."
+              exit 1
+            fi
+          done
+      # Tag the tested commit. A tag pushed with the workflow's own token starts
+      # no new run, so this run publishes it.
+      - name: Tag the release
+        if: github.ref_type == 'branch' && github.event_name == 'push'
+        run: |
+          git tag "$RELEASE_TAG" "$GITHUB_SHA"
+          git push origin "refs/tags/$RELEASE_TAG" || [ "$(git ls-remote origin "refs/tags/$RELEASE_TAG" | cut -f1)" = "$GITHUB_SHA" ]
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/download-artifact@v4
+        with:
+          name: planisphere-release
+          path: release-artifacts
+      - name: Publish the verified package to Pebble
+        env:
+          PEBBLE_FIREBASE_REFRESH_TOKEN: ${{ secrets.PEBBLE_FIREBASE_REFRESH_TOKEN }}
+        run: |
+          pip install pebble-tool==5.0.40
+          python tools/release.py publish --tag "$RELEASE_TAG"
+      - name: Publish GitHub release downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --verify-tag --title "Planisphere $RELEASE_TAG" --notes-file release-artifacts/release-notes.md
+          fi
+          gh release upload "$RELEASE_TAG" release-artifacts/planisphere.pbw release-artifacts/SHA256SUMS --clobber

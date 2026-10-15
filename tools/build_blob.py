@@ -12,10 +12,15 @@ main.c loads it into memory, adds the load address to each listed word, flushes 
 calls the entry table. Only R_ARM_ABS32 relocations need it (calls and branches are relative); anything else
 absolute fails the build. Standard library only.
 
-    python3 tools/build_blob.py
+    python3 tools/build_blob.py [--cc PATH-TO-arm-none-eabi-gcc]
+
+The wscript passes the compiler `pebble build` uses; by hand it is the Pebble SDK's (PEBBLE_SDK, or the SDK the Pebble
+tool installed last).
 """
+import argparse
 import os
 import re
+import shutil
 import struct
 import subprocess
 import sys
@@ -27,7 +32,7 @@ BLOB = ROOT / "watchface" / "blob"
 OUT = ROOT / "watchface" / "resources" / "data" / "plan_code.bin"
 WORK = ROOT / "build" / "blob"
 SDK = Path(os.environ.get("PEBBLE_SDK", Path.home() / ".local/share/pebble-sdk/SDKs/current"))
-TC = SDK / "toolchain" / "arm-none-eabi" / "bin"
+TC = SDK / "toolchain" / "arm-none-eabi" / "bin"     # (or --cc's directory)
 CFLAGS = ["-mcpu=cortex-m3", "-mthumb", "-Os", "-std=c99", "-ffunction-sections", "-fdata-sections",
           "-ffp-contract=off", "-fno-common", "-Wall", "-Wextra", "-Wno-unused-parameter", "-Werror",
           "-fno-tree-loop-distribute-patterns", f"-I{SRC}"]
@@ -42,6 +47,16 @@ def run(*args):
 
 
 def main():
+    global TC
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--cc", help="the SDK's arm-none-eabi-gcc")
+    a = ap.parse_args()
+    sdks = sorted(Path.home().glob(".local/share/pebble-sdk/SDKs/*/toolchain/arm-none-eabi/bin/arm-none-eabi-gcc"))
+    cc = (a.cc or (str(TC / "arm-none-eabi-gcc") if (TC / "arm-none-eabi-gcc").exists() else None) or
+          shutil.which("arm-none-eabi-gcc") or (str(sdks[-1]) if sdks else None))
+    if not cc:
+        sys.exit("build_blob: no arm-none-eabi-gcc (install the Pebble SDK, or pass --cc)")
+    TC = Path(cc).resolve().parent
     WORK.mkdir(parents=True, exist_ok=True)
     gcc = TC / "arm-none-eabi-gcc"
     objs = []

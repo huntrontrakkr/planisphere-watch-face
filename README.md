@@ -1,6 +1,8 @@
 # Planisphere
 
-A watch face prototype for the Pebble Round 2 and Time 2: the sky as it is right now, on a planisphere.
+A watch face for the Pebble Time 2 and Round 2: the sky as it is right now, on a planisphere. The Python prototype
+(`proto/`) is where it is designed; the watch runs the same drawing in C (`watchface/`), and its settings page shows
+the face live, the same C built to WebAssembly. See [On the watch](#on-the-watch).
 
 ## Plates
 
@@ -177,7 +179,8 @@ And the filigree, all drawn by hand:
 
 ## Animations
 
-Each plays for a moment, then the face is still again: a watch has no battery for more.
+Designed in the prototype; the watch does not play them yet. Each plays for a moment, then the face is still again: a
+watch has no battery for more.
 
 - **Falling stars.** Now and then at night a meteor streaks across the window, its head a small cross of white, its trail fading through cream and grey into the sky. On a shower's peak night they come often, and all streak out from the shower's radiant.
 - **Birds.** Now and then by day a little flock crosses the sky in a loose V, wings beating, in the village's dark ink.
@@ -210,7 +213,7 @@ Each plays for a moment, then the face is still again: a watch has no battery fo
 
 ## Experimental: the compass, on a flick
 
-Off unless you turn it on, as an experimental setting. The magnetometer costs battery while it runs, so it only runs when you ask. Flick your wrist and the compass turns on for half a minute. The face becomes a window onto the sky where the watch points: the horizon along the bottom, the compass points on it, and names on what is bright. Then the compass switches off and the planisphere comes back; a second flick ends it sooner.
+Designed in the prototype; not on the watch yet. Off unless you turn it on, as an experimental setting. The magnetometer costs battery while it runs, so it only runs when you ask. Flick your wrist and the compass turns on for half a minute. The face becomes a window onto the sky where the watch points: the horizon along the bottom, the compass points on it, and names on what is bright. Then the compass switches off and the planisphere comes back; a second flick ends it sooner.
 
 ![Turning round under the evening sky, 4 degrees a frame](docs/compass-turn.gif)
 
@@ -301,7 +304,35 @@ The pieces are drawn by hand, pixel by pixel, not generated from shapes. Each is
 uv run python proto/film_plates.py      # writes docs/
 ```
 
-Next: the same drawing in C for the watch, with the pieces and the stars as small tables.
+## On the watch
+
+`watchface/` is the face itself: the prototype's drawing ported to C (`watchface/src/c`), the pieces, the stars, the
+type and each watch's ring packed into the app's resources by `tools/gen_tables.py`. It lands on the prototype's
+pixels: `tools/parity.py` compares the two case by case (every plate, both watches, the south, the weather, the
+eclipses, the labours), and no case differs in more than 0.7% of its pixels. The watch has no room for double
+precision, so the Sun, the Moon and the planets are worked out in single precision, their large angles kept exact as
+fractions of a turn in whole numbers.
+
+The phone (`watchface/src/pkjs/index.js`) finds where it is, names the place, and fetches the weather there from
+Open-Meteo every half hour; the watch keeps them and draws the face once a minute. The settings page shows the face
+as you set it, at any time and date: the watch's own C built to WebAssembly (`preview/`) draws the preview and each
+plate's thumbnail.
+
+![The settings page: the live preview, and the plates as live thumbnails](docs/settings-page.png)
+
+The drawing is larger than PebbleOS lets an app's own code be (64 KB, from the way it records an app's size), so it
+is not linked into the app. `tools/build_blob.py` compiles it into one of the app's resources, and the app loads it at
+start, fixes up its addresses, flushes the caches and runs it from its own memory. The app itself is under 5 KB.
+
+```
+cd watchface && pebble build                                         # the watch app, for both watches
+sh tools/build-host.sh && build/host emery 0 $(date +%s) 40.71 -74.01 -240 out.ppm   # one face, on the computer
+bash preview/build.sh && (cd proto && uv run python ../tools/build_page.py)          # the settings page
+```
+
+[docs/RELEASING.md](docs/RELEASING.md) has the release steps and the checks to run first;
+[docs/STORE-LISTING.md](docs/STORE-LISTING.md) has the store's copy, and `docs/screenshots/store/` its gallery
+(`tools/store_gallery.py`).
 
 ## Credits
 
