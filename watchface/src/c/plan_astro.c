@@ -1,6 +1,11 @@
 /* Where things are in the sky, as the prototype finds them (proto/astro.py, proto/lunar.py): the Sun and the Moon
  * from Meeus (Astronomical Algorithms, ch. 47 and 25, nutation from ch. 22) in dynamical time, the planets from
- * Paul Schlyter's elements with Jupiter's and Saturn's great inequality. Degrees throughout. */
+ * Paul Schlyter's elements with Jupiter's and Saturn's great inequality. Degrees throughout.
+ *
+ * In single precision, as the watch has room for: the angles that turn fast (the Moon's arguments, sidereal time,
+ * the planets' mean anomalies) are kept as binary angles (2^32ths of a turn), advanced from J2000.0 by exact 64-bit
+ * integer arithmetic, so no large angle is ever held in a float; what is left is small. Within 0.001 degree of the
+ * prototype's double precision: well under a pixel. */
 #include "plan.h"
 #include "plan_math.h"
 
@@ -8,7 +13,47 @@
 #pragma GCC optimize("Os")
 #endif
 
-static double rev(double a) { return py_mod(a, 360.0); }
+#define J2000 946728000              /* 2000-01-01 12:00 UTC, as seconds since 1970 */
+#define CENTURY 3155760000.0f        /* seconds in a Julian century */
+
+/* the fast angles at J2000.0 (2^32ths of a turn) and their rates (2^64ths of a turn a second), from the formulae's
+ * degrees (in the comments) exactly */
+enum { A_MOON_LP, A_MOON_D, A_MOON_M, A_MOON_MP, A_MOON_F, A_MOON_A1, A_MOON_A2, A_MOON_A3, A_SUN_L0, A_SUN_M, A_NUT_OM,
+       A_NUT_L, A_NUT_LP, A_NODE, A_SIDEREAL, A_M_SUN, A_M_MERCURY, A_M_VENUS, A_M_MARS, A_M_JUPITER, A_M_SATURN };
+static const struct { uint32_t a0; int64_t rate; } ANGLES[21] = {
+  {0x9b3f4be3u, 7814480889287LL},    /* the Moon's mean longitude: 218.3164477 + 481267.88123421 T */
+  {0xd3cdf906u, 7229926343239LL},    /* its mean elongation D: 297.8501921 + 445267.1114034 T */
+  {0xfe3e3025u, 584526625399LL},     /* the Sun's mean anomaly M: 357.5291092 + 35999.0502909 T */
+  {0x5ff95626u, 7748411177883LL},    /* the Moon's mean anomaly M': 134.9633964 + 477198.8675055 T */
+  {0x4253aaaeu, 7845885999950LL},    /* its argument of latitude F: 93.2720950 + 483202.0175233 T */
+  {0x5527d27du, 2140869007LL},       /* A1: 119.75 + 131.849 T */
+  {0x25c0bd54u, 7781948019299LL},    /* A2: 53.09 + 479264.290 T */
+  {0xdee5d4c4u, 7814458202006LL},    /* A3: 313.45 + 481266.484 T */
+  {0xc7715c64u, 584554546035LL},     /* the Sun's mean longitude L0: 280.46646 + 36000.76983 T */
+  {0xfe3e302eu, 584526625384LL},     /* its mean anomaly: 357.52911 + 35999.05029 T */
+  {0x58eba901u, -31405110206LL},     /* nutation's node: 125.04452 - 1934.136261 T */
+  {0xc7715e41u, 584554545548LL},     /* L: 280.4665 + 36000.7698 T */
+  {0x9b3f4e53u, 7814480890356LL},    /* L': 218.3165 + 481267.8813 T */
+  {0x58ebaa4eu, -31405110662LL},     /* the Moon's mean node: 125.0445479 - 1934.1362891 T */
+  {0xc7704c26u, 214088536884269LL},  /* sidereal time at Greenwich: 280.46061837 + 360.98564736629 d */
+  {0xfe3d834du, 584526611610LL},     /* Schlyter's Sun, M: 356.0470 + 0.9856002585 d (d from 2000 Jan 0.0) */
+  {0x7c4c6784u, 2427026942505LL},    /* Mercury: 168.6562 + 4.0923344368 d */
+  {0x23d8917eu, 950169953133LL},     /* Venus: 48.0052 + 1.6021302244 d */
+  {0x0dc98067u, 310779229528LL},     /* Mars: 18.6021 + 0.5240207766 d */
+  {0x0e3c7649u, 49275117902LL},      /* Jupiter: 19.8950 + 0.0830853001 d */
+  {0xe16f36c4u, 19834655297LL},      /* Saturn: 316.9670 + 0.0334442282 d */
+};
+
+/* degrees as a binary angle (taken to within half a turn first, as a signed 32-bit number holds it) */
+static uint32_t bam(float d) { return (uint32_t)(int32_t)((pyf_mod(d + 180, 360) - 180) * 11930464.71f); }
+/* a binary angle in degrees, 0..360 */
+static float deg(uint32_t a) { return (float)(a >> 8) * (360.0f / 16777216.0f); }
+/* a fast angle at `t` seconds from J2000.0, plus a correction in degrees: a binary angle */
+static uint32_t angle(int i, int32_t t, float plus) {
+  uint64_t q = (uint64_t)ANGLES[i].rate * (uint64_t)(int64_t)t;
+  return ANGLES[i].a0 + (uint32_t)(q >> 32) + bam(plus);
+}
+static float rev(float a) { return pyf_mod(a, 360); }
 
 /* Table 47.A: D, M, M', F; the longitude (1e-6 degree) and distance (0.001 km) coefficients */
 static const int8_t LR_ARG[60][4] = {
@@ -47,188 +92,184 @@ static const int32_t B_B[60] = {
   439, 422, 421, -366, -351, 331, 315, 302, -283, -229, 223, 223, -220, -220, -185, 181, -177, 176, 166, -164, 132,
   -119, 115, 107};
 
-static double delta_t(double year) { return 69.2 + 0.25 * (year - 2025); }
+/* the moment in dynamical time (TT = UT + delta T, about 69 s these decades), seconds from J2000.0 */
+static int32_t tt_of(int32_t t) {
+  float year = 2000.0f + (float)t / 31557600.0f;
+  return t + (int32_t)(69.2f + 0.25f * ((float)(int)year - 2025) + 0.5f);
+}
 
-/* The Moon's geocentric ecliptic longitude and latitude of date (without nutation) and distance (km). */
-static void moon(double jde, double *lam, double *beta, double *dist) {
-  double T = (jde - 2451545.0) / 36525, T2 = T * T, T3 = T2 * T, T4 = T3 * T;
-  double Lp = 218.3164477 + 481267.88123421 * T - 0.0015786 * T2 + T3 / 538841 - T4 / 65194000;
-  double D = 297.8501921 + 445267.1114034 * T - 0.0018819 * T2 + T3 / 545868 - T4 / 113065000;
-  double M = 357.5291092 + 35999.0502909 * T - 0.0001536 * T2 + T3 / 24490000;
-  double Mp = 134.9633964 + 477198.8675055 * T + 0.0087414 * T2 + T3 / 69699 - T4 / 14712000;
-  double F = 93.2720950 + 483202.0175233 * T - 0.0036539 * T2 - T3 / 3526000 + T4 / 863310000;
-  double A1 = 119.75 + 131.849 * T, A2 = 53.09 + 479264.290 * T, A3 = 313.45 + 481266.484 * T;
-  double E = 1 - 0.002516 * T - 0.0000074 * T2;
-  double sl = 0, sr = 0, sb = 0;
+/* a term's argument: D, M, M' and F so many times over */
+static uint32_t term(const int8_t a[4], uint32_t D, uint32_t M, uint32_t Mp, uint32_t F) {
+  return (uint32_t)(int32_t)a[0] * D + (uint32_t)(int32_t)a[1] * M + (uint32_t)(int32_t)a[2] * Mp + (uint32_t)(int32_t)a[3] * F;
+}
+
+/* the Moon's geocentric ecliptic longitude and latitude of date (without nutation) and distance (km) */
+static void moon(int32_t tt, float *lam, float *beta, float *dist) {
+  float T = (float)tt / CENTURY, T2 = T * T, T3 = T2 * T, T4 = T3 * T;
+  uint32_t Lp = angle(A_MOON_LP, tt, -0.0015786f * T2 + T3 / 538841 - T4 / 65194000);
+  uint32_t D = angle(A_MOON_D, tt, -0.0018819f * T2 + T3 / 545868 - T4 / 113065000);
+  uint32_t M = angle(A_MOON_M, tt, -0.0001536f * T2 + T3 / 24490000);
+  uint32_t Mp = angle(A_MOON_MP, tt, 0.0087414f * T2 + T3 / 69699 - T4 / 14712000);
+  uint32_t F = angle(A_MOON_F, tt, -0.0036539f * T2 - T3 / 3526000 + T4 / 863310000);
+  uint32_t A1 = angle(A_MOON_A1, tt, 0), A2 = angle(A_MOON_A2, tt, 0), A3 = angle(A_MOON_A3, tt, 0);
+  float E = 1 - 0.002516f * T - 0.0000074f * T2, EE[3] = {1, E, E * E};
+  float sl = 0, sr = 0, sb = 0;
   for (int i = 0; i < 60; i++) {
-    double e = LR_ARG[i][1] ? (LR_ARG[i][1] == 1 || LR_ARG[i][1] == -1 ? E : E * E) : 1.0;
-    double arg = LR_ARG[i][0] * D + LR_ARG[i][1] * M + LR_ARG[i][2] * Mp + LR_ARG[i][3] * F;
-    if (LR_L[i]) sl += LR_L[i] * e * m_sind(arg);
-    if (LR_R[i]) sr += LR_R[i] * e * m_cosd(arg);
+    float e = EE[LR_ARG[i][1] < 0 ? -LR_ARG[i][1] : LR_ARG[i][1]], a = deg(term(LR_ARG[i], D, M, Mp, F));
+    if (LR_L[i]) sl += (float)LR_L[i] * e * f_sind(a);
+    if (LR_R[i]) sr += (float)LR_R[i] * e * f_cosd(a);
+    sb += (float)B_B[i] * EE[B_ARG[i][1] < 0 ? -B_ARG[i][1] : B_ARG[i][1]] * f_sind(deg(term(B_ARG[i], D, M, Mp, F)));
   }
-  for (int i = 0; i < 60; i++) {
-    double e = B_ARG[i][1] ? (B_ARG[i][1] == 1 || B_ARG[i][1] == -1 ? E : E * E) : 1.0;
-    sb += B_B[i] * e * m_sind(B_ARG[i][0] * D + B_ARG[i][1] * M + B_ARG[i][2] * Mp + B_ARG[i][3] * F);
-  }
-  sl += 3958 * m_sind(A1) + 1962 * m_sind(Lp - F) + 318 * m_sind(A2);
-  sb += -2235 * m_sind(Lp) + 382 * m_sind(A3) + 175 * m_sind(A1 - F) + 175 * m_sind(A1 + F) + 127 * m_sind(Lp - Mp)
-        - 115 * m_sind(Lp + Mp);
-  *lam = rev(Lp + sl / 1e6);
-  *beta = sb / 1e6;
-  *dist = 385000.56 + sr / 1000;
+  sl += 3958 * f_sind(deg(A1)) + 1962 * f_sind(deg(Lp - F)) + 318 * f_sind(deg(A2));
+  sb += -2235 * f_sind(deg(Lp)) + 382 * f_sind(deg(A3)) + 175 * f_sind(deg(A1 - F)) + 175 * f_sind(deg(A1 + F)) +
+        127 * f_sind(deg(Lp - Mp)) - 115 * f_sind(deg(Lp + Mp));
+  *lam = deg(Lp + bam(sl / 1e6f));
+  *beta = sb / 1e6f;
+  *dist = 385000.56f + sr / 1000;
 }
 
-/* The Sun's apparent ecliptic longitude of date (with the aberration, without nutation). */
-static double sun(double jde) {
-  double T = (jde - 2451545.0) / 36525;
-  double L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
-  double M = 357.52911 + 35999.05029 * T - 0.0001537 * T * T;
-  double C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * m_sind(M) + (0.019993 - 0.000101 * T) * m_sind(2 * M)
-             + 0.000289 * m_sind(3 * M);
-  return rev(L0 + C - 0.00569);
+/* the Sun's apparent ecliptic longitude of date (with the aberration, without nutation) */
+static uint32_t sun(int32_t tt) {
+  float T = (float)tt / CENTURY;
+  uint32_t L0 = angle(A_SUN_L0, tt, 0.0003032f * T * T);
+  float M = deg(angle(A_SUN_M, tt, -0.0001537f * T * T));
+  float C = (1.914602f - 0.004817f * T - 0.000014f * T * T) * f_sind(M) + (0.019993f - 0.000101f * T) * f_sind(2 * M) +
+            0.000289f * f_sind(3 * M);
+  return L0 + bam(C - 0.00569f);
 }
 
-static void nutation(double jde, double *dpsi, double *eps) {
-  double T = (jde - 2451545.0) / 36525;
-  double om = 125.04452 - 1934.136261 * T;
-  double L = 280.4665 + 36000.7698 * T, Lp = 218.3165 + 481267.8813 * T;
-  *dpsi = (-17.20 * m_sind(om) - 1.32 * m_sind(2 * L) - 0.23 * m_sind(2 * Lp) + 0.21 * m_sind(2 * om)) / 3600;
-  double deps = (9.20 * m_cosd(om) + 0.57 * m_cosd(2 * L) + 0.10 * m_cosd(2 * Lp) - 0.09 * m_cosd(2 * om)) / 3600;
-  *eps = 23.4392911 - 0.0130042 * T - 1.64e-7 * T * T + 5.04e-7 * T * T * T + deps;
+static void nutation(int32_t tt, float *dpsi, float *eps) {
+  float T = (float)tt / CENTURY;
+  float om = deg(angle(A_NUT_OM, tt, 0)), L = deg(angle(A_NUT_L, tt, 0)), Lp = deg(angle(A_NUT_LP, tt, 0));
+  *dpsi = (-17.20f * f_sind(om) - 1.32f * f_sind(2 * L) - 0.23f * f_sind(2 * Lp) + 0.21f * f_sind(2 * om)) / 3600;
+  float deps = (9.20f * f_cosd(om) + 0.57f * f_cosd(2 * L) + 0.10f * f_cosd(2 * Lp) - 0.09f * f_cosd(2 * om)) / 3600;
+  *eps = 23.4392911f - 0.0130042f * T - 1.64e-7f * T * T + 5.04e-7f * T * T * T + deps;
 }
 
-double plan_moon_node(double jd) {
-  double T = (jd - 2451545.0) / 36525;
-  return rev(125.0445479 - 1934.1362891 * T + 0.0020754 * T * T + T * T * T / 467441 - T * T * T * T / 60616000);
+float plan_moon_node(int64_t utc) {
+  int32_t t = (int32_t)(utc - J2000);
+  float T = (float)t / CENTURY;
+  return deg(angle(A_NODE, t, 0.0020754f * T * T + T * T * T / 467441 - T * T * T * T / 60616000));
 }
 
-void plan_ecl_to_eq(double lon, double lat, double eps, double *ra, double *dec) {
-  double x = m_cosd(lon) * m_cosd(lat);
-  double y = m_sind(lon) * m_cosd(lat) * m_cosd(eps) - m_sind(lat) * m_sind(eps);
-  double z = m_sind(lon) * m_cosd(lat) * m_sind(eps) + m_sind(lat) * m_cosd(eps);
-  *ra = rev(m_atan2d(y, x));
-  *dec = m_asind(z);
+void plan_ecl_to_eq(float lon, float lat, float eps, float *ra, float *dec) {
+  float cl = f_cosd(lat), sl = f_sind(lat), ce = f_cosd(eps), se = f_sind(eps);
+  float x = f_cosd(lon) * cl, y = f_sind(lon) * cl * ce - sl * se, z = f_sind(lon) * cl * se + sl * ce;
+  *ra = rev(f_atan2d(y, x));
+  *dec = f_asind(z);
 }
 
-double plan_altitude(double ra, double dec, double lst, double lat) {
-  return m_asind(m_sind(lat) * m_sind(dec) + m_cosd(lat) * m_cosd(dec) * m_cosd(lst - ra));
+float plan_altitude(float ra, float dec, float lst, float lat) {
+  return f_asind(f_sind(lat) * f_sind(dec) + f_cosd(lat) * f_cosd(dec) * f_cosd(lst - ra));
 }
 
-static double julian(int64_t utc) { return (double)utc / 86400.0 + 2440587.5; }
-
-static double sidereal(double jd, double lon) {
-  double d = jd - 2451545.0, T = d / 36525;
-  return rev(280.46061837 + 360.98564736629 * d + 0.000387933 * T * T - T * T * T / 38710000 + lon);
+/* local sidereal time at east longitude `lon` */
+static float sidereal(int32_t t, float lon) {
+  float T = (float)t / CENTURY;
+  return deg(angle(A_SIDEREAL, t, 0.000387933f * T * T - T * T * T / 38710000 + lon));
 }
 
-/* Schlyter's elements: N, i, w, a, e, M as (value, rate per day) from 2000 Jan 0.0 UT */
+/* Schlyter's elements: N, i, w, a, e as (value, rate per day) from 2000 Jan 0.0 UT; M (fast) a binary angle */
 enum { E_SUN, E_MERCURY, E_VENUS, E_MARS, E_JUPITER, E_SATURN };
-static const double ELEMENTS[6][6][2] = {
-  {{0, 0}, {0, 0}, {282.9404, 4.70935e-5}, {1.0, 0}, {0.016709, -1.151e-9}, {356.0470, 0.9856002585}},
-  {{48.3313, 3.24587e-5}, {7.0047, 5.00e-8}, {29.1241, 1.01444e-5}, {0.387098, 0}, {0.205635, 5.59e-10},
-   {168.6562, 4.0923344368}},
-  {{76.6799, 2.46590e-5}, {3.3946, 2.75e-8}, {54.8910, 1.38374e-5}, {0.723330, 0}, {0.006773, -1.302e-9},
-   {48.0052, 1.6021302244}},
-  {{49.5574, 2.11081e-5}, {1.8497, -1.78e-8}, {286.5016, 2.92961e-5}, {1.523688, 0}, {0.093405, 2.516e-9},
-   {18.6021, 0.5240207766}},
-  {{100.4542, 2.76854e-5}, {1.3030, -1.557e-7}, {273.8777, 1.64505e-5}, {5.20256, 0}, {0.048498, 4.469e-9},
-   {19.8950, 0.0830853001}},
-  {{113.6634, 2.38980e-5}, {2.4886, -1.081e-7}, {339.3939, 2.97661e-5}, {9.55475, 0}, {0.055546, -9.499e-9},
-   {316.9670, 0.0334442282}},
+static const float ELEMENTS[6][5][2] = {
+  {{0, 0}, {0, 0}, {282.9404f, 4.70935e-5f}, {1.0f, 0}, {0.016709f, -1.151e-9f}},
+  {{48.3313f, 3.24587e-5f}, {7.0047f, 5.00e-8f}, {29.1241f, 1.01444e-5f}, {0.387098f, 0}, {0.205635f, 5.59e-10f}},
+  {{76.6799f, 2.46590e-5f}, {3.3946f, 2.75e-8f}, {54.8910f, 1.38374e-5f}, {0.723330f, 0}, {0.006773f, -1.302e-9f}},
+  {{49.5574f, 2.11081e-5f}, {1.8497f, -1.78e-8f}, {286.5016f, 2.92961e-5f}, {1.523688f, 0}, {0.093405f, 2.516e-9f}},
+  {{100.4542f, 2.76854e-5f}, {1.3030f, -1.557e-7f}, {273.8777f, 1.64505e-5f}, {5.20256f, 0}, {0.048498f, 4.469e-9f}},
+  {{113.6634f, 2.38980e-5f}, {2.4886f, -1.081e-7f}, {339.3939f, 2.97661e-5f}, {9.55475f, 0}, {0.055546f, -9.499e-9f}},
 };
+static float element(int body, int k, float d) { return ELEMENTS[body][k][0] + ELEMENTS[body][k][1] * d; }
 
-static double element(int body, int k, double d) { return ELEMENTS[body][k][0] + ELEMENTS[body][k][1] * d; }
-
-static double kepler(double M, double e) {
-  double E = M + e * R2D * m_sind(M) * (1 + e * m_cosd(M));
-  for (int i = 0; i < 8; i++) E = E - (E - e * R2D * m_sind(E) - M) / (1 - e * m_cosd(E));
+static float kepler(float M, float e) {
+  float E = M + e * 57.2957795f * f_sind(M) * (1 + e * f_cosd(M));
+  for (int i = 0; i < 8; i++) E = E - (E - e * 57.2957795f * f_sind(E) - M) / (1 - e * f_cosd(E));
   return E;
 }
 
 /* the body's heliocentric ecliptic position */
-static void orbit(int body, double d, double *x, double *y, double *z) {
-  double N = element(body, 0, d), i = element(body, 1, d), w = element(body, 2, d), a = element(body, 3, d);
-  double e = element(body, 4, d), M = element(body, 5, d);
-  double E = kepler(rev(M), e);
-  double xv = a * (m_cosd(E) - e), yv = a * m_sqrt(1 - e * e) * m_sind(E);
-  double v = m_atan2d(yv, xv), r = m_sqrt(xv * xv + yv * yv);
-  *x = r * (m_cosd(N) * m_cosd(v + w) - m_sind(N) * m_sind(v + w) * m_cosd(i));
-  *y = r * (m_sind(N) * m_cosd(v + w) + m_cosd(N) * m_sind(v + w) * m_cosd(i));
-  *z = r * m_sind(v + w) * m_sind(i);
+static void orbit(int body, float d, float M, float *x, float *y, float *z) {
+  float N = element(body, 0, d), i = element(body, 1, d), w = element(body, 2, d), a = element(body, 3, d);
+  float e = element(body, 4, d);
+  float E = kepler(M, e);
+  float xv = a * (f_cosd(E) - e), yv = a * f_sqrt(1 - e * e) * f_sind(E);
+  float v = f_atan2d(yv, xv), r = f_sqrt(xv * xv + yv * yv);
+  *x = r * (f_cosd(N) * f_cosd(v + w) - f_sind(N) * f_sind(v + w) * f_cosd(i));
+  *y = r * (f_sind(N) * f_cosd(v + w) + f_cosd(N) * f_sind(v + w) * f_cosd(i));
+  *z = r * f_sind(v + w) * f_sind(i);
 }
 
-void plan_sky(Sky *s, int64_t utc, double lon) {
-  double jd = julian(utc);
-  s->jd = jd;
-  s->lst = sidereal(jd, lon);
-  double d = jd - 2451543.5;
-  Civil cv;
-  plan_civil(utc, &cv);
-  double jde = jd + delta_t(cv.year) / 86400;
-  double dpsi, eps;
-  nutation(jde, &dpsi, &eps);
+/* the great inequality's terms: sine (or cosine) of a Mj + b Msat + c */
+static float great(uint32_t Mj, uint32_t Msat, int a, int b, float c, bool cosine) {
+  float x = deg((uint32_t)a * Mj + (uint32_t)b * Msat + bam(c));
+  return cosine ? f_cosd(x) : f_sind(x);
+}
+
+void plan_sky(Sky *s, int64_t utc, float lon) {
+  int32_t t = (int32_t)(utc - J2000), tt = tt_of(t);
+  s->utc = utc;
+  s->lst = sidereal(t, lon);
+  float d = ((float)t + 1.5f * 86400) / 86400;       /* days from 2000 Jan 0.0 UT */
+  float dpsi, eps;
+  nutation(tt, &dpsi, &eps);
   s->eps = eps;
-  double lam_s = rev(sun(jde) + dpsi);
-  double lam_m, beta_m, dist_km;
-  moon(jde, &lam_m, &beta_m, &dist_km);
+  float lam_s = deg(sun(tt) + bam(dpsi));
+  float lam_m, beta_m, dist_km;
+  moon(tt, &lam_m, &beta_m, &dist_km);
   lam_m = rev(lam_m + dpsi);
-  plan_ecl_to_eq(lam_s, 0.0, eps, &s->sun_ra, &s->sun_dec);
+  plan_ecl_to_eq(lam_s, 0.0f, eps, &s->sun_ra, &s->sun_dec);
   s->sun_lon = lam_s;
   plan_ecl_to_eq(lam_m, beta_m, eps, &s->moon_ra, &s->moon_dec);
-  s->moon_dist = dist_km / 6378.14;
-  double ce = m_cosd(lam_m - lam_s) * m_cosd(beta_m);
-  double elong = m_atan2d(m_sqrt(1 - ce * ce), ce);
-  s->moon_phase = (1 - m_cosd(elong)) / 2;
+  s->moon_dist = dist_km / 6378.14f;
+  s->moon_phase = (1 - f_cosd(lam_m - lam_s) * f_cosd(beta_m)) / 2;   /* (1 - cos elongation) / 2 */
   s->moon_waxing = rev(lam_m - lam_s) < 180;
   /* Schlyter's Sun, to carry the planets from the Sun's frame to ours */
-  double ws = element(E_SUN, 2, d), es = element(E_SUN, 4, d), Ms = element(E_SUN, 5, d);
-  double E = kepler(rev(Ms), es);
-  double xv = m_cosd(E) - es, yv = m_sqrt(1 - es * es) * m_sind(E);
-  double v = m_atan2d(yv, xv), rs = m_sqrt(xv * xv + yv * yv);
-  double lon_sun = rev(v + ws), xs = rs * m_cosd(lon_sun), ys = rs * m_sind(lon_sun);
-  double Mj = element(E_JUPITER, 5, d), Msat = element(E_SATURN, 5, d);
-  static const uint8_t body[PLANETS] = {E_VENUS, E_JUPITER, E_MARS, E_SATURN, E_MERCURY};
+  float ws = element(E_SUN, 2, d), es = element(E_SUN, 4, d);
+  float E = kepler(deg(angle(A_M_SUN, t, 0)), es);
+  float xv = f_cosd(E) - es, yv = f_sqrt(1 - es * es) * f_sind(E);
+  float v = f_atan2d(yv, xv), rs = f_sqrt(xv * xv + yv * yv);
+  float lon_sun = rev(v + ws), xs = rs * f_cosd(lon_sun), ys = rs * f_sind(lon_sun);
+  uint32_t Mj = angle(A_M_JUPITER, t, 0), Ms = angle(A_M_SATURN, t, 0);
+  static const uint8_t BODY[PLANETS] = {E_VENUS, E_JUPITER, E_MARS, E_SATURN, E_MERCURY};
+  static const uint8_t MEAN[PLANETS] = {A_M_VENUS, A_M_JUPITER, A_M_MARS, A_M_SATURN, A_M_MERCURY};
   for (int k = 0; k < PLANETS; k++) {
-    double x, y, z;
-    orbit(body[k], d, &x, &y, &z);
-    double lo = m_atan2d(y, x), la = m_atan2d(z, m_sqrt(x * x + y * y)), r = m_sqrt(x * x + y * y + z * z);
-    if (body[k] == E_JUPITER)
-      lo += -0.332 * m_sind(2 * Mj - 5 * Msat - 67.6) - 0.056 * m_sind(2 * Mj - 2 * Msat + 21)
-            + 0.042 * m_sind(3 * Mj - 5 * Msat + 21) - 0.036 * m_sind(Mj - 2 * Msat) + 0.022 * m_cosd(Mj - Msat)
-            + 0.023 * m_sind(2 * Mj - 3 * Msat + 52) - 0.016 * m_sind(Mj - 5 * Msat - 69);
-    if (body[k] == E_SATURN) {
-      lo += 0.812 * m_sind(2 * Mj - 5 * Msat - 67.6) - 0.229 * m_cosd(2 * Mj - 4 * Msat - 2)
-            + 0.119 * m_sind(Mj - 2 * Msat - 3) + 0.046 * m_sind(2 * Mj - 6 * Msat - 69)
-            + 0.014 * m_sind(Mj - 3 * Msat + 32);
-      la += -0.020 * m_cosd(2 * Mj - 4 * Msat - 2) + 0.018 * m_sind(2 * Mj - 6 * Msat - 49);
+    float x, y, z;
+    orbit(BODY[k], d, deg(angle(MEAN[k], t, 0)), &x, &y, &z);
+    float lo = f_atan2d(y, x), la = f_atan2d(z, f_sqrt(x * x + y * y)), r = f_sqrt(x * x + y * y + z * z);
+    if (BODY[k] == E_JUPITER)
+      lo += -0.332f * great(Mj, Ms, 2, -5, -67.6f, 0) - 0.056f * great(Mj, Ms, 2, -2, 21, 0) +
+            0.042f * great(Mj, Ms, 3, -5, 21, 0) - 0.036f * great(Mj, Ms, 1, -2, 0, 0) +
+            0.022f * great(Mj, Ms, 1, -1, 0, 1) + 0.023f * great(Mj, Ms, 2, -3, 52, 0) - 0.016f * great(Mj, Ms, 1, -5, -69, 0);
+    if (BODY[k] == E_SATURN) {
+      lo += 0.812f * great(Mj, Ms, 2, -5, -67.6f, 0) - 0.229f * great(Mj, Ms, 2, -4, -2, 1) +
+            0.119f * great(Mj, Ms, 1, -2, -3, 0) + 0.046f * great(Mj, Ms, 2, -6, -69, 0) + 0.014f * great(Mj, Ms, 1, -3, 32, 0);
+      la += -0.020f * great(Mj, Ms, 2, -4, -2, 1) + 0.018f * great(Mj, Ms, 2, -6, -49, 0);
     }
-    x = r * m_cosd(lo) * m_cosd(la), y = r * m_sind(lo) * m_cosd(la), z = r * m_sind(la);
-    double xg = x + xs, yg = y + ys, zg = z;
-    plan_ecl_to_eq(rev(m_atan2d(yg, xg)), m_atan2d(zg, m_sqrt(xg * xg + yg * yg)), eps, &s->pl_ra[k], &s->pl_dec[k]);
+    x = r * f_cosd(lo) * f_cosd(la), y = r * f_sind(lo) * f_cosd(la), z = r * f_sind(la);
+    float xg = x + xs, yg = y + ys, zg = z;
+    plan_ecl_to_eq(rev(f_atan2d(yg, xg)), f_atan2d(zg, f_sqrt(xg * xg + yg * yg)), eps, &s->pl_ra[k], &s->pl_dec[k]);
   }
 }
 
 /* the Sun's altitude plus the refraction and its radius (0.833 degrees): zero as it rises or sets */
-static double sun_height(int64_t utc, double lat, double lon) {
-  double jd = julian(utc);
-  Civil cv;
-  plan_civil(utc, &cv);
-  double jde = jd + delta_t(cv.year) / 86400;
-  double dpsi, eps, ra, dec;
-  nutation(jde, &dpsi, &eps);
-  plan_ecl_to_eq(rev(sun(jde) + dpsi), 0.0, eps, &ra, &dec);
-  return plan_altitude(ra, dec, sidereal(jd, lon), lat) + 0.833;
+static float sun_height(int32_t t, float lat, float lon) {
+  int32_t tt = tt_of(t);
+  float dpsi, eps, ra, dec;
+  nutation(tt, &dpsi, &eps);
+  plan_ecl_to_eq(deg(sun(tt) + bam(dpsi)), 0.0f, eps, &ra, &dec);
+  return plan_altitude(ra, dec, sidereal(t, lon), lat) + 0.833f;
 }
 
-int plan_sun_event(int64_t utc, double lat, double lon, int64_t *at) {
-  double prev = 0;
+int plan_sun_event(int64_t utc, float lat, float lon, int64_t *at) {
+  int32_t t0 = (int32_t)(utc - J2000);
+  float prev = 0;
   for (int k = 0; k < 27 * 60; k += 3) {
-    int64_t t = utc + (int64_t)k * 60;
-    double alt = sun_height(t, lat, lon);
+    int32_t t = t0 + k * 60;
+    float alt = sun_height(t, lat, lon);
     if (k > 0 && (prev < 0) != (alt < 0)) {
-      double f = prev / (prev - alt);
-      double back = 180.0 * (1 - f), whole = m_floor(back);  /* seconds before t; whole seconds before, rounded up, */
-      *at = t - (int64_t)whole - (whole < back);           /* fall in the same minute as the exact moment */
+      float back = 180.0f * (1 - prev / (prev - alt));   /* seconds before t; whole seconds before, rounded up, */
+      int whole = (int)back;                             /* fall in the same minute as the exact moment */
+      *at = (int64_t)t + J2000 - whole - ((float)whole < back);
       return alt > 0 ? 1 : 2;
     }
     prev = alt;
@@ -237,15 +278,17 @@ int plan_sun_event(int64_t utc, double lat, double lon, int64_t *at) {
 }
 
 void plan_civil(int64_t local, Civil *c) {
-  int32_t days = (int32_t)m_floor((double)local / 86400.0);     /* (no 64-bit division: the watch has no room for it) */
-  int32_t secs = (int32_t)(local - (int64_t)days * 86400);
+  int32_t s = (int32_t)(local - 946684800);              /* seconds from 2000-01-01 00:00 (to 2068) */
+  int32_t days = s / 86400, secs = s % 86400;
+  if (secs < 0) secs += 86400, days--;
+  days += 10957;                                         /* from 1970-01-01 */
   c->hour = secs / 3600, c->minute = secs / 60 % 60, c->second = secs % 60;
-  c->wday = (int)(((days % 7) + 7 + 3) % 7);               /* 1970-01-01 was a Thursday: 3 from Monday */
+  c->wday = (int)(((days % 7) + 7 + 3) % 7);             /* 1970-01-01 was a Thursday: 3 from Monday */
   /* Howard Hinnant's civil_from_days */
   int32_t z = days + 719468, era = (z >= 0 ? z : z - 146096) / 146097;
   int32_t doe = z - era * 146097, yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
   int32_t y = yoe + era * 400, doy = doe - (365 * yoe + yoe / 4 - yoe / 100), mp = (5 * doy + 2) / 153;
   int32_t d = doy - (153 * mp + 2) / 5 + 1, m = mp < 10 ? mp + 3 : mp - 9;
   c->year = (int)(y + (m <= 2)), c->month = (int)m, c->day = (int)d;
-  c->ordinal = (int32_t)(days + 719163);                   /* date(1970, 1, 1).toordinal() */
+  c->ordinal = days + 719163;                            /* date(1970, 1, 1).toordinal() */
 }

@@ -101,14 +101,14 @@ static void face_of(Face *f) {
   f->names = s_settings.names;
   f->fahrenheit = s_settings.units == 2;
   if (s_settings.place == 1) {
-    f->lat = s_settings.lat_e4 / 1e4, f->lon = s_settings.lon_e4 / 1e4;
+    f->lat = (float)s_settings.lat_e4 * 1e-4f, f->lon = (float)s_settings.lon_e4 * 1e-4f;
     f->city = s_settings.city, f->country = s_settings.country, f->coords = true;
   } else if (s_place.time) {
-    f->lat = s_place.lat_e4 / 1e4, f->lon = s_place.lon_e4 / 1e4;
+    f->lat = (float)s_place.lat_e4 * 1e-4f, f->lon = (float)s_place.lon_e4 * 1e-4f;
     f->city = s_place.city, f->country = s_place.country, f->coords = true;
   } else {
     /* not yet told where it is: a northern sky, at the longitude the time zone suggests */
-    f->lat = 40.0, f->lon = utc_offset(time(NULL)) / 240.0;
+    f->lat = 40.0f, f->lon = (float)(utc_offset(time(NULL)) / 240);
   }
   uint32_t now = (uint32_t)time(NULL);
   if (s_settings.weather && s_weather.time && now - s_weather.time < WEATHER_FRESH) f->weather = &s_weather.w;

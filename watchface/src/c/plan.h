@@ -33,7 +33,7 @@ typedef struct {
 typedef struct {
   uint8_t plate;               /* PLATE_* */
   bool clock24, names, labours, fahrenheit;
-  double lat, lon;             /* degrees, north and east positive */
+  float lat, lon;              /* degrees, north and east positive */
   const char *city, *country;  /* the place's names on the ring (NULL or "": none) */
   bool coords;                 /* its latitude and longitude on the ring (false while the place is not yet known) */
   const Weather *weather;      /* NULL: none */
@@ -42,21 +42,21 @@ typedef struct {
 /* Where things are in the sky at a moment (degrees). The planets in the order they are drawn. */
 enum { VENUS, JUPITER, MARS, SATURN, MERCURY, PLANETS };
 typedef struct {
-  double jd;                   /* Julian day (UT) */
-  double lst;                  /* local sidereal time */
-  double eps;                  /* the true obliquity */
-  double sun_ra, sun_dec, sun_lon;
-  double moon_ra, moon_dec, moon_dist, moon_phase;   /* moon_dist in Earth radii, moon_phase the lit fraction */
+  int64_t utc;                 /* the moment, seconds since 1970 */
+  float lst;                   /* local sidereal time */
+  float eps;                   /* the true obliquity */
+  float sun_ra, sun_dec, sun_lon;
+  float moon_ra, moon_dec, moon_dist, moon_phase;    /* moon_dist in Earth radii, moon_phase the lit fraction */
   bool moon_waxing;
-  double pl_ra[PLANETS], pl_dec[PLANETS];
+  float pl_ra[PLANETS], pl_dec[PLANETS];
 } Sky;
 
-void plan_sky(Sky *s, int64_t utc, double lon);
-double plan_altitude(double ra, double dec, double lst, double lat);
-void plan_ecl_to_eq(double lon, double lat, double eps, double *ra, double *dec);
-double plan_moon_node(double jd);
+void plan_sky(Sky *s, int64_t utc, float lon);
+float plan_altitude(float ra, float dec, float lst, float lat);
+void plan_ecl_to_eq(float lon, float lat, float eps, float *ra, float *dec);
+float plan_moon_node(int64_t utc);
 /* The Sun's next rising (1) or setting (2) after `utc`, within 27 hours (0: none), its moment in *at. */
-int plan_sun_event(int64_t utc, double lat, double lon, int64_t *at);
+int plan_sun_event(int64_t utc, float lat, float lon, int64_t *at);
 /* The local calendar from seconds since 1970 (local time): year, month 1..12, day, Python's weekday (0 Monday),
  * hour, minute, second, and the proleptic Gregorian ordinal of the day (Python's date.toordinal()). */
 typedef struct { int year, month, day, wday, hour, minute, second; int32_t ordinal; } Civil;
@@ -67,7 +67,7 @@ typedef struct {
   const uint8_t *data, *geom;  /* the blobs: plan.bin and this screen's geom_*.bin */
   int w, h;
   bool rect;                   /* the Time 2's cushion ring, else the Round 2's circle */
-  double lat_key;              /* the latitude the window was worked out for (NaN: none yet) */
+  float lat_key;               /* the latitude the window was worked out for */
   float cx, cy, k, r_disc, R;
   int16_t wx0[MAX_H], wx1[MAX_H];      /* the window's span in each row (wx0 > wx1: none) */
   int16_t win_top, win_bottom;
@@ -81,7 +81,7 @@ typedef struct {
   /* the Sun's next rising or setting, kept until it passes (or the place changes) */
   int64_t ev_from, ev_at;
   int ev_kind;                         /* 1 rising, 2 setting, 0 none within a day; -1 not yet worked out */
-  double ev_lat, ev_lon;
+  float ev_lat, ev_lon;
   /* while drawing */
   uint8_t *rows[MAX_H];
   int16_t rx0[MAX_H], rx1[MAX_H];
@@ -90,7 +90,7 @@ typedef struct {
 /* Set up for a screen of w x h (200 x 228 the Time 2, 260 x 260 the Round 2) with its blobs. */
 void plan_init(Plan *p, int w, int h, const uint8_t *data, const uint8_t *geom);
 /* The window for a latitude (worked out again only when it changes: about a tenth of a second on the watch). */
-void plan_window(Plan *p, double lat);
+void plan_window(Plan *p, float lat);
 /* Draw the face at `utc` (seconds since 1970), the local clock `offset` seconds ahead of UTC. The working memory
  * (a few kilobytes, freed before returning) comes from `alloc`; false if there was none. */
 bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Target *t, void *(*alloc)(size_t),

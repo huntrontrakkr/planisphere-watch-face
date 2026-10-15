@@ -40,6 +40,15 @@ CASES = {
     "sydney-dusk-r2": ("gabbro", "planisphere", datetime(2026, 10, 15, 8, 20, tzinfo=timezone.utc), (-33.87, 151.21, 660), {}),
     "sydney-astro-t2": ("emery", "astrolabe", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc), (-33.87, 151.21, 660), {}),
     "sydney-apian-t2": ("emery", "apian", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc), (-33.87, 151.21, 660), {}),
+    "rain-t2": ("emery", "planisphere", datetime(2026, 10, 14, 19, 10, tzinfo=timezone.utc), NY, {"weather": "rain"}),
+    "snow-r2": ("gabbro", "planisphere", datetime(2026, 10, 14, 15, 10, tzinfo=timezone.utc), NY, {"weather": "snow"}),
+    "fog-t2": ("emery", "planisphere", datetime(2026, 10, 14, 14, 30, tzinfo=timezone.utc), NY, {"weather": "fog"}),
+    "thunder-t2": ("emery", "night", datetime(2026, 10, 15, 0, 40, tzinfo=timezone.utc), NY, {"weather": "thunder"}),
+    "cirrus-night-t2": ("emery", "planisphere", datetime(2026, 10, 15, 2, 30, tzinfo=timezone.utc), NY, {"weather": "cirrus"}),
+    "fair-dusk-r2": ("gabbro", "planisphere", datetime(2026, 10, 14, 22, 40, tzinfo=timezone.utc), NY, {"weather": "fair"}),
+    "overcast-obs-t2": ("emery", "observatory", datetime(2026, 10, 15, 3, 0, tzinfo=timezone.utc), NY, {"weather": "overcast"}),
+    "gale-t2": ("emery", "planisphere", datetime(2026, 10, 14, 17, 0, tzinfo=timezone.utc), NY, {"weather": "gale"}),
+    "frost-apian-t2": ("emery", "apian", datetime(2026, 10, 15, 11, 0, tzinfo=timezone.utc), NY, {"weather": "frost"}),
     "weather-t2": ("emery", "planisphere", datetime(2026, 10, 14, 20, 10, tzinfo=timezone.utc), NY, {"weather": "cloudy"}),
 }
 

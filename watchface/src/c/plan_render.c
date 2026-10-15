@@ -15,6 +15,7 @@
 #define MAX_BOXES 80
 #define VILLAGE_DX 72                    /* the village and hills reach this far either side of the south point */
 #define NONE16 0x7fff
+enum { FALL_NONE, FALL_DRIZZLE, FALL_RAIN, FALL_SNOW, FALL_HAIL };
 
 /* ---- the blobs ------------------------------------------------------------------------------------------------ */
 static const uint8_t *sec(const uint8_t *blob, int i) { return blob + ((const uint32_t *)(const void *)blob)[i]; }
@@ -60,8 +61,22 @@ typedef struct {
   int16_t vtop[2 * VILLAGE_DX + 1], vground[2 * VILLAGE_DX + 1];
   int col;
   /* the weather, as the sky shows it */
-  bool wx, fog, falls, rain_or_hail, thunder, snow_lying, frost, smoke, snow_falls;
-  float stratus, cumulus, haze, wind, wind_from;
+  bool wx, fog, falls, rain_or_hail, thunder, snow_lying, frost, smoke, snow_falls, halo;
+  uint8_t fall_kind, heavy;                  /* FALL_*, 1 light .. 3 heavy */
+  float stratus, cumulus, cirrus, haze, wind, wind_from;
+  int secs;                                  /* the local clock's seconds into the day */
+  /* the weather's drawings for the moment: the cumulus heaps and banks, the stratus's ruled lines, the cirrus */
+  struct { uint8_t d, flip; int16_t x0, y0; } cloud[24], hair[8];
+  int ncloud, nhair;
+  int16_t strat[28][3];                      /* y, x0, x1 */
+  int nstrat;
+  uint8_t cc[3], c_line, c_hair, c_rain[2], c_snow;   /* the clouds' colours for the hour (K, W, S roles; 0 the sky) */
+  int16_t drawn[96][3];                      /* the drawn bright stars (x, y, half their size): the clouds keep off */
+  int ndrawn;
+  /* the village's pieces as placed: drawing, left, top; the ground's top and the buildings' bases by column */
+  uint32_t vmask[2 * VILLAGE_DX + 1];         /* the village's pixels in each column, a bit a row up from its edge */
+  int16_t chimney_x, chimney_y;
+  bool chimney, night_land;
   Text t1, t2, t3, t4;
 } R;
 
@@ -149,9 +164,8 @@ static void ecl_point(R *r, float lon, float *ra, float *dec) {
   *dec = f_asind(sl * f_sind(e));
 }
 /* a point's altitude here (for drawing's decisions: single precision) */
-static float altitude(R *r, double ra, double dec) {
-  float d = (float)dec;
-  return f_asind(r->sl0 * f_sind(d) + r->cl0 * f_cosd(d) * f_cosd(r->lst - (float)ra));
+static float altitude(R *r, float ra, float dec) {
+  return f_asind(r->sl0 * f_sind(dec) + r->cl0 * f_cosd(dec) * f_cosd(r->lst - ra));
 }
 #define STAR_SIZE 6
 static int star_mag(const uint8_t *s) { return ((s[4] | s[5] << 8) >> 3) - 200; }   /* hundredths */
@@ -384,10 +398,10 @@ void plan_init(Plan *p, int w, int h, const uint8_t *data, const uint8_t *geom) 
   p->ev_kind = -1;
 }
 
-void plan_window(Plan *p, double lat) {
+void plan_window(Plan *p, float lat) {
   if (p->lat_key == lat) return;
   p->lat_key = lat;
-  float alat = f_abs((float)lat), reach = 180.0f - alat;
+  float alat = f_abs(lat), reach = 180.0f - alat;
   int W = p->w, H = p->h;
   if (p->rect) {
     float top = 17.0f + 62.0f, bottom = H - 17.0f - 5.0f;
@@ -628,7 +642,12 @@ static uint8_t card_at(R *r, int x, int y) {
   return P->jacket;
 }
 
-static uint8_t ground_at(R *r, int x, int y) { return inside(r, x, y) ? sky_pixel(r, x, y, 4096, 4096, true) : card_at(r, x, y); }
+static uint8_t cloud_ground(R *r, int x, int y);
+static uint8_t ground_at(R *r, int x, int y) {
+  if (!inside(r, x, y)) return card_at(r, x, y);
+  uint8_t c = (r->ncloud || r->nstrat) ? cloud_ground(r, x, y) : 0;
+  return c ? c : sky_pixel(r, x, y, 4096, 4096, true);
+}
 
 /* the grid over the window: its nodes' values, and with the Milky Way the nodes' places in the sky */
 static bool make_grid(R *r, bool coords, void *(*alloc)(size_t)) {
@@ -680,6 +699,9 @@ static void window_ground(R *r) {
       }
     }
 }
+
+static bool hidden(R *r, int x, int y);
+static bool in_band(R *r, int x, int y);
 
 /* ---- the Milky Way --------------------------------------------------------------------------------------------- */
 /* a cell of the Milky Way's grid (its level 0..5): each row of declination keeps only its stretches that have any */
@@ -761,7 +783,7 @@ static void milky_way(R *r) {
             else if (ra >= 23040) ra -= 23040;
           }
           int m = milky_level(g, ra, dec);
-          if (!m) continue;
+          if (!m || ((r->ncloud || r->nstrat) && (hidden(r, x, y) || in_band(r, x, y)))) continue;
           if (r->woodcut) {
             if (m > 14745 && get(r, x, y) != C8(3, 3, 1)) put(r, x, y, P->milky);
           } else if (m > r->thresh12[r->bn[(y & 63) * 64 + (x & 63)]])
@@ -905,12 +927,19 @@ static void weather_sky(R *r) {
   if (!w) return;
   r->wx = true;
   int code = w->code;
-  bool drizzle = code >= 51 && code <= 57;
-  bool rain = (code >= 61 && code <= 67) || (code >= 80 && code <= 82) || code == 95;
-  bool snow = (code >= 71 && code <= 77) || code == 85 || code == 86;
-  bool hail = code == 96 || code == 99;
-  r->falls = drizzle || rain || snow || hail;
-  r->rain_or_hail = rain || hail;
+  /* the WMO codes that fall: (code, kind << 2 | how heavy), as proto/weather.py FALLS */
+  static const uint8_t FALLS[22][2] = {
+    {51, FALL_DRIZZLE << 2 | 1}, {53, FALL_DRIZZLE << 2 | 2}, {55, FALL_DRIZZLE << 2 | 3}, {56, FALL_DRIZZLE << 2 | 1},
+    {57, FALL_DRIZZLE << 2 | 2}, {61, FALL_RAIN << 2 | 1}, {63, FALL_RAIN << 2 | 2}, {65, FALL_RAIN << 2 | 3},
+    {66, FALL_RAIN << 2 | 1}, {67, FALL_RAIN << 2 | 3}, {71, FALL_SNOW << 2 | 1}, {73, FALL_SNOW << 2 | 2},
+    {75, FALL_SNOW << 2 | 3}, {77, FALL_SNOW << 2 | 1}, {80, FALL_RAIN << 2 | 1}, {81, FALL_RAIN << 2 | 2},
+    {82, FALL_RAIN << 2 | 3}, {85, FALL_SNOW << 2 | 1}, {86, FALL_SNOW << 2 | 3}, {95, FALL_RAIN << 2 | 2},
+    {96, FALL_HAIL << 2 | 2}, {99, FALL_HAIL << 2 | 3}};
+  for (int i = 0; i < 22; i++)
+    if (FALLS[i][0] == code) r->fall_kind = FALLS[i][1] >> 2, r->heavy = FALLS[i][1] & 3;
+  bool snow = r->fall_kind == FALL_SNOW;
+  r->falls = r->fall_kind != FALL_NONE;
+  r->rain_or_hail = r->fall_kind == FALL_RAIN || r->fall_kind == FALL_HAIL;
   r->snow_falls = snow;
   r->fog = code == 45 || code == 48 || w->vis_dam < 100;
   float low = w->low / 100.0f, mid = w->mid / 100.0f, high = w->high / 100.0f;
@@ -918,12 +947,287 @@ static void weather_sky(R *r) {
   float sheet = r->falls ? 1.0f : f_smooth(0.55f, 0.9f, low);
   float clear = r->fog ? 0.0f : 1.0f;
   r->haze = 1.6f * high + (r->fog ? 2.5f : w->vis_dam < 500 ? 1.2f : 0.0f);
-  r->cumulus = low * (1 - sheet) * clear, r->stratus = low * sheet * clear;
+  r->cumulus = low * (1 - sheet) * clear, r->stratus = low * sheet * clear, r->cirrus = high * clear;
+  r->halo = high >= 0.45f && low < 0.5f && !r->falls;
   r->thunder = code >= 95;
   r->snow_lying = w->snow_mm > 5 || snow;
   r->frost = w->temp10 <= 0;
   r->smoke = w->temp10 < 120;
   r->wind = w->wind, r->wind_from = w->wind_from;
+}
+
+/* ---- the weather in the window (proto/skies.py): Howard's clouds drifting downwind, rain and snow ---------------- */
+/* the generator the prototype carries too (proto/rng.py), so both scatter the weather alike */
+typedef struct { uint32_t x; } Rng;
+static uint32_t rng_next(Rng *g) {
+  uint32_t x = g->x;
+  x ^= x << 13, x ^= x >> 17, x ^= x << 5;
+  return g->x = x;
+}
+static void rng_seed(Rng *g, R *r, int salt) {
+  uint32_t s = (uint32_t)r->local.ordinal * 7919u + (uint32_t)pyf_round((float)r->f->lat * 10) * 104729u +
+               (uint32_t)pyf_round((float)r->f->lon * 10) * 1299709u + (uint32_t)salt * 15485863u;
+  g->x = s ^ 0x9E3779B9u;
+  if (!g->x) g->x = 1;
+  for (int i = 0; i < 4; i++) rng_next(g);
+}
+static float rng_random(Rng *g) { return (float)(rng_next(g) >> 8) * (1.0f / 16777216); }
+static float rng_uniform(Rng *g, float a, float b) { return a + (b - a) * rng_random(g); }
+static int rng_int(Rng *g, int a, int b) { return a + (int)(((uint64_t)(rng_next(g) >> 8) * (uint32_t)(b - a)) >> 24); }
+
+#define CLOUD_SPEED 0.0015f                  /* pixels a second per km/h of wind */
+#define MARGIN 28
+static float wrap(float v, float lo, float hi) { return lo + pyf_mod(v - lo, hi - lo); }
+
+typedef struct { int x_lo, x_hi, y_lo, y_hi, area; float dx, dy; } Bounds;
+static void bounds(R *r, Bounds *b) {
+  Plan *p = r->p;
+  b->x_lo = r->W, b->x_hi = 0, b->area = 0;
+  for (int y = p->win_top; y >= 0 && y <= p->win_bottom; y++) {
+    if (p->wx0[y] > p->wx1[y]) continue;
+    if (p->wx0[y] < b->x_lo) b->x_lo = p->wx0[y];
+    if (p->wx1[y] + 1 > b->x_hi) b->x_hi = p->wx1[y] + 1;
+    b->area += p->wx1[y] - p->wx0[y] + 1;
+  }
+  b->y_lo = p->win_top, b->y_hi = p->win_bottom + 1;
+  float to = r->wind_from + 180, v = CLOUD_SPEED * (r->wind > 3 ? r->wind : 3);    /* downwind: east left, north up */
+  b->dx = -f_sind(to) * v, b->dy = -f_cosd(to) * v;
+}
+
+/* `n` clouds in the window at any moment (as many again for the margins they drift through), kept apart */
+static void scatter(R *r, const Bounds *b, int first, int n, int salt, const float w[3]) {
+  Rng g;
+  rng_seed(&g, r, salt);
+  n = pyf_round((float)n * (float)(b->x_hi - b->x_lo + 2 * MARGIN) * (float)(b->y_hi - b->y_lo + 16) / (float)b->area);
+  float pu[24], pv[24];
+  uint8_t pd[24], pf[24];
+  int placed = 0;
+  for (int k = 0; k < n * 12 && placed < n && placed < 24; k++) {
+    float u = rng_random(&g), acc = 0;
+    int d = 2;
+    for (int i = 0; i < 3; i++)
+      if (u < (acc += w[i])) { d = i; break; }
+    bool flip = rng_random(&g) < 0.5f;
+    float cu = rng_uniform(&g, (float)(b->x_lo - MARGIN), (float)(b->x_hi + MARGIN));
+    float cv = rng_uniform(&g, (float)(b->y_lo - 10), (float)(b->y_hi + 6));
+    const DrawIndex *di = drawing(r, first + d);
+    bool apart = true;
+    for (int q = 0; q < placed && apart; q++) {
+      const DrawIndex *dq = drawing(r, pd[q]);
+      apart = !(f_abs(cu - pu[q]) < (di->w + dq->w) / 2.0f + 3 && f_abs(cv - pv[q]) < (di->h + dq->h) / 2.0f + 3);
+    }
+    if (!apart) continue;
+    pu[placed] = cu, pv[placed] = cv, pd[placed] = (uint8_t)(first + d), pf[placed] = flip, placed++;
+  }
+  float t = (float)r->secs;
+  for (int q = 0; q < placed && r->ncloud < 24; q++) {
+    const DrawIndex *di = drawing(r, pd[q]);
+    float x = wrap(pu[q] + b->dx * t, (float)(b->x_lo - MARGIN), (float)(b->x_hi + MARGIN));
+    float y = wrap(pv[q] + b->dy * t, (float)(b->y_lo - 10), (float)(b->y_hi + 6));
+    r->cloud[r->ncloud].d = pd[q], r->cloud[r->ncloud].flip = pf[q];
+    r->cloud[r->ncloud].x0 = (int16_t)pyf_round(x - di->w / 2.0f), r->cloud[r->ncloud].y0 = (int16_t)pyf_round(y - di->h / 2.0f);
+    r->ncloud++;
+  }
+}
+
+/* the weather's drawings at this moment (the same clouds all day, drifting on) */
+static void weather_layer(R *r) {
+  if (!r->wx || !r->live) return;
+  Bounds b;
+  bounds(r, &b);
+  if (r->cumulus > 0.05f) {                      /* heaps, flattening into banks as the low cloud thickens */
+    float big = r->cumulus * 1.4f < 1 ? r->cumulus * 1.4f : 1;
+    const float w1[3] = {0.15f + 0.3f * big, 0.45f, 0.4f - 0.3f * big}, w2[3] = {0.45f, 0.35f, 0.2f};
+    scatter(r, &b, D_CUMULUS0, pyf_round(1 + 6 * r->cumulus), 1, w1);
+    if (r->cumulus > 0.35f) scatter(r, &b, D_STRATUS0, pyf_round(6 * (r->cumulus - 0.3f)), 5, w2);
+  }
+  float t = (float)r->secs;
+  if (r->stratus > 0.08f) {                      /* the sheet in ruled lines, a lens of three to five to each band */
+    Rng g;
+    rng_seed(&g, r, 2);
+    int nb = pyf_round(1 + 4 * r->stratus);
+    float span = (float)(b.y_hi - b.y_lo) / (float)nb;
+    for (int k = 0; k < nb; k++) {
+      int nl = rng_int(&g, 3, 6);
+      float yc = (float)b.y_lo + span * (k + 0.5f) + rng_uniform(&g, -span * 0.2f, span * 0.2f);
+      float half = (float)(b.x_hi - b.x_lo) * (0.22f + 0.3f * r->stratus) * rng_uniform(&g, 0.8f, 1.15f);
+      float xc = wrap(rng_uniform(&g, (float)(b.x_lo - MARGIN), (float)(b.x_hi + MARGIN)) + b.dx * t,
+                      (float)(b.x_lo - MARGIN), (float)(b.x_hi + MARGIN));
+      for (int l = 0; l < nl; l++) {
+        int y = pyf_round(yc + 2 * (l - (nl - 1) / 2.0f));
+        float prof = f_pow(f_sind(180.0f * (l + 1) / (nl + 1)), 0.6f);
+        int x0 = pyf_round(xc - half * prof + rng_uniform(&g, -3, 3));
+        int x1 = pyf_round(xc + half * prof + rng_uniform(&g, -3, 3));
+        if (r->nstrat < 28) r->strat[r->nstrat][0] = (int16_t)y, r->strat[r->nstrat][1] = (int16_t)x0, r->strat[r->nstrat][2] = (int16_t)x1, r->nstrat++;
+      }
+    }
+  }
+  if (r->cirrus > 0.1f) {                        /* a few hair strokes, drifting faster */
+    Rng g;
+    rng_seed(&g, r, 3);
+    int n = pyf_round(5 * r->cirrus);
+    for (int k = 0; k < n && r->nhair < 8; k++) {
+      int d = D_CIRRUS0 + rng_int(&g, 0, 3);
+      bool flip = rng_random(&g) < 0.5f;
+      float x = wrap(rng_uniform(&g, (float)(b.x_lo - MARGIN), (float)(b.x_hi + MARGIN)) + 1.6f * b.dx * t,
+                     (float)(b.x_lo - MARGIN), (float)(b.x_hi + MARGIN));
+      float y = wrap(rng_uniform(&g, (float)b.y_lo, (float)b.y_hi) + 1.6f * b.dy * t, (float)(b.y_lo - 4), (float)b.y_hi);
+      r->hair[r->nhair].d = (uint8_t)d, r->hair[r->nhair].flip = flip;
+      r->hair[r->nhair].x0 = (int16_t)pyf_round(x), r->hair[r->nhair].y0 = (int16_t)pyf_round(y);
+      r->nhair++;
+    }
+  }
+}
+
+/* the cumulus's role at a pixel (0 none): what hides the stars */
+static int cloud_role(R *r, int x, int y) {
+  int role = 0;
+  for (int i = 0; i < r->ncloud; i++) {
+    const DrawIndex *di = drawing(r, r->cloud[i].d);
+    int ii = x - r->cloud[i].x0, jj = y - r->cloud[i].y0;
+    if (ii < 0 || jj < 0 || ii >= di->w || jj >= di->h) continue;
+    int v = role_at(r, di, r->cloud[i].flip ? di->w - 1 - ii : ii, jj);
+    if (v) role = v;
+  }
+  return role;
+}
+static bool hidden(R *r, int x, int y) { return r->ncloud && cloud_role(r, x, y) != 0; }
+/* under the stratus's ruled lines (a row either side): only the brightest stars show */
+static bool in_band(R *r, int x, int y) {
+  for (int i = 0; i < r->nstrat; i++) {
+    int ly = r->strat[i][0], x0 = r->strat[i][1] < 0 ? 0 : r->strat[i][1], x1 = r->strat[i][2];
+    if (y >= ly - 1 && y <= ly + 1 && x >= x0 && x <= x1) return true;
+  }
+  return false;
+}
+/* a pixel the clouds keep off: round a bright star a stratus line or a hair stroke passes */
+static bool kept(R *r, int x, int y) {
+  for (int i = 0; i < r->ndrawn; i++) {
+    int h = r->drawn[i][2];
+    if (x >= r->drawn[i][0] - h - 1 && x <= r->drawn[i][0] + h + 1 && y >= r->drawn[i][1] - h - 1 && y <= r->drawn[i][1] + h + 1)
+      return true;
+  }
+  return false;
+}
+/* the clouds' colour at a pixel, as the ground under the names (0: none there) */
+static uint8_t cloud_ground(R *r, int x, int y) {
+  uint8_t c = 0;
+  if (r->ncloud) {
+    int role = cloud_role(r, x, y);
+    if (role) c = r->cc[role == 1 ? 0 : role == 5 ? 1 : 2];
+  }
+  for (int i = 0; i < r->nstrat; i++)
+    if (y == r->strat[i][0] && x >= r->strat[i][1] && x <= r->strat[i][2] && !kept(r, x, y)) c = r->c_line;
+  return c;
+}
+
+/* the clouds' colours for the hour: the top lit, the base shaded; by night dark, the edge silvered */
+static void cloud_colours(R *r, bool moonlit) {
+  bool overcast = r->stratus > 0.5f || r->falls;
+  float s = r->s_eff;
+  if (r->red) {
+    r->cc[0] = r->c_line = r->c_hair = C8(1, 0, 0), r->cc[1] = r->cc[2] = 0;
+    r->c_rain[0] = C8(1, 0, 0), r->c_rain[1] = C8(2, 0, 0), r->c_snow = C8(2, 0, 0);
+  } else if (s >= 6) {
+    r->cc[0] = r->cc[1] = C8(3, 3, 3), r->cc[2] = overcast ? C8(2, 2, 2) : C8(2, 2, 3);
+    r->c_line = overcast ? C8(3, 3, 3) : C8(2, 3, 3), r->c_hair = C8(3, 3, 3);
+    r->c_rain[0] = C8(1, 1, 2), r->c_rain[1] = overcast ? C8(3, 3, 3) : C8(2, 2, 3), r->c_snow = C8(3, 3, 3);
+  } else if (s >= -2) {
+    r->cc[0] = C8(3, 3, 2), r->cc[1] = C8(3, 2, 2), r->cc[2] = C8(3, 1, 1), r->c_line = r->c_hair = C8(3, 2, 2);
+    r->c_rain[0] = C8(1, 1, 2), r->c_rain[1] = C8(2, 2, 3), r->c_snow = C8(3, 3, 3);
+  } else if (s >= -8) {
+    r->cc[0] = C8(2, 1, 2), r->cc[1] = C8(1, 1, 2), r->cc[2] = C8(3, 1, 1), r->c_line = C8(2, 1, 2), r->c_hair = C8(3, 1, 1);
+    r->c_rain[0] = C8(1, 1, 2), r->c_rain[1] = C8(2, 2, 3), r->c_snow = C8(3, 3, 3);
+  } else {
+    uint8_t lit = moonlit ? C8(2, 2, 2) : C8(1, 1, 2);
+    r->cc[0] = r->c_line = lit, r->cc[1] = r->cc[2] = C8(0, 0, 0), r->c_hair = C8(0, 1, 2);
+    r->c_rain[0] = C8(1, 1, 2), r->c_rain[1] = C8(0, 1, 2), r->c_snow = lit;
+  }
+}
+
+/* the clouds over the stars: the cumulus filled, the stratus ruled, the cirrus stroked (the lines kept off the
+ * bright stars) */
+static void paint_clouds(R *r) {
+  for (int i = 0; i < r->ncloud; i++) {
+    const DrawIndex *di = drawing(r, r->cloud[i].d);
+    for (int j = 0; j < di->h; j++)
+      for (int k = 0; k < di->w; k++) {
+        int v = role_at(r, di, r->cloud[i].flip ? di->w - 1 - k : k, j), X = r->cloud[i].x0 + k, Y = r->cloud[i].y0 + j;
+        if (!v || !inside(r, X, Y)) continue;
+        uint8_t c = r->cc[v == 1 ? 0 : v == 5 ? 1 : 2];
+        put(r, X, Y, c ? c : sky_pixel(r, X, Y, 4096, 4096, true));
+      }
+  }
+  for (int i = 0; i < r->nstrat; i++) {
+    int y = r->strat[i][0];
+    for (int x = r->strat[i][1] < 0 ? 0 : r->strat[i][1]; x <= r->strat[i][2] && x < r->W; x++)
+      if (inside(r, x, y) && !kept(r, x, y)) put(r, x, y, r->c_line);
+  }
+  for (int i = 0; i < r->nhair; i++) {
+    const DrawIndex *di = drawing(r, r->hair[i].d);
+    for (int j = 0; j < di->h; j++)
+      for (int k = 0; k < di->w; k++) {
+        int X = r->hair[i].x0 + k, Y = r->hair[i].y0 + j;
+        if (role_at(r, di, r->hair[i].flip ? di->w - 1 - k : k, j) && inside(r, X, Y) && !kept(r, X, Y)) put(r, X, Y, r->c_hair);
+      }
+  }
+}
+
+/* thin high cloud rings the Moon (or by day the Sun) with a halo at 22 degrees, in the chart's own projection */
+static void paint_halo(R *r, float ra, float dec, uint8_t c) {
+  float d0 = r->south ? -dec : dec, h0 = r->south ? -(r->lst - ra) : r->lst - ra;
+  float bx, by;
+  project(r, ra, dec, &bx, &by);
+  float reach = (22 + 1) * r->k * 2.2f, tol = 0.5f / r->k, sd0 = f_sind(d0), cd0 = f_cosd(d0);
+  for (int y = pyf_floor(by - reach); y <= pyf_floor(by + reach); y++)
+    for (int x = pyf_floor(bx - reach); x <= pyf_floor(bx + reach); x++) {
+      if (!inside(r, x, y) || r->bn[(y & 63) * 64 + (x & 63)] * 16 + 8 >= 2867) continue;    /* tt < 0.7 */
+      float dx = x + 0.5f - r->cx, dy = y + 0.5f - r->cy, rho = f_sqrt(dx * dx + dy * dy);
+      float pd = 90.0f - rho * r->ik, ph = f_atan2d(dx, dy);
+      float g = f_acosd(f_sind(pd) * sd0 + f_cosd(pd) * cd0 * f_cosd(ph - h0));
+      if (f_abs(g - 22) < tol) put(r, x, y, c);
+    }
+}
+
+/* rain cut as Hiroshige cut it, leaning with the wind, in two tones; snow pecked in soft squares; hail in dots */
+static void paint_falls(R *r) {
+  if (!r->wx || !r->live || !r->falls) return;
+  Bounds b;
+  bounds(r, &b);
+  Rng g;
+  rng_seed(&g, r, 4);
+  /* a day's fall carries a streak millions of pixels before it wraps: the fall itself wrapped in whole pixels, the lean
+   * wrapped before the start is added */
+  float east = -f_sind(r->wind_from + 180), lean = -east * r->wind / 45.0f;
+  lean = lean > 0.7f ? 0.7f : lean < -0.7f ? -0.7f : lean;
+  bool drizzle = r->fall_kind == FALL_DRIZZLE, rain = drizzle || r->fall_kind == FALL_RAIN;
+  int n = (int)((rain ? (drizzle ? 22 : 34) : (r->fall_kind == FALL_SNOW ? 22 : 30)) * r->heavy * b.area / 14000);
+  int fall = drizzle ? 25 : r->fall_kind == FALL_RAIN ? 40 : r->fall_kind == FALL_SNOW ? 4 : 30;
+  int span_x = b.x_hi - b.x_lo, span_y = b.y_hi - b.y_lo, F = fall * r->secs;
+  float dy = (float)(F % span_y), dx = pyf_mod(lean * (float)F, (float)span_x);
+  float sway = r->fall_kind == FALL_SNOW ? 1.5f : 0, turn = pyf_mod((float)r->secs * 45.8366236f, 360);   /* 0.8 rad/s */
+  for (int k = 0; k < n; k++) {
+    float u = rng_uniform(&g, (float)b.x_lo, (float)b.x_hi), v = rng_uniform(&g, (float)b.y_lo, (float)b.y_hi);
+    if (rain) {
+      int len = drizzle ? rng_int(&g, 2, 4) : rng_int(&g, 3, 7);
+      float y = wrap(v + dy, (float)b.y_lo, (float)b.y_hi), x = wrap(u + dx, (float)b.x_lo, (float)b.x_hi);
+      uint8_t c = r->c_rain[k % 3 == 0 ? 0 : 1];
+      for (int s2 = 0; s2 < len; s2++) {
+        int X = pyf_floor(x + lean * s2), Y = pyf_floor(y + s2);
+        if (inside(r, X, Y)) put(r, X, Y, c);
+      }
+    } else {
+      float ph = rng_uniform(&g, 0, 360);
+      float y = wrap(v + dy, (float)b.y_lo, (float)b.y_hi);
+      float x = wrap(u + dx + sway * f_sind(turn + ph), (float)b.x_lo, (float)b.x_hi);
+      int X = pyf_floor(x), Y = pyf_floor(y);
+      if (r->fall_kind == FALL_SNOW) {
+        uint8_t col[8] = {0, 0, 0, 0, 0, r->c_snow};
+        paint_at(r, D_SNOWFLAKE, X, Y, col, true, 0);
+      } else if (inside(r, X, Y))
+        put(r, X, Y, r->c_snow);
+    }
+  }
 }
 
 /* ---- the face -------------------------------------------------------------------------------------------------- */
@@ -978,7 +1282,7 @@ static void figure_lines(R *r) {
       for (int dy = 0; dy <= 1; dy++)
         for (int dx = 0; dx <= 1; dx++) {
           int X = xi + dx, Y = yi + dy, ex = pxq - (X * 256 + 128), ey = pyq - (Y * 256 + 128);
-          if (ex * ex + ey * ey < 7465 && inside(r, X, Y)) put(r, X, Y, r->P->line);
+          if (ex * ex + ey * ey < 7465 && inside(r, X, Y) && !hidden(r, X, Y) && !in_band(r, X, Y)) put(r, X, Y, r->P->line);
         }
     }
   }
@@ -1019,6 +1323,10 @@ static void stars(R *r, float faint, float mx, float my, float moon_reach) {
     if (mg < 210 && r->nbright < 96) r->bright[r->nbright][0] = (int16_t)xi, r->bright[r->nbright][1] = (int16_t)yi, r->nbright++;
     if ((float)mg * 0.01f > faint) continue;
     if (r->lit_moon && mg > 220 && (x - mx) * (x - mx) + (y - my) * (y - my) < (6 + moon_reach) * (6 + moon_reach)) continue;
+    if (on_screen(r, xi, yi) && (hidden(r, xi, yi) || (mg > 160 && in_band(r, xi, yi)))) continue;
+    int half = r->rete ? 2 : mg < 50 ? 3 : mg < 140 ? 2 : mg < 210 ? 1 : 0;
+    if (half && r->ndrawn < 96 && (!r->rete || mg < 200))
+      r->drawn[r->ndrawn][0] = (int16_t)xi, r->drawn[r->ndrawn][1] = (int16_t)yi, r->drawn[r->ndrawn][2] = (int16_t)half, r->ndrawn++;
     uint8_t c = (r->paper || r->red) ? P->star
                 : STAR_COLOURS[cls];
     if (r->rete) {                                /* the rete's flame pointers, for the bright stars only */
@@ -1107,7 +1415,11 @@ static void hills(R *r) {
 }
 
 static void vput(R *r, int dx, int y, uint8_t c) {
-  if (dx >= -VILLAGE_DX && dx <= VILLAGE_DX && y < r->vtop[dx + VILLAGE_DX]) r->vtop[dx + VILLAGE_DX] = (int16_t)y;
+  if (dx >= -VILLAGE_DX && dx <= VILLAGE_DX) {
+    if (y < r->vtop[dx + VILLAGE_DX]) r->vtop[dx + VILLAGE_DX] = (int16_t)y;
+    int up = r->edge[dx + VILLAGE_DX] - y;
+    if (up >= 0 && up < 32 && inside(r, r->col + dx, y)) r->vmask[dx + VILLAGE_DX] |= 1u << up;
+  }
   int x = r->col + dx;
   if (inside(r, x, y)) put(r, x, y, c), land(r, x, y);
 }
@@ -1123,7 +1435,7 @@ static void village(R *r, int season) {
   }
   int hour = r->local.hour;
   bool lit = r->sun_alt < -4 && ((hour >= 17 && hour <= 22) || (hour >= 5 && hour <= 7));
-  bool night_land = r->sun_alt < -6 || r->red;
+  bool night_land = r->night_land = r->sun_alt < -6 || r->red;
   bool foggy = r->wx && r->fog && r->live;
   uint8_t silhouette = r->paper ? P->line : night_land ? C8(0, 0, 0) : C8(0, 0, 1);
   if (foggy && r->sun_alt > 4) silhouette = C8(1, 1, 1);
@@ -1167,6 +1479,7 @@ static void village(R *r, int season) {
       for (int i = 0; i < di->w; i++)
         for (int y = base + 1; y <= r->edge[x0 + i + VILLAGE_DX]; y++) vput(r, x0 + i, y, col[1]);
     if (vp->kind == 1) mast = true, mast_x = x0 + 5, mast_y = y0;
+    if (vp->kind == 2) r->chimney = true, r->chimney_x = (int16_t)(x0 + 10), r->chimney_y = (int16_t)y0;
   }
   int vx[16], vy[16], nv = 0;
   if (mast) {                                     /* the vane on the mast, turned into the wind */
@@ -1186,6 +1499,34 @@ static void village(R *r, int season) {
       for (int i = 0; i < nv; i++) on_vane |= vx[i] == dx && vy[i] == y;
       if (!on_vane && inside(r, r->col + dx, y)) put(r, r->col + dx, y, snow_c);
     }
+}
+
+/* smoke from the chimney on a cold day, the puffs rising and leaning with the wind; fog lying over the hills in three
+ * ruled lines, behind the roofs */
+static void village_weather(R *r) {
+  if (!r->wx) return;
+  const Plate *P = r->P;
+  if (r->smoke && r->chimney) {
+    float lean = f_sind(r->wind_from) * (r->wind / 12.0f < 1.6f ? r->wind / 12.0f : 1.6f), t = (float)r->secs;
+    uint8_t c = r->paper ? P->line : r->night_land ? C8(1, 1, 1) : C8(2, 2, 2);
+    for (int h = 1; h <= 8; h++) {
+      if ((h + r->secs * 2) % 4 == 0) continue;
+      float wob = 0.6f * f_sind((h * 1.3f + t * 1.5f) * 57.2957795f) * (1 - (r->wind / 20 < 1 ? r->wind / 20 : 1));
+      int X = pyf_floor(r->col + r->chimney_x + 0.5f - lean * f_pow((float)h, 1.15f) + wob), Y = r->chimney_y - h;
+      if (inside(r, X, Y)) put(r, X, Y, c);
+    }
+  }
+  if (r->fog) {
+    uint8_t c = r->red ? C8(1, 0, 0) : r->paper ? P->line : r->night_land ? C8(1, 1, 1) : C8(2, 2, 2);
+    static const uint8_t FRAC[3] = {46, 40, 30};
+    for (int l = 0; l < 3; l++)
+      for (int dx = -FRAC[l]; dx <= FRAC[l]; dx++) {
+        int e = r->edge[dx + VILLAGE_DX];
+        if (e < 0) continue;
+        int y = e - 3 - 2 * l;
+        if (inside(r, r->col + dx, y) && !((r->vmask[dx + VILLAGE_DX] >> (3 + 2 * l)) & 1)) put(r, r->col + dx, y, c);
+      }
+  }
 }
 
 static void names(R *r, float mx, float my) {
@@ -1303,7 +1644,7 @@ static void ornaments(R *r) {
       add_box(r, xi - 4, yi - 4, xi + 5, yi + 5);
     }
   if (P->dragon) {                                /* in an eclipse season, at the Moon's nodes */
-    float om = plan_moon_node(k->jd);
+    float om = plan_moon_node(r->utc);
     float sl = (float)k->sun_lon;
     float g1 = f_abs(pyf_mod(sl - om + 180, 360) - 180), g2 = f_abs(pyf_mod(sl - om, 360) - 180);
     if ((g1 < g2 ? g1 : g2) < 18) {
@@ -1655,7 +1996,7 @@ static void ring(R *r, int season) {
   for (int i = 0; i < 4; i++) {
     float sv = f_sind(THRESH[i]) - A, c = B > 1e-9f ? sv / B : (sv > 0 ? 9 : -9);
     c = c > 9 ? 9 : c < -9 ? -9 : c;
-    cpos[i] = c >= 0, c2[i] = (int64_t)(c * c * 65536);
+    cpos[i] = c >= 0, c2[i] = (int32_t)(c * c * 65536);
   }
   int cxq = pyf_floor(r->cx * 16 + 0.5f), cyq = pyf_floor(r->cy * 16 + 0.5f);
   static const uint8_t STEP[5] = {0, 9, 7, 5, 4};
@@ -1978,7 +2319,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   r->live = P->window == WIN_SKY || P->window == WIN_RED;
   r->light_paper = r->paper && level_sum(P->night) * 85 > 400;
   r->rete = P->rete, r->woodcut = P->woodcut;
-  r->sun_alt = (float)plan_altitude(r->sky.sun_ra, r->sky.sun_dec, r->sky.lst, f->lat);
+  r->sun_alt = plan_altitude(r->sky.sun_ra, r->sky.sun_dec, r->sky.lst, (float)f->lat);
   r->s_eff = r->sun_alt;
   r->sdec = (float)(r->south ? -r->sky.sun_dec : r->sky.sun_dec);
   r->sha = (float)pyf_mod(r->south ? -(r->sky.lst - r->sky.sun_ra) : r->sky.lst - r->sky.sun_ra, 360.0f);
@@ -1989,6 +2330,8 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
     if (level_sum(COOL[i]) > level_sum(P->night)) r->ramp[r->nramp++] = COOL[i];
   piece_colours(r);
   weather_sky(r);
+  r->secs = r->local.hour * 3600 + r->local.minute * 60 + r->local.second;
+  weather_layer(r);
   for (int x = 0; x < MAX_W; x++) r->btop[x] = NONE16;
   r->closed_sky = P->window == WIN_SKY && r->wx && (r->stratus >= 0.6f || r->fog || r->falls);
 
@@ -2073,16 +2416,25 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
         }
         project(r, ra, dec, &x, &y);
         int xi = (int)x, yi = (int)y;
-        if (inside(r, xi, yi) && r->dark) put(r, xi, yi, kind == 0 ? P->cons : P->line);
+        if (inside(r, xi, yi) && r->dark && !hidden(r, xi, yi)) put(r, xi, yi, kind == 0 ? P->cons : P->line);
       }
   /* the meridian, dotted from the north point through the pole and the zenith to the south point */
   int zy = pyf_floor(r->cy + (90 - r->alat) * r->k);
   if (r->dark || r->paper)
     for (int y = 0; y < r->H; y += 3)
-      if (inside(r, r->col, y) && (y - zy > 3 || zy - y > 3)) put(r, r->col, y, P->line);
+      if (inside(r, r->col, y) && (y - zy > 3 || zy - y > 3) && !hidden(r, r->col, y)) put(r, r->col, y, P->line);
   /* the figures, stopping short of their stars; the stars */
   if (r->figs && !r->rete) figure_lines(r);
   stars(r, faint, mx, my, moon_reach);
+  /* the clouds over the stars (the Moon and planets shine through them); a halo round the Moon or the Sun */
+  cloud_colours(r, r->mphase > 0.4f && moon_up);
+  paint_clouds(r);
+  if (r->wx && r->live && r->halo) {
+    if (r->s_eff < -6 && r->mphase > 0.3f && moon_up)
+      paint_halo(r, (float)r->sky.moon_ra, (float)r->sky.moon_dec, r->red ? C8(1, 0, 0) : C8(1, 1, 2));
+    else if (r->sun_alt > 0)
+      paint_halo(r, (float)r->sky.sun_ra, (float)r->sky.sun_dec, r->red ? C8(1, 0, 0) : r->s_eff < -6 ? C8(1, 1, 2) : C8(3, 3, 3));
+  }
   /* the planets, each its little picture */
   for (int pn = 0; pn < PLANETS; pn++) {
     if (!r->paper && r->s_eff > -3) continue;
@@ -2133,11 +2485,14 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
       add_box(r, si - 12, sj - 12, si + 13, sj + 13);
     }
   }
+  /* rain or snow falling past everything in the sky */
+  paint_falls(r);
   /* the southern horizon: the distant hills, the village */
   int season = season_of(r->sky.sun_lon, f->lat);
   window_edge(r);
   hills(r);
   village(r, season);
+  village_weather(r);
   /* names in the sky; the ornaments where no name is */
   if (f->names) names(r, mx, my);
   ornaments(r);

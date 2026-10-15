@@ -174,6 +174,10 @@ def shared(h):
     fl, tips = flame_drawings()
     drawings += fl
     drawings += village_drawings()
+    drawings += [(f"CUMULUS{i}", sprites.cloud(c)) for i, c in enumerate(sprites.CUMULUS)]
+    drawings += [(f"STRATUS{i}", sprites.cloud(c)) for i, c in enumerate(sprites.STRATUS)]
+    drawings += [(f"CIRRUS{i}", sprites.stroke(c)) for i, c in enumerate(sprites.CIRRUS)]
+    drawings += [("SNOWFLAKE", sprites.SNOWFLAKE)]
     index, data = bytearray(), bytearray()
     for name, a in drawings:
         a = np.asarray(a, np.uint8)

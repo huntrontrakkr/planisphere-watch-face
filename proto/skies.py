@@ -15,6 +15,7 @@ import numpy as np
 
 import sprites
 from render2 import c8
+from rng import Rng
 
 CLOUD_SPEED = 0.0015            # pixels a second per km/h of wind: a 20 km/h breeze crosses the window in an hour
 RAIN_FALL, DRIZZLE_FALL, SNOW_FALL, HAIL_FALL = 40.0, 25.0, 4.0, 30.0      # pixels a second down the screen
@@ -65,13 +66,13 @@ def layer(inside, wsky, t, day, lat, lon, t_falls=None):
     # low cloud grows; as it thickens the heaps flatten into banks (Howard's cumulo-stratus). Nothing shows behind
     def scatter(drawings, n, salt, weights, thin):
         """`n` clouds in the window at any moment: as many again for the margins they drift through."""
-        rng = np.random.default_rng(seed_of(day, lat, lon, salt))
+        rng = Rng(seed_of(day, lat, lon, salt))
         n = int(round(n * (x_hi - x_lo + 2 * margin) * (y_hi - y_lo + 16) / area))
         placed = []
         for _ in range(n * 12):
             if len(placed) >= n:
                 break
-            k = int(rng.choice(len(drawings), p=weights))
+            k = rng.choice(len(drawings), weights)
             a = sprites.cloud(drawings[k])
             if rng.random() < 0.5:
                 a = a[:, ::-1]
@@ -96,11 +97,11 @@ def layer(inside, wsky, t, day, lat, lon, t_falls=None):
     # stratus: the sheet drawn as the engravers drew it, in ruled lines, a lens of three to five lines to each band,
     # more bands as it closes; through it only the brightest stars
     if wsky.stratus > 0.08:
-        rng = np.random.default_rng(seed_of(day, lat, lon, 2))
+        rng = Rng(seed_of(day, lat, lon, 2))
         nb = int(round(1 + 4 * wsky.stratus))
         span = (y_hi - y_lo) / nb
         for b in range(nb):
-            nl = int(rng.integers(3, 6))
+            nl = rng.integers(3, 6)
             yc = y_lo + span * (b + 0.5) + rng.uniform(-span * 0.2, span * 0.2)
             half = (x_hi - x_lo) * (0.22 + 0.3 * wsky.stratus) * rng.uniform(0.8, 1.15)
             xc = wrap(rng.uniform(x_lo - margin, x_hi + margin) + dx * t, x_lo - margin, x_hi + margin)
@@ -114,9 +115,9 @@ def layer(inside, wsky, t, day, lat, lon, t_falls=None):
                     band[max(0, y - 1): min(H, y + 2), max(0, x0): max(0, min(W, x1 + 1))] = True
     # cirrus: a few hair strokes
     if wsky.cirrus > 0.1:
-        rng = np.random.default_rng(seed_of(day, lat, lon, 3))
+        rng = Rng(seed_of(day, lat, lon, 3))
         for _ in range(int(round(5 * wsky.cirrus))):
-            a = sprites.stroke(sprites.CIRRUS[int(rng.integers(len(sprites.CIRRUS)))])
+            a = sprites.stroke(sprites.CIRRUS[rng.integers(0, len(sprites.CIRRUS))])
             if rng.random() < 0.5:
                 a = a[:, ::-1]
             x = wrap(rng.uniform(x_lo - margin, x_hi + margin) + 1.6 * dx * t, x_lo - margin, x_hi + margin)
@@ -124,7 +125,7 @@ def layer(inside, wsky, t, day, lat, lon, t_falls=None):
             out.cirrus.append((a, int(round(x)), int(round(y))))
     # rain and snow, falling down the screen past the village, leaning with the wind
     if wsky.falls:
-        rng = np.random.default_rng(seed_of(day, lat, lon, 4))
+        rng = Rng(seed_of(day, lat, lon, 4))
         east = -math.sin(math.radians(wsky.wind_from + 180))          # the wind's push across the chart (left +)
         lean = max(-0.7, min(0.7, -east * wsky.wind / 45.0))          # pixels across per pixel down
         if wsky.falls in ("rain", "drizzle"):
@@ -132,7 +133,7 @@ def layer(inside, wsky, t, day, lat, lon, t_falls=None):
             fall = DRIZZLE_FALL if wsky.falls == "drizzle" else RAIN_FALL
             for k in range(n):
                 u, v = rng.uniform(x_lo, x_hi), rng.uniform(y_lo, y_hi)
-                length = int(rng.integers(2, 4)) if wsky.falls == "drizzle" else int(rng.integers(3, 7))
+                length = rng.integers(2, 4) if wsky.falls == "drizzle" else rng.integers(3, 7)
                 y = wrap(v + fall * t_falls, y_lo, y_hi)
                 x = wrap(u + lean * fall * t_falls, x_lo, x_hi)
                 out.falls.append(("streak", x, y, k % 3 == 0, length, lean))

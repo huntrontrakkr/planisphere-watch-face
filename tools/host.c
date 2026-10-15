@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
   Face f = {0};
   f.plate = (uint8_t)atoi(argv[2]);
   int64_t utc = atoll(argv[3]);
-  f.lat = atof(argv[4]), f.lon = atof(argv[5]);
+  f.lat = (float)atof(argv[4]), f.lon = (float)atof(argv[5]);
   int32_t offset = atoi(argv[6]) * 60;
   const char *out = argv[7];
   f.names = true, f.coords = true;
