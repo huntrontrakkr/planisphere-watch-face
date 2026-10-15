@@ -134,7 +134,7 @@ The village keeps the year, as an almanac's cuts of the months do. The season co
 - The house's windows are lit of an evening.
 - The Time 2's corner sprigs follow the season.
 - The flowers beside the time keep the season too (below).
-- The month's labour, as the calendars' woodcuts show the year's work, is drawn faint in the card behind the window, in the ring hatching's khaki, so it is felt more than seen. Its field runs on behind the oval: furrows, rows of vines, stubble, grass or snow come out from a point hidden behind the window's top, and a far line of hills crosses behind it. The labourer stands in the cream on the left and the month's thing on the right. The figures follow the cuts' own way of being known at a glance, chiefly the *Kalender of Shepherdes* (Paris, 1493): the labourer's wide straw hat, one pose and one tool drawn large.
+- As an option the owner can turn on (it is off by default), the month's labour, as the calendars' woodcuts show the year's work, is drawn faint in the card behind the window, in the ring hatching's khaki, so it is felt more than seen. Its field runs on behind the oval: furrows, rows of vines, stubble, grass or snow come out from a point hidden behind the window's top, and a far line of hills crosses behind it. The labourer stands in the cream on the left and the month's thing on the right. The figures follow the cuts' own way of being known at a glance, chiefly the *Kalender of Shepherdes* (Paris, 1493): the labourer's wide straw hat, one pose and one tool drawn large.
 
 | Month | The labour | Beside it | The field |
 | --- | --- | --- | --- |
@@ -152,6 +152,8 @@ The village keeps the year, as an almanac's cuts of the months do. The season co
 | December | baking, the peel at the oven's mouth | the oven | snow |
 
   South of the equator the labours turn half a year, as the seasons do.
+
+![The labours of the months, January to December, faint in the card either side of the window's top](docs/labours.png)
 
 ![The year at eleven in the morning: blossom in April, leaf in July, gold in October, snow in January; below, the village up close: blossom, high summer, autumn leaves, frost and snow; a frosty evening with chimney smoke and lit windows, fog, a summer gale, a snowy night](docs/seasons.png)
 

@@ -645,12 +645,13 @@ def widest_time(style, screen, clock24):
 
 
 def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=False, sky_offset=None, extras=None,
-           names=True, weather=None, fahrenheit=False, weather_clock=None):
+           names=True, weather=None, fahrenheit=False, weather_clock=None, labours=False):
     """The face at `when`. Its sky may be drawn at another time (`sky_offset`, for the hourly turn) while the clock
     keeps `when`; `extras(img, ctx)` draws passing things (meteors, birds) into the sky, under the names. With
     `weather` (weather.Weather) the window shows the place's clouds, rain or snow, the village its weather, and
     the almanac line the temperature (in degrees Fahrenheit with `fahrenheit`). A film may set `weather_clock`,
-    (seconds for the clouds, seconds for everything else), to hurry the clouds past."""
+    (seconds for the clouds, seconds for everything else), to hurry the clouds past. With `labours` (an option the
+    owner turns on) the month's labour is drawn faint in the card behind the window."""
     clock_when = when
     if sky_offset is not None:
         when = when + sky_offset
@@ -746,8 +747,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                                                                        for l_ in np.arange(0, 361, 1))], fill=255, width=4)
             img[(np.asarray(line_, np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3)) > 110) & zband] = P["accent"]
     ground = img.copy()
-    labour_scene(img, dial, inside, inner_region(dial), P,                  # the month's labour, faint behind the
-                 (local.month - 1 + (6 if dial.lat < 0 else 0)) % 12 + 1)    # window (half a year round in the south)
+    if labours:                                          # the month's labour, faint behind the window (an option,
+        labour_scene(img, dial, inside, inner_region(dial), P,              # half a year round in the south)
+                     (local.month - 1 + (6 if dial.lat < 0 else 0)) % 12 + 1)
     faint = float(np.interp(s_eff, [-16, -10, -5, -1.5], [4.6, 3.4, 2.0, 0.4])) if not paper else 4.6
     if not paper and s_eff > -1.5:
         faint = -9

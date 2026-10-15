@@ -130,6 +130,14 @@ def main():
                                     fahrenheit=tz is NY))
         sheet.paste(im.resize((400, 456), Image.NEAREST), ((i % 4) * 412 + 6, (i // 4) * 464 + 4))
     sheet.save(ROOT / "docs" / "mountains.png")
+    # the labours of the months, an option: the year's twelve, each at 9:30 pm on the 15th, the card between the
+    # window's top and the ring at twice the watch's size
+    sheet = Image.new("RGB", (3 * 404, 4 * 164), (24, 24, 26))
+    for k, mo in enumerate(range(1, 13)):
+        t = datetime(2026, mo, 15, 21, 30, tzinfo=NY)
+        im = render(t.astimezone(timezone.utc), t2, sky, NY, "planisphere", False, labours=True)
+        sheet.paste(Image.fromarray(im[55:135, 0:200]).resize((400, 160), Image.NEAREST), ((k % 3) * 404, (k // 3) * 164))
+    sheet.save(ROOT / "docs" / "labours.png")
     print(len(frames), "frames")
 
 
