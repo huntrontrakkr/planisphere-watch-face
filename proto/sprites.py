@@ -569,6 +569,19 @@ def minuscule(text, gap=1):
     return out
 
 
+# ---- the Apian plate's pieces: the dragon's head and tail at the Moon's nodes (as on Apian's dragon volvelle, 1540),
+# and the seed pearl on the silk thread that serves his volvelles for an index
+DRAGON_HEAD = art([".RRR.",           # the ascending node
+                   "R...R",
+                   "R...R",
+                   ".R.R.",
+                   "RR.RR"])
+DRAGON_TAIL = DRAGON_HEAD[::-1, :].copy()   # the descending node, the head turned over
+PEARL = art([".S.",
+             "SWS",
+             ".S."])
+
+
 # ---- small marks: the south point's star, the studs on the ring at every third hour, a meteor shower's radiant
 SOUTH_STAR = art([
     "..R..",
@@ -1256,7 +1269,11 @@ if __name__ == "__main__":
         + [block(f, {1: (0, 0, 0), 3: (255, 255, 85)}, (0, 0, 85)) for f in OWL]
         + [block(f, {2: (255, 85, 0)}, (85, 170, 255)) for f in FALLING_LEAF]
         + [block(f, {3: (255, 255, 85), 4: (170, 170, 0)}, (0, 0, 85)) for f in FIREFLY]
-        + [block(SNOWFLAKE, {5: (255, 255, 255)}, (170, 170, 170))],
+        + [block(SNOWFLAKE, {5: (255, 255, 255)}, (170, 170, 170))]
+        + [block(THRONE, {1: (0, 0, 0)}, (170, 170, 85)), block(FLAME, {3: (255, 255, 170)}, (85, 85, 0)),
+           block(FLAME_DIAG, {3: (255, 255, 170)}, (85, 85, 0)), block(CORNER_IVY, {1: (0, 0, 0), 3: (255, 170, 0)}, cream),
+           block(CORNER_FROND, {1: (255, 255, 255)}, (0, 85, 170)), block(DRAGON_HEAD, {2: (0, 0, 0)}, (255, 255, 85)),
+           block(DRAGON_TAIL, {2: (0, 0, 0)}, (255, 255, 85)), block(PEARL, {5: (255, 255, 255), 7: (170, 170, 170)}, (0, 0, 0))],
         [mask_block(word_art(w, 200, 228)[0], red, cream) for w in ("MIDNIGHT", "NOON")],
         [mask_block(word_art(w, 260, 260)[0], red, cream) for w in ("MIDNIGHT", "NOON")],
     ]
@@ -1268,7 +1285,7 @@ if __name__ == "__main__":
               "The trees through the year (in leaf, blossom, turning, gold, bare; the fir stays green), and the vane: wind from the east, north or south, west",
               "The flowers beside the time, charted needlework from the library (1527-1890): for any time, then for the night, the seasons and snow",
               "The corner sprigs through the year, Howard's cumulus heaps and banks (lit tops, shaded bases), cirrus",
-              "The passers-by: a swallow, a bat and a jackdaw on the wing, the owl (blinking, looking about), a leaf tumbling, a firefly's flash, a snowflake",
+              "The passers-by (a swallow, a bat, a jackdaw, the owl, a leaf, a firefly, a snowflake); the plates' own: the astrolabe's throne and pointers, ivy, a frond, the dragon's head and tail, the pearl",
               "MIDNIGHT and NOON along the Time 2's ring", "MIDNIGHT and NOON along the Round 2's ring"]
     tiles = []
     for r, label in zip(rows, labels):

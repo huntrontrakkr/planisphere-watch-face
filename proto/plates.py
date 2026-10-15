@@ -18,6 +18,9 @@ the type of its time, the way Groundtrack's plates follow real charts:
                 zones, blue for the day, red-brown for the twilight, black for the night
   cyanotype     a cyanotype, Herschel's blueprint as Anna Atkins used it for her algae (1843): white on cobalt,
                 a seaweed frond in the corners
+  apian         Apian's Astronomicum Caesareum (Ingolstadt, 1540), a woodcut coloured by hand: heavy black line,
+                a yellow zodiac band across a light blue sky, a yellow-washed ring, the dragon at the Moon's nodes
+                in eclipse seasons, a silk thread and a seed pearl for the Sun's index
   night         the first take: a black jacket, white type
 
 Each shows the time as almanacs and astronomers write it, 9ʰ 30ᵐ (21ʰ 30ᵐ on
@@ -47,6 +50,7 @@ import events
 import figures
 import frame
 import horizon
+import lunar
 import skies
 import sprites
 import weather as meteo
@@ -88,6 +92,10 @@ PLATES = {
                       star=c8(3, 3, 3), glyph="cross", line=c8(1, 2, 3), milky=c8(0, 1, 2), label=c8(3, 3, 3),
                       const=c8(2, 3, 3), planet=c8(3, 3, 3), rule=c8(3, 3, 3), font=(OLD, None), italic=(OLD_I, None),
                       ring="roman", figures="modern", corner="frond"),
+    "apian": dict(jacket=c8(3, 3, 2), ink=c8(0, 0, 0), accent=c8(3, 1, 0), window="paper", night=c8(1, 2, 3),
+                  star=c8(3, 3, 1), glyph="woodcut", line=c8(0, 0, 0), milky=c8(2, 3, 3), label=c8(0, 0, 0),
+                  const=c8(3, 1, 0), planet=c8(3, 1, 0), rule=c8(0, 0, 0), font=(OLD, None), italic=(OLD_I, None),
+                  ring="roman", figures="caslon", woodcut=True, ringwash=c8(3, 3, 1), dragon=True, hand="thread"),
     "night": dict(jacket=c8(0, 0, 0), ink=c8(3, 3, 3), accent=c8(3, 2, 0), window="sky", night=c8(0, 0, 1),
                   star=c8(3, 3, 3), glyph="cross", line=c8(0, 1, 2), milky=c8(1, 1, 2), label=c8(2, 2, 2),
                   const=c8(1, 1, 2), planet=c8(3, 2, 1), rule=c8(1, 1, 1), font=(OLD, None), italic=(OLD_I, None),
@@ -622,6 +630,17 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     else:
         img[inside] = P["night"]
         dark = True
+        if P.get("woodcut"):                             # the zodiac: a band six degrees either side of the
+            ra_ = np.radians(lst) - pha                  # ecliptic, washed yellow and ruled black, the ecliptic red
+            e_ = math.radians(pos["eps"])
+            beta_ = np.degrees(np.arcsin(np.clip(np.sin(pdec) * math.cos(e_) - np.cos(pdec) * math.sin(e_) * np.sin(ra_), -1, 1)))
+            zband = (np.abs(beta_) < 6) & inside
+            img[zband] = c8(3, 3, 1)
+            img[outline(zband) & inside] = P["ink"]
+            line_ = Image.new("L", (W * SS, H * SS), 0)
+            ImageDraw.Draw(line_).line([(x * SS, y * SS) for x, y in (dial.project(*astro.ecl_to_eq(l_, 0, pos["eps"]), lst)
+                                                                       for l_ in np.arange(0, 361, 1))], fill=255, width=4)
+            img[(np.asarray(line_, np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3)) > 110) & zband] = P["accent"]
     ground = img.copy()
     faint = float(np.interp(s_eff, [-16, -10, -5, -1.5], [4.6, 3.4, 2.0, 0.4])) if not paper else 4.6
     if not paper and s_eff > -1.5:
@@ -658,7 +677,10 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             acc_all = np.maximum(acc_all, acc * (level + 1) / len(mw))
         m = acc_all.reshape(H, SS, W, SS).mean(axis=(1, 3))
         dens = np.clip(m * (0.30 if paper else 0.42), 0, 1) ** 1.2
-        img[(dens > tt) & inside & ~hidden & ~lay.band] = P["milky"]
+        if P.get("woodcut"):                             # a woodcut has no grain: the Milky Way a flat wash
+            img[(m > 0.18) & inside & ~hidden & ~lay.band & ~((img == c8(3, 3, 1)).all(axis=2))] = P["milky"]
+        else:
+            img[(dens > tt) & inside & ~hidden & ~lay.band] = P["milky"]
 
     # on an astrolabe: the plate's engraved circles under the rete (the equator, the tropics, the almucantars at 30
     # and 60 degrees), and the rete's own ecliptic, a solid ring
@@ -685,6 +707,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                 continue
             x, y = dial.project(ra, de, lst)
             xi, yi = int(x), int(y)
+            if kind == "ecl" and P.get("woodcut"):
+                continue
             if 0 <= xi < W and 0 <= yi < H and inside[yi, xi] and dark and not hidden[yi, xi]:
                 img[yi, xi] = P["const"] if kind == "ecl" else P["line"]
 
@@ -742,6 +766,22 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             boxes.append((xi - ti_ - 1, yi - tj_ - 1, xi - ti_ + d_.shape[1] + 1, yi - tj_ + d_.shape[0] + 1))
             continue
         drawn.append((xi, yi, 3 if mg < 0.5 else 2 if mg < 1.4 else 1 if mg < 2.1 else 0))
+        if P.get("woodcut"):                             # cut in outline and coloured by hand; the faint ones dots
+            if mg < 2.1:
+                spr = sprites.STAR[0 if mg < 0.5 else 1 if mg < 1.4 else 2]
+                sm = np.zeros((H, W), bool)
+                h_, w_ = spr.shape
+                y0_, x0_ = yi - (h_ - 1) // 2, xi - (w_ - 1) // 2
+                for j, i in zip(*np.nonzero(spr)):
+                    if 0 <= y0_ + j < H and 0 <= x0_ + i < W:
+                        sm[y0_ + j, x0_ + i] = True
+                img[outline(sm) & inside] = P["ink"]
+                img[sm & inside] = c
+                if mg < 1.4:
+                    boxes.append((xi - 3, yi - 3, xi + 4, yi + 4))
+            elif 0 <= yi < H and 0 <= xi < W and inside[yi, xi]:
+                img[yi, xi] = P["ink"]
+            continue
         if mg < 0.5:
             sprites.paint(img, sprites.STAR[0], xi, yi, {5: c}, where=inside)
             boxes.append((xi - 3, yi - 3, xi + 4, yi + 4))
@@ -1072,6 +1112,28 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             img[halo] = P["const"]
             boxes.append((xi - 4, yi - 4, xi + 5, yi + 5))
 
+    # Apian's dragon: in an eclipse season (the Sun within eighteen degrees of a node of the Moon's path), its head
+    # and tail at the nodes on the ecliptic, where the eclipses happen
+    if P.get("dragon"):
+        om_ = lunar.node(astro.julian(when))
+        gap_ = min(abs((pos["sun_lon"] - om_ + 180) % 360 - 180), abs((pos["sun_lon"] - om_) % 360 - 180))
+        if gap_ < 18:
+            for lon_, glyph_ in ((om_, sprites.DRAGON_HEAD), (om_ + 180, sprites.DRAGON_TAIL)):
+                # at the node, or as near it along the ecliptic as there is room (in an eclipse season the Moon
+                # itself is often there)
+                for off_ in (0, 3, -3, 6, -6, 9, -9, 12, -12):
+                    x, y = dial.project(*astro.ecl_to_eq(lon_ + off_, 0, pos["eps"]), lst)
+                    xi, yi = int(math.floor(x)), int(math.floor(y))
+                    if 3 <= xi < W - 3 and 3 <= yi < H - 3 and inside[yi - 3: yi + 4, xi - 3: xi + 4].all() and \
+                            free((xi - 3, yi - 3, xi + 4, yi + 4)):
+                        halo = np.zeros((H, W), bool)
+                        halo[yi - 2: yi + 3, xi - 2: xi + 3] = glyph_ > 0
+                        ring_ = grow(halo, 1) & ~halo & inside
+                        img[ring_] = ground[ring_]
+                        img[halo] = P["ink"]             # printed black, to stand clear of the red ecliptic
+                        boxes.append((xi - 3, yi - 3, xi + 4, yi + 4))
+                        break
+
     # passing things in the sky (meteors, birds): a flash across everything in the window, names too
     if extras is not None:
         extras(img, dict(inside=inside, ground=ground, dial=dial, lst=lst, pos=pos, sun_alt=sun_alt, dark=dark,
@@ -1112,7 +1174,11 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     ang = np.degrees(np.arctan2(xx + 0.5 - dial.cx, yy + 0.5 - dial.cy))
     s_alt = np.degrees(np.arcsin(np.sin(lat) * np.sin(sdec) + np.cos(lat) * np.cos(sdec) * np.cos(np.radians(ang))))
     step = np.select([s_alt > -0.833, s_alt > -6, s_alt > -12, s_alt > -18], [0] + list(HATCH[:3]), HATCH[3])
-    if P.get("ringfill") == "zones":                     # the clock's zones round the Sun's path instead, the day
+    if P.get("ringwash") is not None:                    # a hand-coloured ring: washed, the night hatched over it in a
+        img[band] = P["ringwash"]                        # quiet tone, so the lettering stays clear
+        hatch = band & (step > 0) & ((xx + yy) % np.maximum(step, 1) == 0)
+        img[hatch] = c8(2, 2, 1)
+    elif P.get("ringfill") == "zones":                   # the clock's zones round the Sun's path instead, the day
         img[band & (s_alt > -0.833)] = c8(0, 1, 2)       # a deep blue, as on the clock, so the gold reads on it
         img[band & (s_alt <= -0.833) & (s_alt > -18)] = c8(2, 1, 0)
     else:
@@ -1295,23 +1361,31 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     sun_ang = lst - pos["sun"][0]
     (ex_, ey_), (ox_, oy_) = edge_point(dial, sun_ang), track_point(dial, sun_ang, r_out + 1)
     hx, hy = (ex_ + ox_) / 2, (ey_ + oy_) / 2
-    hand = np.zeros((H, W), bool)
-    sh = sprites.SUN_HAND
-    hx0, hy0 = int(round(hx - sh.shape[1] / 2)), int(round(hy - sh.shape[0] / 2))
-    for j, i in zip(*np.nonzero(sh)):
-        if 0 <= hy0 + j < H and 0 <= hx0 + i < W:
-            hand[hy0 + j, hx0 + i] = True
-    index = [p_ for p_ in line_pixels(hx, hy, *edge_point(dial, sun_ang, 0.6))
-             if not hand[min(H - 1, max(0, p_[1])), min(W - 1, max(0, p_[0]))]]
-    for px_, py_ in index:
-        if 0 <= py_ < H and 0 <= px_ < W:
-            hand[py_, px_] = True
-    clear = grow(hand, 1) & ~inside
-    img[clear] = P["jacket"]
-    for px_, py_ in index:
-        if 0 <= py_ < H and 0 <= px_ < W:
-            img[py_, px_] = sun_c[4]
-    sprites.paint(img, sh, hx0, hy0, sun_c, anchor="corner")
+    if P.get("hand") == "thread":                        # Apian's index: a silk thread across the band, a seed pearl
+        for px_, py_ in line_pixels(*edge_point(dial, sun_ang, 0.6), *track_point(dial, sun_ang, r_out + 0.6)):
+            if 0 <= py_ < H and 0 <= px_ < W and not inside[py_, px_]:
+                img[py_, px_] = P["ink"]
+        setting = (np.abs(xx + 0.5 - hx) + np.abs(yy + 0.5 - hy) <= 2.6) & ~inside      # the pearl's dark setting
+        img[setting] = P["ink"]
+        sprites.paint(img, sprites.PEARL, hx - 0.5, hy - 0.5, {7: c8(2, 2, 2), 5: c8(3, 3, 3)})
+    else:
+        hand = np.zeros((H, W), bool)
+        sh = sprites.SUN_HAND
+        hx0, hy0 = int(round(hx - sh.shape[1] / 2)), int(round(hy - sh.shape[0] / 2))
+        for j, i in zip(*np.nonzero(sh)):
+            if 0 <= hy0 + j < H and 0 <= hx0 + i < W:
+                hand[hy0 + j, hx0 + i] = True
+        index = [p_ for p_ in line_pixels(hx, hy, *edge_point(dial, sun_ang, 0.6))
+                 if not hand[min(H - 1, max(0, p_[1])), min(W - 1, max(0, p_[0]))]]
+        for px_, py_ in index:
+            if 0 <= py_ < H and 0 <= px_ < W:
+                hand[py_, px_] = True
+        clear = grow(hand, 1) & ~inside
+        img[clear] = P["jacket"]
+        for px_, py_ in index:
+            if 0 <= py_ < H and 0 <= px_ < W:
+                img[py_, px_] = sun_c[4]
+        sprites.paint(img, sh, hx0, hy0, sun_c, anchor="corner")
 
     # the time, as an astronomer writes it, with the date and the Sun's next rising or setting
     ring_in = dial.cy - (dial.R - r_in) if not rect else r_in

@@ -96,6 +96,13 @@ def sun(jde):
     return (true_lon - 0.00569) % 360, R
 
 
+def node(jde):
+    """The longitude of the Moon's mean ascending node (degrees; Meeus 47.7): where its path climbs through the
+    ecliptic, the dragon's head of the old astronomers; the tail is opposite."""
+    T = (jde - 2451545.0) / 36525
+    return (125.0445479 - 1934.1362891 * T + 0.0020754 * T * T + T ** 3 / 467441 - T ** 4 / 60616000) % 360
+
+
 def nutation(jde):
     """Nutation in longitude and the true obliquity (degrees), to the accuracy of Meeus ch. 22's short form."""
     T = (jde - 2451545.0) / 36525
