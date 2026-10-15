@@ -12,6 +12,12 @@
 #define MAX_W 260
 #define MAX_H 260
 
+/* plan.bin: its sections (SEC_*, from a table of their offsets), and a star's place at the head of a record of one
+ * (the stars', their names', the constellations'), in 1/65536 of a turn and of the half turn from the south pole */
+static inline const uint8_t *sec(const uint8_t *blob, int i) { return blob + ((const uint32_t *)(const void *)blob)[i]; }
+static inline float star_ra(const uint8_t *s) { return (s[0] | s[1] << 8) * 360.0f / 65536; }
+static inline float star_dec(const uint8_t *s) { return (s[2] | s[3] << 8) * 180.0f / 65535 - 90; }
+
 /* The screen: a row's GColor8 pixels (index x), and the columns it has from x0 to x1 (the Round 2's rows are
  * cut to the circle). */
 typedef uint8_t *(*RowFn)(void *ctx, int y, int *x0, int *x1);
@@ -112,11 +118,14 @@ typedef struct {
   int32_t news_day;
   float news_lat, news_lon;
   uint8_t news, news_a, news_b;
-  /* the day's feast in the kept calendars (plan_feast), kept until the day, the calendars or the hemisphere change */
+  /* the day's feast in the kept calendars (plan_feast), kept until the day, the calendars or the place change */
   int32_t feast_day;                   /* the local date it is for (-1: not yet looked for) */
   uint32_t feast_cal;
-  bool feast_south, feast;             /* (feast: there is one) */
-  uint8_t feast_flags;                 /* FF_* */
+  float feast_lat, feast_lon;          /* the place: its hemisphere, and its sky for the evening's first star */
+  bool feast;                          /* there is one */
+  uint8_t feast_flags, feast_sky;      /* FF_*; FS_* */
+  int8_t feast_first;                  /* the evening's first star (FS_FIRST_STAR): a named star's index + 1, a
+                                        * planet's -(index + 1), 0 none */
   uint8_t feast_art_w, feast_art_h;    /* its emblem (0 wide: none): a bit a pixel, row by row, the low bit first */
   uint8_t feast_art[32];
   char feast_words[2][20];             /* its long and short words for the almanac's line */
@@ -152,8 +161,8 @@ typedef struct {
 } PlanApi;
 /* The calendars' code, a blob of its own (plan_feasts.c and the ephemeris it asks), which the watch loads only to look
  * up the day's feast, once a day, with the calendars' table (feasts.bin), and lets go: the renderer reads the answer
- * the Plan keeps. True when the Plan's answer is for this day, these calendars and this hemisphere (so a NULL table
- * asks only whether a look is needed). */
+ * the Plan keeps. True when the Plan's answer is for this day, these calendars and this place (so a NULL table asks
+ * only whether a look is needed). */
 #define FEAST_API_MAGIC 0x54534546u          /* "FEST" */
 /* how the calendars' code reads the calendars' table (feasts.bin), a few bytes at a time: from the resources on the
  * watch, so the whole table is never in memory; from memory elsewhere (plan_feast_memory) */

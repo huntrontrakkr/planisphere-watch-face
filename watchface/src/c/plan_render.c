@@ -19,7 +19,6 @@ enum { FALL_NONE, FALL_DRIZZLE, FALL_RAIN, FALL_SNOW, FALL_HAIL };
 enum { NEWS_NONE, NEWS_SUN, NEWS_MOON, NEWS_PLANETS, NEWS_SHOWER, NEWS_MOON_BY };
 
 /* ---- the blobs ------------------------------------------------------------------------------------------------ */
-static const uint8_t *sec(const uint8_t *blob, int i) { return blob + ((const uint32_t *)(const void *)blob)[i]; }
 static const int16_t *sec16(const uint8_t *blob, int i) { return (const int16_t *)(const void *)sec(blob, i); }
 
 typedef struct { uint16_t off; uint8_t w, h; } DrawIndex;
@@ -76,8 +75,6 @@ typedef struct {
   int16_t strat[28][3];                      /* y, x0, x1 */
   int nstrat;
   uint8_t cc[3], c_line, c_hair, c_rain[2], c_snow;   /* the clouds' colours for the hour (K, W, S roles; 0 the sky) */
-  int16_t drawn[96][3];                      /* the drawn bright stars (x, y, half their size): the clouds keep off */
-  int ndrawn;
   /* the village's pieces as placed: drawing, left, top; the ground's top and the buildings' bases by column */
   uint32_t vmask[2 * VILLAGE_DX + 1];         /* the village's pixels in each column, a bit a row up from its edge */
   int16_t chimney_x, chimney_y;
@@ -88,13 +85,21 @@ typedef struct {
   float umbra;
   int jlo, jhi, nmoons, shower;
   int16_t moonbox[4][2];                     /* Jupiter's moons, where names keep off */
-  uint64_t lane[40];                         /* the lane cleared for them, round Jupiter (bit x of row y) */
-  /* memory the layers take in turn (the watch's is short): the Milky Way's first, then the lines of type for the
-   * names, the ring and the time, which all come after it */
+  int16_t marks[24][2];                      /* a feast's marks in the sky (the glint, the magpies), names keep off */
+  int nmarks;
+  int8_t first;                              /* Christmas Eve's first star, as Plan.feast_first, once it is out */
+  bool weaver;                               /* Qixi's Weaver and Cowherd, named */
+  /* memory the layers take in turn (the watch's is short): the Milky Way's first; then the stars' places, which the
+   * clouds and Jupiter's moons keep off; then the lines of type for the names, the ring and the time */
   union {
     struct {
       int32_t thresh12[256];                 /* each blue-noise level's threshold for the Milky Way */
       int16_t mra[2][MAX_W / 4 + 3], mdec[2][MAX_W / 4 + 3];   /* its nodes' places, two rows at a time */
+    };
+    struct {
+      int16_t drawn[96][3];                  /* the drawn bright stars (x, y, half their size): the clouds keep off */
+      int ndrawn;
+      uint64_t lane[40];                     /* the lane cleared round Jupiter for its moons (bit x of row y) */
     };
     struct { Text t1, t2, t3, t4; };
   };
@@ -190,8 +195,6 @@ static float altitude(R *r, float ra, float dec) {
 #define STAR_SIZE 6
 static int star_mag(const uint8_t *s) { return ((s[4] | s[5] << 8) >> 3) - 200; }   /* hundredths */
 static int star_class(const uint8_t *s) { return s[4] & 7; }                      /* by colour */
-static float star_ra(const uint8_t *s) { return (s[0] | s[1] << 8) * 360.0f / 65536; }
-static float star_dec(const uint8_t *s) { return (s[2] | s[3] << 8) * 180.0f / 65535 - 90; }
 
 /* ---- type ------------------------------------------------------------------------------------------------------ */
 static void t_clear(Text *t) { memset(t, 0, sizeof *t); }
@@ -904,6 +907,8 @@ static void add_box(R *r, int x0, int y0, int x1, int y1) {
 }
 /* anything of the land (grown a pixel), or one of Jupiter's moons, in the box */
 static bool blocked(R *r, const int16_t b[4]) {
+  for (int i = 0; i < r->nmarks; i++)
+    if (r->marks[i][0] >= b[0] && r->marks[i][0] < b[2] && r->marks[i][1] >= b[1] && r->marks[i][1] < b[3]) return true;
   for (int i = 0; i < r->nmoons; i++) {
     int mx = r->moonbox[i][0], my = r->moonbox[i][1];
     if ((b[0] <= mx + 2 && mx - 2 < b[2] && b[1] <= my + 1 && my - 1 < b[3]) ||
@@ -1555,6 +1560,7 @@ static const uint8_t STAR_COLOURS[5] = {C8(2, 2, 3), C8(3, 3, 3), C8(3, 3, 2), C
 static void stars(R *r, float faint, float mx, float my, float moon_reach) {
   const Plate *P = r->P;
   const uint8_t *st = sec(r->p->data, SEC_STARS);
+  r->ndrawn = 0;                                         /* (its memory the Milky Way's until now) */
   for (int i = 0; i < STAR_COUNT; i++) {
     const uint8_t *s = st + STAR_SIZE * i;
     int mg = star_mag(s), cls = star_class(s);
@@ -1989,9 +1995,96 @@ static void corona(R *r, int si, int sj, float ox, float oy) {
   }
 }
 
+/* ---- what a feast marks in the sky (proto/feast_draw.py) ----------------------------------------------------- */
+static bool feast_marks(R *r, int sky) {
+  Plan *p = r->p;
+  return p->feast && p->feast_day == r->local.ordinal && p->feast_sky == sky;
+}
+static void mark(R *r, int x, int y, uint8_t c) {
+  put(r, x, y, c);
+  if (r->nmarks < 24) r->marks[r->nmarks][0] = (int16_t)x, r->marks[r->nmarks][1] = (int16_t)y, r->nmarks++;
+}
+static bool pixel_blocked(R *r, int x, int y) {
+  int16_t b[4] = {(int16_t)x, (int16_t)y, (int16_t)(x + 1), (int16_t)(y + 1)};
+  return blocked(r, b);
+}
+/* the magpies' bridge between the Weaver and the Cowherd: a gentle arc of small birds, five pixels apart */
+static __attribute__((noinline)) bool near5(float x, float y, float ax, float ay) {
+  return (x - ax) * (x - ax) + (y - ay) * (y - ay) < 25;
+}
+static __attribute__((noinline)) float arc_at(float a, float c, float b, float t) {   /* the arc's quadratic Bezier */
+  float u = 1 - t;
+  return u * u * a + 2 * u * t * c + t * t * b;
+}
+static void bridge(R *r, float ax, float ay, float bx, float by, uint8_t colour) {
+  float dx = bx - ax, dy = by - ay, L = f_sqrt(dx * dx + dy * dy);
+  if (L < 16) return;
+  float mx = (ax + bx) / 2, my = (ay + by) / 2, nx = -dy / L, ny = dx / L;
+  if ((r->cx - mx) * nx + (r->cy - my) * ny < 0) nx = -nx, ny = -ny;
+  float cx = mx + nx * 0.22f * L, cy = my + ny * 0.22f * L, lx = ax, ly = ay;   /* (the last bird: none yet) */
+  int steps = (int)(L * 2);
+  for (int k = 0; k <= steps; k++) {
+    float t = (float)k / (float)steps, x = arc_at(ax, cx, bx, t), y = arc_at(ay, cy, by, t);
+    if (near5(x, y, ax, ay) || near5(x, y, bx, by) || near5(x, y, lx, ly)) continue;
+    int px = pyf_floor(x), py = pyf_floor(y);
+    bool ok = true;
+    for (int q = -1; q <= 1 && ok; q++) ok = inside(r, px + q, py - (q != 0)) && !pixel_blocked(r, px + q, py - (q != 0));
+    if (!ok) continue;
+    lx = x, ly = y;
+    for (int q = -1; q <= 1; q++) mark(r, px + q, py - (q != 0), colour);
+  }
+}
+
+/* a feast's marks, before the names: Christmas Eve's first star (from dusk) with its glint; on Qixi the bridge */
+static void feast_sky(R *r) {
+  Plan *p = r->p;
+  const uint8_t *sn = sec(p->data, SEC_STAR_NAMES);
+  r->nmarks = 0, r->first = 0;
+  r->weaver = feast_marks(r, FS_WEAVER) && (r->dark || r->paper);
+  int i = p->feast_first;
+  if (feast_marks(r, FS_FIRST_STAR) && i && r->sun_alt < -4 && r->local.hour >= 12) {
+    float ra = i < 0 ? r->sky.pl_ra[-1 - i] : star_ra(sn + 20 * (i - 1));
+    float dec = i < 0 ? r->sky.pl_dec[-1 - i] : star_dec(sn + 20 * (i - 1)), x, y;
+    if (altitude(r, ra, dec) > 2) {
+      r->first = (int8_t)i;
+      project(r, ra, dec, &x, &y);
+      int gx = pyf_floor(x), gy = pyf_floor(y);
+      static const int8_t D4[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+      for (int d = 0; d < 4; d++)
+        for (int rr = 4; rr <= 5; rr++)
+          if (inside(r, gx + D4[d][0] * rr, gy + D4[d][1] * rr))
+            mark(r, gx + D4[d][0] * rr, gy + D4[d][1] * rr, r->paper ? r->P->accent : C8(3, 3, 1));
+    }
+  }
+  if (r->weaver) {
+    const uint8_t *a = sn + 20 * STAR_WEAVER, *b = sn + 20 * STAR_COWHERD;
+    if (altitude(r, star_ra(a), star_dec(a)) < 5 || altitude(r, star_ra(b), star_dec(b)) < 5) return;
+    float e[4];
+    project(r, star_ra(a), star_dec(a), &e[0], &e[1]);
+    project(r, star_ra(b), star_dec(b), &e[2], &e[3]);
+    bridge(r, e[0], e[1], e[2], e[3], r->paper ? r->P->ink : C8(3, 3, 3));
+  }
+}
+
+/* a named star's name on the feast's evening: the first star's own, the Weaver's or the Cowherd's (NULL: none) */
+static const char *feast_name(R *r, int i) {
+  if (r->first == i + 1) return (const char *)sec(r->p->data, SEC_STAR_NAMES) + 20 * i + 4;
+  return !r->weaver ? NULL : i == STAR_WEAVER ? "Weaver" : i == STAR_COWHERD ? "Cowherd" : NULL;
+}
+
 static __attribute__((noinline)) void names(R *r, float mx, float my) {
   const Plate *P = r->P;
   Sky *k = &r->sky;
+  const uint8_t *sn = sec(r->p->data, SEC_STAR_NAMES);
+  for (int i = 0; i < STAR_NAME_COUNT; i++) {            /* the feast's names before all others */
+    const uint8_t *s = sn + 20 * i;
+    const char *say = feast_name(r, i);
+    if (!say || altitude(r, star_ra(s), star_dec(s)) < 5) continue;
+    float x, y;
+    project(r, star_ra(s), star_dec(s), &x, &y);
+    pixel_text(&r->t1, r, say, true, 0);
+    place(r, &r->t1, pyf_floor(x) + 1, pyf_floor(y), r->first == i + 1 ? P->accent : P->label, false, 0, 0, true);
+  }
   if (altitude(r, k->moon_ra, k->moon_dec) > 0) {
     pixel_text(&r->t1, r, "Moon", false, 0);
     place(r, &r->t1, pyf_floor(mx), pyf_floor(my), P->planet, false, -3, 3, true);
@@ -2003,14 +2096,14 @@ static __attribute__((noinline)) void names(R *r, float mx, float my) {
     int hw = drawing(r, PLANET_DRAWINGS[pn])->w / 2, lo = -hw, hi = hw;
     if (pn == JUPITER) lo = r->jlo, hi = r->jhi;
     pixel_text(&r->t1, r, PLANET_NAMES[pn], false, 0);
-    place(r, &r->t1, pyf_floor(x), pyf_floor(y), P->planet, false, lo + 1, hi - 2, true);
+    place(r, &r->t1, pyf_floor(x), pyf_floor(y), r->first == -1 - pn ? P->accent : P->planet, false, lo + 1, hi - 2,
+          true);
   }
   if (!(r->dark || r->paper)) return;
-  const uint8_t *sn = sec(r->p->data, SEC_STAR_NAMES);
   int shown = 0;
   for (int i = 0; i < STAR_NAME_COUNT && shown < 3; i++) {
     const uint8_t *s = sn + 20 * i;
-    if (altitude(r, star_ra(s), star_dec(s)) < 8) continue;
+    if (feast_name(r, i) || altitude(r, star_ra(s), star_dec(s)) < 8) continue;
     float x, y;
     project(r, star_ra(s), star_dec(s), &x, &y);
     pixel_text(&r->t1, r, (const char *)s + 4, true, 0);
@@ -3053,6 +3146,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
     while (phase < MOON_PHASES - 1 && !(r->mphase < MOON_BY_LIGHT[phase])) phase++;
     int mi = pyf_floor(mx), mj = pyf_floor(my);
     if (r->have_lun && r->lun.magnitude > 0) moon_in_shadow(r, mi, mj, mx, my, mc[5]);
+    else if (phase == MOON_PHASES - 1 && feast_marks(r, FS_RABBIT)) paint(r, D_MOON_RABBIT, mi, mj, mc, true);
     else paint(r, D_MOON_NEW + 2 * phase + (r->sky.moon_waxing ? 0 : 1), mi, mj, mc, true);
     add_box(r, mi - 6, mj - 6, mi + 7, mj + 7);
   }
@@ -3116,6 +3210,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   village_weather(r);
   feast_fires(r);
   /* names in the sky; the ornaments where no name is */
+  feast_sky(r);
   if (f->names) names(r, mx, my);
   if (f->names && r->shower >= 0) {
     pixel_text(&r->t1, r, SHOWERS[r->shower].name, true, 0);

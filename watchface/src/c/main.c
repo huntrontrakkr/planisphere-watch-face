@@ -121,23 +121,26 @@ static int32_t utc_offset(time_t now) {
   return (int32_t)(local - (int64_t)now);
 }
 
-static bool s_south;                    /* the face's place is south of the equator (as face_of sets it) */
+static int32_t s_where[2];              /* the face's place as face_of sets it, 1e-4 degrees (latitude, longitude) */
 static void face_of(Face *f) {
   memset(f, 0, sizeof *f);
   f->plate = s_settings.plate < PLATE_COUNT ? s_settings.plate : 0;
   f->clock24 = s_settings.clock == 0 ? clock_is_24h_style() : s_settings.clock == 2;
   f->names = s_settings.names, f->labours = s_settings.labours, f->calendars = s_settings.calendars;
   f->fahrenheit = s_settings.units == 2;
-  s_south = s_settings.place == 1 ? s_settings.lat_e4 < 0 : s_place.time && s_place.lat_e4 < 0;
   if (s_settings.place == 1) {
+    s_where[0] = s_settings.lat_e4, s_where[1] = s_settings.lon_e4;
     f->lat = (float)s_settings.lat_e4 * 1e-4f, f->lon = (float)s_settings.lon_e4 * 1e-4f;
     f->city = s_settings.city, f->country = s_settings.country, f->coords = true;
   } else if (s_place.time) {
+    s_where[0] = s_place.lat_e4, s_where[1] = s_place.lon_e4;
     f->lat = (float)s_place.lat_e4 * 1e-4f, f->lon = (float)s_place.lon_e4 * 1e-4f;
     f->city = s_place.city, f->country = s_place.country, f->coords = true;
   } else {
     /* not yet told where it is: a northern sky, at the longitude the time zone suggests */
-    f->lat = 40.0f, f->lon = (float)(utc_offset(time(NULL)) / 240);
+    int32_t lon = utc_offset(time(NULL)) / 240;
+    s_where[0] = 400000, s_where[1] = lon * 10000;
+    f->lat = 40.0f, f->lon = (float)lon;
   }
   uint32_t now = (uint32_t)time(NULL);
   if (s_settings.weather && s_weather.time && now - s_weather.time < WEATHER_FRESH) f->weather = &s_weather.w;
@@ -151,21 +154,26 @@ static void resource_read(void *ctx, uint32_t at, void *buf, uint32_t n) {
   resource_load_byte_range(*(ResHandle *)ctx, at, buf, n);
 }
 
-/* the day's feast in the kept calendars, looked up once a day (when the day, the calendars or the hemisphere change):
- * the calendars' code loaded for that from the resources, and let go before the face is drawn */
-static void feast_of_day(const Face *f, time_t now, int32_t offset, bool south) {
+/* the day's feast in the kept calendars, looked up once a day (when the day, the calendars or the place change: the
+ * place for its hemisphere and its evening's first star): the calendars' code loaded for that from the resources, and
+ * let go before the face is drawn. (The key in integers, as the Plan's in floats would bring libgcc's compares.) */
+static int32_t s_looked[2];             /* the place the Plan's feast was looked up for (as s_where) */
+static void feast_of_day(const Face *f, time_t now, int32_t offset) {
   int32_t day = (int32_t)((now + offset) / 86400) + 719163;     /* (32-bit arithmetic: the watch's clock is) */
-  if (!f->calendars || (s_plan->feast_day == day && s_plan->feast_cal == f->calendars && s_plan->feast_south == south)) {
-    if (!f->calendars) s_plan->feast = false;
+  if (!f->calendars) {                                          /* none kept, as plan_feast keeps it */
+    s_plan->feast = false, s_plan->feast_cal = 0;
     return;
   }
+  if (s_plan->feast_day == day && s_plan->feast_cal == f->calendars && s_looked[0] == s_where[0] &&
+      s_looked[1] == s_where[1])
+    return;
   uint8_t *mem;
   const FeastApi *api = load_blob(RESOURCE_ID_PLAN_FEAST_CODE, &mem);
   if (api && api->magic == FEAST_API_MAGIC && api->layout == PLAN_LAYOUT) {
     ResHandle h = resource_get_handle(RESOURCE_ID_PLAN_FEASTS);
     FeastReader rd = {resource_read, &h};
     g_feast_heap = heap_bytes_free();
-    api->feast(s_plan, f, (int64_t)now, offset, &rd);
+    if (api->feast(s_plan, f, (int64_t)now, offset, &rd)) s_looked[0] = s_where[0], s_looked[1] = s_where[1];
   }
   free(mem);
 }
@@ -199,7 +207,7 @@ static void update(Layer *layer, GContext *ctx) {
   if (heap_bytes_free() < g_heap_low || !g_heap_low) g_heap_low = heap_bytes_free();
   g_utc = (uint32_t)now, g_offset = utc_offset(now);
   g_stack_at = (uint32_t)((uintptr_t)__pbl_app_info - (uintptr_t)&tg);
-  feast_of_day(&f, now, g_offset, s_south);
+  feast_of_day(&f, now, g_offset);
   s_api->render(s_plan, &f, (int64_t)now, g_offset, &tg, alloc, free);
   graphics_release_frame_buffer(ctx, fb);
   g_render_ms = now_ms() - t0;

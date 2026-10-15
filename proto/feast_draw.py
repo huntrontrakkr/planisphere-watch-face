@@ -184,3 +184,79 @@ def fireworks_show(img, ctx, frame, plan, sparks, ink=None):
                 _put(img, inside, bx + 0.5 * r1 * math.sin(a + 0.2), by - 0.5 * r1 * math.cos(a + 0.2) + fall,
                      (c8(3, 3, 3) if s < SPREAD + 3 else c8(2, 2, 3)) if ink is None else ink)
     _draw(img_, inside, ctx["ground"], img)
+
+
+# ---- what a feast marks in the sky ----------------------------------------------------------------------------------
+PLANET_MAG = {"venus": -4.2, "jupiter": -2.2, "mercury": 0.2, "mars": 0.6, "saturn": 0.7}   # their usual brightness
+
+
+def first_star(lat, lst, sun, stars, planets):
+    """The first star out this evening (the Polish and Ukrainian Christmas Eve supper waits for it): the brightest of
+    the named stars and the planets standing 10 degrees up when the Sun is 6 degrees down (the end of civil twilight),
+    the sky given at any hour of the day (`lst`, the Sun and the planets then; the face takes the place's mean noon)
+    and turned to that one. `sun` (ra, dec); `stars` [(key, ra, dec, mag)]; `planets` {name: (ra, dec)}. Returns
+    ("star", key), ("planet", name) or None (the Sun never so low, or nothing up)."""
+    D = math.radians
+    sd = math.sin(D(lat)) * math.sin(D(sun[1]))
+    cd = math.cos(D(lat)) * math.cos(D(sun[1]))
+    c = (math.sin(D(-6)) - sd) / cd if cd else 2
+    if not -1 < c < 1:
+        return None
+    h6 = math.degrees(math.acos(c))
+    ha = ((lst - sun[0] + 180) % 360) - 180
+    lst6 = lst + (h6 - ha) * 15.04107 / 15.0                # the sky's turn by then (the Sun's hour angle at 15 an hour)
+
+    def up(ra, dec):
+        hh = math.radians(lst6 - ra)
+        return math.degrees(math.asin(math.sin(D(lat)) * math.sin(D(dec)) +
+                                      math.cos(D(lat)) * math.cos(D(dec)) * math.cos(hh))) >= 10
+    best = None
+    for name, (ra, dec) in planets.items():
+        if up(ra, dec) and (best is None or PLANET_MAG[name] < best[0]):
+            best = (PLANET_MAG[name], ("planet", name))
+    for key, ra, dec, mag in stars:
+        if up(ra, dec) and (best is None or mag < best[0]):
+            best = (mag, ("star", key))
+    return best[1] if best else None
+
+
+def glint(img, inside, blocked, x, y, colour):
+    """A small glint round the first star: four short rays, standing off its own picture."""
+    H, W = inside.shape
+    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        for r in (4, 5):
+            X, Y = x + dx * r, y + dy * r
+            if 0 <= Y < H and 0 <= X < W and inside[Y, X]:
+                img[Y, X] = colour
+                blocked[Y, X] = True
+
+
+def bridge(img, inside, blocked, a, b, centre, colour):
+    """The magpies' bridge between the Weaver and the Cowherd (Vega and Altair): a gentle arc across the Milky Way of
+    small birds five pixels apart, kept off the two stars and off what is drawn (`blocked`, which then keeps the names
+    off the birds)."""
+    (ax, ay), (bx, by) = a, b
+    L = math.hypot(bx - ax, by - ay)
+    if L < 16:
+        return
+    mx, my = (ax + bx) / 2, (ay + by) / 2
+    nx, ny = -(by - ay) / L, (bx - ax) / L                  # the arc bows toward the window's middle
+    if (centre[0] - mx) * nx + (centre[1] - my) * ny < 0:
+        nx, ny = -nx, -ny
+    cx, cy = mx + nx * 0.22 * L, my + ny * 0.22 * L
+    H, W = inside.shape
+    steps = int(L * 2)
+    last = (ax, ay)                                          # (none yet: the first must be clear of the star anyway)
+    for k in range(steps + 1):
+        t = k / steps
+        x = (1 - t) ** 2 * ax + 2 * (1 - t) * t * cx + t * t * bx
+        y = (1 - t) ** 2 * ay + 2 * (1 - t) * t * cy + t * t * by
+        if min((x - px_) ** 2 + (y - py_) ** 2 for px_, py_ in ((ax, ay), (bx, by), last)) < 25:
+            continue                                         # clear of the two stars and the last bird
+        px, py = int(math.floor(x)), int(math.floor(y))
+        bird = ((px - 1, py - 1), (px, py), (px + 1, py - 1))
+        if all(0 <= Y < H and 0 <= X < W and inside[Y, X] and not blocked[Y, X] for X, Y in bird):
+            last = (x, y)
+            for X, Y in bird:
+                img[Y, X] = colour
+                blocked[Y, X] = True

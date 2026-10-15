@@ -175,6 +175,25 @@ _MOON_BY_LIGHT = [(0.04, "new"), (0.22, "thin"), (0.40, "crescent"), (0.60, "qua
                   (0.96, "fat"), (1.01, "full")]
 
 
+# the full Moon on the Mid-Autumn night: the rabbit sitting in it where the face is (S), its ears up, as China and
+# Japan see the dark seas
+MOON_RABBIT = ["...WWWWW...",
+               "..WWWWWWW..",
+               ".WWSWSWWWW.",
+               "WWWSWSWWWWW",
+               "WWSSSSWWWWW",
+               "WWSSSSSSSWW",
+               "WWWSSSSSSSW",
+               "WWWWSSSSSSW",
+               ".WWWSWWSWW.",
+               "..WWWWWWW..",
+               "...WWWWW..."]
+
+
+def moon_rabbit():
+    return np.array([[ROLE[c] for c in r] for r in MOON_RABBIT], np.uint8)
+
+
 def moon(name, waning=False):
     """The Moon drawn in phase `name` (MOON_PHASES), lit on the right; waning, the mirror (lit on the left)."""
     rows = MOON_PHASES[name]

@@ -3,7 +3,7 @@
     <pebble-tool-python> tools/emulator.py <emery|gabbro> shots [--time ...] [--shots 0,2,4] [--gdb expr ...]
     <pebble-tool-python> tools/emulator.py <emery|gabbro> profile [--fn frame update ...]
 
-shots    boots with the RTC at --time, installs watchface/build/watchface.pbw
+shots    boots with the clock at --time (UTC), installs watchface/build/watchface.pbw
          (or --pbw), starts it, saves a screendump (PNG) at each listed second.
          --update PBW --update-at T installs another package over the running
          face as the phone does when the store has a newer version.
@@ -54,7 +54,7 @@ class Monitor:
 class Emu:
     def __init__(self, plat, when, out, trace=None, icount=None, events=(), exec_filter=None):
         self.exec_filter = exec_filter
-        self.plat, self.out = plat, out
+        self.plat, self.out, self.when = plat, out, when
         self.ports = {k: free_port() for k in ["app", "serial", "gdb", "monitor"]}
         flash = out / f"{plat}-spi-flash.bin"
         flash.write_bytes(bz2.decompress((SDK / f"sdk-core/pebble/{plat}/qemu/qemu_spi_flash.bin.bz2").read_bytes()))
@@ -122,6 +122,11 @@ class Emu:
         c = PebbleConnection(QemuTransport(port=self.ports["app"]))
         c.connect()
         c.run_async()
+        # the clock at --time (UTC), set as the phone sets it: the machines' clocks follow the PC's whatever -rtc says
+        from datetime import datetime, timezone
+        from libpebble2.protocol.system import SetUTC, TimeMessage
+        t = int(datetime.fromisoformat(self.when).replace(tzinfo=timezone.utc).timestamp())
+        c.send_packet(TimeMessage(message=SetUTC(unix_time=t, utc_offset=0, tz_name="UTC")))
         AppInstaller(c, str(pbw or APP / "build/watchface.pbw")).install()
         u = uuid.UUID(json.loads((APP / "package.json").read_text())["pebble"]["uuid"])
         c.send_packet(AppRunState(data=AppRunStateStart(uuid=u)))
@@ -284,6 +289,8 @@ def main():
     ap.add_argument("--set-at", type=float, default=1.0, help="seconds after start to send --set")
     ap.add_argument("--then", nargs="*", default=[], help="a second message, KEY=value, sent at --then-at")
     ap.add_argument("--then-at", type=float, default=3.0)
+    ap.add_argument("--send", nargs="+", action="append", default=[], metavar="AT KEY=value",
+                    help="more messages, each at its second after start, e.g. --send 5 CALENDARS=0 --send 7 CALENDARS=2")
     ap.add_argument("--poke", nargs="*", default=[], help="app variables to set over gdb, e.g. g_debug_stamp=1")
     ap.add_argument("--poke-at", type=float, default=1.0)
     ap.add_argument("--relaunch-at", type=float, default=None, help="start the app again (leave and come back)")
@@ -309,8 +316,8 @@ def main():
         try:
             e.install(a.boot, a.pbw)
             t0 = time.time()
-            pending = dict(kv.split("=") for kv in a.set)
-            then = dict(kv.split("=") for kv in a.then)
+            messages = sorted([(a.set_at, a.set), (a.then_at, a.then)] + [(float(m[0]), m[1:]) for m in a.send])
+            messages = [(at, dict(kv.split("=") for kv in kvs)) for at, kvs in messages if kvs]
             pokes = list(a.poke)
             if pokes:
                 e.gdb_setup()
@@ -372,18 +379,12 @@ def main():
                     e.gdb_raw([f"set var {p}" for p in pokes])
                     print("poked", pokes, f"at {time.time() - t0:.1f}s", flush=True)
                     pokes = []
-                if pending and s >= a.set_at:
-                    while time.time() - t0 < a.set_at:
+                while messages and messages[0][0] <= s:
+                    at, values = messages.pop(0)
+                    while time.time() - t0 < at:
                         time.sleep(0.05)
-                    e.settings(pending)
-                    print("sent", pending, flush=True)
-                    pending = {}
-                if then and s >= a.then_at:
-                    while time.time() - t0 < a.then_at:
-                        time.sleep(0.05)
-                    e.settings(then)
-                    print("sent", then, flush=True)
-                    then = {}
+                    e.settings(values)
+                    print("sent", values, f"at {at:g}s", flush=True)
                 while time.time() - t0 < s:
                     time.sleep(0.05)
                 path = out / f"{plat}-{s:05.1f}.png"

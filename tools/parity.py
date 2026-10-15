@@ -83,6 +83,17 @@ CASES = {
                                {"calendars": 4095}),
     "feast-solstice-south-t2": ("emery", "planisphere", datetime(2026, 6, 21, 9, 0, tzinfo=timezone.utc), (-33.87, 151.21, 600),
                                 {"calendars": 1}),
+    # what the feasts mark in the sky: Christmas Eve's first star, the Weaver and the Cowherd, the rabbit in the Moon
+    "sky-first-star-t2": ("emery", "planisphere", datetime(2026, 12, 24, 22, 15, tzinfo=timezone.utc), (40.71, -74.01, -300),
+                          {"calendars": 4095}),
+    "sky-holy-evening-r2": ("gabbro", "planisphere", datetime(2027, 1, 6, 15, 0, tzinfo=timezone.utc), (50.45, 30.52, 120),
+                            {"calendars": 4095}),
+    "sky-qixi-t2": ("emery", "planisphere", datetime(2026, 8, 19, 13, 0, tzinfo=timezone.utc), (39.90, 116.40, 480),
+                    {"calendars": 4095}),
+    "sky-qixi-r2": ("gabbro", "burritt", datetime(2026, 8, 19, 14, 0, tzinfo=timezone.utc), (39.90, 116.40, 480),
+                    {"calendars": 4095}),
+    "sky-mid-autumn-t2": ("emery", "night", datetime(2026, 9, 25, 13, 0, tzinfo=timezone.utc), (39.90, 116.40, 480),
+                          {"calendars": 4095}),
 }
 
 

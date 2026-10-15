@@ -94,6 +94,7 @@ def moon_drawings():
     for _, n in sprites._MOON_BY_LIGHT:
         out.append((f"MOON_{n.upper()}", sprites.moon(n, False)))
         out.append((f"MOON_{n.upper()}_WANING", sprites.moon(n, True)))
+    out.append(("MOON_RABBIT", sprites.moon_rabbit()))   # (after the phases: the Mid-Autumn night's full Moon)
     return out
 
 
@@ -362,16 +363,23 @@ def shared(h):
     h.append(f"#define LINE_COUNT {len(pairs)}")
     # the bright stars' names (the prototype names up to three, magnitude 1.3 or brighter), brightest first
     nm = star_names()
-    rows = []
+    rows, mags, hips = [], [], []
     for ra, de, mg, bv, hip in sorted(named, key=lambda s: s[2]):
         if mg > 1.3 or hip not in nm:
             continue
+        hips.append(hip)
         name = nm[hip].encode("ascii", "replace").decode()
         assert len(name) < 16, name
         rows.append(struct.pack("<HH", int(round(ra / 360 * 65536)) % 65536, int(round((de + 90) / 180 * 65535)))
                     + name.encode().ljust(16, b"\0"))
+        mags.append(mg)
     blob.add("STAR_NAMES", b"".join(rows))
     h.append(f"#define STAR_NAME_COUNT {len(rows)}")
+    # Vega and Altair among them, the Weaver and the Cowherd on Qixi (the prototype's 91262 and 97649)
+    h.append(f"#define STAR_WEAVER {hips.index(91262)}")
+    h.append(f"#define STAR_COWHERD {hips.index(97649)}")
+    # their magnitudes (for the first star out on Christmas Eve, set beside the planets'), as floats the prototype has
+    h.append("static const float STAR_NAME_MAG[STAR_NAME_COUNT] = {" + ", ".join(f"{float(m)!r}f" for m in mags) + "};")
     # the constellations' names, rank 1, in the catalogue's order (the prototype's)
     rows = []
     for name, rank, ra, de in sorted(plates.constellations(), key=lambda c: c[1]):
@@ -604,13 +612,14 @@ FEAST_KINDS = ["fixed", "easter", "orthodox", "nth", "after", "window", "advent"
                "chinese", "islamic", "diwali"]
 FEAST_ZONES = ["local", "bj", "ist"]
 SPARK_SETS = ["independence", "bonfire", "new year"]
+SKY_MARKS = [None, "first star", "weaver", "rabbit"]
 
 
 def feasts_blob(h):
     """The calendars' days (proto/feasts.py) for the watch: feasts.bin, a resource the watch reads once a day.
 
     header   uint16 count, the words' offset, the emblems' offset, the table's size
-    records  24 bytes each: uint8 calendar, kind, span, emblem (255 none), flags (FF_*), rank, zone, 0;
+    records  24 bytes each: uint8 calendar, kind, span, emblem (255 none), flags (FF_*), rank, zone, sky (FS_*);
              int16 a, b, c (the rule's numbers), 0; uint16 the words (long, short, south's long, south's short;
              65535 none) as offsets into the words
     words    NUL-terminated
@@ -657,7 +666,8 @@ def feasts_blob(h):
             flags |= 64                                     # a great feast: its date in red
         if f.get("emblem") == "hanukkiah":
             flags |= 128                                    # the emblem shows the night's lights
-        recs += struct.pack("<8B3hH4H", feasts.CAL[f["cal"]], kind, span, emblem, flags, f["rank"], zone, 0, a, b, c, 0,
+        recs += struct.pack("<8B3hH4H", feasts.CAL[f["cal"]], kind, span, emblem, flags, f["rank"], zone,
+                            SKY_MARKS.index(f.get("sky")), a, b, c, 0,
                             word(wl[0]), word(wl[1] or wl[0]), word(sl[0]), word(sl[1] or sl[0]) if sl[0] else 0xFFFF)
     n = len(feasts.FEASTS)
     emb = bytearray(struct.pack("<H", len(names)))
@@ -681,7 +691,8 @@ def feasts_blob(h):
     h.append("enum { " + ", ".join(f"FZ_{k.upper()}" for k in FEAST_ZONES) + " };")
     h.append("enum { FF_LIGHTS = 1, FF_BONFIRES = 2, FF_FIREWORKS = 4, FF_MIDNIGHT = 8, FF_RED = 64, FF_NIGHTS = 128 };"
              "   /* sparks: flags >> 4 & 3 */")
-    h.append("typedef struct { uint8_t cal, kind, span, emblem, flags, rank, zone, pad; int16_t a, b, c, pad2; "
+    h.append("enum { FS_NONE, FS_FIRST_STAR, FS_WEAVER, FS_RABBIT };   /* what a feast marks in the sky */")
+    h.append("typedef struct { uint8_t cal, kind, span, emblem, flags, rank, zone, sky; int16_t a, b, c, pad2; "
              "uint16_t words[4]; } FeastRecord;")
     return out
 

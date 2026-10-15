@@ -23,16 +23,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 HOST = ROOT / "build" / "host"
 DATA = ROOT / "watchface" / "resources" / "data"
-HEAP = {"emery": 22724, "gabbro": 21728}     # bytes free after loading, measured 2026-10-15 with:
-MEASURED = {"code": 61756, "plan": 24084, "geom": {"emery": 13316, "gabbro": 14312},
-            "app": {"emery": 5060, "gabbro": 5060}}
+HEAP = {"emery": 20284, "gabbro": 19288}     # bytes free after loading, measured 2026-10-15 with:
+MEASURED = {"code": 63972, "plan": 24148, "geom": {"emery": 13316, "gabbro": 14312},
+            "app": {"emery": 5172, "gabbro": 5172}}
 HEADROOM = 3072
 SNOW = "-20,73,90,60,20,12,20,1003,80,250"
 MOMENTS = (1792027800, 1792000800)          # 15 October 2026, 01:30 and 18:00 UTC (night and day in the Americas)
 
 
-def peak(args):
-    out = subprocess.run([str(HOST), *args, "/dev/null", "--mem"], capture_output=True, text=True)
+def peak(args, flags):
+    out = subprocess.run([str(HOST), *args, "/dev/null", *flags, "--mem"], capture_output=True, text=True)
     if out.returncode:
         sys.exit(f"check_memory: the drawing failed: {' '.join(args)}: {out.stderr.strip()}")
     return int(re.search(r"peak (\d+)", out.stdout).group(1))
@@ -70,7 +70,7 @@ def main():
         worst, at = 0, None
         for lat in range(-89, 90):
             for t in MOMENTS:
-                n = peak([screen, "0", str(t), str(lat), "-74", "-240", "--labours", "--weather", SNOW])
+                n = peak([screen, "0", str(t), str(lat), "-74", "-240"], ["--labours", "--weather", SNOW])
                 if n > worst:
                     worst, at = n, (lat, t)
         budget = heap(screen) - HEADROOM

@@ -13,7 +13,17 @@
 
 /* ---- the Gregorian calendar ---------------------------------------------------------------------------------- */
 
-static int32_t floor_div(int64_t a, int64_t b) { return (int32_t)(a >= 0 ? a / b : -((-a + b - 1) / b)); }
+/* a / b for 64-bit numbers (b > 0), rounding toward zero: long division, a bit at a time (libgcc's would cost the blob
+ * 750 bytes, for a few hundred divisions a day) */
+static int64_t div64(int64_t a, int64_t b) {
+  uint64_t n = a < 0 ? 0 - (uint64_t)a : (uint64_t)a, q = 0, rem = 0;
+  for (int i = 0; i < 64; i++) {
+    rem = rem << 1 | n >> 63, n <<= 1, q <<= 1;
+    if (rem >= (uint64_t)b) rem -= (uint64_t)b, q |= 1;
+  }
+  return a < 0 ? -(int64_t)q : (int64_t)q;
+}
+static int32_t floor_div(int64_t a, int64_t b) { return (int32_t)(a >= 0 ? div64(a, b) : -div64(-a + b - 1, b)); }
 
 /* days since 1970 from a civil date, and back (Howard Hinnant's days_from_civil and civil_from_days) */
 static int32_t ordinal_of(int y, int m, int d) {
@@ -87,7 +97,7 @@ static int32_t hebrew_date(int32_t y, int month, int day) {
   return at;
 }
 static int32_t hebrew_year_of(int32_t o) {
-  int32_t y = (int32_t)(((int64_t)(o - HEBREW_EPOCH) * 98496) / 35975351) + 1;
+  int32_t y = (int32_t)div64((int64_t)(o - HEBREW_EPOCH) * 98496, 35975351) + 1;
   while (hebrew_new_year(y + 1) <= o) y++;
   while (hebrew_new_year(y) > o) y--;
   return y;
@@ -111,12 +121,12 @@ static void islamic_of(int32_t o, int *m, int *d) {
 static float wrap180(float a) { return pyf_mod(a + 180, 360) - 180; }
 
 static int64_t new_moon_near(int64_t utc) {
-  int64_t ms = (utc - NEW_MOON_2000) * 1000, k = (ms + (ms >= 0 ? SYNODIC_MS / 2 : -SYNODIC_MS / 2)) / SYNODIC_MS;
-  int64_t t = NEW_MOON_2000 + k * SYNODIC_MS / 1000;
+  int64_t ms = (utc - NEW_MOON_2000) * 1000, k = div64(ms + (ms >= 0 ? SYNODIC_MS / 2 : -SYNODIC_MS / 2), SYNODIC_MS);
+  int64_t t = NEW_MOON_2000 + div64(k * SYNODIC_MS, 1000);
   for (int i = 0; i < 4; i++) {
     float sl, ml;
     plan_lons(t, &sl, &ml);
-    t -= (int64_t)(wrap180(ml - sl) / 12.190749f * 86400.0f);
+    t -= (int32_t)(wrap180(ml - sl) / 12.190749f * 86400.0f);
   }
   return t;
 }
@@ -124,7 +134,7 @@ static int64_t elongation_moment(int64_t t, float target) {
   for (int i = 0; i < 5; i++) {
     float sl, ml;
     plan_lons(t, &sl, &ml);
-    t -= (int64_t)(wrap180(ml - sl - target) / 12.190749f * 86400.0f);
+    t -= (int32_t)(wrap180(ml - sl - target) / 12.190749f * 86400.0f);
   }
   return t;
 }
@@ -132,7 +142,7 @@ static int64_t sun_moment(int64_t t, float target) {
   for (int i = 0; i < 5; i++) {
     float sl, ml;
     plan_lons(t, &sl, &ml);
-    t -= (int64_t)(wrap180(sl - target) / 0.98564736f * 86400.0f);
+    t -= (int32_t)(wrap180(sl - target) / 0.98564736f * 86400.0f);
   }
   return t;
 }
@@ -145,7 +155,7 @@ static float ayanamsa(int year) { return 23.857f + 50.29f / 3600 * (float)(year 
 /* the date (on a zone's clock) the Sun reaches a longitude in a year, tropical or sidereal (Lahiri) */
 static int32_t sun_day(int year, float lon, int minutes, bool sidereal) {
   float target = pyf_mod(lon + (sidereal ? ayanamsa(year) : 0), 360);
-  int64_t t = zone_midnight(ordinal_of(year, 1, 1), 0) + (int64_t)(pyf_mod(target - 280, 360) / 0.98564736f * 86400.0f);
+  int64_t t = zone_midnight(ordinal_of(year, 1, 1), 0) + (int32_t)(pyf_mod(target - 280, 360) / 0.98564736f * 86400.0f);
   return zone_date(sun_moment(t, target), minutes);
 }
 
@@ -198,14 +208,14 @@ static void chinese_of(int32_t o, int *month, bool *leap, int *day) {
 
 /* a place's sunset on a local date: the Sun's hour angle at the horizon (refracted), from its place at noon */
 static int64_t sunset(int32_t o, float lat, float lon, int minutes) {
-  int64_t noon = zone_midnight(o, minutes) + (int64_t)((12 - lon / 15) * 3600 + minutes * 60);
+  int64_t noon = zone_midnight(o, minutes) + (int32_t)((12 - lon / 15) * 3600 + minutes * 60);
   Sky s;
   for (int i = 0; i < 2; i++) {                  /* (the declination the last noon's, as the prototype has it) */
     plan_sun_moon(&s, noon, lon);
-    noon -= (int64_t)(wrap180(s.lst - s.sun_ra) / 15.04107f * 3600);
+    noon -= (int32_t)(wrap180(s.lst - s.sun_ra) / 15.04107f * 3600);
   }
   float c = (f_sind(-0.833f) - f_sind(lat) * f_sind(s.sun_dec)) / (f_cosd(lat) * f_cosd(s.sun_dec));
-  return noon + (int64_t)(f_acosd(f_clamp(c, -1, 1)) / 15.04107f * 3600);
+  return noon + (int32_t)(f_acosd(f_clamp(c, -1, 1)) / 15.04107f * 3600);
 }
 static int32_t diwali(int year) {
   int64_t ingress = sun_moment(zone_midnight(ordinal_of(year, 10, 17), 0), 180 + ayanamsa(year));
@@ -341,23 +351,48 @@ static void copy_words(char *out, const FeastReader *rd, uint16_t at) {
   out[19] = 0;
 }
 
+/* ---- the evening's first star ------------------------------------------------------------------------------- */
+
+/* the planets' usual brightness, in their order (VENUS, JUPITER, MARS, SATURN, MERCURY) */
+static const float PLANET_MAG[PLANETS] = {-4.2f, -2.2f, 0.6f, 0.7f, 0.2f};
+
+/* the first star out on a date's evening (proto/feast_draw.py first_star): the brightest of the named stars and the
+ * planets 10 degrees up when the Sun is 6 down, from the sky at the place's mean noon turned to that hour. A named
+ * star's index + 1, a planet's -(index + 1), or 0 (the Sun never so low, or nothing up). */
+static int8_t first_star(const Plan *p, float lat, float lon, int32_t o) {
+  Sky k;
+  plan_sky(&k, zone_midnight(o, 0) + 43200 - (int32_t)(lon * 240), lon);
+  float sd = f_sind(lat) * f_sind(k.sun_dec), cd = f_cosd(lat) * f_cosd(k.sun_dec);
+  float c = cd != 0 ? (f_sind(-6) - sd) / cd : 2;
+  if (!(c > -1 && c < 1)) return 0;
+  float h6 = f_acosd(c), ha = wrap180(k.lst - k.sun_ra);
+  float lst6 = k.lst + (h6 - ha) * 15.04107f / 15.0f, best = 1e9f;
+  const uint8_t *sn = sec(p->data, SEC_STAR_NAMES);
+  int8_t first = 0;
+  for (int i = -1; i >= -PLANETS; i--)                 /* the planets, then the stars, brightest first */
+    if (PLANET_MAG[-1 - i] < best && plan_altitude(k.pl_ra[-1 - i], k.pl_dec[-1 - i], lst6, lat) >= 10)
+      best = PLANET_MAG[-1 - i], first = (int8_t)i;
+  for (int i = 0; i < STAR_NAME_COUNT; i++)
+    if (STAR_NAME_MAG[i] < best && plan_altitude(star_ra(sn + 20 * i), star_dec(sn + 20 * i), lst6, lat) >= 10)
+      best = STAR_NAME_MAG[i], first = (int8_t)(i + 1);
+  return first;
+}
+
 bool plan_feast(Plan *p, const Face *f, int64_t utc, int32_t offset, const FeastReader *rd) {
   int32_t day = floor_div(utc + offset, 86400) + EPOCH_ORDINAL;
-  bool south = f->lat < 0;
-  if (p->feast_day == day && p->feast_cal == f->calendars && p->feast_south == south) return true;
-  if (!f->calendars) {
-    p->feast_day = day, p->feast_cal = 0, p->feast_south = south, p->feast = false;
+  if (p->feast_day == day && p->feast_cal == f->calendars && p->feast_lat == f->lat && p->feast_lon == f->lon)
     return true;
-  }
-  if (!rd) return false;
-  p->feast_day = day, p->feast_cal = f->calendars, p->feast_south = south, p->feast = false;
+  if (f->calendars && !rd) return false;
+  p->feast_day = day, p->feast_cal = f->calendars, p->feast_lat = f->lat, p->feast_lon = f->lon, p->feast = false;
+  if (!f->calendars) return true;
   FeastRecord r;
   int nth = 0, i = feast_on(rd, day, f->calendars, (float)offset / 3600, &nth, &r);
   if (i < 0) return true;
-  bool alt = south && r.words[2] != 0xFFFF;
+  bool alt = f->lat < 0 && r.words[2] != 0xFFFF;
   copy_words(p->feast_words[0], rd, r.words[alt ? 2 : 0]);
   copy_words(p->feast_words[1], rd, r.words[alt ? 3 : 1]);
   copy_art(p, rd, &r, nth + 1);
-  p->feast_flags = r.flags, p->feast = true;
+  p->feast_flags = r.flags, p->feast_sky = r.sky, p->feast = true;
+  p->feast_first = r.sky == FS_FIRST_STAR ? first_star(p, f->lat, f->lon, day) : 0;
   return true;
 }

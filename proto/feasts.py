@@ -379,7 +379,9 @@ def diwali(year):
 # Each calendar is a switch on the settings page (bit n of CALENDARS, in this order). Each day: its calendar, its rule,
 # its words for the almanac's line (the longest that fits is used), the needlework emblem set beside the time, what it
 # brings (lights in the windows, fires on the hills, a fireworks display at the evening's hours, "midnight" for one at
-# midnight too), and its rank (1 a great feast, 3 a small one: the greater wins a shared day).
+# midnight too), what it marks in the sky ("first star": the first star out on Christmas Eve, named in red; "weaver":
+# Vega and Altair named the Weaver and the Cowherd, the magpies' bridge between them; "rabbit": the rabbit in the full
+# Moon), and its rank (1 a great feast, 3 a small one: the greater wins a shared day).
 #
 # Rules: ("fixed", month, day[, days]), ("easter", offset), ("orthodox", offset), ("nth", month, weekday, n),
 # ("after", month, day, weekday), ("window", month, day, weekday), ("advent", offset), ("sun", longitude, zone),
@@ -435,10 +437,13 @@ FEASTS = [
     dict(cal="christian", rule=("fixed", 11, 1), words=("ALL SAINTS",), emblem="church", rank=2),
     dict(cal="christian", rule=("fixed", 11, 2), words=("ALL SOULS",), emblem="candle", rank=3),
     dict(cal="christian", rule=("advent", 0), words=("ADVENT SUNDAY", "ADVENT"), emblem="wreath", rank=2),
-    dict(cal="christian", rule=("fixed", 12, 24), words=("CHRISTMAS EVE",), emblem="holly", brings=("lights",), rank=1),
+    dict(cal="christian", rule=("fixed", 12, 24), words=("CHRISTMAS EVE",), emblem="holly", brings=("lights",),
+         sky="first star", rank=1),
     dict(cal="christian", rule=("fixed", 12, 25), words=("CHRISTMAS DAY", "CHRISTMAS"), emblem="horn",
          brings=("lights",), rank=1),
     # the Eastern churches (the Julian dates as they fall on the civil calendar this century)
+    dict(cal="eastern", rule=("fixed", 1, 6), words=("HOLY EVENING", "CHRISTMAS EVE"), emblem="star6",
+         brings=("lights",), sky="first star", rank=1),
     dict(cal="eastern", rule=("fixed", 1, 7), words=("ORTHODOX CHRISTMAS", "CHRISTMAS"), emblem="star6",
          brings=("lights",), rank=1),
     dict(cal="eastern", rule=("fixed", 1, 19), words=("THEOPHANY",), emblem="waves cross", rank=2),
@@ -512,8 +517,9 @@ FEASTS = [
          brings=("lights",), rank=1),
     dict(cal="chinese", rule=("sun", 15, "bj"), words=("QINGMING",), emblem="willow", rank=2),
     dict(cal="chinese", rule=("chinese", 5, 5), words=("DRAGON BOAT",), emblem="dragon boat", rank=2),
-    dict(cal="chinese", rule=("chinese", 7, 7), words=("QIXI",), emblem="magpie", rank=2),
-    dict(cal="chinese", rule=("chinese", 8, 15), words=("MID-AUTUMN",), emblem="rabbit moon", brings=("lights",), rank=1),
+    dict(cal="chinese", rule=("chinese", 7, 7), words=("QIXI",), emblem="magpie", sky="weaver", rank=2),
+    dict(cal="chinese", rule=("chinese", 8, 15), words=("MID-AUTUMN",), emblem="rabbit moon", brings=("lights",),
+         sky="rabbit", rank=1),
     dict(cal="chinese", rule=("chinese", 9, 9), words=("DOUBLE NINTH",), emblem="chrysanthemum", rank=3),
     dict(cal="chinese", rule=("sun", 270, "bj"), words=("DONGZHI",), emblem="sun wheel", rank=3),
     # the Islamic calendar (tabular)

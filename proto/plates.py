@@ -1021,7 +1021,10 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             else:
                 img[Y_, X_] = moon_cols[5]
     else:
-        sprites.paint(img, sprites.moon_for(f, pos["moon_waxing"]), mi, mj, moon_cols, where=inside)
+        moon_d = sprites.moon_for(f, pos["moon_waxing"])
+        if feast and feast.get("sky") == "rabbit" and f >= sprites._MOON_BY_LIGHT[-2][0]:
+            moon_d = sprites.moon_rabbit()                # the Mid-Autumn night's full Moon: the rabbit in it
+        sprites.paint(img, moon_d, mi, mj, moon_cols, where=inside)
     boxes.append((mi - 6, mj - 6, mi + 7, mj + 7))
 
     # the Sun, with its face (after the Sun of May), by day; on a printed chart always. In a live sky it stands
@@ -1200,6 +1203,44 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             stamp(img, mask, lx, y, colour, halo=ground, where=inside, anchor=anchor)
             return True
         return False
+    # a feast's marks in the sky: Christmas Eve's first star (from dusk until midnight), named in red with a glint
+    star_name = star_names()
+    first = None
+    if feast and feast.get("sky") == "first star" and sun_alt < -4 and local.hour >= 12:
+        bright_named = [(hip, ra, de, mg) for ra, de, mg, bv, hip in sorted(named, key=lambda s: s[2])
+                        if mg <= 1.3 and hip in star_name]
+        # chosen once for the evening (as the watch's daily lookup does), from the sky at the place's mean noon
+        noon = datetime(local.year, local.month, local.day, 12, tzinfo=timezone.utc) - timedelta(seconds=int(dial.lon * 240))
+        npos = astro.positions(noon)
+        first = feast_draw.first_star(dial.lat, astro.sidereal(noon, dial.lon), npos["sun"], bright_named,
+                                      {pn: npos[pn] for pn in ("venus", "jupiter", "mars", "saturn", "mercury")})
+        if first:
+            fra, fde = pos[first[1]] if first[0] == "planet" else next((ra, de) for h_, ra, de, _ in bright_named
+                                                                        if h_ == first[1])
+            if astro.altitude(fra, fde, lst, dial.lat) > 2:
+                gx_, gy_ = dial.project(fra, fde, lst)
+                feast_draw.glint(img, inside, blocked, int(math.floor(gx_)), int(math.floor(gy_)),
+                                 P["accent"] if paper else c8(3, 3, 1))
+            else:
+                first = None
+    # on Qixi the magpies' bridge between the Weaver and the Cowherd, drawn before the names (which keep off it)
+    if feast and feast.get("sky") == "weaver" and (dark or paper):
+        ends = [(ra, de) for ra, de, mg, bv, hip in sorted(named, key=lambda s: s[2]) if hip in (91262, 97649)]
+        if len(ends) == 2 and all(astro.altitude(ra, de, lst, dial.lat) >= 5 for ra, de in ends):
+            pts = [dial.project(ra, de, lst) for ra, de in ends]
+            feast_draw.bridge(img, inside, blocked, pts[0], pts[1], (dial.cx, dial.cy),
+                              P["ink"] if paper else c8(3, 3, 3))
+    # the feast's names before all others: the first star's in red (from dusk), the Weaver and the Cowherd (on Qixi)
+    special = {}
+    if first and first[0] == "star":
+        special[first[1]] = (star_name[first[1]], P["accent"], True)
+    if feast and feast.get("sky") == "weaver" and (dark or paper):
+        special.update({91262: ("Weaver", P["label"], False), 97649: ("Cowherd", P["label"], False)})
+    for ra, de, mg, bv, hip in sorted(named, key=lambda s: s[2]):
+        if names and hip in special and (special[hip][2] or dark or paper) and astro.altitude(ra, de, lst, dial.lat) >= 5:
+            x, y = dial.project(ra, de, lst)
+            place(pixel_text(special[hip][0], oblique=True), int(math.floor(x)) + 1, int(math.floor(y)), special[hip][1],
+                  own=True)
     if names and astro.altitude(*pos["moon"], lst, dial.lat) > 0:
         place(pixel_text("Moon"), mi, mj, P["planet"], clear=(-3, 3), own=True)
     for pn in ("venus", "jupiter", "mars", "saturn", "mercury"):
@@ -1207,16 +1248,16 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             continue
         x, y = dial.project(*pos[pn], lst)
         lo, hi = reach.get(pn, (-2, 2))
-        place(pixel_text(pn.capitalize()), int(math.floor(x)), int(math.floor(y)), P["planet"], clear=(lo + 1, hi - 2), own=True)
+        place(pixel_text(pn.capitalize()), int(math.floor(x)), int(math.floor(y)),
+              P["accent"] if first == ("planet", pn) else P["planet"], clear=(lo + 1, hi - 2), own=True)
     if radiant and names:
         place(pixel_text(shower[0], oblique=True), radiant[0] + 3, radiant[1], P["accent"])
     if names and (dark or paper):
-        star_name = star_names()
         shown = 0
         for ra, de, mg, bv, hip in sorted(named, key=lambda s: s[2]):
             if shown >= 3 or mg > 1.3:
                 break
-            if astro.altitude(ra, de, lst, dial.lat) < 8 or hip not in star_name:
+            if hip in special or astro.altitude(ra, de, lst, dial.lat) < 8 or hip not in star_name:
                 continue
             x, y = dial.project(ra, de, lst)
             if place(pixel_text(star_name[hip], oblique=True), int(math.floor(x)) + 1, int(math.floor(y)), P["label"], own=True):
