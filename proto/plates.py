@@ -47,6 +47,7 @@ from render2 import (COOL, WARM, bn_tile, sky_scalar, banded, smooth, star_names
 from typeset import ink, astro_time
 from pixeltext import pixel_text, time_text, temp_text, ornament, concat, stamp, box_of
 import events
+import feast_draw
 import figures
 import frame
 import horizon
@@ -664,13 +665,14 @@ def widest_time(style, screen, clock24):
 
 
 def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=False, sky_offset=None, extras=None,
-           names=True, weather=None, fahrenheit=False, weather_clock=None, labours=False):
+           names=True, weather=None, fahrenheit=False, weather_clock=None, labours=False, feast=None):
     """The face at `when`. Its sky may be drawn at another time (`sky_offset`, for the hourly turn) while the clock
     keeps `when`; `extras(img, ctx)` draws passing things (meteors, birds) into the sky, under the names. With
     `weather` (weather.Weather) the window shows the place's clouds, rain or snow, the village its weather, and
     the almanac line the temperature (in degrees Fahrenheit with `fahrenheit`). A film may set `weather_clock`,
     (seconds for the clouds, seconds for everything else), to hurry the clouds past. With `labours` (an option the
-    owner turns on) the month's labour is drawn faint in the card behind the window."""
+    owner turns on) the month's labour is drawn faint in the card behind the window. A `feast` (proto/feasts.py:
+    its words, its emblem, what it brings) names the day on the almanac's line and keeps it as its tradition does."""
     clock_when = when
     if sky_offset is not None:
         when = when + sky_offset
@@ -877,6 +879,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     # stars, as drawn on the old charts: eight points for the brightest, four, a cross, a point
     light_paper = paper and P["night"].sum() > 400
     drawn = []                                           # each star's sprite: (x, y, half its size)
+    stars_from = len(boxes)                              # (the stars' boxes: fireworks may burst over them)
     for ra, de, mg, bv in sorted(stars, key=lambda s: -s[2]):
         if mg > faint:
             continue
@@ -944,6 +947,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             ring_ = skies.halo_ring(pdec, pha, flip * body_[1], flip * (lst - body_[0]), dial.k) & inside & (tt < 0.7)
             img[ring_] = c8(1, 0, 0) if P["window"] == "red" else c8(1, 1, 2) if s_eff < -6 else c8(3, 3, 3)
 
+    stars_to = len(boxes)
     # the planets, each its little picture; beside Jupiter its four great moons where they are now, along its
     # equator (near enough the ecliptic), magnified: at the chart's scale they would sit inside one pixel
     reach = {}
@@ -1072,6 +1076,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         vane = "end" if wsky.wind < 2 or abs(e_) < 0.38 else ("left" if e_ > 0 else "right")
         snow_ = wsky.snow_lying
     lit_ = sun_alt < -4 and (17 <= local.hour <= 22 or 5 <= local.hour <= 7)
+    if feast and "lights" in feast.get("brings", ()):     # a candle in every window, all night
+        lit_ = sun_alt < -4
     edge_ = {}
     for dx_ in range(-72, 73):
         x = col + dx_
@@ -1157,6 +1163,10 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                     y, x = e - 3 - 2 * l_, col + dx_
                     if 0 <= y < H and inside[y, x] and not village_mask[y, x]:
                         img[y, x] = fog_c
+    # fires on the hills, on a fire festival's night
+    if feast and "bonfires" in feast.get("brings", ()) and sun_alt < -4 and not (wsky is not None and (wsky.fog or wsky.falls)):
+        feast_draw.bonfires(img, inside, edge_, heights, col, local.toordinal() * 1440 + local.hour * 60 + local.minute,
+                            ink=P["accent"] if paper else None)
     blocked = grow(blocked, 1)
 
     # names in the sky, in pixel type
@@ -1215,6 +1225,15 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             x, y = dial.project(ra, de, lst)
             if place(pixel_text(name.upper().replace("Ö", "O"), track=1), x, y, P["const"], centred=True):
                 cshown += 1
+
+    # fireworks over the village on the feast's evening, in the sky the names and bodies leave clear
+    if feast and feast.get("fireworks") and sun_alt < -4 and (local.hour >= 18 or local.hour < 1) and \
+            not (wsky is not None and (wsky.stratus >= 0.6 or wsky.falls)):
+        avoid = blocked.copy()                           # the land, the names, the planets, the Moon: not the stars
+        for q in boxes[:stars_from] + boxes[stars_to:]:
+            avoid[max(0, q[1]): q[3], max(0, q[0]): q[2]] = True
+        feast_draw.fireworks(img, inside, avoid, edge_, col, feast_draw.SPARKS[feast["fireworks"]],
+                             local.toordinal() * 1440 + local.hour * 60 + local.minute, ink=P["accent"] if paper else None)
 
     # the zenith's cross and the signs of the zodiac, drawn after the names, where no name or body is drawn: the
     # names matter more than the ornaments
@@ -1532,6 +1551,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     hour = (lambda h: h if clock24 else (h % 12 or 12))
     # on a day with news in the sky, the news takes the Sun's rising or setting line
     news = events.news(clock_when, tz, dial.lat, dial.lon)
+    # a feast day names itself there, a red-letter day, unless an eclipse is the news
+    if feast and not (news and any(k in news[0] for k in ("ECLIPSE", "RING OF FIRE", "BLOOD MOON"))):
+        news = tuple(feast["words"])
     if (sol and sol["kind"] == "total") or (lun and lun["kind"] == "total"):
         news = ("TOTALITY",)
     rows_at = (0.345, 0.675, 0.915)
@@ -1555,7 +1577,10 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         if wsky is not None:                             # the weather's piece, the most telling first
             kind_ = "thunder" if wsky.thunder else "snow" if (wsky.snow_lying or wsky.frost or wsky.falls == "snow") \
                 else "rain" if wsky.falls else "fog" if wsky.fog else "wind" if wsky.wind >= 30 else None
-        for name in sprites.flank_pieces(season, local.toordinal() * 24 + local.hour, s_eff < -6, kind_):
+        flank_ = sprites.flank_pieces(season, local.toordinal() * 24 + local.hour, s_eff < -6, kind_)
+        if feast and feast.get("emblem"):              # the feast's own emblem either side of the time
+            flank_ = [feast["emblem"]] + list(flank_)
+        for name in flank_:
             a_ = sprites.needlework(name)
             h_, w_ = a_.shape
             rows_ = np.nonzero(inner[yc_ - h_ // 2: yc_ + h_ // 2 + 1].all(axis=0))[0]
