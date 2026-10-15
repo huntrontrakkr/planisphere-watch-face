@@ -8,3 +8,4 @@ watchface/.lock-waf*
 watchface/resources/data/plan_code.bin
 release-artifacts/
 watchface/resources/data/feast_code.bin
+watchface/resources/data/show_code.bin

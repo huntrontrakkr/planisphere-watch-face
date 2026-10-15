@@ -13,6 +13,10 @@
  *     --calendars MASK  the calendars whose days it keeps (bit n for CAL_* n), as a number
  *     --mem             print the most memory the drawing held at once (as the watch's heap counts it: each block
  *                       rounded to 4 bytes, with its 4-byte header), and its blocks
+ *     --show FRAME      the fireworks display due at the top of this hour, played over the face (plan_show, as the
+ *                       watch plays it) to that frame
+ *     --show-check      play the whole display and check the face is put back exactly; print its frames and the
+ *                       most pixels a frame covered
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,7 +69,8 @@ int main(int argc, char **argv) {
   f.names = true, f.coords = true;
   Weather wx;
   int repeat = 1;
-  bool mem = false;
+  bool mem = false, show_check = false;
+  int show = -1;
   for (int i = 8; i < argc; i++) {
     if (!strcmp(argv[i], "--24")) f.clock24 = true;
     else if (!strcmp(argv[i], "--no-names")) f.names = false;
@@ -76,6 +81,8 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--country") && i + 1 < argc) f.country = argv[++i];
     else if (!strcmp(argv[i], "--time") && i + 1 < argc) repeat = atoi(argv[++i]);
     else if (!strcmp(argv[i], "--mem")) mem = true;
+    else if (!strcmp(argv[i], "--show") && i + 1 < argc) show = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "--show-check")) show_check = true;
     else if (!strcmp(argv[i], "--calendars") && i + 1 < argc) f.calendars = (uint32_t)strtoul(argv[++i], NULL, 0);
     else if (!strcmp(argv[i], "--weather") && i + 1 < argc) {
       int v[10] = {0};
@@ -103,6 +110,25 @@ int main(int argc, char **argv) {
   for (int i = 0; i < repeat; i++)
     if (!plan_render(&p, &f, utc, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
   if (mem) printf("peak %zu bytes in %zu blocks\n", mem_peak, mem_peak_blocks);
+  if (show >= 0 || show_check) {
+    int32_t hour = (int32_t)((utc + offset) / 86400 + 719163) * 24 + (int32_t)((utc + offset) % 86400 / 3600);
+    if (p.show_hour != hour) { fprintf(stderr, "no display due at this moment\n"); return 1; }
+    static uint8_t base[MAX_W * MAX_H];
+    memcpy(base, fb, sizeof fb);
+    static struct { ShowUndo u; uint32_t px[4096]; } undo = {{0, 4096}, {0}};
+    int last = show_check ? p.show_end : show, most = 0;
+    for (int k = 0; k <= last; k++) {
+      plan_show(&p, &t, k, &undo.u);
+      if (undo.u.n > most) most = undo.u.n;
+    }
+    if (show_check) {
+      int off = 0;
+      for (int i = 0; i < W * H; i++) off += fb[i] != base[i];
+      printf("display: %d rockets, %d frames, at most %d pixels a frame; %s\n", p.show_rockets, p.show_end, most,
+             off ? "NOT put back" : "the face put back exactly");
+      if (off) return 1;
+    }
+  }
   clock_gettime(CLOCK_MONOTONIC, &t1);
   if (repeat > 1)
     printf("%.2f ms a render\n", ((t1.tv_sec - t0.tv_sec) * 1e3 + (t1.tv_nsec - t0.tv_nsec) / 1e6) / repeat);

@@ -42,6 +42,9 @@ volatile int32_t g_offset = 0;
 /* the stack's deepest (stack_deepest), ever and by the end of init; and how deep it is where the renderer is called */
 volatile uint32_t g_stack = 0, g_stack_init = 0, g_stack_at = 0;
 volatile uint32_t g_feast_heap = 0;      /* the heap free while the calendars' code and table are loaded */
+/* the fireworks displays: frames drawn, the slowest frame (ms), the heap free while one plays */
+volatile uint32_t g_show_frames = 0, g_show_ms = 0, g_show_heap = 0, g_show_end = 0;   /* (1 played out, 2 gave way) */
+volatile uint32_t g_show_px = 0;         /* the most pixels a frame covered */
 
 static Window *s_window;
 static Layer *s_layer;
@@ -130,18 +133,15 @@ static void face_of(Face *f) {
   f->fahrenheit = s_settings.units == 2;
   if (s_settings.place == 1) {
     s_where[0] = s_settings.lat_e4, s_where[1] = s_settings.lon_e4;
-    f->lat = (float)s_settings.lat_e4 * 1e-4f, f->lon = (float)s_settings.lon_e4 * 1e-4f;
     f->city = s_settings.city, f->country = s_settings.country, f->coords = true;
   } else if (s_place.time) {
     s_where[0] = s_place.lat_e4, s_where[1] = s_place.lon_e4;
-    f->lat = (float)s_place.lat_e4 * 1e-4f, f->lon = (float)s_place.lon_e4 * 1e-4f;
     f->city = s_place.city, f->country = s_place.country, f->coords = true;
   } else {
     /* not yet told where it is: a northern sky, at the longitude the time zone suggests */
-    int32_t lon = utc_offset(time(NULL)) / 240;
-    s_where[0] = 400000, s_where[1] = lon * 10000;
-    f->lat = 40.0f, f->lon = (float)lon;
+    s_where[0] = 400000, s_where[1] = utc_offset(time(NULL)) / 240 * 10000;
   }
+  s_api->place(f, s_where[0], s_where[1]);
   uint32_t now = (uint32_t)time(NULL);
   if (s_settings.weather && s_weather.time && now - s_weather.time < WEATHER_FRESH) f->weather = &s_weather.w;
 }
@@ -185,7 +185,84 @@ static void *alloc(size_t n) {
   return p;
 }
 
+/* ---- the fireworks display: at the top of an hour that brings one (Plan.show_hour, worked out by the renderer as it
+ * drew the hour's first face), its code is loaded and plays SHOW_FPS frames a second over the face as drawn, each
+ * putting back what the last covered. A drawing asked for meanwhile (the weather, the settings) waits for its end.
+ * One the system asks for (as the app opens, say) is made at once, as the face and the display have no room for
+ * both: the display gives way to it and then takes up its time again. ---- */
+static const ShowApi *s_show;
+static uint8_t *s_show_mem;
+static ShowUndo *s_undo;
+static AppTimer *s_show_timer;
+static int32_t s_show_played = -1;      /* the hour whose display has begun, */
+static bool s_show_done;                /* and played out */
+static int s_show_frame = -1;           /* the frame the next drawing is for (-1: a whole face) */
+static int s_show_last = -1;            /* the frame last drawn (a frame a tick of the timer: the clock may jump) */
+static bool s_redraw_after;
+
+static void redraw(void) {
+  if (s_show) s_redraw_after = true;
+  else if (s_layer) layer_mark_dirty(s_layer);
+}
+
+static void show_end(bool redraw_now) {
+  if (s_show_timer) app_timer_cancel(s_show_timer);
+  free(s_undo), free(s_show_mem);
+  s_show_timer = NULL, s_undo = NULL, s_show_mem = NULL, s_show = NULL, s_show_frame = -1;
+  if (s_redraw_after && redraw_now && s_layer) layer_mark_dirty(s_layer);
+  s_redraw_after = false;
+}
+
+static void show_tick(void *data) {
+  s_show_timer = NULL;
+  s_show_frame = s_show_last + 1;
+  if (s_layer) layer_mark_dirty(s_layer);
+}
+
+static void show_begin(void) {
+  if (s_show || s_plan->show_hour < 0) return;
+  if (s_plan->show_hour != s_show_played) s_show_played = s_plan->show_hour, s_show_last = -1, s_show_done = false;
+  else if (s_show_done) return;                  /* (else it gave way, and goes on from its last frame) */
+  s_show = load_blob(RESOURCE_ID_PLAN_SHOW_CODE, &s_show_mem);
+  s_undo = malloc(sizeof(ShowUndo) + SHOW_UNDO * sizeof(uint32_t));
+  if (!s_show || s_show->magic != SHOW_API_MAGIC || s_show->layout != PLAN_LAYOUT || !s_undo) {
+    show_end(false);
+    return;
+  }
+  s_undo->n = 0, s_undo->cap = SHOW_UNDO;
+  g_show_heap = heap_bytes_free();
+  s_show_timer = app_timer_register(1, show_tick, NULL);
+}
+
+static void show_frame(GContext *ctx) {
+  uint32_t t0 = now_ms();
+  GBitmap *fb = graphics_capture_frame_buffer(ctx);
+  if (!fb) {                                     /* (no screen to draw on: the display ends, the face is drawn again) */
+    s_show_done = true, s_redraw_after = true;
+    show_end(true);
+    return;
+  }
+  Target tg = {fb_row, fb};
+  bool more = s_show->frame(s_plan, &tg, s_show_frame, s_undo);
+  graphics_release_frame_buffer(ctx, fb);
+  g_show_frames++, s_show_last = s_show_frame;
+  if (s_undo->n > g_show_px) g_show_px = s_undo->n;
+  if (now_ms() - t0 > g_show_ms) g_show_ms = now_ms() - t0;
+  if (!more) {
+    g_show_end = 1, s_show_done = true;
+    show_end(true);
+    return;
+  }
+  s_show_frame = -1;
+  s_show_timer = app_timer_register(1000 / SHOW_FPS, show_tick, NULL);
+}
+
 static void update(Layer *layer, GContext *ctx) {
+  if (s_show && s_show_frame >= 0) {
+    show_frame(ctx);
+    return;
+  }
+  if (s_show) g_show_end = 2, show_end(false);   /* the system asks for the whole face: the display gives way */
   time_t now = time(NULL);
   if (!s_plan) {                                 /* no memory for the face's data: the time alone */
     graphics_context_set_fill_color(ctx, GColorBlack);
@@ -208,15 +285,16 @@ static void update(Layer *layer, GContext *ctx) {
   g_utc = (uint32_t)now, g_offset = utc_offset(now);
   g_stack_at = (uint32_t)((uintptr_t)__pbl_app_info - (uintptr_t)&tg);
   feast_of_day(&f, now, g_offset);
-  s_api->render(s_plan, &f, (int64_t)now, g_offset, &tg, alloc, free);
+  bool drawn = s_api->render(s_plan, &f, (int64_t)now, g_offset, &tg, alloc, free);
   graphics_release_frame_buffer(ctx, fb);
   g_render_ms = now_ms() - t0;
   if (g_render_ms > g_render_max) g_render_max = g_render_ms;
   g_stack = stack_deepest();
+  if (drawn) show_begin();
 }
 
 static void tick(struct tm *t, TimeUnits changed) {
-  if (s_layer) layer_mark_dirty(s_layer);
+  redraw();
   if (t->tm_min % 10 == 0) ask_phone(false);
 }
 
@@ -261,7 +339,7 @@ static void inbox(DictionaryIterator *it, void *context) {
   if (got[IN_SETTINGS]) persist_write_data(KEY_SETTINGS, &s_settings, sizeof s_settings);
   if (got[IN_PLACE]) s_place.time = now, persist_write_data(KEY_PLACE, &s_place, sizeof s_place);
   if (got[IN_WEATHER]) s_weather.time = now, persist_write_data(KEY_WEATHER, &s_weather, sizeof s_weather);
-  if (s_layer) layer_mark_dirty(s_layer);
+  redraw();
 }
 
 /* ---- life cycle ---- */
@@ -347,6 +425,7 @@ static void init(void) {
   g_heap_free = heap_bytes_free();
   APP_LOG(APP_LOG_LEVEL_INFO, "heap free %u", (unsigned)g_heap_free);
   s_window = window_create();
+  window_set_background_color(s_window, GColorClear);   /* (the face as drawn stays under the display's frames) */
   window_set_window_handlers(s_window, (WindowHandlers){.load = window_load, .unload = window_unload});
   window_stack_push(s_window, false);
   tick_timer_service_subscribe(MINUTE_UNIT, tick);
@@ -355,6 +434,7 @@ static void init(void) {
 }
 
 static void deinit(void) {
+  show_end(false);
   tick_timer_service_unsubscribe();
   window_destroy(s_window);
   free(s_plan), free(s_data), free(s_geom), free(s_code);

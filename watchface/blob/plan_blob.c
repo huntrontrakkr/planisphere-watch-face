@@ -2,5 +2,5 @@
 #include "plan.h"
 
 __attribute__((used, section(".plan_api"))) const PlanApi plan_api = {
-  PLAN_API_MAGIC, PLAN_LAYOUT, plan_init, plan_render,
+  PLAN_API_MAGIC, PLAN_LAYOUT, plan_init, plan_render, plan_place,
 };

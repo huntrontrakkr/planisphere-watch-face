@@ -332,13 +332,17 @@ Christian year, the Eastern churches, old English customs, the fire festivals, a
 Britain and Ireland, and the Hebrew, Chinese, Islamic and Hindu calendars. On a feast day the almanac's line names it
 in red, its emblem stands beside the time, and some bring a light in every window or fires on the hills
 (`proto/feasts.py` has the days and their rules; `watchface/src/c/plan_feasts.c` follows it, checked day by day by
-`tools/check_feasts.py`). The fireworks display at the evening's hours is in the prototype so far
-(`research/holidays/`).
+`tools/check_feasts.py`). Some mark the sky: Christmas Eve's first star, Qixi's Weaver and Cowherd with the magpies'
+bridge, the rabbit in the Mid-Autumn Moon. And at the top of each evening hour of a fireworks feast (Independence Day,
+Bonfire Night, Diwali, New Year's Eve, Hogmanay, the Spring Festival), and at the midnight when New Year's Eve and
+Chuxi turn the year, a display of rockets plays over the window for seven or eight seconds, on the watch and in the
+settings page's preview (`proto/feast_draw.py`, `watchface/src/c/plan_show.c`; films in `research/holidays/`).
 
 The drawing is larger than PebbleOS lets an app's own code be (64 KB, from the way it records an app's size), so it
 is not linked into the app. `tools/build_blob.py` compiles it into one of the app's resources, and the app loads it at
 start, fixes up its addresses, flushes the caches and runs it from its own memory; the calendars' code is a second
-blob, loaded once a day with the calendars' table to find the day's feast, then let go. The app itself is about 5 KB.
+blob, loaded once a day with the calendars' table to find the day's feast, then let go, and the fireworks display a
+third, loaded for the seconds it plays. The app itself is under 5 KB.
 
 ```
 cd watchface && pebble build                                         # the watch app, for both watches

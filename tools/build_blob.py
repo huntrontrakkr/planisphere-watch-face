@@ -1,6 +1,7 @@
 """Build the code blobs for the watch: watchface/resources/data/plan_code.bin, the renderer (plan_render.c,
-plan_astro.c, plan_math.c), which main.c keeps loaded, and feast_code.bin, the calendars (plan_feasts.c and the
-ephemeris it asks), which main.c loads once a day to look up the day's feast and lets go.
+plan_astro.c, plan_math.c), which main.c keeps loaded; feast_code.bin, the calendars (plan_feasts.c and the
+ephemeris it asks), which main.c loads once a day to look up the day's feast and lets go; and show_code.bin, the
+fireworks display (plan_show.c), which it loads for the few seconds of a display.
 
 Each is compiled with the Pebble SDK's own compiler and flags, its entry table first (watchface/blob/*_blob.c) and
 the C library's few functions it uses (blob_libc.c), linked at address 0 with libgcc's arithmetic
@@ -49,6 +50,7 @@ BLOBS = {
                    BLOB / "blob_libc.c"], "plan_api"),
     "feast_code": ([BLOB / "feast_blob.c", SRC / "plan_feasts.c", SRC / "plan_astro.c", SRC / "plan_math.c",
                     BLOB / "blob_libc.c"], "feast_api"),
+    "show_code": ([BLOB / "show_blob.c", SRC / "plan_show.c", SRC / "plan_math.c", BLOB / "blob_libc.c"], "show_api"),
 }
 SOURCES = BLOBS["plan_code"][0]
 MAGIC = 0x434E4C50          # "PLNC"

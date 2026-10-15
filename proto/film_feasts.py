@@ -9,6 +9,7 @@ from pathlib import Path
 from PIL import Image
 
 import feast_draw
+import feasts
 from plates import render, RectDial, RoundDial
 from render import load_sky
 
@@ -16,8 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "research" / "holidays"
 FPS = feast_draw.FPS
 NY, LONDON = (40.71, -74.01), (51.51, -0.13)
-JULY4 = dict(words=("INDEPENDENCE DAY", "JULY FOURTH"), emblem="star", fireworks="independence")
-BONFIRE = dict(words=("BONFIRE NIGHT", "GUY FAWKES"), emblem="star", brings=("bonfires",), fireworks="bonfire")
+JULY4 = next(f for f in feasts.FEASTS if f["words"][0] == "INDEPENDENCE DAY")
+BONFIRE = next(f for f in feasts.FEASTS if f["words"][0] == "BONFIRE NIGHT")
 
 
 def film(name, place, local, offset, plate, feast, round_screen=False):
@@ -27,13 +28,14 @@ def film(name, place, local, offset, plate, feast, round_screen=False):
     sparks = feast_draw.SPARKS[feast["fireworks"]]
     probe = {}
     render(when, dial, sky, tz, plate, round_screen, feast=feast, extras=lambda img, ctx: probe.update(ctx))
-    plan, end = feast_draw.show_plan(local.toordinal() * 24 + local.hour, probe["edge"], probe["col"], sparks)
+    plan, end = feast_draw.show_plan(local.toordinal() * 24 + local.hour, probe["edge"], probe["col"], sparks,
+                                     probe["ground"], probe["inside"])
     ink = probe["P"]["accent"] if probe["paper"] else None
     lead, tail = 6, 10
     frames = []
-    for k in range(lead + end + tail):
+    for k in range(lead + end + tail):               # over the face as drawn at the top of the hour, as the watch plays it
         f = k - lead
-        frames.append(render(when + timedelta(seconds=k / FPS), dial, sky, tz, plate, round_screen, feast=feast,
+        frames.append(render(when, dial, sky, tz, plate, round_screen, feast=feast,
                              extras=lambda img, ctx, f=f: feast_draw.fireworks_show(img, ctx, f, plan, sparks, ink)))
     size = (390, 390) if round_screen else (400, 456)
     pal = [Image.fromarray(fr.astype("uint8")).resize(size, Image.NEAREST).quantize(

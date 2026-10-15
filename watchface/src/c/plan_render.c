@@ -415,6 +415,10 @@ static void ring_geometry(Plan *p) {
   p->num_style = -1;
 }
 
+void plan_place(Face *f, int32_t lat_e4, int32_t lon_e4) {
+  f->lat = (float)lat_e4 / 10000.0f, f->lon = (float)lon_e4 / 10000.0f;
+}
+
 void plan_init(Plan *p, int w, int h, const uint8_t *data, const uint8_t *geom) {
   memset(p, 0, sizeof *p);
   p->w = w, p->h = h, p->data = data, p->geom = geom;
@@ -422,7 +426,7 @@ void plan_init(Plan *p, int w, int h, const uint8_t *data, const uint8_t *geom) 
   p->lat_key = 1e9f;
   p->ev_kind = -1;
   p->news_day = -1;
-  p->feast_day = -1;
+  p->feast_day = -1, p->show_hour = -1;
 }
 
 void plan_window(Plan *p, float lat) {
@@ -1041,25 +1045,11 @@ static void weather_sky(R *r) {
 }
 
 /* ---- the weather in the window (proto/skies.py): Howard's clouds drifting downwind, rain and snow ---------------- */
-/* the generator the prototype carries too (proto/rng.py), so both scatter the weather alike */
-typedef struct { uint32_t x; } Rng;
-static uint32_t rng_next(Rng *g) {
-  uint32_t x = g->x;
-  x ^= x << 13, x ^= x >> 17, x ^= x << 5;
-  return g->x = x;
-}
-static void rng_start(Rng *g, uint32_t seed) {
-  g->x = seed ^ 0x9E3779B9u;
-  if (!g->x) g->x = 1;
-  for (int i = 0; i < 4; i++) rng_next(g);
-}
+/* the day's generator for a layer of the weather (plan_math.h Rng, the prototype's), so both scatter it alike */
 static void rng_seed(Rng *g, R *r, int salt) {
   rng_start(g, (uint32_t)r->local.ordinal * 7919u + (uint32_t)pyf_round((float)r->f->lat * 10) * 104729u +
                (uint32_t)pyf_round((float)r->f->lon * 10) * 1299709u + (uint32_t)salt * 15485863u);
 }
-static float rng_random(Rng *g) { return (float)(rng_next(g) >> 8) * (1.0f / 16777216); }
-static float rng_uniform(Rng *g, float a, float b) { return a + (b - a) * rng_random(g); }
-static int rng_int(Rng *g, int a, int b) { return a + (int)(((uint64_t)(rng_next(g) >> 8) * (uint32_t)(b - a)) >> 24); }
 
 /* ---- the labours of the months (proto/plates.py labour_scene), an option: faint in the card between the window and
  * the ring, the month's field running on behind the window from a point hidden behind its top, the labourer in the
@@ -1669,6 +1659,60 @@ static void hills(R *r) {
 static bool feast_brings(R *r, int flag) {
   Plan *p = r->p;
   return p->feast && p->feast_day == r->local.ordinal && (p->feast_flags & flag);
+}
+
+/* ---- the fireworks display (proto/feast_draw.py show_plan), worked out at the top of an hour that brings one:
+ * each hour of a fireworks feast's evening once the Sun is down, from seven to eleven, and the midnight that ends a
+ * feast turning the year. Five rockets one after another from the window's edge either side of the village, then a
+ * finale of three; plan_show plays it. ---------------------------------------------------------------------------- */
+/* the commonest colour of the window's ground in the five pixels square round a point (the first met, row by row,
+ * among equals), or -1 if none of it is in the window: the margin round a rocket's sparks */
+static int halo_colour(R *r, int x, int y) {
+  uint8_t seen[25];
+  int n = 0, best = -1, most = 0;
+  for (int j = -2; j <= 2; j++)
+    for (int i = -2; i <= 2; i++)
+      if (inside(r, x + i, y + j)) seen[n++] = ground_at(r, x + i, y + j);
+  for (int a = 0; a < n; a++) {
+    int c = 0;
+    for (int b = 0; b < n; b++) c += seen[b] == seen[a];
+    if (c > most) most = c, best = seen[a];
+  }
+  return best;
+}
+static void show_plan(R *r) {
+  Plan *p = r->p;
+  int hour = r->local.hour, flags = 0;
+  if (hour == 0) flags = p->feast_day == r->local.ordinal ? p->feast_eve : 0;
+  else if (feast_brings(r, FF_FIREWORKS) && r->sun_alt < -1 && hour >= 19 && hour <= 23) flags = p->feast_flags;
+  p->show_hour = -1;
+  if (!flags || r->local.minute != 0) return;
+  const uint8_t *sparks = SPARK_COLOURS[(flags >> 4) & 3];
+  int colours = 0;
+  while (colours < 4 && sparks[colours]) p->show_sparks[colours] = sparks[colours], colours++;
+  if (colours < 4) p->show_sparks[colours] = 0;
+  int32_t at = r->local.ordinal * 24 + hour;
+  Rng g;
+  rng_start(&g, (uint32_t)at);
+  int starts[SHOW_ROCKETS], f = 0, n = 0, end = 0;
+  for (int i = 0; i < 5; i++) starts[i] = f, f += rng_int(&g, 8, 13);
+  for (int i = 0; i < 3; i++) starts[5 + i] = f + 4 + 2 * i;
+  for (int i = 0; i < SHOW_ROCKETS; i++) {
+    int dx = rng_int(&g, -50, 51), e = r->edge[dx + VILLAGE_DX];
+    if (e < 0) continue;
+    Rocket *k = &p->show[n++];
+    k->f0 = (uint8_t)starts[i], k->x0 = (int16_t)(r->col + dx), k->foot = (int16_t)(e - 3);
+    k->rise = (uint8_t)rng_int(&g, 44, 92), k->up = (uint8_t)rng_int(&g, 10, 15), k->drift = (int8_t)rng_int(&g, -6, 7);
+    k->R = (uint8_t)rng_int(&g, 11, 18), k->kind = (uint8_t)rng_int(&g, 0, 3);
+    k->colour = (uint8_t)rng_int(&g, 0, colours), k->turn = rng_random(&g);
+    k->n = k->R >= 14 ? 20 : 16;
+    int h = halo_colour(r, k->x0 + k->drift, k->foot - k->rise);       /* where it bursts, else where it rises */
+    if (h < 0) h = halo_colour(r, k->x0, k->foot);
+    k->halo = (uint8_t)(h < 0 ? ground_at(r, k->x0, e) : h);
+    if (k->f0 + k->up + SHOW_SPREAD + SHOW_LIFE + 1 > end) end = k->f0 + k->up + SHOW_SPREAD + SHOW_LIFE + 1;
+  }
+  p->show_rockets = (uint8_t)n, p->show_end = (uint16_t)end, p->show_ink = r->paper ? r->P->accent : 0;
+  p->show_hour = at;
 }
 
 /* fires on the hilltops on a fire festival's night (proto/feast_draw.py bonfires): on the three highest tops at least
@@ -3212,6 +3256,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   village(r, season);
   village_weather(r);
   feast_fires(r);
+  show_plan(r);
   /* names in the sky; the ornaments where no name is */
   feast_sky(r);
   if (f->names) names(r, mx, my);

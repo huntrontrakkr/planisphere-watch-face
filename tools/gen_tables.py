@@ -694,6 +694,14 @@ def feasts_blob(h):
     h.append("enum { FS_NONE, FS_FIRST_STAR, FS_WEAVER, FS_RABBIT };   /* what a feast marks in the sky */")
     h.append("typedef struct { uint8_t cal, kind, span, emblem, flags, rank, zone, sky; int16_t a, b, c, pad2; "
              "uint16_t words[4]; } FeastRecord;")
+    # the fireworks' colours by tradition (proto/feast_draw.py SPARKS), as the flags' sparks number them; 0 ends a set
+    import feast_draw
+
+    def g8(c):
+        return 0xC0 | (int(c[0]) // 85) << 4 | (int(c[1]) // 85) << 2 | int(c[2]) // 85
+    sets = [[g8(c) for c in feast_draw.SPARKS[k]] + [0] * (4 - len(feast_draw.SPARKS[k])) for k in SPARK_SETS]
+    h.append(f"static const uint8_t SPARK_COLOURS[{len(sets)}][4] = {{" +
+             ", ".join("{" + ", ".join(f"0x{c:02X}" for c in cs) + "}" for cs in sets) + "};")
     return out
 
 

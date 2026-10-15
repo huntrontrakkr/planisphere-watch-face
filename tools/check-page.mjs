@@ -114,6 +114,25 @@ await tap('.plate', 'Astrolabe');
 await tap('.seg button', '24-hour');
 await tap('label.switch', 'The labours of the months');
 await tap('.calendar label.switch', 'The United States');
+// the fireworks display: from the first of July the United States' next day is Independence Day, which its button
+// shows at nine at night
+await page.locator('#date').fill('2027-07-01');
+await page.waitForTimeout(300);
+await page.locator('button.next', { hasText: 'Independence' }).first().click();
+const grab = () => page.evaluate(() => {
+  const c = document.getElementById('screen');
+  return Array.from(c.getContext('2d').getImageData(0, 0, c.width, c.height).data);
+});
+const differ = (a, b) => { let n = 0; for (let i = 0; i < a.length; i += 4) n += a[i] !== b[i] || a[i + 1] !== b[i + 1] || a[i + 2] !== b[i + 2]; return n; };
+const shots = [];
+for (let i = 0; i < 6; i++) { await page.waitForTimeout(400); shots.push(await grab()); }
+const moved = shots.slice(1).map((f, i) => differ(f, shots[i]));
+await page.waitForTimeout(9000);
+const end1 = await grab();
+await page.waitForTimeout(500);
+const still = differ(end1, await grab());
+check(moved.filter((n) => n > 0).length >= 3 && still === 0,
+      `the fireworks display played in the preview (pixels changed between frames: ${moved.join(', ')}; after: ${still})`);
 await tap('.calendar label.switch', 'The Hebrew calendar');
 await tap('.seg button', 'Snow');
 await tap('.seg button', '°C');

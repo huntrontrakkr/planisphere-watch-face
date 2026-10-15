@@ -285,6 +285,12 @@ static bool matches(const FeastRecord *f, Day *day, float hours, int *nth) {
     return o >= start && o - start < f->span;
   }
   case FK_CHINESE:
+    if (f->b == 0) {                                   /* day 0: the eve of the month's first day */
+      int m, d;
+      bool leap;
+      chinese_of(o + 1, &m, &leap, &d);
+      return !leap && m == f->a && d == 1;
+    }
     if (!day->cn) chinese_of(o, &day->cm, &day->cleap, &day->cd), day->cn = true;
     return !day->cleap && day->cm == f->a && day->cd == f->b;
   case FK_ISLAMIC:
@@ -384,9 +390,14 @@ bool plan_feast(Plan *p, const Face *f, int64_t utc, int32_t offset, const Feast
     return true;
   if (f->calendars && !rd) return false;
   p->feast_day = day, p->feast_cal = f->calendars, p->feast_lat = f->lat, p->feast_lon = f->lon, p->feast = false;
+  p->feast_eve = 0;
   if (!f->calendars) return true;
   FeastRecord r;
-  int nth = 0, i = feast_on(rd, day, f->calendars, (float)offset / 3600, &nth, &r);
+  int nth = 0;
+  float hours = (float)offset / 3600;
+  if (feast_on(rd, day - 1, f->calendars, hours, &nth, &r) >= 0 && (r.flags & FF_MIDNIGHT) && (r.flags & FF_FIREWORKS))
+    p->feast_eve = r.flags;                            /* the year turning at this day's midnight, with fireworks */
+  int i = feast_on(rd, day, f->calendars, hours, &nth, &r);
   if (i < 0) return true;
   bool alt = f->lat < 0 && r.words[2] != 0xFFFF;
   copy_words(p->feast_words[0], rd, r.words[alt ? 2 : 0]);

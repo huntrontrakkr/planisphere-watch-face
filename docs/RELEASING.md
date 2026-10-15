@@ -46,12 +46,14 @@ By hand:
 `tools/release.py check` verifies the package's identity, version and platforms, the store's 256 KB of resources and
 the 64 KB cap on the app's binary, that the renderer's code (`tools/build_blob.py`) is whole in each watch's
 resources, and that the store's copy is 1 to 1,600 characters with no third-party brand names. CI also runs
-`tools/stack_depth.py --budget 1000` (the renderer's deepest call chain, from the compiler: the watch's stack is
-2 KB) and `tools/check_memory.py` (every latitude's frame against the heap left after loading).
+`tools/stack_depth.py --budget 1000` (each code blob's deepest call chain, from the compiler: the watch's stack is
+2 KB) and `tools/check_memory.py` (every latitude's frame, the day's feast lookup and a fireworks display against the
+heap left after loading).
 
 Before a release, also run the checks CI does not:
 
-    tools/build-host.sh && (cd proto && uv run python ../tools/parity.py)     # the C against the prototype
+    tools/build-host.sh && (cd proto && uv run python ../tools/parity.py)     # the C against the prototype (and its
+                                                                              # baseline, tools/parity-baseline.json)
     (cd proto && uv run python ../tools/check_feasts.py)                      # the calendars, day by day
     LD_LIBRARY_PATH=~/.local/lib/chromedeps node tools/check-page.mjs          # the settings page, in Chromium
     <pebble-tool-python> tools/emulator.py emery shots --gdb g_heap_free g_heap_low

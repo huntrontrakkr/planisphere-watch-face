@@ -379,14 +379,14 @@ def diwali(year):
 # Each calendar is a switch on the settings page (bit n of CALENDARS, in this order). Each day: its calendar, its rule,
 # its words for the almanac's line (the longest that fits is used), the needlework emblem set beside the time, what it
 # brings (lights in the windows, fires on the hills, a fireworks display at the evening's hours, "midnight" for one at
-# midnight too), what it marks in the sky ("first star": the first star out on Christmas Eve, named in red; "weaver":
+# the midnight that ends it, as the year turns), what it marks in the sky ("first star": the first star out on Christmas Eve, named in red; "weaver":
 # Vega and Altair named the Weaver and the Cowherd, the magpies' bridge between them; "rabbit": the rabbit in the full
 # Moon), and its rank (1 a great feast, 3 a small one: the greater wins a shared day).
 #
 # Rules: ("fixed", month, day[, days]), ("easter", offset), ("orthodox", offset), ("nth", month, weekday, n),
 # ("after", month, day, weekday), ("window", month, day, weekday), ("advent", offset), ("sun", longitude, zone),
-# ("sidereal", longitude, zone), ("hebrew", month, day[, days]), ("chinese", month, day), ("islamic", month, day),
-# ("diwali",). Weekdays 0 Monday; zones "local", "bj" (Beijing), "ist" (India).
+# ("sidereal", longitude, zone), ("hebrew", month, day[, days]), ("chinese", month, day) (day 0: the eve of the
+# month's first), ("islamic", month, day), ("diwali",). Weekdays 0 Monday; zones "local", "bj" (Beijing), "ist" (India).
 
 CALENDARS = [
     ("sky", "The sky’s year", "The solstices and the equinoxes, named as the seasons turn where you are."),
@@ -404,8 +404,8 @@ CALENDARS = [
                                        "Hogmanay."),
     ("hebrew", "The Hebrew calendar", "Rosh Hashanah, Yom Kippur, Sukkot, Hanukkah’s eight nights, Purim, "
                                       "Passover, Shavuot."),
-    ("chinese", "The Chinese calendar", "The Spring Festival, the Lantern Festival, Qingming, the Dragon Boat, "
-                                        "Qixi, Mid-Autumn."),
+    ("chinese", "The Chinese calendar", "New Year’s Eve and the Spring Festival, the Lantern Festival, Qingming, "
+                                        "the Dragon Boat, Qixi, Mid-Autumn."),
     ("islamic", "The Islamic calendar", "The new year, Ramadan, the two Eids, the Mawlid; by the calendar’s "
                                         "arithmetic, so within a day of the crescent’s sighting."),
     ("hindu", "The Hindu calendar", "Makar Sankranti and Diwali’s lamps."),
@@ -511,8 +511,10 @@ FEASTS = [
     dict(cal="hebrew", rule=("hebrew", 1, 15, 7), words=("PASSOVER", "PESACH"), emblem="matzah", rank=1),
     dict(cal="hebrew", rule=("hebrew", 3, 6, 2), words=("SHAVUOT",), emblem="sheaf", rank=2),
     # the Chinese calendar
+    dict(cal="chinese", rule=("chinese", 1, 0), words=("CHUXI",), emblem="lantern", fireworks="new year", midnight=True,
+         rank=1),
     dict(cal="chinese", rule=("chinese", 1, 1), words=("SPRING FESTIVAL", "NEW YEAR"), emblem="lantern",
-         fireworks="new year", midnight=True, rank=1),
+         fireworks="new year", rank=1),
     dict(cal="chinese", rule=("chinese", 1, 15), words=("LANTERN FESTIVAL", "LANTERNS"), emblem="lantern",
          brings=("lights",), rank=1),
     dict(cal="chinese", rule=("sun", 15, "bj"), words=("QINGMING",), emblem="willow", rank=2),
@@ -581,9 +583,9 @@ def day_in(rule, o, local_hours):
         span = rule[3] if len(rule) > 3 else 1
         k = o - hebrew_date(y, month, rule[2])
         return k if 0 <= k < span else None
-    if kind == "chinese":
-        m, leap, day = chinese_from_ordinal(o)
-        return 0 if not leap and (m, day) == (rule[1], rule[2]) else None
+    if kind == "chinese":                                    # (day 0: the eve of the month's first day)
+        m, leap, day = chinese_from_ordinal(o + (rule[2] == 0))
+        return 0 if not leap and (m, day) == (rule[1], max(rule[2], 1)) else None
     if kind == "islamic":
         return 0 if islamic_from_ordinal(o)[1:] == (rule[1], rule[2]) else None
     if kind == "diwali":

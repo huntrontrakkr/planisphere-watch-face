@@ -67,17 +67,49 @@ LIFE = 12                          # frames its sparks then hang, drooping and f
 DISPLAY = (19, 23)                 # the evening's hours it is given, from sunset; and midnight on New Year's Eve
 
 
-def display_hours(local_hour, sun_alt, midnight=False):
-    """Whether this hour's top brings the display: every hour of the evening once the Sun has set, until eleven
-    (and at midnight, for a feast that turns the year)."""
-    if midnight and local_hour == 0:
-        return True
-    return sun_alt < -1 and DISPLAY[0] <= local_hour <= DISPLAY[1]
+def display_hours(local_hour, sun_alt, fireworks=True, midnight_eve=False):
+    """Whether this hour's top brings the display: every hour of a fireworks feast's evening once the Sun has set,
+    until eleven; and at the midnight that ends a feast that turns the year (`midnight_eve`: yesterday's feast has
+    "midnight")."""
+    if local_hour == 0:
+        return midnight_eve
+    return fireworks and sun_alt < -1 and DISPLAY[0] <= local_hour <= DISPLAY[1]
 
 
-def show_plan(seed, edge, col, sparks, rockets=5, finale=3):
+def display_at(local, sun_alt, calendars, lat):
+    """The display at the top of this local hour (`local` an aware datetime), as the watch has it (plan_render.c
+    show_plan): (its seed, its sparks), or None. The day's feast's evening if it brings fireworks, or at midnight the
+    day before's if it ends then with them."""
+    import feasts
+    o, hour, hours = local.toordinal(), local.hour, local.utcoffset().total_seconds() / 3600
+    if hour == 0:
+        f = feasts.feast_of(o - 1, calendars, lat, hours)
+        f = f if f and f.get("midnight") and f.get("fireworks") else None
+    else:
+        f = feasts.feast_of(o, calendars, lat, hours)
+        f = f if f and f.get("fireworks") and display_hours(hour, sun_alt) else None
+    return (o * 24 + hour, SPARKS[f["fireworks"]]) if f else None
+
+
+def halo_colour(ground, inside, x, y):
+    """The commonest colour of the window's ground in the five pixels square round a point (the first met, row by
+    row, among equals), or None if none of it is in the window."""
+    H, W = inside.shape
+    seen = []
+    for j in range(-2, 3):
+        for i in range(-2, 3):
+            X, Y = x + i, y + j
+            if 0 <= Y < H and 0 <= X < W and inside[Y, X]:
+                seen.append(tuple(int(v) for v in ground[Y, X]))
+    return max(seen, key=lambda c: (seen.count(c), -seen.index(c))) if seen else None
+
+
+def show_plan(seed, edge, col, sparks, ground, inside, rockets=5, finale=3):
     """The display's rockets: each (launch frame, x, foot, rise, frames up, drift, radius, sparks, kind, colour,
-    turn). Five one after another, then a finale of three together. Returns (rockets, frames the display lasts)."""
+    turn, halo). Five one after another, then a finale of three together. The halo is the colour of the margin round
+    its sparks: the window's ground where it bursts (or, if that is out of the window, where it rises from), as the
+    watch keeps no picture of the ground to draw it pixel by pixel. Returns (rockets, frames the display lasts).
+    (Worked out on the watch by plan_render.c show_plan at the top of the hour, played by plan_show.c.)"""
     rng = Rng(seed)
     starts, f = [], 0
     for _ in range(rockets):
@@ -92,8 +124,11 @@ def show_plan(seed, edge, col, sparks, rockets=5, finale=3):
         rise, up, drift = rng.integers(44, 92), rng.integers(*UP), rng.integers(-6, 7)
         R = rng.integers(11, 18)
         kind = rng.integers(0, 3)                         # 0 a peony, 1 a gold willow, 2 crackling
-        plan.append((f0, col + dx, edge[dx] - 3, rise, up, drift, R, 20 if R >= 14 else 16, kind,
-                     rng.integers(0, len(sparks)), rng.random()))
+        ci, turn = rng.integers(0, len(sparks)), rng.random()
+        x0, foot = col + dx, edge[dx] - 3
+        halo = (halo_colour(ground, inside, x0 + drift, foot - rise) or halo_colour(ground, inside, x0, foot) or
+                tuple(int(v) for v in ground[edge[dx], x0]))
+        plan.append((f0, x0, foot, rise, up, drift, R, 20 if R >= 14 else 16, kind, ci, turn, halo))
     end = max(p[0] + p[4] + SPREAD + LIFE for p in plan) + 1 if plan else 0
     return plan, end
 
@@ -103,24 +138,25 @@ def _dim(c, steps):
     return np.maximum(np.array(c) - 85 * steps, (0, 0, 0))
 
 
-def _put(out, inside, x, y, c):
-    """Note a pixel of the display (drawn together at the end of the frame, each with the ground cleared round it)."""
+def _put(out, inside, x, y, c, halo):
+    """Note a pixel of the display (drawn together at the end of the frame, each with its margin round it)."""
     H, W = inside.shape
     x, y = int(round(x)), int(round(y))
     if 0 <= y < H and 0 <= x < W and inside[y, x]:
-        out[(x, y)] = c
+        out.append((x, y, c, halo))
 
 
-def _draw(img, inside, ground, out):
-    """The frame's display: a pixel of the window's own ground round every spark (as the names have), so the sparks
-    read against a busy chart and wash out the faint stars beside them, as a bright display does; then the sparks."""
+def _draw(img, inside, out):
+    """The frame's display: a pixel of the window's ground round every spark (as the names have), so the sparks read
+    against a busy chart and wash out the faint stars beside them, as a bright display does; then the sparks, in the
+    order they were noted (the watch's order: a later one over an earlier)."""
     H, W = inside.shape
-    for (x, y) in out:
+    for x, y, c, halo in out:
         for ox, oy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             X, Y = x + ox, y + oy
-            if 0 <= Y < H and 0 <= X < W and inside[Y, X] and (X, Y) not in out:
-                img[Y, X] = ground[Y, X]
-    for (x, y), c in out.items():
+            if 0 <= Y < H and 0 <= X < W and inside[Y, X]:
+                img[Y, X] = halo
+    for x, y, c, halo in out:
         img[y, x] = c
 
 
@@ -130,8 +166,8 @@ def fireworks_show(img, ctx, frame, plan, sparks, ink=None):
     The willows droop longest, gold; the crackling ones twinkle as they go; the peonies have a white pistil. On a
     printed chart the whole of it is engraved, in its ink."""
     inside = ctx["inside"]
-    img_, img = img, {}                                  # (the pixels gathered, then drawn with their margins)
-    for (f0, x0, foot, rise, up, drift, R, n, kind, ci, turn) in plan:
+    img_, img = img, []                                  # (the pixels gathered, then drawn with their margins)
+    for (f0, x0, foot, rise, up, drift, R, n, kind, ci, turn, halo) in plan:
         t = frame - f0
         if t < 0:
             continue
@@ -141,7 +177,7 @@ def fireworks_show(img, ctx, frame, plan, sparks, ink=None):
                 e = 1 - (1 - u) ** 2
                 if ink is not None and back % 2:
                     continue
-                _put(img, inside, x0 + drift * e, foot - rise * e, ink if ink is not None else c)
+                _put(img, inside, x0 + drift * e, foot - rise * e, ink if ink is not None else c, halo)
             continue
         s = t - up                                       # bursting
         if s >= SPREAD + LIFE:
@@ -155,7 +191,7 @@ def fireworks_show(img, ctx, frame, plan, sparks, ink=None):
             return R * (1 - (1 - min(q, SPREAD) / SPREAD) ** 2) + 0.3 * max(0, q - SPREAD)
         if s < 2:                                        # the flash
             for ox, oy in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)) + (((1, 1), (-1, -1), (1, -1), (-1, 1)) if s == 0 else ()):
-                _put(img, inside, bx + ox, by + oy, c8(3, 3, 3) if ink is None else ink)
+                _put(img, inside, bx + ox, by + oy, c8(3, 3, 3) if ink is None else ink, halo)
         if s < 2 and ink is None:
             head = c8(3, 3, 3)
         elif s < SPREAD + 5:
@@ -179,11 +215,11 @@ def fireworks_show(img, ctx, frame, plan, sparks, ink=None):
                     continue
                 rb = max(0.0, r1 - back * (1.3 if s < SPREAD else 0.9))
                 fb = g * max(0, s - 2 - back) ** 2
-                _put(img, inside, bx + rb * sa, by - rb * ca + fb, c)
+                _put(img, inside, bx + rb * sa, by - rb * ca + fb, c, halo)
             if kind == 0 and k % 2 == 0 and s < SPREAD + 6:   # a peony's pistil: an inner ring, white
                 _put(img, inside, bx + 0.5 * r1 * math.sin(a + 0.2), by - 0.5 * r1 * math.cos(a + 0.2) + fall,
-                     (c8(3, 3, 3) if s < SPREAD + 3 else c8(2, 2, 3)) if ink is None else ink)
-    _draw(img_, inside, ctx["ground"], img)
+                     (c8(3, 3, 3) if s < SPREAD + 3 else c8(2, 2, 3)) if ink is None else ink, halo)
+    _draw(img_, inside, img)
 
 
 # ---- what a feast marks in the sky ----------------------------------------------------------------------------------

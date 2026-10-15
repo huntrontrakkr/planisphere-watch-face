@@ -29,3 +29,22 @@ static inline float f_smooth(float e0, float e1, float x) {
   float t = f_clamp((x - e0) / (e1 - e0), 0.0f, 1.0f);
   return t * t * (3.0f - 2.0f * t);
 }
+
+/* the random numbers the prototype draws too (proto/rng.py, xorshift32), so both scatter the weather, the stars of
+ * the labours and the fireworks alike */
+typedef struct { uint32_t x; } Rng;
+static inline uint32_t rng_next(Rng *g) {
+  uint32_t x = g->x;
+  x ^= x << 13, x ^= x >> 17, x ^= x << 5;
+  return g->x = x;
+}
+static inline void rng_start(Rng *g, uint32_t seed) {
+  g->x = seed ^ 0x9E3779B9u;
+  if (!g->x) g->x = 1;
+  for (int i = 0; i < 4; i++) rng_next(g);
+}
+static inline float rng_random(Rng *g) { return (float)(rng_next(g) >> 8) * (1.0f / 16777216); }   /* 0 <= u < 1 */
+static inline float rng_uniform(Rng *g, float a, float b) { return a + (b - a) * rng_random(g); }
+static inline int rng_int(Rng *g, int a, int b) {                                               /* a <= n < b */
+  return a + (int)(((uint64_t)(rng_next(g) >> 8) * (uint32_t)(b - a)) >> 24);
+}

@@ -1,8 +1,8 @@
 """The code blobs' deepest stack, worked out from the compiler: each function's frame (-fstack-usage) along the call
-graph (-fcallgraph-info), for each code blob as tools/build_blob.py builds it (the renderer from plan_render and
-plan_init, the calendars from plan_feast). Prints the deepest chains from each
-entry, and the depth at each call the renderer makes out of itself (the memory and the screen's rows, which run the
-system's code on the same stack).
+graph (-fcallgraph-info), for each code blob as tools/build_blob.py builds it, from each function its entry table
+holds (the renderer's plan_render and plan_init, the calendars' plan_feast, the display's plan_show). Prints the
+deepest chains from each entry, and the depth at each call the blob makes out of itself (the memory and the screen's
+rows, which run the system's code on the same stack).
 
     python3 tools/stack_depth.py [--top N] [--budget BYTES]
 
@@ -35,15 +35,14 @@ def main():
     gcc = str(cc if cc.exists() else sdks[-1])
     flags = [f for f in build_blob.CFLAGS if f not in ("-Werror",)]
     worst_all, dynamic_all = 0, set()
-    for name, (sources, _) in build_blob.BLOBS.items():
-        entries = ("plan_render", "plan_init") if name == "plan_code" else ("plan_feast",)
-        worst, dynamic = analyse(gcc, flags, sources, entries, a.top)
+    for name, (sources, api) in build_blob.BLOBS.items():
+        worst, dynamic = analyse(gcc, flags, sources, api, a.top)
         worst_all, dynamic_all = max(worst_all, worst), dynamic_all | dynamic
     if dynamic_all or (a.budget and worst_all > a.budget):
         sys.exit(f"A blob goes {worst_all} bytes deep (budget {a.budget}), or has frames sized at run time.")
 
 
-def analyse(gcc, flags, sources, entries, top):
+def analyse(gcc, flags, sources, api, top):
     with tempfile.TemporaryDirectory() as tmp:
         objs = []
         for src in sources:
@@ -54,15 +53,19 @@ def analyse(gcc, flags, sources, entries, top):
         subprocess.run([gcc, *flags, "-fstack-usage", "-fcallgraph-info=su", "-nostdlib", "-nostartfiles",
                         f"-Wl,-T,{build_blob.BLOB / 'blob.ld'}", "-Wl,--gc-sections", "-Wl,-q", "-save-temps", "-o",
                         str(elf), *objs, "-lgcc"], check=True, cwd=tmp, capture_output=True)
-        # the functions whose addresses the code takes: what a call through a pointer inside the renderer may reach
+        # the functions whose addresses the code takes: those in the entry table (the blob's entries), and the rest,
+        # what a call through a pointer inside the blob may reach
         readelf = str(Path(gcc).parent / "arm-none-eabi-readelf")
-        funcs = set(re.findall(r"\sFUNC\s+\S+\s+\S+\s+\S+\s+(\S+)$",
-                               subprocess.run([readelf, "-sW", str(elf)], capture_output=True, text=True).stdout, re.M))
-        taken = set()
+        symtab = subprocess.run([readelf, "-sW", str(elf)], capture_output=True, text=True).stdout
+        funcs = set(re.findall(r"\sFUNC\s+\S+\s+\S+\s+\S+\s+(\S+)$", symtab, re.M))
+        at, size = (int(v, 16) if i == 0 else int(v) for i, v in
+                    enumerate(re.search(r"([0-9a-f]+)\s+(\d+)\s+OBJECT\s+\S+\s+\S+\s+\S+\s+" + api + "$", symtab,
+                                        re.M).groups()))
+        entries, taken = [], set()
         for line in subprocess.run([readelf, "-rW", str(elf)], capture_output=True, text=True).stdout.splitlines():
-            m = re.match(r"\s*[0-9a-f]+\s+[0-9a-f]+\s+R_ARM_ABS32\s+[0-9a-f]+\s+(\S+)", line)
-            if m and m.group(1) in funcs and m.group(1) not in ("plan_init", "plan_render", "plan_feast"):
-                taken.add(m.group(1))
+            m = re.match(r"\s*([0-9a-f]+)\s+[0-9a-f]+\s+R_ARM_ABS32\s+[0-9a-f]+\s+(\S+)", line)
+            if m and m.group(2) in funcs:
+                (entries.append if at <= int(m.group(1), 16) < at + size else taken.add)(m.group(2))
         frame, calls, dynamic = {}, {}, set()
         for ci in Path(tmp).glob("*.ci"):
             text = ci.read_text()
@@ -93,6 +96,7 @@ def analyse(gcc, flags, sources, entries, top):
                 best = d
         return own + best[0], (f,) + best[1]
 
+    entries.sort(key=lambda e: -deepest(e)[0])         # (the deepest first, for the report on its calls)
     for entry in entries:
         total, chain = deepest(entry)
         print(f"{entry}: {total} bytes deep at most")

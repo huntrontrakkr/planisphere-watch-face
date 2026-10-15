@@ -92,6 +92,21 @@ void plan_civil(int64_t local, Civil *c);
 typedef struct FeastReader FeastReader;
 int plan_feast_on(const FeastReader *rd, int32_t ordinal, uint32_t cal, float hours);
 
+/* A rocket of a fireworks display (proto/feast_draw.py show_plan): launched at frame f0 from (x0, foot), it climbs
+ * rise pixels in up frames, drifting aside, and bursts into n sparks reaching R pixels; kind 0 a peony, 1 a gold
+ * willow, 2 crackling; its colour among the feast's sparks, the turn of its ring of sparks, the colour of the margin
+ * round them (the window's ground where it bursts). */
+typedef struct {
+  uint8_t f0, rise, up, R, n, kind, colour, halo;
+  int8_t drift;
+  int16_t x0, foot;
+  float turn;
+} Rocket;
+#define SHOW_ROCKETS 8
+#define SHOW_FPS 12
+#define SHOW_SPREAD 7                        /* frames a burst takes to open */
+#define SHOW_LIFE 12                         /* frames its sparks then hang, drooping and fading */
+
 /* The face's state: its data, the screen, and the window for the latitude (kept from one drawing to the next). */
 typedef struct {
   const uint8_t *data, *geom;  /* the blobs: plan.bin and this screen's geom_*.bin */
@@ -126,14 +141,25 @@ typedef struct {
   uint8_t feast_flags, feast_sky;      /* FF_*; FS_* */
   int8_t feast_first;                  /* the evening's first star (FS_FIRST_STAR): a named star's index + 1, a
                                         * planet's -(index + 1), 0 none */
+  uint8_t feast_eve;                   /* the day before's feast's FF_* if it ends at midnight with fireworks, or 0 */
   uint8_t feast_art_w, feast_art_h;    /* its emblem (0 wide: none): a bit a pixel, row by row, the low bit first */
   uint8_t feast_art[32];
   char feast_words[2][20];             /* its long and short words for the almanac's line */
+  /* the fireworks display at the top of this hour, if there is one: plan_render works it out then (from the window's
+   * edge and ground), the display's own code (plan_show) plays it */
+  int32_t show_hour;                   /* the local hour it is for (the date's ordinal * 24 + the hour), -1 none */
+  uint8_t show_rockets, show_ink;      /* how many; 0 in colour, else the ink a printed chart engraves it in */
+  uint8_t show_sparks[4];              /* the feast's colours (0 ends them) */
+  uint16_t show_end;                   /* the frames it lasts, at SHOW_FPS */
+  Rocket show[SHOW_ROCKETS];
   /* while drawing */
   uint8_t *rows[MAX_H];
   int16_t rx0[MAX_H], rx1[MAX_H];
 } Plan;
 
+/* The face's place from the phone's numbers (1e-4 degrees): here, so the app itself does no arithmetic in floats
+ * (libgcc's would cost it a kilobyte and more). */
+void plan_place(Face *f, int32_t lat_e4, int32_t lon_e4);
 /* Set up for a screen of w x h (200 x 228 the Time 2, 260 x 260 the Round 2) with its blobs. */
 void plan_init(Plan *p, int w, int h, const uint8_t *data, const uint8_t *geom);
 /* The window for a latitude (worked out again only when it changes: about a tenth of a second on the watch). */
@@ -150,7 +176,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
  * app's own binary stays small (PebbleOS caps it at 64 KB) and the renderer has the rest of the app's memory. The
  * layout number keeps a blob from one build from running with another's structures. */
 #define PLAN_API_MAGIC 0x4e414c50u           /* "PLAN" */
-#define PLAN_API_VERSION 2u
+#define PLAN_API_VERSION 3u
 #define PLAN_LAYOUT ((PLAN_API_VERSION << 28) ^ ((uint32_t)sizeof(Plan) << 12) ^ ((uint32_t)sizeof(Face) << 4) ^ \
                      (uint32_t)sizeof(Weather))
 typedef struct {
@@ -158,6 +184,7 @@ typedef struct {
   void (*init)(Plan *p, int w, int h, const uint8_t *data, const uint8_t *geom);
   bool (*render)(Plan *p, const Face *f, int64_t utc, int32_t offset, const Target *t, void *(*alloc)(size_t),
                  void (*release)(void *));
+  void (*place)(Face *f, int32_t lat_e4, int32_t lon_e4);
 } PlanApi;
 /* The calendars' code, a blob of its own (plan_feasts.c and the ephemeris it asks), which the watch loads only to look
  * up the day's feast, once a day, with the calendars' table (feasts.bin), and lets go: the renderer reads the answer
@@ -173,3 +200,16 @@ typedef struct {
   bool (*feast)(Plan *p, const Face *f, int64_t utc, int32_t offset, const FeastReader *rd);
 } FeastApi;
 bool plan_feast(Plan *p, const Face *f, int64_t utc, int32_t offset, const FeastReader *rd);
+
+/* The fireworks display's code, a blob of its own (plan_show.c), which the watch loads at the top of an hour that
+ * brings one and plays SHOW_FPS times a second over the face as last drawn: each frame puts back the pixels the last
+ * covered (kept in a ShowUndo) and draws its own. Frame `end` (Plan.show_end) only puts back. True while the display
+ * goes on. */
+#define SHOW_API_MAGIC 0x574f4853u           /* "SHOW" */
+typedef struct { uint16_t n, cap; uint32_t px[]; } ShowUndo;   /* each x | y << 9 | the colour << 18 */
+#define SHOW_UNDO 1024                       /* the pixels a frame may cover (the most seen is under 450: check_memory) */
+typedef struct {
+  uint32_t magic, layout;
+  bool (*frame)(Plan *p, const Target *t, int frame, ShowUndo *undo);
+} ShowApi;
+bool plan_show(Plan *p, const Target *t, int frame, ShowUndo *undo);

@@ -112,3 +112,4 @@ enum { FZ_LOCAL, FZ_BJ, FZ_IST };
 enum { FF_LIGHTS = 1, FF_BONFIRES = 2, FF_FIREWORKS = 4, FF_MIDNIGHT = 8, FF_RED = 64, FF_NIGHTS = 128 };   /* sparks: flags >> 4 & 3 */
 enum { FS_NONE, FS_FIRST_STAR, FS_WEAVER, FS_RABBIT };   /* what a feast marks in the sky */
 typedef struct { uint8_t cal, kind, span, emblem, flags, rank, zone, sky; int16_t a, b, c, pad2; uint16_t words[4]; } FeastRecord;
+static const uint8_t SPARK_COLOURS[3][4] = {{0xF0, 0xFF, 0xDB, 0x00}, {0xFD, 0xF8, 0xFF, 0x00}, {0xFD, 0xFF, 0xF5, 0xDD}};

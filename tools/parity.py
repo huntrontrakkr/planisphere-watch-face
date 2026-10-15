@@ -16,6 +16,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "proto"))
+import feast_draw                  # noqa: E402
 import plates                      # noqa: E402
 import weather as meteo           # noqa: E402
 from render import load_sky        # noqa: E402
@@ -98,6 +99,17 @@ CASES = {
                     {"calendars": 4095}),
     "sky-mid-autumn-t2": ("emery", "night", datetime(2026, 9, 25, 13, 0, tzinfo=timezone.utc), (39.90, 116.40, 480),
                           {"calendars": 4095}),
+    # frames of the fireworks displays at the top of an evening hour (and New Year's midnight), as the watch plays them
+    "show-july4-t2": ("emery", "planisphere", datetime(2026, 7, 5, 1, 0, tzinfo=timezone.utc), NY,
+                      {"calendars": 64, "show": 20}),
+    "show-july4-finale-r2": ("gabbro", "planisphere", datetime(2026, 7, 5, 2, 0, tzinfo=timezone.utc), NY,
+                             {"calendars": 64, "show": 66}),
+    "show-flamsteed-t2": ("emery", "flamsteed", datetime(2026, 7, 5, 1, 0, tzinfo=timezone.utc), NY,
+                          {"calendars": 64, "show": 30}),
+    "show-bonfire-t2": ("emery", "planisphere", datetime(2026, 11, 5, 20, 0, tzinfo=timezone.utc), (51.51, -0.13, 0),
+                        {"calendars": 128, "show": 40}),
+    "show-new-year-r2": ("gabbro", "burritt", datetime(2027, 1, 1, 0, 0, tzinfo=timezone.utc), (51.51, -0.13, 0),
+                         {"calendars": 128, "show": 50}),
 }
 
 
@@ -111,6 +123,8 @@ def c_render(screen, plate, when, place, opts, path):
         args.append("--labours")
     if opts.get("calendars"):
         args += ["--calendars", str(opts["calendars"])]
+    if opts.get("show") is not None:
+        args += ["--show", str(opts["show"])]
     city, country = plates.place_name(lat, lon)
     if city:
         args += ["--city", city, "--country", country]
@@ -129,8 +143,20 @@ def py_render(screen, plate, when, place, opts, sky):
     dial = plates.RectDial(200, 228, lat, lon) if screen == "emery" else plates.RoundDial(260, 260, lat, lon)
     tz = timezone(timedelta(minutes=off))
     w = meteo.SAMPLES[opts["weather"]] if opts.get("weather") else None
-    return plates.render(when, dial, sky, tz, plate, round_screen=screen == "gabbro", clock24=opts.get("clock24", False),
-                         weather=w, labours=opts.get("labours", False), calendars=opts.get("calendars", 0)).astype(np.uint8)
+
+    def face(extras=None):
+        return plates.render(when, dial, sky, tz, plate, round_screen=screen == "gabbro",
+                             clock24=opts.get("clock24", False), weather=w, labours=opts.get("labours", False),
+                             calendars=opts.get("calendars", 0), extras=extras).astype(np.uint8)
+    if opts.get("show") is None:
+        return face()
+    # a frame of the fireworks display due at the top of the hour, over the face as drawn then
+    probe = {}
+    face(lambda img, ctx: probe.update(ctx))
+    seed, sparks = feast_draw.display_at(when.astimezone(tz), probe["sun_alt"], opts.get("calendars", 0), lat)
+    plan, _ = feast_draw.show_plan(seed, probe["edge"], probe["col"], sparks, probe["ground"], probe["inside"])
+    ink = probe["P"]["accent"] if probe["paper"] else None
+    return face(lambda img, ctx: feast_draw.fireworks_show(img, ctx, opts["show"], plan, sparks, ink))
 
 
 def main():

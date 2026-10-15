@@ -295,7 +295,7 @@
   $('date').onchange = function () {
     var p = $('date').value.split('-');
     if (p.length === 3) day = new Date(+p[0], +p[1] - 1, +p[2]), following = false;
-    draw(); refreshThumbs(); showTime();
+    refresh(); draw(); refreshThumbs(); showTime();             // (the calendars' next days count from it)
   };
   $('now').onclick = function () {
     day = new Date(); minute = day.getHours() * 60 + day.getMinutes(); following = true;
@@ -364,10 +364,13 @@
     try { return !/[ap]m/i.test(new Date(2026, 0, 1, 15).toLocaleTimeString()); } catch (e) { return false; }
   }
   function paint(canvas, plate) {
+    stopShow();                                  // (the preview draws one face at a time)
     setup(plate);
     var t = moment();
     var ptr = M._pv_render(t.utc, t.offset);
-    if (!ptr) return;
+    if (ptr) blit(canvas, ptr);
+  }
+  function blit(canvas, ptr) {
     var w = M._pv_width(), h = M._pv_height(), ctx = canvas.getContext('2d'), img = ctx.createImageData(w, h);
     var px = img.data, round = which === 'round2';
     for (var y = 0; y < h; y++) {
@@ -381,9 +384,25 @@
     }
     ctx.putImageData(img, 0, 0);
   }
+  // the fireworks display, in the preview as on the watch: at the top of an hour that brings one, its frames over the
+  // face as drawn then (the plates below wait for it)
+  var show = null, thumbsWaiting = false;
+  function stopShow() { if (show) clearInterval(show.timer), show = null; }
+  function startShow() {
+    var frames = M._pv_show_frames();
+    if (!frames || lapse) return;
+    var s = show = {frame: 0};
+    s.timer = setInterval(function () {
+      blit($('screen'), M._pv_show_frame(s.frame));
+      if (s.frame++ < frames) return;
+      stopShow();
+      if (thumbsWaiting) refreshThumbs();
+    }, 1000 / 12);
+  }
   function draw() {
     if (!M) return;
     paint($('screen'), settings.PLATE);
+    startShow();
     var p = place();
     $('caption').innerHTML = PLATES[settings.PLATE] ? '<b>Plate ' + roman(settings.PLATE + 1) + '</b>' +
       escapeHtml(PLATES[settings.PLATE].name) + ' · ' + Math.abs(p.lat).toFixed(1) + '° ' + (p.lat >= 0 ? 'N' : 'S') +
@@ -393,7 +412,10 @@
   function refreshThumbs() {
     if (!M) return;
     clearTimeout(thumbTimer);
-    thumbTimer = setTimeout(function () { thumbs.forEach(function (t) { paint(t.canvas, t.plate); }); }, 30);
+    thumbTimer = setTimeout(function () {
+      thumbsWaiting = !!show;
+      if (!show) thumbs.forEach(function (t) { paint(t.canvas, t.plate); });
+    }, 30);
   }
   function refresh() { theme(settings.PLATE); dirty.forEach(function (f) { f(); }); }
   function changed() { refresh(); draw(); refreshThumbs(); showTime(); }

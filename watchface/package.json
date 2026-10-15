@@ -74,6 +74,11 @@
           "type": "raw",
           "name": "PLAN_FEAST_CODE",
           "file": "data/feast_code.bin"
+        },
+        {
+          "type": "raw",
+          "name": "PLAN_SHOW_CODE",
+          "file": "data/show_code.bin"
         }
       ]
     },

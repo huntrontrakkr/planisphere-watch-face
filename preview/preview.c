@@ -89,3 +89,16 @@ EMSCRIPTEN_KEEPALIVE int pv_next_feast(int mask, int from, int days, int offset)
   return -1;
 }
 EMSCRIPTEN_KEEPALIVE char *pv_feast_words(void) { return feast_words; }
+
+/* The fireworks display due at the top of the hour last drawn (pv_render), if there is one: its frames (0: none), at
+ * SHOW_FPS. Then each frame over the face as last drawn (pv_show_frame), the screen back each time; frame `frames`
+ * puts the face back as it was. */
+static struct { ShowUndo u; uint32_t px[SHOW_UNDO]; } undo = {{0, SHOW_UNDO}, {0}};
+EMSCRIPTEN_KEEPALIVE int pv_show_frames(void) {
+  undo.u.n = 0;
+  return P.show_hour >= 0 ? P.show_end : 0;
+}
+EMSCRIPTEN_KEEPALIVE uint8_t *pv_show_frame(int frame) {
+  plan_show(&P, &(Target){pv_row, NULL}, frame, &undo.u);
+  return fb;
+}
