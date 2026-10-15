@@ -44,10 +44,14 @@ typedef struct {
   uint8_t sun_c[8], planet_c[8], moon_c[8];  /* colours by role; 0 none */
   uint8_t tint, ramp[6];
   int nramp;
-  const uint16_t *bn;
+  const uint8_t *bn;
+  int32_t thresh12[256];                     /* each blue-noise level's threshold for the Milky Way */
   /* the window's ground: two values on a grid every 4 pixels over the window */
   int gx0, gy0, gnx, gny;
-  float *ga, *gb;
+  int16_t *ga, *gb, *gra, *gdec;
+  float ik, sk_day, sk_lift, sk_twf, sk_warm, ssd, csd, csh, ssh, sl0, cl0;
+  int16_t bright[96][2];                     /* the stars brighter than 2.1 on the screen, for the zodiac to avoid */
+  int nbright;
   /* what names keep clear of */
   int16_t box[MAX_BOXES][4];
   int nbox;
@@ -77,7 +81,7 @@ static inline bool inside(R *r, int x, int y) {
 static inline bool on_screen(R *r, int x, int y) { return (unsigned)x < (unsigned)r->W && (unsigned)y < (unsigned)r->H; }
 
 /* the blue-noise threshold at a pixel, 0..1 */
-static inline float tt(R *r, int x, int y) { return ((float)r->bn[(y & 63) * 64 + (x & 63)] + 0.5f) / 4096.0f; }
+static inline float tt(R *r, int x, int y) { return ((float)r->bn[(y & 63) * 64 + (x & 63)] + 0.5f) * (1.0f / 256); }
 
 /* a colour mixed with another, a parts in one, then put to the nearest of the palette's levels */
 static uint8_t mix(uint8_t c1, uint8_t c2, float a) {
@@ -138,15 +142,20 @@ static void project(R *r, float ra, float dec, float *x, float *y) {
   *x = r->cx + rho * (float)f_sind((float)h);
   *y = r->cy + rho * (float)f_cosd((float)h);
 }
-/* a point of the ecliptic at longitude `lon`, as right ascension and declination */
+/* a point of the ecliptic at longitude `lon`, as right ascension and declination (for drawing: single precision) */
 static void ecl_point(R *r, float lon, float *ra, float *dec) {
-  double a, d;
-  plan_ecl_to_eq(lon, 0, r->sky.eps, &a, &d);
-  *ra = (float)a, *dec = (float)d;
+  float sl = f_sind(lon), e = (float)r->sky.eps;
+  *ra = pyf_mod(f_atan2d(sl * f_cosd(e), f_cosd(lon)), 360);
+  *dec = f_asind(sl * f_sind(e));
 }
-#define STAR_SIZE 8
-static int star_mag(const uint8_t *s) { return (int16_t)(s[4] | s[5] << 8); }   /* hundredths */
-static int star_bv(const uint8_t *s) { return (int16_t)(s[6] | s[7] << 8); }    /* thousandths */
+/* a point's altitude here (for drawing's decisions: single precision) */
+static float altitude(R *r, double ra, double dec) {
+  float d = (float)dec;
+  return f_asind(r->sl0 * f_sind(d) + r->cl0 * f_cosd(d) * f_cosd(r->lst - (float)ra));
+}
+#define STAR_SIZE 6
+static int star_mag(const uint8_t *s) { return ((s[4] | s[5] << 8) >> 3) - 200; }   /* hundredths */
+static int star_class(const uint8_t *s) { return s[4] & 7; }                      /* by colour */
 static float star_ra(const uint8_t *s) { return (s[0] | s[1] << 8) * 360.0f / 65536; }
 static float star_dec(const uint8_t *s) { return (s[2] | s[3] << 8) * 180.0f / 65535 - 90; }
 
@@ -372,6 +381,7 @@ void plan_init(Plan *p, int w, int h, const uint8_t *data, const uint8_t *geom) 
   p->w = w, p->h = h, p->data = data, p->geom = geom;
   p->rect = w != h;
   p->lat_key = 1e9f;
+  p->ev_kind = -1;
 }
 
 void plan_window(Plan *p, double lat) {
@@ -419,138 +429,175 @@ static const uint8_t WARM[5] = {C8(1, 1, 2), C8(2, 1, 2), C8(3, 1, 1), C8(3, 2, 
 static const uint8_t GREY[4] = {0, C8(1, 1, 1), C8(2, 2, 2), C8(3, 3, 3)};
 static const uint8_t REDS[3] = {C8(0, 0, 0), C8(1, 0, 0), C8(2, 0, 0)};
 
-/* the sky's brightness on the COOL ramp (0 night .. 5 palest) and a warm glow 0..1 (proto/render2.py sky_scalar) */
-static void sky_scalar(float alt, float gamma, float s, float *b, float *warm) {
-  float a = f_clamp(alt, 0, 90);
-  float day = f_smooth(-3, 7, s);
-  float horizon = f_exp(-a / 32), sunside = f_exp(-gamma / 80);
-  float lift = f_smooth(-18, -1, s);
-  float b_tw = lift * (0.8f + 3.0f * horizon * (0.25f + 0.75f * sunside) * (0.6f + 0.4f * lift));
-  float q = 1 - a / 90;
-  float b_day = 2.3f + 2.1f * q * q * q + 1.4f * f_exp(-gamma / 11);
-  *b = f_clamp(b_tw * (1 - day) + b_day * day, 0, 5);
-  *warm = f_clamp(f_smooth(-11, -1, s) * (1 - f_smooth(-1, 5, s)) * f_exp(-a / 15 - gamma / 42) * 1.25f, 0, 1);
+/* the sky's brightness on the COOL ramp (0 night .. 5 palest) and a warm glow 0..1 (proto/render2.py sky_scalar), the
+ * Sun's part worked out once a drawing (sky_constants) */
+static void sky_constants(R *r, float s) {
+  r->sk_day = f_smooth(-3, 7, s), r->sk_lift = f_smooth(-18, -1, s);
+  r->sk_twf = 0.6f + 0.4f * r->sk_lift;
+  r->sk_warm = f_smooth(-11, -1, s) * (1 - f_smooth(-1, 5, s)) * 1.25f;
+}
+static void sky_scalar(R *r, float alt, float gamma, float *b, float *warm) {
+  float a = f_clamp(alt, 0, 90), b_tw = 0, b_day = 0;
+  if (r->sk_day < 1 && r->sk_lift > 0) {
+    float horizon = f_exp(-a * (1.0f / 32)), sunside = f_exp(-gamma * (1.0f / 80));
+    b_tw = r->sk_lift * (0.8f + 3.0f * horizon * (0.25f + 0.75f * sunside) * r->sk_twf);
+  }
+  if (r->sk_day > 0) {
+    float q = 1 - a * (1.0f / 90);
+    b_day = 2.3f + 2.1f * q * q * q + 1.4f * f_exp(-gamma * (1.0f / 11));
+  }
+  *b = f_clamp(b_tw * (1 - r->sk_day) + b_day * r->sk_day, 0, 5);
+  *warm = r->sk_warm > 0 ? f_clamp(r->sk_warm * f_exp(-a * (1.0f / 15) - gamma * (1.0f / 42)), 0, 1) : 0;
 }
 
-/* the grid's two values at a point of the chart */
-static void node_values(R *r, float x, float y, float *va, float *vb) {
-  float dx = x - r->cx, dy = y - r->cy, rho = f_sqrt(dx * dx + dy * dy);
-  float dec = 90.0f - rho / r->k, ch = rho > 0 ? dy / rho : 1, sh = rho > 0 ? dx / rho : 0;
-  float sd = f_sind(dec), cd = f_cosd(dec);
-  *vb = 0;
-  if (r->woodcut) {                               /* the ecliptic latitude, for the zodiac's band */
-    float ha = f_atan2d(sh, ch);
-    float ra = r->south ? r->lst + ha : r->lst - ha, d = r->south ? -dec : dec;
-    float e = (float)r->sky.eps;
-    *va = f_asind(f_sind(d) * f_cosd(e) - f_cosd(d) * f_sind(e) * f_sind(ra));
+static int q12(float v) { return (int)(v * 4096 + (v < 0 ? -0.5f : 0.5f)); }
+
+/* the grid's values at a node (pixel coordinates of the point): the ground's (Q12, the woodcut's ecliptic latitude Q8)
+ * and its warmth (Q12); with the Milky Way, the point's right ascension (Q6) and declination (Q8) */
+static void node_values(R *r, float x, float y, int16_t *va, int16_t *vb, int16_t *vra, int16_t *vdec) {
+  float dx = x - r->cx, dy = y - r->cy, rho = f_sqrt(dx * dx + dy * dy), irho = rho > 0 ? 1 / rho : 0;
+  float dec = 90.0f - rho * r->ik, ch = rho > 0 ? dy * irho : 1, sh = dx * irho;
+  *va = *vb = 0;
+  if (vra || r->woodcut) {
+    float ha = f_atan2d(dx, dy), ra = r->south ? r->lst + ha : r->lst - ha;
+    ra = pyf_mod(ra, 360);
+    if (vra) *vra = (int16_t)(int)(ra * 64), *vdec = (int16_t)(int)((r->south ? -dec : dec) * 256);
+    if (r->woodcut) {                             /* the ecliptic latitude, for the zodiac's band */
+      float d = r->south ? -dec : dec, e = (float)r->sky.eps;
+      *va = (int16_t)(int)(f_asind(f_sind(d) * f_cosd(e) - f_cosd(d) * f_sind(e) * f_sind(ra)) * 256);
+      return;
+    }
+  }
+  if (r->P->window != WIN_SKY && r->P->window != WIN_RED) return;
+  if (r->closed_sky) {                            /* an even grey under a closed sky, paler overhead */
+    float k = f_smooth(-9, 5, r->s_eff);
+    if (k <= 0) return;
+    float lift = r->fog ? 0.75f : (r->thunder || r->rain_or_hail) ? -1.0f : 0.0f;
+    float palt = f_asind(r->sl * f_sind(dec) + r->cl * f_cosd(dec) * ch);
+    *va = (int16_t)q12(f_clamp((2.0f + 0.45f * f_sind(f_clamp(palt, 0, 90)) + lift) * k, 0, 3));
     return;
   }
+  if (r->sk_lift <= 0 && r->sk_day <= 0 && r->sk_warm <= 0) return;   /* night: the sky's darkest everywhere */
+  float sd = f_sind(dec), cd = f_cosd(dec);
   float palt = f_asind(r->sl * sd + r->cl * cd * ch);
-  float gamma = f_acosd(sd * f_sind(r->sdec) + cd * f_cosd(r->sdec) * (ch * f_cosd(r->sha) + sh * f_sind(r->sha)));
-  if (r->P->window == WIN_RED) {
-    float b, w;
-    sky_scalar(palt, gamma, r->s_eff, &b, &w);
-    *va = f_clamp(b * 0.5f, 0, 2);
-  } else if (r->closed_sky) {                     /* an even grey under a closed sky, paler overhead */
-    float lift = r->fog ? 0.75f : (r->thunder || r->rain_or_hail) ? -1.0f : 0.0f;
-    *va = f_clamp((2.0f + 0.45f * f_sind(f_clamp(palt, 0, 90)) + lift) * f_smooth(-9, 5, r->s_eff), 0, 3);
-  } else {
-    sky_scalar(palt, gamma, r->sun_alt, va, vb);
-    *va = f_clamp(*va, 0, (float)(r->nramp - 1));
-  }
+  float gamma = f_acosd(sd * r->ssd + cd * r->csd * (ch * r->csh + sh * r->ssh));
+  float b, w;
+  sky_scalar(r, palt, gamma, &b, &w);
+  if (r->P->window == WIN_RED) *va = (int16_t)q12(f_clamp(b * 0.5f, 0, 2));
+  else *va = (int16_t)q12(f_clamp(b, 0, (float)(r->nramp - 1))), *vb = (int16_t)q12(w);
 }
 
-/* the grid cell holding a pixel: its corner values and where in it the pixel is */
-typedef struct { float v00, v10, v01, v11, u, v; } Cell;
-static void cell_at(R *r, const float *g, int x, int y, Cell *c) {
+/* the grid cell holding a pixel: its corners' values, and where in it the pixel is (0..3 each way) */
+typedef struct { int v00, v10, v01, v11, dx, dy; } Cell;
+static void cell_at(R *r, const int16_t *g, int x, int y, Cell *c) {
   int gx = x - r->gx0, gy = y - r->gy0;
   int i = gx >> 2, j = gy >> 2;
   if (i < 0) i = 0;
   if (j < 0) j = 0;
   if (i > r->gnx - 2) i = r->gnx - 2;
   if (j > r->gny - 2) j = r->gny - 2;
-  c->u = (gx - 4 * i) / 4.0f, c->v = (gy - 4 * j) / 4.0f;
-  const float *a = g + j * r->gnx + i;
+  c->dx = gx - 4 * i, c->dy = gy - 4 * j;
+  const int16_t *a = g + j * r->gnx + i;
   c->v00 = a[0], c->v10 = a[1], c->v01 = a[r->gnx], c->v11 = a[r->gnx + 1];
 }
-static float cell_value(const Cell *c) {
-  return (c->v00 * (1 - c->u) + c->v10 * c->u) * (1 - c->v) + (c->v01 * (1 - c->u) + c->v11 * c->u) * c->v;
+static int cell_value(const Cell *c) {
+  int l = c->v00 * (4 - c->dy) + c->v01 * c->dy, rr = c->v10 * (4 - c->dy) + c->v11 * c->dy;
+  return (l * (4 - c->dx) + rr * c->dx) >> 4;
 }
-static float cell_grad(const Cell *c) {
-  float ddx = ((c->v10 - c->v00) * (1 - c->v) + (c->v11 - c->v01) * c->v) / 4;
-  float ddy = ((c->v01 - c->v00) * (1 - c->u) + (c->v11 - c->v10) * c->u) / 4;
-  return f_sqrt(ddx * ddx + ddy * ddy);
+static uint32_t isqrt(uint32_t v) {
+  uint32_t r = 0, b = 1u << 30;
+  while (b > v) b >>= 2;
+  while (b) {
+    if (v >= r + b) v -= r + b, r = (r >> 1) + b;
+    else r >>= 1;
+    b >>= 2;
+  }
+  return r;
 }
-static float grid_at(R *r, const float *g, int x, int y, float *grad) {
-  Cell c;
-  cell_at(r, g, x, y, &c);
-  if (grad) *grad = cell_grad(&c);
-  return cell_value(&c);
+/* how fast the value changes at the pixel, per pixel (in the value's units) */
+static int cell_grad(const Cell *c) {
+  int gx = ((c->v10 - c->v00) * (4 - c->dy) + (c->v11 - c->v01) * c->dy) >> 4;
+  int gy = ((c->v01 - c->v00) * (4 - c->dx) + (c->v11 - c->v10) * c->dx) >> 4;
+  return (int)isqrt((uint32_t)(gx * gx + gy * gy));
 }
 
-/* the prototype's banded(): flat bands along v, each edge dithered about 1.6f pixels wide; `wmax` bounds the edge's
- * width over the cell (pixels further than that from an edge are their band's without working the width out) */
-static int band_index(const Cell *c, float t, int n, float wmax) {
-  float v = cell_value(c), fl = v + 0.5f;
-  int k = (int)fl;
-  if ((float)k > fl) k--;
-  float f = fl - (float)k;
-  int idx = k;
-  if (f < wmax || 1 - f < wmax) {
-    float w = f_clamp(cell_grad(c) * 1.6f, 1e-3f, 0.5f);
-    float p_up = f_clamp(0.5f - (1 - f) / (2 * w), 0, 1), p_dn = f_clamp(0.5f - f / (2 * w), 0, 1);
-    idx = k + (t < p_up) - (t > 1 - p_dn);
+/* the prototype's banded(), in Q12: flat bands along the value, each edge dithered about 1.6 pixels wide; `wmax`
+ * bounds the edge's width over the cell (pixels further than that from an edge are their band's, the width not
+ * worked out) */
+static int band_q(const Cell *c, int t, int n, int wmax) {
+  int fl = cell_value(c) + 2048, k = fl >> 12, f = fl & 4095, idx = k;
+  if (f < wmax || 4096 - f < wmax) {
+    int w = (cell_grad(c) * 1638) >> 10;
+    w = w < 4 ? 4 : w > 2048 ? 2048 : w;
+    int up = 2048 - (4096 - f) * 2048 / w, dn = 2048 - f * 2048 / w;
+    up = up < 0 ? 0 : up, dn = dn < 0 ? 0 : dn;
+    idx = k + (t < up) - (t > 4096 - dn);
   }
   return idx < 0 ? 0 : idx >= n ? n - 1 : idx;
 }
 /* the widest an edge's dither can be anywhere in a cell: the gradient is largest at a corner */
-static float cell_wmax(const Cell *c0, float scale) {
+static int cell_wmax(const Cell *c0) {
   Cell c = *c0;
-  float m = 0;
+  int m = 0;
   for (int k = 0; k < 4; k++) {
-    c.u = (float)(k & 1), c.v = (float)(k >> 1);
-    float g = cell_grad(&c);
+    c.dx = (k & 1) * 4, c.dy = (k >> 1) * 4;
+    int g = cell_grad(&c);
     if (g > m) m = g;
   }
-  return f_clamp(m * scale * 1.6f, 1e-3f, 0.5f);
+  m = (m * 1638) >> 10;
+  return m < 4 ? 4 : m > 2048 ? 2048 : m;
+}
+/* the warm glow's band value, wv - 1 clipped to 0..4 (Q12), at each corner */
+static void warm_corners(Cell *w) {
+  int *v[4] = {&w->v00, &w->v10, &w->v01, &w->v11};
+  for (int i = 0; i < 4; i++) {
+    int x = *v[i] * 5 + 819 - 4096;
+    *v[i] = x < 0 ? 0 : x > 16384 ? 16384 : x;
+  }
 }
 
 /* the woodcut's zodiac band at a pixel: 0 outside, 1 the band, 2 its edge (inked), 3 the ecliptic (red) */
 static int zodiac_at(R *r, int x, int y) {
-  float g, beta = grid_at(r, r->ga, x, y, &g);
-  if (beta < 6 && beta > -6) return (g > 0 && f_abs(beta) / g < 0.57f) ? 3 : 1;
+  Cell c;
+  cell_at(r, r->ga, x, y, &c);
+  int beta = cell_value(&c), g = cell_grad(&c);
+  if (beta < 1536 && beta > -1536) return (g > 0 && (beta < 0 ? -beta : beta) * 100 < 57 * g) ? 3 : 1;
   static const int8_t N4[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
   for (int n = 0; n < 4; n++) {
     int X = x + N4[n][0], Y = y + N4[n][1];
     if (!inside(r, X, Y)) continue;
-    float b2 = grid_at(r, r->ga, X, Y, NULL);
-    if (b2 < 6 && b2 > -6) return 2;
+    cell_at(r, r->ga, X, Y, &c);
+    int b2 = cell_value(&c);
+    if (b2 < 1536 && b2 > -1536) return 2;
   }
   return 0;
 }
 
 /* the window's ground at a pixel in it (the prototype's `ground` there) */
-static uint8_t sky_pixel(R *r, int x, int y, float wmax_a, float wmax_b, bool warm_cell) {
+static uint8_t sky_pixel(R *r, int x, int y, int wa, int wb, bool warm) {
   const Plate *P = r->P;
-  float t = tt(r, x, y);
+  int t = r->bn[(y & 63) * 64 + (x & 63)] * 16 + 8;      /* the blue-noise threshold, Q12 */
   Cell c;
   switch (P->window) {
   case WIN_SKY: {
     cell_at(r, r->ga, x, y, &c);
     if (r->closed_sky) {
-      int i = band_index(&c, t, 4, wmax_a);
+      int i = band_q(&c, t, 4, wa);
       return i ? GREY[i] : P->night;
     }
-    uint8_t col = r->ramp[band_index(&c, t, r->nramp, wmax_a)];
-    if (warm_cell) {
+    uint8_t col = r->ramp[band_q(&c, t, r->nramp, wa)];
+    if (warm) {
       Cell w;
       cell_at(r, r->gb, x, y, &w);
-      float wv = cell_value(&w) * 5 + 0.2f;
-      if (wv >= 1.0f && f_smooth(0, 0.5f, wv - 1) > t) {
-        /* the warm ramp's value wv - 1, clipped to 0..4 */
-        w.v00 = f_clamp(w.v00 * 5 - 0.8f, 0, 4), w.v10 = f_clamp(w.v10 * 5 - 0.8f, 0, 4);
-        w.v01 = f_clamp(w.v01 * 5 - 0.8f, 0, 4), w.v11 = f_clamp(w.v11 * 5 - 0.8f, 0, 4);
-        col = WARM[band_index(&w, t, 5, wmax_b)];
+      int wv = cell_value(&w) * 5 + 819;
+      if (wv >= 4096) {
+        int sm = (wv - 4096) * 2;                   /* smooth(0, 0.5, wv - 1) */
+        sm = sm > 4096 ? 4096 : sm;
+        sm = ((sm * sm >> 12) * (12288 - 2 * sm)) >> 12;
+        if (sm > t) {
+          warm_corners(&w);
+          col = WARM[band_q(&w, t, 5, wb)];
+        }
       }
     }
     return col;
@@ -559,7 +606,7 @@ static uint8_t sky_pixel(R *r, int x, int y, float wmax_a, float wmax_b, bool wa
     return r->s_eff > -0.833f ? C8(1, 2, 3) : r->s_eff > -18 ? C8(2, 1, 0) : C8(0, 0, 0);
   case WIN_RED:
     cell_at(r, r->ga, x, y, &c);
-    return REDS[band_index(&c, t, 3, wmax_a)];
+    return REDS[band_q(&c, t, 3, wa)];
   default:
     if (r->woodcut) {
       int z = zodiac_at(r, x, y);
@@ -576,14 +623,15 @@ static uint8_t card_at(R *r, int x, int y) {
   const Plate *P = r->P;
   if (P->fox) {
     int fy = (r->H - 1 - y) & 63, fx = (r->W - 1 - x) & 63;
-    if ((float)r->bn[fy * 64 + fx] + 0.5f < (float)P->fox) return P->fox_c;
+    if ((r->bn[fy * 64 + fx] * 16 + 8) < P->fox) return P->fox_c;
   }
   return P->jacket;
 }
 
-static uint8_t ground_at(R *r, int x, int y) { return inside(r, x, y) ? sky_pixel(r, x, y, 0.5f, 0.5f, true) : card_at(r, x, y); }
+static uint8_t ground_at(R *r, int x, int y) { return inside(r, x, y) ? sky_pixel(r, x, y, 4096, 4096, true) : card_at(r, x, y); }
 
-static bool make_grid(R *r, void *(*alloc)(size_t)) {
+/* the grid over the window: its nodes' values, and with the Milky Way the nodes' places in the sky */
+static bool make_grid(R *r, bool coords, void *(*alloc)(size_t)) {
   Plan *p = r->p;
   int minx = r->W, maxx = -1;
   for (int y = p->win_top; y <= p->win_bottom && y >= 0; y++) {
@@ -595,15 +643,15 @@ static bool make_grid(R *r, void *(*alloc)(size_t)) {
   r->gx0 = minx, r->gy0 = p->win_top;
   r->gnx = (maxx - minx) / 4 + 2, r->gny = (p->win_bottom - p->win_top) / 4 + 2;
   size_t n = (size_t)r->gnx * (size_t)r->gny;
-  r->ga = alloc(2 * n * sizeof(float));
+  r->ga = alloc((coords ? 4 : 2) * n * sizeof(int16_t));
   if (!r->ga) return false;
   r->gb = r->ga + n;
-  bool values = r->P->window == WIN_SKY || r->P->window == WIN_RED || r->woodcut;
+  r->gra = coords ? r->ga + 2 * n : NULL, r->gdec = coords ? r->ga + 3 * n : NULL;
   for (int j = 0; j < r->gny; j++)
     for (int i = 0; i < r->gnx; i++) {
-      float *a = r->ga + j * r->gnx + i, *b = r->gb + j * r->gnx + i;
-      if (values) node_values(r, r->gx0 + 4 * i + 0.5f, r->gy0 + 4 * j + 0.5f, a, b);
-      else *a = *b = 0;
+      size_t k = (size_t)j * r->gnx + i;
+      node_values(r, r->gx0 + 4 * i + 0.5f, r->gy0 + 4 * j + 0.5f, r->ga + k, r->gb + k,
+                  coords ? r->gra + k : NULL, coords ? r->gdec + k : NULL);
     }
   return true;
 }
@@ -611,20 +659,19 @@ static bool make_grid(R *r, void *(*alloc)(size_t)) {
 /* the window's ground, a grid cell at a time (each cell's edges' widths and warmth worked out once) */
 static void window_ground(R *r) {
   Plan *p = r->p;
+  bool banded = r->P->window == WIN_SKY || r->P->window == WIN_RED;
   for (int j = 0; j < r->gny - 1; j++)
     for (int i = 0; i < r->gnx - 1; i++) {
-      int x0 = r->gx0 + 4 * i, y0 = r->gy0 + 4 * j;
-      float wa = 0.5f, wb = 0.5f;
+      int x0 = r->gx0 + 4 * i, y0 = r->gy0 + 4 * j, wa = 4096, wb = 4096;
       bool warm = false;
-      if (r->P->window == WIN_SKY || r->P->window == WIN_RED) {
+      if (banded) {
         Cell c;
         cell_at(r, r->ga, x0, y0, &c);
-        c.u = c.v = 0;
-        wa = cell_wmax(&c, 1);
+        wa = cell_wmax(&c);
         if (r->P->window == WIN_SKY && !r->closed_sky) {
           cell_at(r, r->gb, x0, y0, &c);
-          warm = c.v00 >= 0.16f || c.v10 >= 0.16f || c.v01 >= 0.16f || c.v11 >= 0.16f;
-          if (warm) wb = cell_wmax(&c, 5);
+          warm = c.v00 >= 656 || c.v10 >= 656 || c.v01 >= 656 || c.v11 >= 656;
+          if (warm) warm_corners(&c), wb = cell_wmax(&c);
         }
       }
       for (int y = y0; y < y0 + 4 && y <= p->win_bottom; y++) {
@@ -635,63 +682,93 @@ static void window_ground(R *r) {
 }
 
 /* ---- the Milky Way --------------------------------------------------------------------------------------------- */
-static float milky_level(R *r, const uint8_t *g, float ra, float dec) {
-  float u = (float)pyf_mod(ra, 360.0f) / MILKY_STEP - 0.5f, v = (dec + 90.0f) / MILKY_STEP - 0.5f;
-  int i0 = (int)(u + 1) - 1, j0 = (int)(v + 1) - 1;
-  float fu = u - (float)i0, fv = v - (float)j0;
+/* a cell of the Milky Way's grid (its level 0..5): each row of declination keeps only its stretches that have any */
+static int milky_cell(const uint8_t *g, int i, int j) {
+  const uint8_t *e = g + 6 * j, *data = g + 6 * MILKY_H + (e[0] | e[1] << 8);
+  int d = i - e[2];
+  if (d < 0) d += MILKY_W;
+  if (d >= e[3]) {
+    data += (e[3] + 1) >> 1;
+    d = i - e[4];
+    if (d < 0) d += MILKY_W;
+    if (d >= e[5]) return 0;
+  }
+  return (data[d >> 1] >> ((d & 1) * 4)) & 15;
+}
+/* the Milky Way's level at (ra Q6, dec Q8), between its cells' middles: 0 .. 5 x 16384 */
+static int milky_level(const uint8_t *g, int ra, int dec) {
+  int u = (ra >> 1) - 32, v = ((dec + 23040) >> 1) - 128;
+  int i0 = u >> 6, fu = u & 63, j0 = v >> 8, fv = v & 255;
   int i1 = i0 + 1, j1 = j0 + 1;
   if (i0 < 0) i0 += MILKY_W;
   if (i1 >= MILKY_W) i1 -= MILKY_W;
   if (j0 < 0) j0 = 0, fv = 0;
   if (j1 >= MILKY_H) j1 = MILKY_H - 1;
-#define CELL(i, j) ((g[((j) * MILKY_W + (i)) >> 1] >> ((((j) * MILKY_W + (i)) & 1) * 4)) & 15)
-  int c00 = CELL(i0, j0), c10 = CELL(i1, j0), c01 = CELL(i0, j1), c11 = CELL(i1, j1);
-#undef CELL
+  if (j0 >= MILKY_H) j0 = MILKY_H - 1;
+  int c00 = milky_cell(g, i0, j0), c10 = milky_cell(g, i1, j0), c01 = milky_cell(g, i0, j1), c11 = milky_cell(g, i1, j1);
   if (!(c00 | c10 | c01 | c11)) return 0;
-  float a = c00 * (1 - fu) + c10 * fu, b = c01 * (1 - fu) + c11 * fu;
-  return (a * (1 - fv) + b * fv) / MILKY_LEVELS;
+  return (c00 * (64 - fu) + c10 * fu) * (256 - fv) + (c01 * (64 - fu) + c11 * fu) * fv;
 }
 
-static void pixel_radec(R *r, float x, float y, float *ra, float *dec) {
+/* the sky's place at a pixel's middle: right ascension (Q6, 0..360) and declination (Q8) */
+static void pixel_radec(R *r, int x, int y, int *ra, int *dec) {
   float dx = x + 0.5f - r->cx, dy = y + 0.5f - r->cy;
-  float rho = f_sqrt(dx * dx + dy * dy), h = f_atan2d(dx, dy), d = 90.0f - rho / r->k;
-  if (r->south) *dec = -d, *ra = r->lst + h;
-  else *dec = d, *ra = r->lst - h;
+  float rho = f_sqrt(dx * dx + dy * dy), h = f_atan2d(dx, dy), d = 90.0f - rho * r->ik;
+  float a = pyf_mod(r->south ? r->lst + h : r->lst - h, 360);
+  *ra = (int)(a * 64), *dec = (int)((r->south ? -d : d) * 256);
 }
 
 static void milky_way(R *r) {
   const Plate *P = r->P;
-  const uint8_t *g = sec(r->p->data, SEC_MILKY);
-  for (int y = r->p->win_top; y >= 0 && y <= r->p->win_bottom; y++) {
-    int x0 = r->p->wx0[y], x1 = r->p->wx1[y];
-    float ry = y + 0.5f - r->cy;
-    bool near_pole = ry < 12 && ry > -12;
-    float ra0 = 0, dec0 = 0, ra1 = 0, dec1 = 0;
-    int xa = x0, xb = x0 - 1;
-    for (int x = x0; x <= x1; x++) {
-      float ra, dec;
-      if (near_pole) pixel_radec(r, x, y, &ra, &dec);
-      else {
-        if (x > xb) {                             /* the next stretch: exact at its ends, between them in proportion */
-          xa = x, xb = x + 4 > x1 ? x1 : x + 4;
-          pixel_radec(r, xa, y, &ra0, &dec0);
-          pixel_radec(r, xb, y, &ra1, &dec1);
-          if (ra1 - ra0 > 180) ra1 -= 360;
-          else if (ra0 - ra1 > 180) ra1 += 360;
+  Plan *p = r->p;
+  const uint8_t *g = sec(p->data, SEC_MILKY);
+  /* dens^1.2 > t, as level > t^(1/1.2), in the level's units: each threshold's root worked out once */
+  float scale = (r->paper ? 0.30f : 0.42f) / MILKY_LEVELS / 16384;
+  for (int i = 0; i < 256; i++) r->thresh12[i] = (int32_t)(f_pow((i + 0.5f) * (1.0f / 256), 1.0f / 1.2f) / scale);
+  /* a cell of the grid at a time: its corners' places in the sky, and none of it if no part of the Milky Way is near */
+  for (int j = 0; j < r->gny - 1; j++)
+    for (int i = 0; i < r->gnx - 1; i++) {
+      int x0 = r->gx0 + 4 * i, y0 = r->gy0 + 4 * j;
+      Cell a, d;
+      cell_at(r, r->gra, x0, y0, &a);
+      cell_at(r, r->gdec, x0, y0, &d);
+      int lo = a.v00, hi = a.v00, dlo = d.v00, dhi = d.v00;
+      int *v[3] = {&a.v10, &a.v01, &a.v11}, *w[3] = {&d.v10, &d.v01, &d.v11};
+      for (int k = 0; k < 3; k++) {              /* the corners' right ascensions taken round with the first */
+        if (*v[k] - a.v00 > 11520) *v[k] -= 23040;
+        else if (a.v00 - *v[k] > 11520) *v[k] += 23040;
+        lo = *v[k] < lo ? *v[k] : lo, hi = *v[k] > hi ? *v[k] : hi;
+        dlo = *w[k] < dlo ? *w[k] : dlo, dhi = *w[k] > dhi ? *w[k] : dhi;
+      }
+      bool exact = hi - lo > 5760;               /* by the pole, where they turn too fast to take between */
+      if (!exact) {
+        int i0 = ((lo >> 1) - 32) >> 6, i1 = (((hi >> 1) - 32) >> 6) + 1;
+        int j0 = (((dlo + 23040) >> 1) - 128) >> 8, j1 = ((((dhi + 23040) >> 1) - 128) >> 8) + 1;
+        bool any = false;
+        for (int jj = j0 < 0 ? 0 : j0; jj <= (j1 >= MILKY_H ? MILKY_H - 1 : j1) && !any; jj++)
+          for (int ii = i0; ii <= i1 && !any; ii++) any = milky_cell(g, (ii % MILKY_W + MILKY_W) % MILKY_W, jj) != 0;
+        if (!any) continue;
+      }
+      for (int y = y0; y < y0 + 4 && y <= p->win_bottom; y++) {
+        int xa = p->wx0[y] > x0 ? p->wx0[y] : x0, xb = p->wx1[y] < x0 + 3 ? p->wx1[y] : x0 + 3;
+        for (int x = xa; x <= xb; x++) {
+          int ra, dec;
+          if (exact) pixel_radec(r, x, y, &ra, &dec);
+          else {
+            a.dx = d.dx = x - x0, a.dy = d.dy = y - y0;
+            ra = cell_value(&a), dec = cell_value(&d);
+            if (ra < 0) ra += 23040;
+            else if (ra >= 23040) ra -= 23040;
+          }
+          int m = milky_level(g, ra, dec);
+          if (!m) continue;
+          if (r->woodcut) {
+            if (m > 14745 && get(r, x, y) != C8(3, 3, 1)) put(r, x, y, P->milky);
+          } else if (m > r->thresh12[r->bn[(y & 63) * 64 + (x & 63)]])
+            put(r, x, y, P->milky);
         }
-        float s = xb > xa ? (float)(x - xa) / (float)(xb - xa) : 0;
-        ra = ra0 + (ra1 - ra0) * s, dec = dec0 + (dec1 - dec0) * s;
       }
-      float m = milky_level(r, g, ra, dec);
-      if (m <= 0) continue;
-      if (r->woodcut) {
-        if (m > 0.18f && get(r, x, y) != C8(3, 3, 1)) put(r, x, y, P->milky);
-        continue;
-      }
-      float dens = f_clamp(m * (r->paper ? 0.30f : 0.42f), 0, 1);
-      if (f_pow(dens, 1.2f) > tt(r, x, y)) put(r, x, y, P->milky);
     }
-  }
 }
 
 /* ---- lines ----------------------------------------------------------------------------------------------------- */
@@ -892,17 +969,16 @@ static void figure_lines(R *r) {
     float g = 2.6f / L;
     float ax = x[0] + (x[1] - x[0]) * g, ay = y[0] + (y[1] - y[0]) * g;
     float bx = x[1] - (x[1] - x[0]) * g, by = y[1] - (y[1] - y[0]) * g;
-    /* the prototype's antialiased line, its coverage over 0.55f: within 0.3375f px of a sample point */
-    float adx = bx - ax < 0 ? ax - bx : bx - ax, ady = by - ay < 0 ? ay - by : by - ay;
+    /* the prototype's antialiased line, its coverage over 0.55: within 0.3375 px of a sample point (in 1/256 px) */
+    float adx = f_abs(bx - ax), ady = f_abs(by - ay);
     int n = (int)((adx > ady ? adx : ady) * 3) + 1;
+    int axq = (int)(ax * 256), ayq = (int)(ay * 256), dxq = (int)(bx * 256) - axq, dyq = (int)(by * 256) - ayq;
     for (int k = 0; k <= n; k++) {
-      float t = (float)k / n, px = ax + (bx - ax) * t, py = ay + (by - ay) * t;
-      int xi = pyf_floor(px), yi = pyf_floor(py);
+      int pxq = axq + dxq * k / n, pyq = ayq + dyq * k / n, xi = pxq >> 8, yi = pyq >> 8;
       for (int dy = 0; dy <= 1; dy++)
         for (int dx = 0; dx <= 1; dx++) {
-          int X = xi + dx, Y = yi + dy;
-          float ex = px - (X + 0.5f), ey = py - (Y + 0.5f);
-          if (ex * ex + ey * ey < 0.3375f * 0.3375f && inside(r, X, Y)) put(r, X, Y, r->P->line);
+          int X = xi + dx, Y = yi + dy, ex = pxq - (X * 256 + 128), ey = pyq - (Y * 256 + 128);
+          if (ex * ex + ey * ey < 7465 && inside(r, X, Y)) put(r, X, Y, r->P->line);
         }
     }
   }
@@ -928,19 +1004,23 @@ static void woodcut_star(R *r, int d, int xi, int yi, uint8_t c) {
       if (role_at(r, di, i, j) && inside(r, x0 + i, y0 + j)) put(r, x0 + i, y0 + j, c);
 }
 
+static const uint8_t STAR_COLOURS[5] = {C8(2, 2, 3), C8(3, 3, 3), C8(3, 3, 2), C8(3, 2, 1), C8(3, 2, 0)};
+
 static void stars(R *r, float faint, float mx, float my, float moon_reach) {
   const Plate *P = r->P;
   const uint8_t *st = sec(r->p->data, SEC_STARS);
   for (int i = 0; i < STAR_COUNT; i++) {
     const uint8_t *s = st + STAR_SIZE * i;
-    int mg = star_mag(s), bv = star_bv(s);
-    if ((float)mg * 0.01f > faint) continue;
+    int mg = star_mag(s), cls = star_class(s);
+    if ((float)mg * 0.01f > faint && mg >= 210) continue;
     float x, y;
     project(r, star_ra(s), star_dec(s), &x, &y);
     int xi = pyf_floor(x), yi = pyf_floor(y);
+    if (mg < 210 && r->nbright < 96) r->bright[r->nbright][0] = (int16_t)xi, r->bright[r->nbright][1] = (int16_t)yi, r->nbright++;
+    if ((float)mg * 0.01f > faint) continue;
     if (r->lit_moon && mg > 220 && (x - mx) * (x - mx) + (y - my) * (y - my) < (6 + moon_reach) * (6 + moon_reach)) continue;
     uint8_t c = (r->paper || r->red) ? P->star
-                : bv < -100 ? C8(2, 2, 3) : bv < 500 ? C8(3, 3, 3) : bv < 1150 ? C8(3, 3, 2) : bv < 1600 ? C8(3, 2, 1) : C8(3, 2, 0);
+                : STAR_COLOURS[cls];
     if (r->rete) {                                /* the rete's flame pointers, for the bright stars only */
       if (mg >= 200) continue;
       float a = pyf_mod((float)f_atan2d((float)(yi - r->cy), (float)(xi - r->cx)), 360.0f);
@@ -1000,7 +1080,7 @@ static void hills(R *r) {
   const Plate *P = r->P;
   if (r->wx && (r->fog || r->falls)) return;
   bool closed = r->wx && r->stratus >= 0.6f;
-  bool moon_up = plan_altitude(r->sky.moon_ra, r->sky.moon_dec, r->sky.lst, r->f->lat) > 0;
+  bool moon_up = altitude(r, r->sky.moon_ra, r->sky.moon_dec) > 0;
   uint8_t tone = 0, ridge = 0;
   float s = r->s_eff;
   if (r->red) tone = C8(1, 0, 0);
@@ -1111,13 +1191,12 @@ static void village(R *r, int season) {
 static void names(R *r, float mx, float my) {
   const Plate *P = r->P;
   Sky *k = &r->sky;
-  float lat = r->f->lat;
-  if (plan_altitude(k->moon_ra, k->moon_dec, k->lst, lat) > 0) {
+  if (altitude(r, k->moon_ra, k->moon_dec) > 0) {
     pixel_text(&r->t1, r, "Moon", false, 0);
     place(r, &r->t1, pyf_floor(mx), pyf_floor(my), P->planet, false, -3, 3, true);
   }
   for (int pn = 0; pn < PLANETS; pn++) {
-    if ((!r->paper && r->s_eff > -3) || plan_altitude(k->pl_ra[pn], k->pl_dec[pn], k->lst, lat) <= 2) continue;
+    if ((!r->paper && r->s_eff > -3) || altitude(r, k->pl_ra[pn], k->pl_dec[pn]) <= 2) continue;
     float x, y;
     project(r, k->pl_ra[pn], k->pl_dec[pn], &x, &y);
     int hw = drawing(r, PLANET_DRAWINGS[pn])->w / 2;
@@ -1129,7 +1208,7 @@ static void names(R *r, float mx, float my) {
   int shown = 0;
   for (int i = 0; i < STAR_NAME_COUNT && shown < 3; i++) {
     const uint8_t *s = sn + 20 * i;
-    if (plan_altitude(star_ra(s), star_dec(s), k->lst, lat) < 8) continue;
+    if (altitude(r, star_ra(s), star_dec(s)) < 8) continue;
     float x, y;
     project(r, star_ra(s), star_dec(s), &x, &y);
     pixel_text(&r->t1, r, (const char *)s + 4, true, 0);
@@ -1139,7 +1218,7 @@ static void names(R *r, float mx, float my) {
   shown = 0;
   for (int i = 0; i < CONSTELLATION_COUNT && shown < 3; i++) {
     const uint8_t *s = cn + 20 * i;
-    if (plan_altitude(star_ra(s), star_dec(s), k->lst, lat) < 12) continue;
+    if (altitude(r, star_ra(s), star_dec(s)) < 12) continue;
     float x, y;
     project(r, star_ra(s), star_dec(s), &x, &y);
     pixel_text(&r->t1, r, (const char *)s + 4, false, 1);
@@ -1181,14 +1260,20 @@ static bool near_body(R *r, int xi, int yi) {
     if (i == -2) project(r, k->sun_ra, k->sun_dec, &x, &y);
     else if (i == -1) project(r, k->moon_ra, k->moon_dec, &x, &y);
     else project(r, k->pl_ra[i], k->pl_dec[i], &x, &y);
-    if (f_abs((float)(x - xi)) < 7 && f_abs((float)(y - yi)) < 7) return true;
+    if (f_abs(x - xi) < 7 && f_abs(y - yi) < 7) return true;
   }
-  const uint8_t *st = sec(r->p->data, SEC_STARS);
-  for (int i = STAR_COUNT - 1; i >= 0; i--) {
-    const uint8_t *s = st + STAR_SIZE * i;
-    if (star_mag(s) >= 210) break;                 /* the catalogue runs faintest first */
-    project(r, star_ra(s), star_dec(s), &x, &y);
-    if (f_abs((float)(x - xi)) < 7 && f_abs((float)(y - yi)) < 7) return true;
+  for (int i = 0; i < r->nbright; i++) {          /* (to the pixel: within 7 of a star's place is within 7 of its pixel) */
+    int dx = r->bright[i][0] - xi, dy = r->bright[i][1] - yi;
+    if (dx > -8 && dx < 8 && dy > -8 && dy < 8) {
+      const uint8_t *st = sec(r->p->data, SEC_STARS);
+      for (int j = STAR_COUNT - 1; j >= 0; j--) {   /* near the edge of the square: the star's exact place decides */
+        const uint8_t *s = st + STAR_SIZE * j;
+        if (star_mag(s) >= 210) break;
+        project(r, star_ra(s), star_dec(s), &x, &y);
+        if (f_abs(x - xi) < 7 && f_abs(y - yi) < 7) return true;
+      }
+      return false;
+    }
   }
   return false;
 }
@@ -1564,11 +1649,15 @@ static void ring(R *r, int season) {
    * (its cosine) against those of the Sun's altitude's thresholds */
   float A = r->sl * (float)f_sind(r->sdec), B = r->cl * (float)f_cosd(r->sdec);
   static const float THRESH[4] = {-0.833f, -6, -12, -18};
-  float cth[4];
+  /* the thresholds' cosines, as their squares (Q16) and signs, against each pixel's (1/16 px from the pole) */
+  int64_t c2[4];
+  bool cpos[4];
   for (int i = 0; i < 4; i++) {
-    float s = (float)f_sind(THRESH[i]) - A;
-    cth[i] = B > 1e-9f ? s / B : (s > 0 ? 9 : -9);
+    float sv = f_sind(THRESH[i]) - A, c = B > 1e-9f ? sv / B : (sv > 0 ? 9 : -9);
+    c = c > 9 ? 9 : c < -9 ? -9 : c;
+    cpos[i] = c >= 0, c2[i] = (int64_t)(c * c * 65536);
   }
+  int cxq = pyf_floor(r->cx * 16 + 0.5f), cyq = pyf_floor(r->cy * 16 + 0.5f);
   static const uint8_t STEP[5] = {0, 9, 7, 5, 4};
   uint8_t ink = P->ring_ink, fc = P->fill_c;
   uint8_t hatch_c = P->fill == FILL_COLOUR ? (uint8_t)(0xC0 | (LV(fc, 4) ? LV(fc, 4) - 1 : 0) << 4 | (LV(fc, 2) ? LV(fc, 2) - 1 : 0) << 2 |
@@ -1582,9 +1671,10 @@ static void ring(R *r, int season) {
       if (!span_has(outer1, y, x)) { put(r, x, y, ink); continue; }
       if (rule_in) { if (!inside(r, x, y)) put(r, x, y, ink); continue; }
       if (inside(r, x, y)) continue;
-      float dx = x + 0.5f - r->cx, dy = y + 0.5f - r->cy, rho = f_sqrt(dx * dx + dy * dy);
-      float ch = rho > 0 ? dy / rho : 1;
-      int band = ch > cth[0] ? 0 : ch > cth[1] ? 1 : ch > cth[2] ? 2 : ch > cth[3] ? 3 : 4;
+      int dyq = y * 16 + 8 - cyq, dxq = x * 16 + 8 - cxq;
+      int64_t rho2 = (int64_t)(dxq * dxq + dyq * dyq), dy2 = (int64_t)(dyq * dyq) << 16;
+      int band = 0;
+      while (band < 4 && !(cpos[band] ? dyq > 0 && dy2 > c2[band] * rho2 : dyq >= 0 || dy2 < c2[band] * rho2)) band++;
       int step = STEP[band];
       bool hatch = step && (x + y) % step == 0;
       if (P->fill == FILL_COLOUR || P->fill == FILL_WASH) put(r, x, y, hatch ? hatch_c : fc);
@@ -1821,8 +1911,13 @@ static void time_block(R *r, int fy0, int season) {
   stamp(r, &r->t1, left + ds->w + 4, y_date, P->ink, false, false, 1);
   /* the almanac's line: the Sun's next rising or setting; with the weather, the temperature after a lozenge (the
    * line alone when the two will not fit together, the temperature alone when neither does) */
-  int64_t at = 0;
-  int ev = plan_sun_event(r->utc, r->f->lat, r->f->lon, &at);
+  if (p->ev_kind < 0 || r->utc < p->ev_from || r->utc >= p->ev_at || p->ev_lat != r->f->lat || p->ev_lon != r->f->lon) {
+    p->ev_kind = plan_sun_event(r->utc, r->f->lat, r->f->lon, &p->ev_at);
+    if (!p->ev_kind) p->ev_at = r->utc + 3600;     /* the Sun neither rises nor sets today: look again in an hour */
+    p->ev_from = r->utc, p->ev_lat = r->f->lat, p->ev_lon = r->f->lon;
+  }
+  int64_t at = p->ev_at;
+  int ev = p->ev_kind;
   float room = (r->W - 2 * ring_in) * 0.84f;
   Text *line = &r->t1, *both = &r->t2, *temp = &r->t3, *tmp = &r->t4;
   if (ev) {
@@ -1870,12 +1965,13 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   plan_window(p, f->lat);
   plan_sky(&r->sky, utc, f->lon);
   plan_civil(utc + offset, &r->local);
-  r->bn = (const uint16_t *)(const void *)sec(p->data, SEC_BLUE_NOISE);
+  r->bn = sec(p->data, SEC_BLUE_NOISE);
   r->cx = p->cx, r->cy = p->cy, r->k = p->k;
   r->col = (int)p->cx;
   r->south = f->lat < 0;
   r->alat = (float)f_abs(f->lat);
   r->sl = f_sind(r->alat), r->cl = f_cosd(r->alat);
+  r->sl0 = f_sind((float)f->lat), r->cl0 = f_cosd((float)f->lat);
   r->lst = (float)r->sky.lst;
   r->paper = P->window == WIN_PAPER;
   r->red = P->window == WIN_RED;
@@ -1899,7 +1995,12 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   /* the card, and the window's ground */
   for (int y = 0; y < r->H; y++)
     for (int x = p->rx0[y]; x <= p->rx1[y]; x++) p->rows[y][x] = card_at(r, x, y);
-  if (!make_grid(r, alloc)) { release(r); return false; }
+  r->ik = 1 / r->k;
+  sky_constants(r, P->window == WIN_RED ? r->s_eff : r->sun_alt);
+  r->ssd = f_sind(r->sdec), r->csd = f_cosd(r->sdec), r->csh = f_cosd(r->sha), r->ssh = f_sind(r->sha);
+  bool milky = !r->rete && (r->paper || (r->sun_alt < -15 &&
+               !(r->wx && r->live && (r->haze > 1.0f || r->stratus + r->cumulus > 0.45f))));
+  if (!make_grid(r, milky, alloc)) { release(r); return false; }
   window_ground(r);
   r->dark = r->paper ? true : r->s_eff < -12;
   r->figs = r->paper || r->s_eff < -10.5f;
@@ -1914,7 +2015,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   /* the Moon's light pales the sky round it and hides the faint stars there */
   float mx, my;
   project(r, r->sky.moon_ra, r->sky.moon_dec, &mx, &my);
-  bool moon_up = plan_altitude(r->sky.moon_ra, r->sky.moon_dec, r->sky.lst, f->lat) > 0;
+  bool moon_up = altitude(r, r->sky.moon_ra, r->sky.moon_dec) > 0;
   r->lit_moon = !r->paper && P->window == WIN_SKY && r->s_eff < -10 && r->mphase > 0.3f && moon_up;
   float moon_reach = 7 + 12 * r->mphase;
   if (r->lit_moon)
@@ -1927,8 +2028,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
         if (g > 0 && f_pow(g, 1.6f) * 0.55f * r->mphase > tt(r, x, y)) put(r, x, y, C8(0, 1, 2));
       }
   /* the Milky Way, the first thing haze and cloud take away */
-  if (!r->rete && (r->paper || (r->sun_alt < -15 && !(r->wx && r->live && (r->haze > 1.0f || r->stratus + r->cumulus > 0.45f)))))
-    milky_way(r);
+  if (milky) milky_way(r);
   /* an astrolabe's plate: the equator, the tropics and the almucantars engraved, the rete's ecliptic solid */
   if (r->rete) {
     for (int kk = 0; kk < 3; kk++) {

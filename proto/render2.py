@@ -72,14 +72,17 @@ _BN = None
 
 
 def bn_tile(h, w):
+    """The blue-noise thresholds over an h x w screen, in 256 steps (as the watch keeps them, a byte each)."""
     global _BN
     if _BN is None:
-        cache = ROOT / "out" / "bluenoise64.npy"
+        cache = ROOT / "data" / "bluenoise64.npy"
         if cache.exists():
-            _BN = np.load(cache)
+            tile = np.load(cache)
         else:
-            _BN = blue_noise(64)
-            np.save(cache, _BN)
+            tile = blue_noise(64)
+            np.save(cache, tile)
+        rank = np.round(tile * 4096 - 0.5)
+        _BN = (np.floor(rank / 16) + 0.5) / 256
     return np.tile(_BN, (h // 64 + 1, w // 64 + 1))[:h, :w]
 
 

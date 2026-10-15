@@ -308,8 +308,9 @@ def shared(h):
     h.append("static const uint8_t WIDEST_TIME[6][2] = {" + ", ".join(f"{{{a}, {b}}}" for a, b in widest) + "};")
 
     # the stars to magnitude 4.6, faintest first (the order they are drawn): right ascension in 65536ths of a turn,
-    # declination in 65535ths of a half turn from the south pole, the magnitude in hundredths and B-V in thousandths
-    # (the catalogue's own precision, so the prototype's thresholds fall the same way)
+    # declination in 65535ths of a half turn from the south pole, then the magnitude in hundredths (the catalogue's own
+    # precision, so the prototype's thresholds fall the same way) plus 2, times 8, plus the colour's class by B-V
+    # (blue-white, white, cream, gold, orange: the prototype's bounds -0.1, 0.5, 1.15, 1.6)
     stars, lines, mw, named = load_sky(4.6)
     order = sorted(range(len(stars)), key=lambda i: -stars[i][2])
     stars = [stars[i] for i in order]
@@ -317,7 +318,10 @@ def shared(h):
     for ra, dec, mg, bv in stars:
         r = int(round(ra / 360 * 65536)) % 65536
         d = int(round((dec + 90) / 180 * 65535))
-        data += struct.pack("<HHhh", r, d, int(round(mg * 100)), int(round(bv * 1000)))
+        cls = 0 if bv < -0.1 else 1 if bv < 0.5 else 2 if bv < 1.15 else 3 if bv < 1.6 else 4
+        m100 = int(round(mg * 100))
+        assert -200 <= m100 < 8000 // 8 * 8 - 200
+        data += struct.pack("<HHH", r, d, (m100 + 200) << 3 | cls)
     blob.add("STARS", data)
     h.append(f"#define STAR_COUNT {len(stars)}")
     # the figures' lines, between stars of magnitude 3.8 or brighter (as the prototype draws them): star pairs
@@ -358,16 +362,48 @@ def shared(h):
     h.append(f"#define CONSTELLATION_COUNT {len(rows)}")
     # the Milky Way: its level (0 none .. 5 the brightest of d3-celestial's contours) on a 2-degree grid, the cells'
     # middles at odd degrees: 180 in right ascension by 90 in declination, two cells a byte
+    # stored by rows of declination, each only where it has any: up to two stretches of right ascension (from a cell,
+    # so many cells, running on round through 0), their cells two a byte
     grid = milky_grid(mw, 2.0)
-    blob.add("MILKY", nibbles(grid))
+    blob.add("MILKY", milky_rows(grid))
     h.append(f"#define MILKY_LEVELS {len(mw)}\n#define MILKY_STEP 2\n#define MILKY_W 180\n#define MILKY_H 90")
-    # the blue-noise tile: each cell's rank, 0..4095 (the threshold is (rank + 0.5) / 4096)
-    bn = np.load(ROOT / "out" / "bluenoise64.npy")
+    # the blue-noise tile: each cell's level, 0..255 (the threshold is (level + 0.5) / 256), as render2.bn_tile
+    bn = np.load(ROOT / "data" / "bluenoise64.npy")
     ranks = np.round(bn * 4096 - 0.5).astype(np.int64)
     assert sorted(ranks.ravel().tolist()) == list(range(4096))
-    blob.add("BLUE_NOISE", b"".join(struct.pack("<H", int(v)) for v in ranks.ravel()))
+    blob.add("BLUE_NOISE", bytes(int(v) >> 4 for v in ranks.ravel()))
     h.insert(0, blob.enum())
     return blob
+
+
+def milky_rows(grid):
+    """Each row: its data's offset (u16), then two stretches (start, count; u8 each, count 0 for none); then the
+    cells. A row's cells are its stretches' in turn, two a byte, each stretch starting on a fresh byte."""
+    H, W = grid.shape
+    index, data = bytearray(), bytearray()
+    for j in range(H):
+        row = grid[j]
+        on = [i for i in range(W) if row[i]]
+        stretches = []
+        if on:
+            # the gaps between lit cells, round the circle; keep the two widest as the breaks
+            gaps = sorted(((on[(k + 1) % len(on)] - on[k]) % W, k) for k in range(len(on)))[::-1]
+            breaks = sorted(k for g, k in gaps[:2] if g > 1) if len(on) > 1 else [0]
+            if not breaks:
+                stretches = [(0, W)]
+            else:
+                for n, k in enumerate(breaks):
+                    start = on[(k + 1) % len(on)]
+                    end = on[breaks[(n + 1) % len(breaks)]]
+                    stretches.append((start, (end - start) % W + 1))
+        stretches = (stretches + [(0, 0), (0, 0)])[:2]
+        index += struct.pack("<HBBBB", len(data), stretches[0][0], stretches[0][1], stretches[1][0], stretches[1][1])
+        for start, count in stretches:
+            data += nibbles([row[(start + i) % W] for i in range(count)])
+        # every lit cell must be in a stretch
+        covered = {(s + i) % W for s, c in stretches for i in range(c)}
+        assert set(on) <= covered, j
+    return index + data
 
 
 def milky_grid(mw, step):

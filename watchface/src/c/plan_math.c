@@ -302,7 +302,7 @@ static float sin_kernel(float x) {
   return x * (1.0f + z * (-0.166666672f + z * (0.00833333377f + z * (-0.000198412701f + z * 2.75573188e-6f))));
 }
 float f_sind(float deg) {
-  float a = deg - 360.0f * (float)(int)(deg / 360.0f);       /* -360 < a < 360 */
+  float a = deg - 360.0f * (float)(int)(deg * (1.0f / 360));  /* -360 < a < 360 */
   if (a >= 180.0f) a -= 360.0f;
   else if (a < -180.0f) a += 360.0f;
   if (a > 90.0f) a = 180.0f - a;
