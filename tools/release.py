@@ -79,14 +79,17 @@ def validate_pbw(path, version):
                 raise ValueError("Resources exceed the store's 256 KB.")
             if archive.getinfo(platform + "/pebble-app.bin").file_size > MAX_BINARY:
                 raise ValueError("The app binary exceeds 64 KB.")
-            # the renderer's code, whole, in this watch's resources
+            # the code blobs (the renderer's, the calendars'), whole, in this watch's resources
             pack = archive.read(platform + "/app_resources.pbpack")
-            at = pack.find(CODE_MAGIC)
-            if at < 0:
-                raise ValueError("The renderer's code is not among " + platform + "'s resources.")
-            image, bss, nrel = struct.unpack_from("<III", pack, at + 4)
-            if at + 20 + image + 2 * nrel > len(pack):
-                raise ValueError("The renderer's code in " + platform + "'s resources is cut short.")
+            at, found = pack.find(CODE_MAGIC), 0
+            while at >= 0:
+                image, bss, nrel = struct.unpack_from("<III", pack, at + 4)
+                if at + 20 + image + 2 * nrel > len(pack):
+                    raise ValueError("A code blob in " + platform + "'s resources is cut short.")
+                found += 1
+                at = pack.find(CODE_MAGIC, at + 20 + image)
+            if found < 2:
+                raise ValueError("The renderer's and the calendars' code are not both among " + platform + "'s resources.")
         js = archive.read("pebble-js-app.js").decode("utf-8", "replace")
         if "PLAN_STATE" not in js:
             raise ValueError("The phone's bundle lacks the settings page.")

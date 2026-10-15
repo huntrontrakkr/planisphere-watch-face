@@ -1,7 +1,10 @@
-"""Build the renderer's code blob for the watch: watchface/resources/data/plan_code.bin.
+"""Build the code blobs for the watch: watchface/resources/data/plan_code.bin, the renderer (plan_render.c,
+plan_astro.c, plan_math.c), which main.c keeps loaded, and feast_code.bin, the calendars (plan_feasts.c and the
+ephemeris it asks), which main.c loads once a day to look up the day's feast and lets go.
 
-The renderer (plan_render.c, plan_astro.c, plan_math.c and plan_blob.c's entry table) is compiled with the Pebble
-SDK's own compiler and flags, linked at address 0 with libgcc's arithmetic (watchface/blob/blob.ld), and packed as
+Each is compiled with the Pebble SDK's own compiler and flags, its entry table first (watchface/blob/*_blob.c) and
+the C library's few functions it uses (blob_libc.c), linked at address 0 with libgcc's arithmetic
+(watchface/blob/blob.ld), and packed as
 
     header   magic "PLNC", the image's size, the zeroed memory after it (bss), the relocations' count, the entry
              table's offset: five little-endian uint32s
@@ -29,7 +32,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "watchface" / "src" / "c"
 BLOB = ROOT / "watchface" / "blob"
-OUT = ROOT / "watchface" / "resources" / "data" / "plan_code.bin"
+OUT_DIR = ROOT / "watchface" / "resources" / "data"
 WORK = ROOT / "build" / "blob"
 SDK = Path(os.environ.get("PEBBLE_SDK", Path.home() / ".local/share/pebble-sdk/SDKs/current"))
 TC = SDK / "toolchain" / "arm-none-eabi" / "bin"     # (or --cc's directory)
@@ -40,12 +43,22 @@ CFLAGS = ["-mcpu=cortex-m3", "-mthumb", "-Os", "-std=c11", "-ffunction-sections"
           "-fno-inline-functions-called-once"]
 # for tools/emulator.py profile: every function its own, to count where the time goes; else link-time optimisation
 CFLAGS += ["-fno-inline"] if os.environ.get("PLAN_PROFILE") else ["-flto"]
-SOURCES = [SRC / "plan_render.c", SRC / "plan_astro.c", SRC / "plan_math.c", BLOB / "plan_blob.c"]
+# each blob: its sources (the entry table's first) and its entry table's name
+BLOBS = {
+    "plan_code": ([BLOB / "plan_blob.c", SRC / "plan_render.c", SRC / "plan_astro.c", SRC / "plan_math.c",
+                   BLOB / "blob_libc.c"], "plan_api"),
+    "feast_code": ([BLOB / "feast_blob.c", SRC / "plan_feasts.c", SRC / "plan_astro.c", SRC / "plan_math.c",
+                    BLOB / "blob_libc.c"], "feast_api"),
+}
+SOURCES = BLOBS["plan_code"][0]
 MAGIC = 0x434E4C50          # "PLNC"
 
 
 def run(*args):
-    return subprocess.run([str(a) for a in args], check=True, capture_output=True, text=True).stdout
+    out = subprocess.run([str(a) for a in args], capture_output=True, text=True)
+    if out.returncode:
+        sys.exit(f"build_blob: {Path(str(args[0])).name} failed:\n{out.stderr.strip()}")
+    return out.stdout
 
 
 def main():
@@ -59,14 +72,20 @@ def main():
     if not cc:
         sys.exit("build_blob: no arm-none-eabi-gcc (install the Pebble SDK, or pass --cc)")
     TC = Path(cc).resolve().parent
-    WORK.mkdir(parents=True, exist_ok=True)
+    for name, (sources, api_name) in BLOBS.items():
+        build(name, sources, api_name)
+
+
+def build(name, sources, api_name):
+    work = WORK / name
+    work.mkdir(parents=True, exist_ok=True)
     gcc = TC / "arm-none-eabi-gcc"
     objs = []
-    for src in SOURCES:
-        obj = WORK / (src.stem + ".o")
+    for src in sources:
+        obj = work / (src.stem + ".o")
         run(gcc, *CFLAGS, "-c", src, "-o", obj)
         objs.append(obj)
-    elf = WORK / "plan_code.elf"
+    elf = WORK / f"{name}.elf"
     run(gcc, *CFLAGS, "-nostdlib", "-nostartfiles", f"-Wl,-T,{BLOB / 'blob.ld'}", "-Wl,--gc-sections", "-Wl,-q",
         "-o", elf, *objs, "-lgcc")
     # the sections: the image is .text then .data, contiguous; .bss after them is only zeroed memory
@@ -79,7 +98,7 @@ def main():
     data_a, data_n = sec.get(".data", (text_a + text_n, 0))
     bss_a, bss_n = sec.get(".bss", (data_a + data_n, 0))
     assert text_a == 0 and data_a == text_a + text_n, "the image must start at 0 and run on unbroken"
-    image_bin = WORK / "image.bin"
+    image_bin = work / "image.bin"
     run(TC / "arm-none-eabi-objcopy", "-O", "binary", "-j", ".text", "-j", ".data", elf, image_bin)
     image = image_bin.read_bytes()
     assert len(image) == text_n + data_n, (len(image), text_n, data_n)
@@ -106,14 +125,15 @@ def main():
             sys.exit(f"build_blob: an absolute relocation the loader cannot apply: {kind} at {off:#x} in {section}")
     relocs = sorted(set(relocs))
     syms = {n: int(a, 16) for a, n in re.findall(r"^([0-9a-f]+) \S (\S+)$", run(TC / "arm-none-eabi-nm", elf), re.M)}
-    api = syms["plan_api"]
+    api = syms[api_name]
     assert len(image) < 4 * 65536, "relocation offsets are kept as uint16 words"
     blob = struct.pack("<5I", MAGIC, len(image), bss, len(relocs), api) + image + \
         b"".join(struct.pack("<H", r // 4) for r in relocs)
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    if not OUT.exists() or OUT.read_bytes() != blob:
-        OUT.write_bytes(blob)
-    print(f"plan_code.bin: {len(blob):,} bytes ({len(image):,} image, {bss} bss, {len(relocs)} relocations)")
+    out = OUT_DIR / f"{name}.bin"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if not out.exists() or out.read_bytes() != blob:
+        out.write_bytes(blob)
+    print(f"{name}.bin: {len(blob):,} bytes ({len(image):,} image, {bss} bss, {len(relocs)} relocations)")
 
 
 if __name__ == "__main__":

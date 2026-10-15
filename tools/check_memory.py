@@ -23,9 +23,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 HOST = ROOT / "build" / "host"
 DATA = ROOT / "watchface" / "resources" / "data"
-HEAP = {"emery": 23204, "gabbro": 22200}     # bytes free after loading, measured 2026-10-15 with:
-MEASURED = {"code": 60900, "plan": 24084, "geom": {"emery": 13316, "gabbro": 14312},
-            "app": {"emery": 4784, "gabbro": 4788}}
+HEAP = {"emery": 22724, "gabbro": 21728}     # bytes free after loading, measured 2026-10-15 with:
+MEASURED = {"code": 61756, "plan": 24084, "geom": {"emery": 13316, "gabbro": 14312},
+            "app": {"emery": 5060, "gabbro": 5060}}
 HEADROOM = 3072
 SNOW = "-20,73,90,60,20,12,20,1003,80,250"
 MOMENTS = (1792027800, 1792000800)          # 15 October 2026, 01:30 and 18:00 UTC (night and day in the Americas)
@@ -57,6 +57,13 @@ def heap(screen):
     return HEAP[screen] - grown
 
 
+def lookup_need():
+    """The day's feast lookup: the calendars' code blob and table loaded together (main.c feast_of_day), with the
+    heap's headers and the code's alignment."""
+    code = struct.unpack("<5I", (DATA / "feast_code.bin").read_bytes()[:20])[1]
+    return (code + 4 + 4) + ((DATA / "feasts.bin").stat().st_size + 3) // 4 * 4 + 4
+
+
 def main():
     bad = False
     for screen in ("emery", "gabbro"):
@@ -67,8 +74,10 @@ def main():
                 if n > worst:
                     worst, at = n, (lat, t)
         budget = heap(screen) - HEADROOM
-        print(f"{screen}: a frame needs {worst:,} bytes at most (latitude {at[0]}), budget {budget:,}")
-        bad |= worst > budget
+        need = lookup_need()
+        print(f"{screen}: a frame needs {worst:,} bytes at most (latitude {at[0]}), the day's feast lookup {need:,}; "
+              f"budget {budget:,}")
+        bad |= worst > budget or need > budget
     if bad:
         sys.exit("check_memory: a frame could run out of memory on the watch")
 

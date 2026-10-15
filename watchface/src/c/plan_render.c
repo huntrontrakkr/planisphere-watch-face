@@ -415,6 +415,7 @@ void plan_init(Plan *p, int w, int h, const uint8_t *data, const uint8_t *geom) 
   p->lat_key = 1e9f;
   p->ev_kind = -1;
   p->news_day = -1;
+  p->feast_day = -1;
 }
 
 void plan_window(Plan *p, float lat) {
@@ -1620,6 +1621,59 @@ static void hills(R *r) {
   }
 }
 
+/* whether today's feast (plan_feast) brings this (FF_*) */
+static bool feast_brings(R *r, int flag) {
+  Plan *p = r->p;
+  return p->feast && p->feast_day == r->local.ordinal && (p->feast_flags & flag);
+}
+
+/* fires on the hilltops on a fire festival's night (proto/feast_draw.py bonfires): on the three highest tops at least
+ * twenty pixels from the church, eighteen apart, each a flame with its glow round it and a spark that moves with the
+ * minute; on a printed chart in its red ink */
+static void feast_fires(R *r) {
+  if (!feast_brings(r, FF_BONFIRES) || r->sun_alt >= -4 || (r->wx && (r->fog || r->falls))) return;
+  static const char *const FLAME[4] = {"..Y..", ".YOY.", ".ORO.", "ORRRO"};
+  /* the tops in the prototype's order (the highest first, the rightmost of equals), each kept if eighteen from those
+   * kept */
+  int chosen[3], nc = 0, last_h = 1 << 20, last_dx = 1 << 20;
+  while (nc < 3) {
+    int bh = -1, bdx = 0;
+    for (int dx = -VILLAGE_DX; dx <= VILLAGE_DX; dx++) {
+      if (r->edge[dx + VILLAGE_DX] < 0 || (dx < 20 && dx > -20)) continue;
+      int h = pyf_round(interp(dx, DISTANT, DISTANT_COUNT));
+      if (h < 3 || h > last_h || (h == last_h && dx >= last_dx)) continue;
+      if (h > bh || (h == bh && dx > bdx)) bh = h, bdx = dx;
+    }
+    if (bh < 0) break;
+    last_h = bh, last_dx = bdx;
+    bool far = true;
+    for (int c = 0; c < nc; c++) far &= bdx - chosen[c] >= 18 || chosen[c] - bdx >= 18;
+    if (far) chosen[nc++] = bdx;
+  }
+  Rng g;
+  rng_start(&g, (uint32_t)(r->local.ordinal * 1440 + r->local.hour * 60 + r->local.minute));
+  uint8_t ink = r->paper ? r->P->accent : 0;
+  for (int c = 0; c < nc; c++) {
+    int dx = chosen[c], x0 = r->col + dx - 2;
+    int base = r->edge[dx + VILLAGE_DX] - pyf_round(interp(dx, DISTANT, DISTANT_COUNT));
+    if (!ink)
+      for (int j = -6; j < 2; j++)
+        for (int i = -4; i < 9; i++) {
+          int a = i - 2, b = j + 2, d100 = 100 * a * a + 169 * b * b;   /* (d = hypot(a, 1.3 b), in hundredths squared) */
+          if (inside(r, x0 + i, base + j) && d100 < 2704 && ((i + j) % 2 + 2) % 2 == 0)
+            put(r, x0 + i, base + j, d100 < 1225 ? C8(2, 1, 0) : C8(1, 0, 0));
+        }
+    for (int j = 0; j < 4; j++)
+      for (int i = 0; i < 5; i++) {
+        char ch = FLAME[j][i];
+        int y = base - 3 + j, x = x0 + i;
+        if (ch != '.' && inside(r, x, y)) put(r, x, y, ink ? ink : ch == 'Y' ? C8(3, 3, 1) : ch == 'O' ? C8(3, 2, 0) : C8(3, 0, 0));
+      }
+    int y = base - 5 - rng_int(&g, 0, 3), x = x0 + 2 + rng_int(&g, -1, 2);
+    if (inside(r, x, y)) put(r, x, y, ink ? ink : C8(3, 3, 1));
+  }
+}
+
 static void vput(R *r, int dx, int y, uint8_t c) {
   if (dx >= -VILLAGE_DX && dx <= VILLAGE_DX) {
     if (y < r->vtop[dx + VILLAGE_DX]) r->vtop[dx + VILLAGE_DX] = (int16_t)y;
@@ -1641,6 +1695,7 @@ static void village(R *r, int season) {
   }
   int hour = r->local.hour;
   bool lit = r->sun_alt < -4 && ((hour >= 17 && hour <= 22) || (hour >= 5 && hour <= 7));
+  if (feast_brings(r, FF_LIGHTS)) lit = r->sun_alt < -4;   /* a feast of lights: a candle in every window, all night */
   bool night_land = r->night_land = r->sun_alt < -6 || r->red;
   bool foggy = r->wx && r->fog && r->live;
   uint8_t silhouette = r->paper ? P->line : night_land ? C8(0, 0, 0) : C8(0, 0, 1);
@@ -2569,6 +2624,12 @@ static bool news_wording(R *r, int w, char *out) {
     return true;
   }
   if (w > 1) return false;
+  /* a feast day names itself, a red-letter day, unless an eclipse is the news */
+  if (p->feast && p->feast_day == r->local.ordinal && p->news != NEWS_SUN && p->news != NEWS_MOON) {
+    if (w && !strcmp(p->feast_words[1], p->feast_words[0])) return false;
+    strcpy(out, p->feast_words[w]);
+    return true;
+  }
   switch (p->news) {
   case NEWS_SUN: strcpy(out, SUN[p->news_a][w]); return true;
   case NEWS_MOON: strcpy(out, MOON[p->news_a][w]); return true;
@@ -2669,6 +2730,7 @@ static __attribute__((noinline)) void time_block(R *r, int fy0, int season) {
   bool even = count % 2 == 0;
   uint8_t order[24];
   int no = 0;
+  if (p->feast && p->feast_day == r->local.ordinal && p->feast_emblem != 255) order[no++] = p->feast_emblem;
   for (int pass = 0; pass < 2; pass++) {
     const uint8_t *lst = (pass == 0) == even ? seasonal : general;
     int nl = (pass == 0) == even ? ns : ng;
@@ -3008,6 +3070,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   hills(r);
   village(r, season);
   village_weather(r);
+  feast_fires(r);
   /* names in the sky; the ornaments where no name is */
   if (f->names) names(r, mx, my);
   if (f->names && r->shower >= 0) {

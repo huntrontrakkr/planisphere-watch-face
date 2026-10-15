@@ -103,3 +103,8 @@ static const uint8_t WIDEST_TIME[6][2] = {{78, 81}, {82, 85}, {78, 81}, {82, 85}
 #define MILKY_STEP 2
 #define MILKY_W 180
 #define MILKY_H 90
+enum { CAL_SKY, CAL_CHRISTIAN, CAL_EASTERN, CAL_ENGLISH, CAL_FIRE, CAL_ROME, CAL_US, CAL_BRITAIN, CAL_HEBREW, CAL_CHINESE, CAL_ISLAMIC, CAL_HINDU, CAL_COUNT };
+enum { FK_FIXED, FK_EASTER, FK_ORTHODOX, FK_NTH, FK_AFTER, FK_WINDOW, FK_ADVENT, FK_SUN, FK_SIDEREAL, FK_HEBREW, FK_CHINESE, FK_ISLAMIC, FK_DIWALI };
+enum { FZ_LOCAL, FZ_BJ, FZ_IST };
+enum { FF_LIGHTS = 1, FF_BONFIRES = 2, FF_FIREWORKS = 4, FF_MIDNIGHT = 8 };   /* sparks: flags >> 4 */
+typedef struct { uint8_t cal, kind, span, emblem, flags, rank, zone, pad; int16_t a, b, c, pad2; uint16_t words[4]; } FeastRecord;

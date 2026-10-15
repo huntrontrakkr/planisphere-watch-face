@@ -600,15 +600,79 @@ def geometry(dial, rect):
     return blob
 
 
+FEAST_KINDS = ["fixed", "easter", "orthodox", "nth", "after", "window", "advent", "sun", "sidereal", "hebrew",
+               "chinese", "islamic", "diwali"]
+FEAST_ZONES = ["local", "bj", "ist"]
+SPARK_SETS = ["independence", "bonfire", "new year"]
+
+
+def feasts_blob(h):
+    """The calendars' days (proto/feasts.py) for the watch: feasts.bin, a resource the watch reads once a day.
+
+    header   uint16 count, uint16 the words' offset
+    records  24 bytes each: uint8 calendar, kind, span, emblem (NW_*, 255 none), flags (FF_*), rank, zone, 0;
+             int16 a, b, c (the rule's numbers), 0; uint16 the words (long, short, south's long, south's short;
+             65535 none) as offsets into the words
+    words    NUL-terminated"""
+    import feasts
+    needle = list(sprites.NEEDLEWORK)
+    words, at = bytearray(), {}
+
+    def word(w):
+        if w is None:
+            return 0xFFFF
+        if w not in at:
+            at[w] = len(words)
+            words.extend(w.encode("ascii") + b"\0")
+        return at[w]
+    recs = bytearray()
+    for f in feasts.FEASTS:
+        rule = f["rule"]
+        kind = FEAST_KINDS.index(rule[0])
+        a = b = c = 0
+        span, zone = 1, 0
+        if rule[0] in ("fixed", "hebrew"):
+            a, b = rule[1], rule[2]
+            span = rule[3] if len(rule) > 3 else 1
+        elif rule[0] in ("easter", "orthodox", "advent"):
+            a = rule[1]
+        elif rule[0] in ("nth", "after", "window"):
+            a, b, c = rule[1], rule[2], rule[3]
+        elif rule[0] in ("sun", "sidereal"):
+            a, zone = rule[1], FEAST_ZONES.index(rule[2])
+        elif rule[0] in ("chinese", "islamic"):
+            a, b = rule[1], rule[2]
+        flags = (1 if "lights" in f.get("brings", ()) else 0) | (2 if "bonfires" in f.get("brings", ()) else 0)
+        if f.get("fireworks"):
+            flags |= 4 | (SPARK_SETS.index(f["fireworks"]) << 4)
+        if f.get("midnight"):
+            flags |= 8
+        wl = list(f["words"]) + [None] * (2 - len(f["words"]))
+        sl = list(f.get("south", (None, None))) + [None] * 2
+        emblem = needle.index(f["emblem"]) if f.get("emblem") else 255
+        recs += struct.pack("<8B3hH4H", feasts.CAL[f["cal"]], kind, span, emblem, flags, f["rank"], zone, 0, a, b, c, 0,
+                            word(wl[0]), word(wl[1] or wl[0]), word(sl[0]), word(sl[1] or sl[0]) if sl[0] else 0xFFFF)
+    n = len(feasts.FEASTS)
+    out = struct.pack("<HH", n, 4 + len(recs)) + recs + words
+    h.append("enum { " + ", ".join(f"CAL_{k.upper()}" for k, _, _ in feasts.CALENDARS) + ", CAL_COUNT };")
+    h.append("enum { " + ", ".join(f"FK_{k.upper()}" for k in FEAST_KINDS) + " };")
+    h.append("enum { " + ", ".join(f"FZ_{k.upper()}" for k in FEAST_ZONES) + " };")
+    h.append("enum { FF_LIGHTS = 1, FF_BONFIRES = 2, FF_FIREWORKS = 4, FF_MIDNIGHT = 8 };   /* sparks: flags >> 4 */")
+    h.append("typedef struct { uint8_t cal, kind, span, emblem, flags, rank, zone, pad; int16_t a, b, c, pad2; "
+             "uint16_t words[4]; } FeastRecord;")
+    return out
+
+
 def main():
     h = []
     sh = shared(h)
+    feast_bin = feasts_blob(h)
     t2 = plates.RectDial(200, 228, 40.71, -74.01)
     r2 = plates.RoundDial(260, 260, 40.71, -74.01)
     ge, gg = geometry(t2, True), geometry(r2, False)
     assert ge.names == gg.names
     RES.mkdir(parents=True, exist_ok=True)
-    blobs = {"plan.bin": sh.bytes(), "geom~emery.bin": ge.bytes(), "geom~gabbro.bin": gg.bytes()}
+    blobs = {"plan.bin": sh.bytes(), "geom~emery.bin": ge.bytes(), "geom~gabbro.bin": gg.bytes(), "feasts.bin": feast_bin}
     for name, data in blobs.items():
         (RES / name).write_bytes(data)
     for old in ("geom_emery.bin", "geom_gabbro.bin"):

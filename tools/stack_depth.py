@@ -1,5 +1,6 @@
-"""The renderer's deepest stack, worked out from the compiler: each function's frame (-fstack-usage) along the call
-graph (-fcallgraph-info), for the code blob as tools/build_blob.py builds it. Prints the deepest chains from each
+"""The code blobs' deepest stack, worked out from the compiler: each function's frame (-fstack-usage) along the call
+graph (-fcallgraph-info), for each code blob as tools/build_blob.py builds it (the renderer from plan_render and
+plan_init, the calendars from plan_feast). Prints the deepest chains from each
 entry, and the depth at each call the renderer makes out of itself (the memory and the screen's rows, which run the
 system's code on the same stack).
 
@@ -33,9 +34,19 @@ def main():
     cc = build_blob.TC / "arm-none-eabi-gcc"
     gcc = str(cc if cc.exists() else sdks[-1])
     flags = [f for f in build_blob.CFLAGS if f not in ("-Werror",)]
+    worst_all, dynamic_all = 0, set()
+    for name, (sources, _) in build_blob.BLOBS.items():
+        entries = ("plan_render", "plan_init") if name == "plan_code" else ("plan_feast",)
+        worst, dynamic = analyse(gcc, flags, sources, entries, a.top)
+        worst_all, dynamic_all = max(worst_all, worst), dynamic_all | dynamic
+    if dynamic_all or (a.budget and worst_all > a.budget):
+        sys.exit(f"A blob goes {worst_all} bytes deep (budget {a.budget}), or has frames sized at run time.")
+
+
+def analyse(gcc, flags, sources, entries, top):
     with tempfile.TemporaryDirectory() as tmp:
         objs = []
-        for src in build_blob.SOURCES:
+        for src in sources:
             obj = Path(tmp) / (src.stem + ".o")
             subprocess.run([gcc, *flags, "-c", str(src), "-o", str(obj)], check=True)
             objs.append(str(obj))
@@ -50,7 +61,7 @@ def main():
         taken = set()
         for line in subprocess.run([readelf, "-rW", str(elf)], capture_output=True, text=True).stdout.splitlines():
             m = re.match(r"\s*[0-9a-f]+\s+[0-9a-f]+\s+R_ARM_ABS32\s+[0-9a-f]+\s+(\S+)", line)
-            if m and m.group(1) in funcs and m.group(1) not in ("plan_init", "plan_render"):
+            if m and m.group(1) in funcs and m.group(1) not in ("plan_init", "plan_render", "plan_feast"):
                 taken.add(m.group(1))
         frame, calls, dynamic = {}, {}, set()
         for ci in Path(tmp).glob("*.ci"):
@@ -82,15 +93,16 @@ def main():
                 best = d
         return own + best[0], (f,) + best[1]
 
-    for entry in ("plan_render", "plan_init"):
+    for entry in entries:
         total, chain = deepest(entry)
         print(f"{entry}: {total} bytes deep at most")
         print("   " + " > ".join(f"{f} {frame.get(f, LIBGCC if f.startswith('__') else 0)}" for f in chain))
-    # the deepest ways down from plan_render, one per first call
-    print("plan_render's calls, deepest first:")
-    rows = sorted(((deepest(g)[0], g) for g in calls.get("plan_render", ())), reverse=True)
-    for d, g in rows[:a.top]:
-        print(f"   {frame['plan_render'] + d:5d}  {' > '.join(deepest(g)[1])}")
+    # the deepest ways down from the first entry, one per first call
+    first = entries[0]
+    print(f"{first}'s calls, deepest first:")
+    rows = sorted(((deepest(g)[0], g) for g in calls.get(first, ())), reverse=True)
+    for d, g in rows[:top]:
+        print(f"   {frame[first] + d:5d}  {' > '.join(deepest(g)[1])}")
     # where the renderer calls out (function pointers): the depth there, before the system's own frames
     def outs(f, depth, path, found):
         depth += frame.get(f, 0)
@@ -100,16 +112,15 @@ def main():
             if g in frame and g not in path:
                 outs(g, depth, path + (f,), found)
         return found
-    found = sorted(set(outs("plan_render", 0, (), [])), reverse=True)
-    print("calls out of the renderer (alloc, release, the screen's rows), deepest first:")
-    for d, p in found[:a.top]:
-        print(f"   {d:5d}  {p}")
+    found = sorted(set(outs(first, 0, (), [])), reverse=True)
+    if found:
+        print("calls through pointers (out of the blob, or to those below), deepest first:")
+        for d, p in found[:top]:
+            print(f"   {d:5d}  {p}")
     print("called through pointers:", ", ".join(sorted(taken)) or "none")
     if dynamic:
         print("frames sized at run time:", ", ".join(sorted(dynamic)))
-    worst = max(deepest(e)[0] for e in ("plan_render", "plan_init"))
-    if dynamic or (a.budget and worst > a.budget):
-        sys.exit(f"The renderer goes {worst} bytes deep (budget {a.budget}), or has frames sized at run time.")
+    return max(deepest(e)[0] for e in entries), dynamic
 
 
 if __name__ == "__main__":

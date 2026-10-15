@@ -37,6 +37,7 @@ typedef struct {
   const char *city, *country;  /* the place's names on the ring (NULL or "": none) */
   bool coords;                 /* its latitude and longitude on the ring (false while the place is not yet known) */
   const Weather *weather;      /* NULL: none */
+  uint32_t calendars;          /* the calendars whose days the face keeps: bit n for CAL_* n (plan_data.h) */
 } Face;
 
 /* Where things are in the sky at a moment (degrees). The planets in the order they are drawn. */
@@ -72,10 +73,17 @@ void plan_ecl_to_eq(float lon, float lat, float eps, float *ra, float *dec);
 float plan_moon_node(int64_t utc);
 /* The Sun's next rising (1) or setting (2) after `utc`, within 27 hours (0: none), its moment in *at. */
 int plan_sun_event(int64_t utc, float lat, float lon, int64_t *at);
+/* The Sun's and the Moon's apparent longitudes (degrees, nutation included) at a moment. */
+void plan_lons(int64_t utc, float *sun, float *moon);
 /* The local calendar from seconds since 1970 (local time): year, month 1..12, day, Python's weekday (0 Monday),
  * hour, minute, second, and the proleptic Gregorian ordinal of the day (Python's date.toordinal()). */
 typedef struct { int year, month, day, wday, hour, minute, second; int32_t ordinal; } Civil;
 void plan_civil(int64_t local, Civil *c);
+
+/* The feast of a local date (a Gregorian ordinal) in the calendars `cal` (bit n for CAL_* n), from the calendars'
+ * table (feasts.bin): its record's index, or -1. `hours` is the place's clock ahead of UTC (for the days set by
+ * the Sun where it is). */
+int plan_feast_on(const uint8_t *table, int32_t ordinal, uint32_t cal, float hours);
 
 /* The face's state: its data, the screen, and the window for the latitude (kept from one drawing to the next). */
 typedef struct {
@@ -103,6 +111,12 @@ typedef struct {
   int32_t news_day;
   float news_lat, news_lon;
   uint8_t news, news_a, news_b;
+  /* the day's feast in the kept calendars (plan_feast), kept until the day, the calendars or the hemisphere change */
+  int32_t feast_day;                   /* the local date it is for (-1: not yet looked for) */
+  uint32_t feast_cal;
+  bool feast_south, feast;             /* (feast: there is one) */
+  uint8_t feast_emblem, feast_flags;   /* NW_* (255 none); FF_* */
+  char feast_words[2][20];             /* its long and short words for the almanac's line */
   /* while drawing */
   uint8_t *rows[MAX_H];
   int16_t rx0[MAX_H], rx1[MAX_H];
@@ -124,7 +138,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
  * app's own binary stays small (PebbleOS caps it at 64 KB) and the renderer has the rest of the app's memory. The
  * layout number keeps a blob from one build from running with another's structures. */
 #define PLAN_API_MAGIC 0x4e414c50u           /* "PLAN" */
-#define PLAN_API_VERSION 1u
+#define PLAN_API_VERSION 2u
 #define PLAN_LAYOUT ((PLAN_API_VERSION << 28) ^ ((uint32_t)sizeof(Plan) << 12) ^ ((uint32_t)sizeof(Face) << 4) ^ \
                      (uint32_t)sizeof(Weather))
 typedef struct {
@@ -133,3 +147,13 @@ typedef struct {
   bool (*render)(Plan *p, const Face *f, int64_t utc, int32_t offset, const Target *t, void *(*alloc)(size_t),
                  void (*release)(void *));
 } PlanApi;
+/* The calendars' code, a blob of its own (plan_feasts.c and the ephemeris it asks), which the watch loads only to look
+ * up the day's feast, once a day, with the calendars' table (feasts.bin), and lets go: the renderer reads the answer
+ * the Plan keeps. True when the Plan's answer is for this day, these calendars and this hemisphere (so a NULL table
+ * asks only whether a look is needed). */
+#define FEAST_API_MAGIC 0x54534546u          /* "FEST" */
+typedef struct {
+  uint32_t magic, layout;
+  bool (*feast)(Plan *p, const Face *f, int64_t utc, int32_t offset, const uint8_t *table);
+} FeastApi;
+bool plan_feast(Plan *p, const Face *f, int64_t utc, int32_t offset, const uint8_t *table);

@@ -327,9 +327,18 @@ vellum and ultramarine for the Book of Hours, black and gold for the Orloj, coba
 
 ![The page in the Planisphere's, the Book of Hours', the Orloj's, the Cyanotype's and Apian's colours](docs/settings-themes.png)
 
+The owner may keep the days of any of twelve calendars (the settings page's "The calendar"): the sky's year, the
+Christian year, the Eastern churches, old English customs, the fire festivals, ancient Rome, the United States,
+Britain and Ireland, and the Hebrew, Chinese, Islamic and Hindu calendars. On a feast day the almanac's line names it
+in red, its emblem stands beside the time, and some bring a light in every window or fires on the hills
+(`proto/feasts.py` has the days and their rules; `watchface/src/c/plan_feasts.c` follows it, checked day by day by
+`tools/check_feasts.py`). The fireworks display at the evening's hours is in the prototype so far
+(`research/holidays/`).
+
 The drawing is larger than PebbleOS lets an app's own code be (64 KB, from the way it records an app's size), so it
 is not linked into the app. `tools/build_blob.py` compiles it into one of the app's resources, and the app loads it at
-start, fixes up its addresses, flushes the caches and runs it from its own memory. The app itself is under 5 KB.
+start, fixes up its addresses, flushes the caches and runs it from its own memory; the calendars' code is a second
+blob, loaded once a day with the calendars' table to find the day's feast, then let go. The app itself is about 5 KB.
 
 ```
 cd watchface && pebble build                                         # the watch app, for both watches

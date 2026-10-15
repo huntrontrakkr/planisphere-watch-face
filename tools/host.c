@@ -10,6 +10,7 @@
  *     --time N          render N times and print the mean milliseconds
  *     --labours         the labours of the months
  *     --no-coords       no latitude and longitude on the ring
+ *     --calendars MASK  the calendars whose days it keeps (bit n for CAL_* n), as a number
  *     --mem             print the most memory the drawing held at once (as the watch's heap counts it: each block
  *                       rounded to 4 bytes, with its 4-byte header), and its blocks
  */
@@ -75,6 +76,7 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--country") && i + 1 < argc) f.country = argv[++i];
     else if (!strcmp(argv[i], "--time") && i + 1 < argc) repeat = atoi(argv[++i]);
     else if (!strcmp(argv[i], "--mem")) mem = true;
+    else if (!strcmp(argv[i], "--calendars") && i + 1 < argc) f.calendars = (uint32_t)strtoul(argv[++i], NULL, 0);
     else if (!strcmp(argv[i], "--weather") && i + 1 < argc) {
       int v[10] = {0};
       sscanf(argv[++i], "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", &v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7], &v[8], &v[9]);
@@ -95,6 +97,7 @@ int main(int argc, char **argv) {
   Target t = {row, NULL};
   struct timespec t0, t1;
   clock_gettime(CLOCK_MONOTONIC, &t0);
+  plan_feast(&p, &f, utc, offset, BLOB_FEASTS);
   for (int i = 0; i < repeat; i++)
     if (!plan_render(&p, &f, utc, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
   if (mem) printf("peak %zu bytes in %zu blocks\n", mem_peak, mem_peak_blocks);

@@ -67,6 +67,22 @@ CASES = {
     "labours-nov-r2": ("gabbro", "apian", datetime(2026, 11, 16, 2, 30, tzinfo=timezone.utc), NY, {"labours": True}),
     "labours-sydney-t2": ("emery", "flamsteed", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc), (-33.87, 151.21, 660),
                           {"labours": True}),
+    # the calendars' days (all kept): the name on the almanac's line, the emblem, the lights and the fires
+    "feast-july4-t2": ("emery", "planisphere", datetime(2026, 7, 5, 1, 40, tzinfo=timezone.utc), NY, {"calendars": 4095}),
+    "feast-christmas-eve-r2": ("gabbro", "planisphere", datetime(2026, 12, 25, 2, 0, tzinfo=timezone.utc), (40.71, -74.01, -300),
+                               {"calendars": 4095}),
+    "feast-st-johns-t2": ("emery", "planisphere", datetime(2026, 6, 23, 22, 15, tzinfo=timezone.utc), (50.12, -5.53, 60),
+                          {"calendars": 1 << 3}),
+    "feast-hanukkah-t2": ("emery", "night", datetime(2025, 12, 15, 23, 0, tzinfo=timezone.utc), (40.71, -74.01, -300),
+                          {"calendars": 4095}),
+    "feast-diwali-r2": ("gabbro", "planisphere", datetime(2026, 11, 8, 14, 30, tzinfo=timezone.utc), (28.61, 77.21, 330),
+                        {"calendars": 4095}),
+    "feast-spring-festival-t2": ("emery", "orloj", datetime(2026, 2, 17, 12, 0, tzinfo=timezone.utc), (39.90, 116.40, 480),
+                                 {"calendars": 4095}),
+    "feast-bonfire-night-t2": ("emery", "apian", datetime(2026, 11, 5, 20, 0, tzinfo=timezone.utc), (51.51, -0.13, 0),
+                               {"calendars": 4095}),
+    "feast-solstice-south-t2": ("emery", "planisphere", datetime(2026, 6, 21, 9, 0, tzinfo=timezone.utc), (-33.87, 151.21, 600),
+                                {"calendars": 1}),
 }
 
 
@@ -78,6 +94,8 @@ def c_render(screen, plate, when, place, opts, path):
         args.append("--24")
     if opts.get("labours"):
         args.append("--labours")
+    if opts.get("calendars"):
+        args += ["--calendars", str(opts["calendars"])]
     city, country = plates.place_name(lat, lon)
     if city:
         args += ["--city", city, "--country", country]
@@ -97,7 +115,7 @@ def py_render(screen, plate, when, place, opts, sky):
     tz = timezone(timedelta(minutes=off))
     w = meteo.SAMPLES[opts["weather"]] if opts.get("weather") else None
     return plates.render(when, dial, sky, tz, plate, round_screen=screen == "gabbro", clock24=opts.get("clock24", False),
-                         weather=w, labours=opts.get("labours", False)).astype(np.uint8)
+                         weather=w, labours=opts.get("labours", False), calendars=opts.get("calendars", 0)).astype(np.uint8)
 
 
 def main():

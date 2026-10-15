@@ -11,11 +11,11 @@
 /* Nothing here is in a hot loop: built for size. */
 #pragma GCC optimize("Os")
 
-#define SETTINGS_VERSION 1
+#define SETTINGS_VERSION 2
 #define KEY_SETTINGS 1
 #define KEY_PLACE 2
 #define KEY_WEATHER 3
-#define INBOX 1024                       /* bytes: the whole settings message, with room to grow */
+#define INBOX 320                        /* bytes: the whole settings message (about 150), with room to grow */
 #define WEATHER_FRESH (3 * 3600)         /* s: the weather is shown this long after it came */
 #define ASK_EVERY (30 * 60)              /* and the phone asked for it again after this */
 #define ASK_RETRY (10 * 60)              /* asking at most this often */
@@ -23,6 +23,7 @@
 typedef struct {
   uint8_t version, plate, clock, names, weather, units, place, labours;
   int32_t lat_e4, lon_e4;               /* the place given on the settings page (PLACE 1) */
+  uint32_t calendars;                   /* the calendars whose days the face keeps (bit n for CAL_* n) */
   char city[24], country[20];
 } Settings;
 
@@ -40,6 +41,7 @@ volatile uint32_t g_render_ms = 0, g_render_max = 0, g_heap_free = 0, g_heap_low
 volatile int32_t g_offset = 0;
 /* the stack's deepest (stack_deepest), ever and by the end of init; and how deep it is where the renderer is called */
 volatile uint32_t g_stack = 0, g_stack_init = 0, g_stack_at = 0;
+volatile uint32_t g_feast_heap = 0;      /* the heap free while the calendars' code and table are loaded */
 
 static Window *s_window;
 static Layer *s_layer;
@@ -119,12 +121,14 @@ static int32_t utc_offset(time_t now) {
   return (int32_t)(local - (int64_t)now);
 }
 
+static bool s_south;                    /* the face's place is south of the equator (as face_of sets it) */
 static void face_of(Face *f) {
   memset(f, 0, sizeof *f);
   f->plate = s_settings.plate < PLATE_COUNT ? s_settings.plate : 0;
   f->clock24 = s_settings.clock == 0 ? clock_is_24h_style() : s_settings.clock == 2;
-  f->names = s_settings.names, f->labours = s_settings.labours;
+  f->names = s_settings.names, f->labours = s_settings.labours, f->calendars = s_settings.calendars;
   f->fahrenheit = s_settings.units == 2;
+  s_south = s_settings.place == 1 ? s_settings.lat_e4 < 0 : s_place.time && s_place.lat_e4 < 0;
   if (s_settings.place == 1) {
     f->lat = (float)s_settings.lat_e4 * 1e-4f, f->lon = (float)s_settings.lon_e4 * 1e-4f;
     f->city = s_settings.city, f->country = s_settings.country, f->coords = true;
@@ -137,6 +141,30 @@ static void face_of(Face *f) {
   }
   uint32_t now = (uint32_t)time(NULL);
   if (s_settings.weather && s_weather.time && now - s_weather.time < WEATHER_FRESH) f->weather = &s_weather.w;
+}
+
+static const void *load_blob(uint32_t resource, uint8_t **mem);
+
+/* the day's feast in the kept calendars, looked up once a day (when the day, the calendars or the hemisphere change):
+ * the calendars' code and table loaded for that from the resources, and let go before the face is drawn */
+static void feast_of_day(const Face *f, time_t now, int32_t offset, bool south) {
+  int32_t day = (int32_t)((now + offset) / 86400) + 719163;     /* (32-bit arithmetic: the watch's clock is) */
+  if (!f->calendars || (s_plan->feast_day == day && s_plan->feast_cal == f->calendars && s_plan->feast_south == south)) {
+    if (!f->calendars) s_plan->feast = false;
+    return;
+  }
+  uint8_t *mem, *table = NULL;
+  const FeastApi *api = load_blob(RESOURCE_ID_PLAN_FEAST_CODE, &mem);
+  if (api && api->magic == FEAST_API_MAGIC && api->layout == PLAN_LAYOUT) {
+    ResHandle h = resource_get_handle(RESOURCE_ID_PLAN_FEASTS);
+    size_t n = resource_size(h);
+    if ((table = malloc(n))) {
+      g_feast_heap = heap_bytes_free();
+      resource_load(h, table, n);
+      api->feast(s_plan, f, (int64_t)now, offset, table);
+    }
+  }
+  free(table), free(mem);
 }
 
 /* the renderer's memory, and how little was left */
@@ -168,6 +196,7 @@ static void update(Layer *layer, GContext *ctx) {
   if (heap_bytes_free() < g_heap_low || !g_heap_low) g_heap_low = heap_bytes_free();
   g_utc = (uint32_t)now, g_offset = utc_offset(now);
   g_stack_at = (uint32_t)((uintptr_t)__pbl_app_info - (uintptr_t)&tg);
+  feast_of_day(&f, now, g_offset, s_south);
   s_api->render(s_plan, &f, (int64_t)now, g_offset, &tg, alloc, free);
   graphics_release_frame_buffer(ctx, fb);
   g_render_ms = now_ms() - t0;
@@ -192,7 +221,7 @@ static const struct { const uint32_t *key; uint8_t rec, type, off, size; } KEYS[
   IN(UNITS, IN_SETTINGS, IN_U8, Settings, units), IN(PLACE, IN_SETTINGS, IN_U8, Settings, place),
   IN(LABOURS, IN_SETTINGS, IN_U8, Settings, labours), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
   IN(PLACE_LON, IN_SETTINGS, IN_I32, Settings, lon_e4), IN(PLACE_CITY, IN_SETTINGS, IN_TEXT, Settings, city),
-  IN(PLACE_COUNTRY, IN_SETTINGS, IN_TEXT, Settings, country),
+  IN(PLACE_COUNTRY, IN_SETTINGS, IN_TEXT, Settings, country), IN(CALENDARS, IN_SETTINGS, IN_I32, Settings, calendars),
   IN(LAT, IN_PLACE, IN_I32, Place, lat_e4), IN(LON, IN_PLACE, IN_I32, Place, lon_e4),
   IN(CITY, IN_PLACE, IN_TEXT, Place, city), IN(COUNTRY, IN_PLACE, IN_TEXT, Place, country),
   IN(WX_TEMP, IN_WEATHER, IN_I16, Stored, w.temp10), IN(WX_CODE, IN_WEATHER, IN_U8, Stored, w.code),
@@ -226,20 +255,23 @@ static void inbox(DictionaryIterator *it, void *context) {
 
 /* ---- life cycle ---- */
 
-/* The renderer, from the app's resources (tools/build_blob.py): its code linked at address 0, then a list of the
- * words in it that hold absolute addresses, to which we add where it landed. PebbleOS lets an app run code in its
- * own memory; memory_cache_flush is the SDK's call for code it has loaded. */
+/* Code from the app's resources (tools/build_blob.py): linked at address 0, then a list of the words in it that hold
+ * absolute addresses, to which we add where it landed. PebbleOS lets an app run code in its own memory;
+ * memory_cache_flush is the SDK's call for code it has loaded. Two blobs: the renderer, kept loaded, and the
+ * calendars, loaded once a day to look up the day's feast. Returns the blob's entry table (its memory in *mem, to
+ * free), or NULL. */
 typedef struct { uint32_t magic, image, bss, nrel, api; } CodeHeader;
 #define CODE_MAGIC 0x434E4C50u           /* "PLNC" */
 
-static bool load_code(void) {
-  ResHandle h = resource_get_handle(RESOURCE_ID_PLAN_CODE);
+static const void *load_blob(uint32_t resource, uint8_t **mem) {
+  ResHandle h = resource_get_handle(resource);
   CodeHeader hd;
-  if (resource_load_byte_range(h, 0, (uint8_t *)&hd, sizeof hd) != sizeof hd || hd.magic != CODE_MAGIC) return false;
+  *mem = NULL;
+  if (resource_load_byte_range(h, 0, (uint8_t *)&hd, sizeof hd) != sizeof hd || hd.magic != CODE_MAGIC) return NULL;
   uint32_t n = hd.image + hd.bss;
-  s_code = malloc(n + 4);                        /* the heap gives 4-byte alignment; the code was linked for 8 */
-  if (!s_code) return false;
-  uint8_t *code = (uint8_t *)(((uintptr_t)s_code + 7) & ~(uintptr_t)7);
+  *mem = malloc(n + 4);                          /* the heap gives 4-byte alignment; the code was linked for 8 */
+  if (!*mem) return NULL;
+  uint8_t *code = (uint8_t *)(((uintptr_t)*mem + 7) & ~(uintptr_t)7);
   if (resource_load_byte_range(h, sizeof hd, code, hd.image) != hd.image) goto fail;
   memset(code + hd.image, 0, hd.bss);
   uint16_t at[32];                               /* the relocations, a few at a time: the stack is small */
@@ -249,13 +281,20 @@ static bool load_code(void) {
     for (uint32_t j = 0; j < k; j++) ((uint32_t *)code)[at[j]] += (uint32_t)(uintptr_t)code;
   }
   memory_cache_flush(code, n);
-  s_api = (const PlanApi *)(code + hd.api);
-  if (s_api->magic != PLAN_API_MAGIC || s_api->layout != PLAN_LAYOUT) goto fail;
-  g_code = (uint32_t)(uintptr_t)code;
-  return true;
+  return code + hd.api;
 fail:
-  free(s_code), s_code = NULL, s_api = NULL;
-  return false;
+  free(*mem), *mem = NULL;
+  return NULL;
+}
+
+static bool load_code(void) {
+  s_api = load_blob(RESOURCE_ID_PLAN_CODE, &s_code);
+  if (!s_api || s_api->magic != PLAN_API_MAGIC || s_api->layout != PLAN_LAYOUT) {
+    free(s_code), s_code = NULL, s_api = NULL;
+    return false;
+  }
+  g_code = (uint32_t)(uintptr_t)s_api;
+  return true;
 }
 
 /* the face's data from the app's resources: the pieces, the stars, the type (shared) and this watch's ring */

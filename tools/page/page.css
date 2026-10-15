@@ -141,3 +141,11 @@ footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 10; display: fl
   border-top: 1px solid var(--rule); box-shadow: 0 -2px 0 var(--paper), 0 -3px 0 var(--rule);
   transition: background-color .35s; }
 footer .primary { flex: 1; }
+
+/* the calendars: each a switch, a line on what it keeps, and its next day (which the preview shows when touched) */
+.calendars { margin-top: 2px; }
+.calendar { padding: 10px 0 11px; border-top: 1px dotted var(--rule); }
+.calendar:first-child { border-top: 0; padding-top: 2px; }
+.calendar .desc { margin-top: 4px; }
+.calendar .next { display: block; margin-top: 5px; padding: 0; color: var(--accent); font-size: 14px; text-align: left; }
+.calendar .next:empty { display: none; }

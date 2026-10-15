@@ -6,6 +6,7 @@
 #include <string.h>
 #include "plan.h"
 #include "plan_blobs.h"
+#include "plan_data.h"
 
 static Plan P;
 static Face F;
@@ -42,9 +43,10 @@ EMSCRIPTEN_KEEPALIVE int pv_plates(void) { return PLATE_COUNT; }
 
 /* What the face shows: the plate, the clock, names in the sky, the temperature's scale, the place, the labours. */
 EMSCRIPTEN_KEEPALIVE void pv_face(int plate, int clock24, int names, int fahrenheit, float lat, float lon, int coords,
-                                  int labours) {
+                                  int labours, int calendars) {
   F.plate = (uint8_t)(plate >= 0 && plate < PLATE_COUNT ? plate : 0);
   F.clock24 = clock24 != 0, F.names = names != 0, F.fahrenheit = fahrenheit != 0, F.labours = labours != 0;
+  F.calendars = (uint32_t)calendars;
   F.lat = lat, F.lon = lon, F.coords = coords != 0;
   F.city = city, F.country = country;
 }
@@ -63,6 +65,23 @@ EMSCRIPTEN_KEEPALIVE void pv_weather(int code, int temp10, int low, int mid, int
 
 /* The face at `utc` (seconds since 1970), the local clock `offset` minutes ahead: the screen, W x H bytes. */
 EMSCRIPTEN_KEEPALIVE uint8_t *pv_render(double utc, int offset) {
+  plan_feast(&P, &F, (int64_t)utc, offset * 60, BLOB_FEASTS);
   if (!plan_render(&P, &F, (int64_t)utc, offset * 60, &(Target){pv_row, NULL}, malloc, free)) return NULL;
   return fb;
 }
+
+/* The first feast of the calendars `mask` on or after a local date (days since 1970), within `days`: its date (days
+ * since 1970), or -1; its words then in pv_feast_words. `offset` the clock's minutes ahead of UTC. */
+static char feast_words[24];
+EMSCRIPTEN_KEEPALIVE int pv_next_feast(int mask, int from, int days, int offset) {
+  for (int d = from; d < from + days; d++) {
+    int i = plan_feast_on(BLOB_FEASTS, d + 719163, (uint32_t)mask, offset / 60.0f);
+    if (i < 0) continue;
+    const FeastRecord *r = (const FeastRecord *)(const void *)(BLOB_FEASTS + 4) + i;
+    const char *w = (const char *)BLOB_FEASTS + (BLOB_FEASTS[2] | BLOB_FEASTS[3] << 8) + r->words[0];
+    strncpy(feast_words, w, sizeof feast_words - 1);
+    return d;
+  }
+  return -1;
+}
+EMSCRIPTEN_KEEPALIVE char *pv_feast_words(void) { return feast_words; }

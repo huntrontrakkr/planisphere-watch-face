@@ -31,6 +31,7 @@
       "PLACE_CITY",
       "PLACE_COUNTRY",
       "LABOURS",
+      "CALENDARS",
       "LAT",
       "LON",
       "CITY",
@@ -63,6 +64,16 @@
           "type": "raw",
           "name": "PLAN_CODE",
           "file": "data/plan_code.bin"
+        },
+        {
+          "type": "raw",
+          "name": "PLAN_FEASTS",
+          "file": "data/feasts.bin"
+        },
+        {
+          "type": "raw",
+          "name": "PLAN_FEAST_CODE",
+          "file": "data/feast_code.bin"
         }
       ]
     },

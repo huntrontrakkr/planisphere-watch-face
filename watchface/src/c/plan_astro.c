@@ -210,6 +210,15 @@ static float great(uint32_t Mj, uint32_t Msat, int a, int b, float c, bool cosin
 }
 
 /* the Sun and the Moon alone (for the eclipses' search through a day) */
+void plan_lons(int64_t utc, float *sun_lon, float *moon_lon) {
+  int32_t t = (int32_t)(utc - J2000), tt = tt_of(t);
+  float dpsi, eps, dist, beta;
+  nutation(tt, &dpsi, &eps);
+  *sun_lon = deg(sun(tt, &dist) + bam(dpsi));
+  moon(tt, moon_lon, &beta, &dist);
+  *moon_lon = rev(*moon_lon + dpsi);
+}
+
 void plan_sun_moon(Sky *s, int64_t utc, float lon) {
   int32_t t = (int32_t)(utc - J2000), tt = tt_of(t);
   s->utc = utc;

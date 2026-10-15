@@ -52,5 +52,6 @@ resources, and that the store's copy is 1 to 1,600 characters with no third-part
 Before a release, also run the checks CI does not:
 
     tools/build-host.sh && (cd proto && uv run python ../tools/parity.py)     # the C against the prototype
+    (cd proto && uv run python ../tools/check_feasts.py)                      # the calendars, day by day
     LD_LIBRARY_PATH=~/.local/lib/chromedeps node tools/check-page.mjs          # the settings page, in Chromium
     <pebble-tool-python> tools/emulator.py emery shots --gdb g_heap_free g_heap_low

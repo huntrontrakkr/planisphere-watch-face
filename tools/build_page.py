@@ -102,6 +102,8 @@ def main():
     order = list(plates.PLATES)
     assert set(order) == set(PLATES), "a plate without its name here"
     plate_list = [{"name": PLATES[k][0], "words": PLATES[k][1], "theme": PLATES[k][2]} for k in order]
+    import feasts
+    calendar_list = [{"key": k, "name": n, "desc": d} for k, n, d in feasts.CALENDARS]
     pieces = art()
     html = (PAGE / "page.html").read_text()
     preview = (ROOT / "preview" / "plan-preview.js").read_text()
@@ -114,6 +116,7 @@ def main():
                 .replace("/*PREVIEW*/", preview)
                 .replace("/*PLATES*/[]", json.dumps(plate_list, separators=(",", ":"), ensure_ascii=False))
                 .replace("/*ART*/{}", json.dumps({k: v for k, v in pieces.items() if k in ("fleur", "star", "stud")}))
+                .replace("/*CALENDARS*/[]", json.dumps(calendar_list, ensure_ascii=False))
                 .replace("/*PAGE*/", script))
     assert html.count("/*STATE*/null") == 1
     licence = (PAGE / "fonts" / "OFL-oldstandardtt.txt").read_text().replace("*/", "* /")

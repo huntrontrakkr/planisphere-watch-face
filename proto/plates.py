@@ -48,6 +48,7 @@ from typeset import ink, astro_time
 from pixeltext import pixel_text, time_text, temp_text, ornament, concat, stamp, box_of
 import events
 import feast_draw
+import feasts
 import figures
 import frame
 import horizon
@@ -665,14 +666,15 @@ def widest_time(style, screen, clock24):
 
 
 def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=False, sky_offset=None, extras=None,
-           names=True, weather=None, fahrenheit=False, weather_clock=None, labours=False, feast=None):
+           names=True, weather=None, fahrenheit=False, weather_clock=None, labours=False, feast=None, calendars=0):
     """The face at `when`. Its sky may be drawn at another time (`sky_offset`, for the hourly turn) while the clock
     keeps `when`; `extras(img, ctx)` draws passing things (meteors, birds) into the sky, under the names. With
     `weather` (weather.Weather) the window shows the place's clouds, rain or snow, the village its weather, and
     the almanac line the temperature (in degrees Fahrenheit with `fahrenheit`). A film may set `weather_clock`,
     (seconds for the clouds, seconds for everything else), to hurry the clouds past. With `labours` (an option the
     owner turns on) the month's labour is drawn faint in the card behind the window. A `feast` (proto/feasts.py:
-    its words, its emblem, what it brings) names the day on the almanac's line and keeps it as its tradition does."""
+    its words, its emblem, what it brings) names the day on the almanac's line and keeps it as its tradition does;
+    `calendars` (bit n for feasts.CALENDARS[n]) looks the day's feast up as the watch does."""
     clock_when = when
     if sky_offset is not None:
         when = when + sky_offset
@@ -686,6 +688,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     sun_alt = astro.altitude(*pos["sun"], lst, dial.lat)
     lat = abs(dial.lat) * astro.D2R
     local = clock_when.astimezone(tz)
+    if calendars and feast is None:
+        feast = feasts.feast_of(local.toordinal(), calendars, dial.lat, local.utcoffset().total_seconds() / 3600)
     rect = getattr(dial, "rect", False)
     SS = 4
     sun_c, planet_c, moon_c = piece_colours(P)

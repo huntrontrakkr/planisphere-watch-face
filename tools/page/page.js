@@ -5,6 +5,7 @@
   var STATE = window.PLAN_STATE || {};
   var PLATES = window.PLAN_PLATES || [];
   var ART = window.PLAN_ART || {};
+  var CALENDARS = window.PLAN_CALENDARS || [];
   var returnTo = STATE.returnTo || 'pebblejs://close#';
   var owned = STATE.platform === 'gabbro' ? 'round2' : 'time2';
   var which = owned;
@@ -16,8 +17,8 @@
     return e;
   }
 
-  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0,
-                  PLACE_CITY: '', PLACE_COUNTRY: ''};
+  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CALENDARS: 0, WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0,
+                  PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: ''};
   var settings = {};
   function reset(from) {
     settings = {};
@@ -93,6 +94,11 @@
        desc: 'The month’s work, faint in the card round the window, as the old calendars’ woodcuts show it: ' +
              'January’s feast, the March pruning, October’s sowing. In the south, by the seasons there.'}
     ]},
+    {title: 'The calendar', items: [
+      {type: 'calendars', desc: 'Keep the days of the calendars you choose: the almanac’s line names the day in red, ' +
+       'its emblem stands beside the time, and some bring lights in the windows, fires on the hills, or fireworks at ' +
+       'the top of each hour of the evening.'}
+    ]},
     {title: 'The weather', items: [
       {key: 'WEATHER', type: 'switch', label: 'Show the weather',
        desc: 'The temperature on the almanac’s line and the weather in the sky and on the village, from ' +
@@ -162,6 +168,35 @@
         dirty.push(function () { card.classList.toggle('on', settings.PLATE === i); });
       });
       box.appendChild(grid);
+    } else if (it.type === 'calendars') {
+      var list = el('div', 'calendars');
+      CALENDARS.forEach(function (c, i) {
+        var row = el('div', 'calendar');
+        var sw = el('label', 'switch');
+        sw.appendChild(el('span', null, c.name));
+        var cb = el('input');
+        cb.type = 'checkbox';
+        cb.onchange = function () { settings.CALENDARS = (settings.CALENDARS ^ (1 << i)) >>> 0; changed(); };
+        sw.appendChild(cb);
+        row.appendChild(sw);
+        row.appendChild(el('div', 'desc', c.desc));
+        var next = el('button', 'next');
+        next.type = 'button';
+        row.appendChild(next);
+        list.appendChild(row);
+        dirty.push(function () {
+          cb.checked = !!(settings.CALENDARS >> i & 1);
+          var n = nextFeast(1 << i);
+          next.textContent = n ? 'Next: ' + n.words.toLowerCase().replace(/(^|[ \-])([a-z])/g, function (m, a, b) {
+            return a + b.toUpperCase(); }).replace(/'S\b/g, '’s') + ', ' + n.when + ' →' : '';
+          next.onclick = n ? function () {
+            day = n.date; minute = 21 * 60; following = false;
+            if (!(settings.CALENDARS >> i & 1)) settings.CALENDARS = (settings.CALENDARS | 1 << i) >>> 0;
+            stopLapse(); changed(); window.scrollTo({top: 0, behavior: 'smooth'});
+          } : null;
+        });
+      });
+      box.appendChild(list);
     } else if (it.type === 'trysky') {
       var seg2 = el('div', 'seg small');
       var kinds = (phoneWeather ? [['phone', 'Now']] : []).concat([['fair', 'Fair'], ['cloudy', 'Cloudy'],
@@ -300,7 +335,7 @@
   function setup(plate) {
     var p = place();
     M._pv_face(plate, settings.CLOCK === 2 || (settings.CLOCK === 0 && clock24Here()) ? 1 : 0, settings.NAMES ? 1 : 0,
-               fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0, settings.LABOURS ? 1 : 0);
+               fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0, settings.LABOURS ? 1 : 0, settings.CALENDARS >>> 0);
     M.stringToUTF8(p.city || '', M._pv_city(), 32);
     M.stringToUTF8(p.country || '', M._pv_country(), 32);
     var w = !settings.WEATHER ? null : trySky === 'phone' ? phoneWeather && [phoneWeather.code, phoneWeather.temp10,
@@ -308,6 +343,21 @@
       phoneWeather.snow_mm, phoneWeather.vis_dam] : SAMPLES[trySky];
     if (w) M._pv_weather(w[0], w[1], w[2], w[3], w[4], w[5], w[6], w[7], w[8], w[9]);
     else M._pv_weather(-1, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+  }
+  // a calendar's next day, from the preview's own C: from the day shown, within a year
+  var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
+                'November', 'December'];
+  function nextFeast(mask) {
+    if (!M) return null;
+    var from = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+    var days = Math.round((from.getTime() - from.getTimezoneOffset() * 60000) / 86400000);
+    var found = M._pv_next_feast(mask, days, 400, -from.getTimezoneOffset());
+    if (found < 0) return null;
+    var d = new Date((found + 1) * 86400000 + from.getTimezoneOffset() * 60000 - 43200000);
+    var date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return {date: date, words: M.UTF8ToString(M._pv_feast_words()),
+            when: date.getDate() + ' ' + MONTHS[date.getMonth()] + (date.getFullYear() !== from.getFullYear() ? ' ' +
+                  date.getFullYear() : '')};
   }
   // the clock as the phone keeps it, for "as the watch" (the watch follows the phone)
   function clock24Here() {
@@ -349,11 +399,11 @@
   function changed() { refresh(); draw(); refreshThumbs(); showTime(); }
 
   // the header shrinks as the settings scroll beneath it
+  // (measured at the top, where it is full size: when the page opens, once its type has come, once the preview has)
   function layoutHead() {
-    var head = $('top');
-    var k = Math.max(0.55, 1 - window.scrollY / 420);
-    head.style.setProperty('--k', k.toFixed(3));
-    document.documentElement.style.setProperty('--head', ($('top').offsetHeight / k) + 'px');
+    if (window.scrollY > 0) return;
+    $('top').style.setProperty('--k', '1');
+    document.documentElement.style.setProperty('--head', $('top').offsetHeight + 'px');
   }
   window.addEventListener('scroll', function () {
     var k = Math.max(0.55, 1 - window.scrollY / 420);
@@ -372,6 +422,7 @@
   showTime();
   layoutHead();
   window.addEventListener('resize', layoutHead);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutHead);
   if (typeof PlanPreview === 'function')
-    PlanPreview().then(function (mod) { M = mod; screen(); draw(); refreshThumbs(); });
+    PlanPreview().then(function (mod) { M = mod; screen(); refresh(); draw(); refreshThumbs(); layoutHead(); });
 })();
