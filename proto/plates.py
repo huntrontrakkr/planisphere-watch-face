@@ -433,22 +433,36 @@ def window_mask(dial, SS=4):
     return dial._window
 
 
+_BEADS = {}
+
+
 def bead_pixels(dial, inset):
-    """Every third pixel along the ring's track `inset` in: the beads (the same for every frame, so kept)."""
-    cache = dial.__dict__.setdefault("_beads", {})
-    if inset not in cache:
+    """Every third pixel along the ring's track `inset` in: the beads. Traced round the screen's middle, not the pole
+    (which on the Time 2 moves with the latitude), so they are the same everywhere, and kept."""
+    rect = getattr(dial, "rect", False)
+    key = (dial.w, dial.h, rect, inset)
+    if key not in _BEADS:
         H, W = dial.h, dial.w
+        cx, cy = W / 2, H / 2
         trace = np.zeros((H, W), bool)
         for t_ in np.arange(0, 360, 0.05):
             a_ = math.radians(t_)
-            if getattr(dial, "rect", False):
-                bx_, by_ = track_point(dial, t_, inset)
+            dx, dy = math.sin(a_), math.cos(a_)
+            if rect:
+                lo, hi = 0.0, 400.0                     # track_point's bisection, from the screen's middle
+                for _ in range(40):
+                    mid = (lo + hi) / 2
+                    if dial.outline.dist(cx + mid * dx, cy + mid * dy)[0] > inset:
+                        lo = mid
+                    else:
+                        hi = mid
+                bx_, by_ = cx + lo * dx, cy + lo * dy
             else:
-                bx_, by_ = dial.cx + (dial.R - inset) * math.sin(a_), dial.cy + (dial.R - inset) * math.cos(a_)
+                bx_, by_ = dial.cx + (dial.R - inset) * dx, dial.cy + (dial.R - inset) * dy
             trace[int(by_), int(bx_)] = True
-        trail = sorted(zip(*np.nonzero(trace)), key=lambda p: math.atan2(p[1] + 0.5 - dial.cx, p[0] + 0.5 - dial.cy))
-        cache[inset] = [p for k, p in enumerate(trail) if k % 3 == 0]
-    return cache[inset]
+        trail = sorted(zip(*np.nonzero(trace)), key=lambda p: math.atan2(p[1] + 0.5 - cx, p[0] + 0.5 - cy))
+        _BEADS[key] = [p for k, p in enumerate(trail) if k % 3 == 0]
+    return _BEADS[key]
 
 
 def inner_region(dial):
@@ -698,7 +712,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     pdec = (90 - np.hypot(pdx, pdy) / dial.k) * astro.D2R
     pha = np.arctan2(pdx, pdy)
     palt = np.degrees(np.arcsin(np.clip(np.sin(lat) * np.sin(pdec) + np.cos(lat) * np.cos(pdec) * np.cos(pha), -1, 1)))
-    sdec, sha = pos["sun"][1] * astro.D2R, (lst - pos["sun"][0]) * astro.D2R
+    # the Sun in the chart's frame (a southern chart is turned over: its declinations and hour angles change sign)
+    flip = -1.0 if dial.south else 1.0
+    sdec, sha = flip * pos["sun"][1] * astro.D2R, flip * (lst - pos["sun"][0]) * astro.D2R
     gamma = np.degrees(np.arccos(np.clip(np.sin(pdec) * np.sin(sdec) + np.cos(pdec) * np.cos(sdec) * np.cos(pha - sha), -1, 1)))
     tt = bn_tile(H, W)
     if P.get("foxing") is not None:                      # old rag paper, foxed: a sparse speckle of buff in the card
@@ -742,9 +758,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         img[inside] = P["night"]
         dark = True
         if P.get("woodcut"):                             # the zodiac: a band six degrees either side of the
-            ra_ = np.radians(lst) - pha                  # ecliptic, washed yellow and ruled black, the ecliptic red
+            ra_ = np.radians(lst) - flip * pha           # ecliptic, washed yellow and ruled black, the ecliptic red
             e_ = math.radians(pos["eps"])
-            beta_ = np.degrees(np.arcsin(np.clip(np.sin(pdec) * math.cos(e_) - np.cos(pdec) * math.sin(e_) * np.sin(ra_), -1, 1)))
+            beta_ = np.degrees(np.arcsin(np.clip(flip * np.sin(pdec) * math.cos(e_) - np.cos(pdec) * math.sin(e_) * np.sin(ra_), -1, 1)))
             zband = (np.abs(beta_) < 6) & inside
             img[zband] = c8(3, 3, 1)
             img[outline(zband) & inside] = P["ink"]
@@ -810,7 +826,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             pts_ = []
             for az_ in np.arange(0, 361, 2):
                 d_, h_ = altaz_to_eq(alt_, az_, abs(dial.lat))
-                pts_.append(dial.project(lst - h_, d_, lst))
+                pts_.append(dial.project(lst - flip * h_, flip * d_, lst))   # drawn in the chart's own frame
             engraved |= stroke(pts_, 3)
         img[engraved] = P["line"]
         img[stroke([dial.project(*astro.ecl_to_eq(l_, 0, pos["eps"]), lst) for l_ in np.arange(0, 361, 1)], 7)] = P["const"]
@@ -923,7 +939,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     if wsky is not None and live and wsky.halo:
         body_ = pos["moon"] if (s_eff < -6 and f > 0.3 and moon_up) else pos["sun"] if sun_alt > 0 else None
         if body_ is not None:
-            ring_ = skies.halo_ring(pdec, pha, body_[1], lst - body_[0], dial.k) & inside & (tt < 0.7)
+            ring_ = skies.halo_ring(pdec, pha, flip * body_[1], flip * (lst - body_[0]), dial.k) & inside & (tt < 0.7)
             img[ring_] = c8(1, 0, 0) if P["window"] == "red" else c8(1, 1, 2) if s_eff < -6 else c8(3, 3, 3)
 
     # the planets, each its little picture; beside Jupiter its four great moons where they are now, along its
@@ -1195,7 +1211,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             if cshown >= 3 or rank > 1 or astro.altitude(ra, de, lst, dial.lat) < 12:
                 continue
             x, y = dial.project(ra, de, lst)
-            if place(pixel_text(name.upper(), track=1), x, y, P["const"], centred=True):
+            if place(pixel_text(name.upper().replace("Ö", "O"), track=1), x, y, P["const"], centred=True):
                 cshown += 1
 
     # the zenith's cross and the signs of the zodiac, drawn after the names, where no name or body is drawn: the
@@ -1310,7 +1326,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     # with the seasons (equal at the equinoxes), as an astrolabe's plate engraves them
     if P.get("beads") == "unequal":
         bead_px = []
-        cos_h0 = -math.tan(lat) * math.tan(math.radians(pos["sun"][1]))
+        cos_h0 = -math.tan(lat) * math.tan(sdec)
         h0 = math.degrees(math.acos(max(-1.0, min(1.0, cos_h0))))
         if 0 < h0 < 180:
             angles = [-h0 + k * 2 * h0 / 12 for k in range(12)] + [h0 + k * (360 - 2 * h0) / 12 for k in range(12)]
@@ -1367,7 +1383,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     # the numerals, drawn as engraved roman capitals (or figures on the plain plates), upright, each set on
     # its hour's ray where it stands clearest of the rules and ticks (nearest the band's middle among equals)
     held = rule_in | rule_out | studs
-    for by_, bx_ in bead_px:
+    for by_, bx_ in bead_pixels(dial, rp["bead"]):     # the beaded rule's track: numerals stay put through the year
         held[by_, bx_] = True
     for x, y in ticks:
         for xx_ in (x, W - 1 - x):
@@ -1477,7 +1493,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                 sprites.paint(img, leaf, xs_.start + i, ys_.start + j, {2: P["accent"], 1: P["ink"], 3: sun_c[3]})
     # the Sun's hand: a gilded Sun riding the band at the Sun's own hour, as on the old astronomical clocks, an
     # index from it to the scale on the inner rule; over everything, cleared round, as a hand covers what it passes
-    sun_ang = lst - pos["sun"][0]
+    sun_ang = flip * (lst - pos["sun"][0])
     (ex_, ey_), (ox_, oy_) = edge_point(dial, sun_ang), track_point(dial, sun_ang, r_out + 1)
     hx, hy = (ex_ + ox_) / 2, (ey_ + oy_) / 2
     if P.get("hand") == "thread":                        # Apian's index: a silk thread across the band, a seed pearl

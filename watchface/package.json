@@ -1,0 +1,69 @@
+{
+  "name": "planisphere",
+  "author": "huntrontrakkr",
+  "version": "0.1.0",
+  "private": true,
+  "keywords": [
+    "pebble-app"
+  ],
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Planisphere",
+    "uuid": "9b4e4dd6-a685-4dc5-9acb-03c83b64190a",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "emery",
+      "gabbro"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "messageKeys": [
+      "PLATE",
+      "CLOCK",
+      "NAMES",
+      "WEATHER",
+      "UNITS",
+      "PLACE",
+      "PLACE_LAT",
+      "PLACE_LON",
+      "PLACE_CITY",
+      "PLACE_COUNTRY",
+      "LABOURS",
+      "LAT",
+      "LON",
+      "CITY",
+      "COUNTRY",
+      "WX_TEMP",
+      "WX_CODE",
+      "WX_LOW",
+      "WX_MID",
+      "WX_HIGH",
+      "WX_WIND",
+      "WX_FROM",
+      "WX_PRESSURE",
+      "WX_SNOW",
+      "WX_VIS",
+      "REQUEST"
+    ],
+    "resources": {
+      "media": [
+        {
+          "type": "raw",
+          "name": "PLAN_DATA",
+          "file": "data/plan.bin"
+        },
+        {
+          "type": "raw",
+          "name": "PLAN_GEOM",
+          "file": "data/geom.bin"
+        }
+      ]
+    },
+    "capabilities": [
+      "configurable",
+      "location"
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Planisphere</title>
+<style>/*CSS*/</style>
+</head>
+<body>
+<header id="top">
+  <div id="stage">
+    <div id="watch" class="time2">
+      <canvas id="screen" width="200" height="228" aria-label="Live preview of the watch face"></canvas>
+    </div>
+    <div id="caption"></div>
+  </div>
+  <div id="controls">
+    <div class="row clock">
+      <button id="now" type="button" class="ghost">Now</button>
+      <input id="time" type="range" min="0" max="1439" step="1" aria-label="Time of day">
+      <span id="timelabel">21:30</span>
+      <button id="lapse" type="button" class="ghost" title="The sky turning through a day">Turn</button>
+    </div>
+    <div class="row">
+      <div class="seg small" id="which"></div>
+      <input id="date" type="date" aria-label="Date">
+    </div>
+  </div>
+</header>
+<main id="sections"></main>
+<footer>
+  <button id="reset" type="button" class="ghost">Defaults</button>
+  <button id="save" type="button" class="primary">Save to watch</button>
+</footer>
+<script>/*PREVIEW*/</script>
+<script>var PLAN_PLATES = /*PLATES*/[]; var PLAN_STATE = /*STATE*/null;</script>
+<script>/*PAGE*/</script>
+</body>
+</html>
