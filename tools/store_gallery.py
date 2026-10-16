@@ -15,7 +15,8 @@ as the store expects (docs/screenshots/store), and the same reels for the README
  10  the passing events, as the watch plays them: the figures drawn in at dusk, a skein of birds at twilight, meteors
      out of the Orionids' radiant on the night of their peak
 and for the README alone: the Time 2's Labours' tools in its corners, month by month (docs/gallery-tools.gif), and the
-zodiac behind the face, sign by sign (docs/gallery-zodiac.gif).
+zodiac behind the face, sign by sign (docs/gallery-zodiac.gif); the astronomer, month by month
+(docs/gallery-astronomer.gif).
 
     tools/build-host.sh && cd proto && uv run python ../tools/store_gallery.py
 """
@@ -228,12 +229,21 @@ def main():
     save_gif([side_by_side(*(frame(p, "planisphere", local(y, m, d, 21, 30, -240 if 3 < m < 11 else -300), NY,
                                    -240 if 3 < m < 11 else -300, theme=2, tools=True) for p in ("emery", "gabbro")))
               for y, m, d in signs], ROOT / "docs" / "gallery-zodiac.gif", 1200)
+    astronomer_gallery()
     save_gif([frame("emery", "planisphere", local(2026, m, 15, 21, 30, -240 if 3 < m < 11 else -300), NY,
                     -240 if 3 < m < 11 else -300, tools=True) for m in range(1, 13)], ROOT / "docs" / "gallery-tools.gif", 1200)
     for f in sorted(OUT.iterdir()):
         print(f"{f.stat().st_size:>9,}  {f.relative_to(ROOT)}")
     for f in sorted((ROOT / "docs").glob("gallery-*.gif")):
         print(f"{f.stat().st_size:>9,}  {f.relative_to(ROOT)}")
+
+
+def astronomer_gallery():
+    """The astronomer behind the face, month by month (Tycho's instrument; the planets up in the Time 2's corners), on
+    both watches side by side (docs/gallery-astronomer.gif)."""
+    save_gif([side_by_side(*(frame(p, "planisphere", local(2026, m, 15, 21, 30, -240 if 3 < m < 11 else -300), NY,
+                                   -240 if 3 < m < 11 else -300, theme=3, tools=True) for p in ("emery", "gabbro")))
+              for m in range(1, 13)], ROOT / "docs" / "gallery-astronomer.gif", 1200)
 
 
 if __name__ == "__main__":

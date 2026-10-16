@@ -190,6 +190,11 @@ await tap('.seg button', 'The labours');
 await page.waitForTimeout(400);
 check(zodiacal > 50 && differ(withLabours, await grab()) === 0,
       `the zodiac behind the face (pixels changed from the labours: ${zodiacal}; back again: the same)`);
+// the astronomer behind the face: the card changes from the labours' (Tycho's instrument)
+await tap('.seg button', 'The astronomer');
+await page.waitForTimeout(400);
+const astronomical = differ(withLabours, await grab());
+check(astronomical > 50, `the astronomer behind the face (pixels changed from the labours: ${astronomical})`);
 await tap('.seg button', 'The zodiac');          // (saved so: the theme reaches the watch as itself, not as a switch)
 await tap('.calendar label.switch', 'The Hebrew calendar');
 await tap('.seg button', 'Snow');

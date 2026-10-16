@@ -122,15 +122,19 @@
     ]},
     {title: 'The card', items: [
       {key: 'LABOURS', type: 'seg', label: 'Behind the face', options: [[0, 'Plain'], [1, 'The labours'],
-       [2, 'The zodiac']],
+       [2, 'The zodiac'], [3, 'The astronomer']],
        desc: 'Faint in the card round the window. The labours of the months: the month’s work as the old ' +
              'calendars’ woodcuts show it, January’s feast, the March pruning, October’s sowing (in the south, by ' +
              'the seasons there). The zodiac: the sign the Sun is in, its woodcut from Ratdolt’s Hyginus (Venice, ' +
-             '1482) filling the card behind the face, seen only where the window and the type leave it open.'},
+             '1482) filling the card behind the face, seen only where the window and the type leave it open. The ' +
+             'astronomer: each month one of Tycho Brahe’s instruments at Uraniborg, from his Mechanica (1602), ' +
+             'the same way.'},
       {key: 'TOOLS', type: 'switch', label: 'The theme in the corners',
        desc: 'On the Time 2, instead of the season’s sprigs. With the labours, the month’s tools as the Shepherds’ ' +
              'Calendar draws them: the scythe and the hay rake in June, the flail in August. With the zodiac, the Sun ' +
-             'and the Moon and the signs they are in, as the Venetian printers cut their glyphs, each in a roundel.'}
+             'and the Moon and the signs they are in, as the Venetian printers cut their glyphs, each in a roundel. ' +
+             'With the astronomer, the brightest planets above the horizon in roundels, brightest first, and ' +
+             'Tycho’s new star of 1572 where there is none.'}
     ]},
     {title: 'The calendar', items: [
       {type: 'calendars', desc: 'Keep the days of the calendars you choose: the almanac’s line names the day in red, ' +
