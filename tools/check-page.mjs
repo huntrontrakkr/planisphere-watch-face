@@ -71,7 +71,7 @@ fire('ready');
 await sleep(300);
 const got = Object.assign({}, ...sent.map(byName));
 check(got.LAT === 473769 && got.LON === 85417, `the place sent: ${got.LAT}, ${got.LON}`);
-check(got.CITY === 'ZURICH' && got.COUNTRY === 'SWITZERL.|SWITZ.|CH', `its name engraved: ${got.CITY}, ${got.COUNTRY}`);
+check(got.CITY === 'ZURICH|ZUR.' && got.COUNTRY === 'SWITZERL.|SWITZ.|CH', `its name engraved: ${got.CITY}, ${got.COUNTRY}`);
 check(got.WX_TEMP === -34 && got.WX_CODE === 73 && got.WX_SNOW === 80 && got.WX_VIS === 250 && got.WX_FROM === 20,
       `the weather sent: ${JSON.stringify(Object.fromEntries(Object.entries(got).filter(([k]) => k.startsWith('WX_'))))}`);
 // the watch must take each message in: a dictionary is a count byte, then 7 bytes a tuple and its value
@@ -240,7 +240,7 @@ fire('webviewclosed', { response: encodeURIComponent(answer) });
 await sleep(100);
 const msg = byName(sent[before] || {});
 console.log('sent:', JSON.stringify(msg));
-const want = { PLATE: 4, CLOCK: 2, UNITS: 1, PLACE: 1, PLACE_LAT: -338700, PLACE_LON: 1512100, PLACE_CITY: 'SYDNEY',
+const want = { PLATE: 4, CLOCK: 2, UNITS: 1, PLACE: 1, PLACE_LAT: -338700, PLACE_LON: 1512100, PLACE_CITY: 'SYDNEY|SYD.',
                PLACE_COUNTRY: 'AUSTRALIA|AUST.', NAMES: 1, LABOURS: 2, CORNERS: 4, CALENDARS: (1 << 6) | (1 << 8), WEATHER: 1,
                ANIMATIONS: 63 };
 const bad = Object.entries(want).filter(([k, v]) => msg[k] !== v);
