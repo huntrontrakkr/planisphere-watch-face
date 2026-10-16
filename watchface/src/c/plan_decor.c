@@ -120,8 +120,9 @@ static void labours(const DecorCtx *r) {
   if (!card) return;
   const int16_t *inner = sec16(p->geom, GEO_INNER);
   for (int y = 0; y < r->p->h; y++) card_row(r, inner, y, card[y]);
-  if (r->theme == THEME_ZODIAC) {                /* (the zodiac's woodcut fills the card behind the window) */
-    if (r->scenes) scene(r, (const uint8_t (*)[4])card, r->scenes, r->sun_sign);
+  if (r->theme != THEME_LABOURS) {               /* (a woodcut fills the card behind the window: the Sun's sign's, or the
+                                                    month's instrument after the zodiac's twelve) */
+    if (r->scenes) scene(r, (const uint8_t (*)[4])card, r->scenes, r->theme == THEME_ZODIAC ? r->sun_sign : 12 + r->month);
     r->release(card);
     return;
   }
@@ -225,28 +226,49 @@ static void corner_tools(const DecorCtx *r, const uint8_t *rec) {
  * faint, showing wherever the card is open; in the Time 2's corners the Sun and the Moon and the signs they are in,
  * their glyphs as the Venetian printers cut them (Sacrobosco, 1490: proto/zodiac_art.py), each in its roundel ----- */
 /* the woodcut `k` of scenes.bin (proto/woodcuts.py) behind the face, faint, its middle where it was placed from the
- * window's middle, wherever the card is open: streamed from the table a few bytes at a time and unpacked as it goes */
-typedef struct { const FeastReader *rd; uint32_t at; uint8_t buf[64]; int have, pos; } Stream;
-static int next_byte(Stream *s) {
+ * window's middle, wherever the card is open: streamed from the table a few bytes at a time and decoded as it goes,
+ * each pixel by the range coder from the chance of ink its context gives (woodcuts.py encode: seven neighbours, three
+ * rows kept) */
+typedef struct { const FeastReader *rd; uint32_t at; uint8_t buf[64]; int have, pos; uint32_t range, code; } Stream;
+static uint32_t next_byte(Stream *s) {
   if (s->pos == s->have) s->rd->read(s->rd->ctx, s->at, s->buf, sizeof s->buf), s->at += sizeof s->buf, s->have = sizeof s->buf, s->pos = 0;
   return s->buf[s->pos++];
 }
+static int next_bit(Stream *s, uint16_t *prob) {
+  uint32_t p = *prob, bound = (s->range >> 12) * p;
+  int b = s->code >= bound;
+  if (b) s->code -= bound, s->range -= bound, *prob = (uint16_t)(p - (p >> 4));
+  else s->range = bound, *prob = (uint16_t)(p + ((4096 - p) >> 4));
+  while (s->range < 1u << 24) s->range <<= 8, s->code = s->code << 8 | next_byte(s);
+  return b;
+}
+static int bit_at(const uint8_t *row, int x, int w) { return x >= 0 && x < w && row[x >> 3] >> (7 - (x & 7)) & 1; }
 static void scene(const DecorCtx *r, const uint8_t (*card)[4], const FeastReader *rd, int k) {
   Plan *p = r->p;
   uint8_t e[12];
   rd->read(rd->ctx, 2 + 12 * (uint32_t)k, e, 12);
-  Stream st = {rd, e[0] | e[1] << 8 | e[2] << 16 | (uint32_t)e[3] << 24, {0}, 0, 0};
   int w = e[4] | e[5] << 8, h = e[6] | e[7] << 8, dx = (int16_t)(e[8] | e[9] << 8), dy = (int16_t)(e[10] | e[11] << 8);
-  int rowb = (w + 7) / 8, ox = (p->w - w) / 2 + dx, oy = (p->win_top + p->win_bottom) / 2 - h / 2 + dy, n = 0;
-  int total = rowb * h;
-  while (n < total) {
-    int c = next_byte(&st), count = c < 128 ? c + 1 : c > 128 ? 257 - c : 0, v = c > 128 ? next_byte(&st) : 0;
-    for (int i = 0; i < count && n < total; i++, n++) {
-      int byte = c < 128 ? next_byte(&st) : v, y = oy + n / rowb, x = ox + (n % rowb) * 8;
-      for (int b = 0; b < 8 && byte; b++)
-        if (byte & (0x80 >> b) && on_screen(r, x + b, y) && in_card(card[y], x + b)) put(r, x + b, y, r->tone);
+  int rowb = (w + 7) / 8, ox = (p->w - w) / 2 + dx, oy = (p->win_top + p->win_bottom) / 2 - h / 2 + dy;
+  uint16_t *prob = r->alloc(128 * sizeof *prob + 3 * (size_t)rowb);
+  if (!prob) return;
+  uint8_t *up2 = (uint8_t *)(prob + 128), *up = up2 + rowb, *row = up + rowb;
+  for (int i = 0; i < 128; i++) prob[i] = 2048;
+  for (int i = 0; i < 3 * rowb; i++) up2[i] = 0;
+  Stream st = {rd, e[0] | e[1] << 8 | e[2] << 16 | (uint32_t)e[3] << 24, {0}, 0, 0, 0xFFFFFFFFu, 0};
+  for (int i = 0; i < 5; i++) st.code = st.code << 8 | next_byte(&st);
+  for (int j = 0, y = oy; j < h; j++, y++) {
+    for (int x = 0; x < w; x++) {
+      int c = bit_at(up2, x, w) << 6 | bit_at(up, x - 1, w) << 5 | bit_at(up, x, w) << 4 | bit_at(up, x + 1, w) << 3 |
+              bit_at(up, x + 2, w) << 2 | bit_at(row, x - 2, w) << 1 | bit_at(row, x - 1, w);
+      if (!next_bit(&st, &prob[c])) continue;
+      row[x >> 3] |= (uint8_t)(0x80 >> (x & 7));
+      if (on_screen(r, ox + x, y) && in_card(card[y], ox + x)) put(r, ox + x, y, r->tone);
     }
+    uint8_t *t = up2;
+    up2 = up, up = row, row = t;
+    for (int i = 0; i < rowb; i++) row[i] = 0;
   }
+  r->release(prob);
 }
 static void glyph(const DecorCtx *r, const uint8_t *bits, int w, int h, int x0, int y0, uint8_t c) {
   for (int j = 0; j < h; j++)
@@ -269,12 +291,12 @@ bool plan_decor(const DecorCtx *dc, const FeastReader *tools, const FeastReader 
   DecorCtx copy = *dc;                           /* (the woodcuts' table with it) */
   copy.scenes = scenes;
   const DecorCtx *d = &copy;
-  if (d->theme == THEME_LABOURS || d->theme == THEME_ZODIAC) labours(d);
+  if (d->theme == THEME_LABOURS || d->theme == THEME_ZODIAC || d->theme == THEME_ASTRONOMER) labours(d);
   if (d->tools && d->theme == THEME_ZODIAC) {
     zodiac_corners(d);
     return true;
   }
-  if (d->tools && tools) {                       /* the month's record of tools.bin: its clearance, its two pieces */
+  if (d->tools && tools && d->theme <= THEME_LABOURS) {   /* the month's record of tools.bin: its clearance, its two pieces */
     uint8_t o[4];
     tools->read(tools->ctx, TOOLS_CLIP + 2 * (uint32_t)d->month, o, 4);
     int a = o[0] | o[1] << 8, n = (o[2] | o[3] << 8) - a;

@@ -902,6 +902,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                      (local.month - 1 + (6 if dial.lat < 0 else 0)) % 12 + 1)
     elif theme == THEME_ZODIAC:                          # the woodcut of the Sun's sign, behind the face
         woodcut_scene(img, inside, inner_region(dial), P, sun_sign)
+    elif theme == THEME_ASTRONOMER:                      # the month's instrument of Tycho's, behind the face
+        import woodcuts
+        woodcut_scene(img, inside, inner_region(dial), P, woodcuts.ASTRONOMER_BASE + local.month - 1)
     faint = float(np.interp(s_eff, [-16, -10, -5, -1.5], [4.6, 3.4, 2.0, 0.4])) if not paper else 4.6
     if not paper and s_eff > -1.5:
         faint = -9
@@ -1688,6 +1691,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     # into each, where the corner has most room, in the season's dress (blossom, leaf, gold leaf, bare twig)
     if rect and tools and theme == THEME_ZODIAC:        # the Sun and the Moon and their signs, in roundels
         zodiac_corners(img, P, sun_sign, moon_sign)
+    elif rect and tools and theme > THEME_LABOURS:      # (the theme's own corners: none yet but the zodiac's)
+        pass
     elif rect and tools:
         import labour_tools
         labour_tools.paint(img, dial, (local.month - 1 + (6 if dial.lat < 0 else 0)) % 12 + 1,

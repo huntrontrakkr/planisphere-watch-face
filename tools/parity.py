@@ -78,6 +78,13 @@ CASES = {
     "zodiac-oct-r2": ("gabbro", "hours", datetime(2026, 10, 15, 1, 30, tzinfo=timezone.utc), NY, {"theme": 2}),
     "zodiac-apr-paper-t2": ("emery", "flamsteed", datetime(2026, 4, 12, 23, 20, tzinfo=timezone.utc), NY,
                             {"theme": 2, "tools": True}),
+    # the astronomer: the month's instrument of Tycho's behind the face (the south: the same month)
+    "astronomer-jan-t2": ("emery", "planisphere", datetime(2026, 1, 20, 2, 30, tzinfo=timezone.utc), NY, {"theme": 3}),
+    "astronomer-aug-r2": ("gabbro", "hours", datetime(2026, 8, 16, 1, 30, tzinfo=timezone.utc), NY, {"theme": 3}),
+    "astronomer-sydney-r2": ("gabbro", "apian", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc), (-33.87, 151.21, 660),
+                             {"theme": 3}),
+    "astronomer-may-paper-t2": ("emery", "flamsteed", datetime(2026, 5, 12, 23, 20, tzinfo=timezone.utc), NY,
+                                {"theme": 3, "tools": True}),
     # near the equator: the Time 2's window cut by its ring, the place's names beside the fleur-de-lis
     "quito-t2": ("emery", "planisphere", datetime(2026, 10, 15, 3, 0, tzinfo=timezone.utc), (-0.1807, -78.4678, -300), {}),
     "quito-hours-t2": ("emery", "hours", datetime(2026, 10, 14, 22, 0, tzinfo=timezone.utc), (-0.1807, -78.4678, -300),

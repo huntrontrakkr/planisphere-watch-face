@@ -36,6 +36,57 @@ ZODIAC = [
     ("hyginus1482-pisces.jpg", None, [], 0, 210, 0, -15),
 ]
 
+# the astronomer (THEME_ASTRONOMER), the month's: Tycho Brahe's instruments at Uraniborg as his Astronomiae instauratae
+# mechanica (Nuremberg, 1602) engraves them, January first, each (file, crop inside the plate's frame, words to wipe,
+# width, dx, dy) as the zodiac's
+PLATE = (0.05, 0.04, 0.95, 0.93)
+ASTRONOMER = [
+    ("brahe1602-armillary-equatorial.jpg", PLATE, [], 210, 0, 0),
+    ("brahe1602-armillary-zodiacal.jpg", PLATE, [], 210, 0, 0),
+    ("brahe1602-great-globe.jpg", PLATE, [], 210, 0, 0),
+    ("brahe1602-quadrant-azimuthal-brass.jpg", PLATE, [], 210, 0, 0),
+    ("brahe1602-sextant-trigonic.jpg", PLATE, [], 210, 0, 0),
+    ("brahe1602-quadrant-revolving.jpg", PLATE, [], 210, 0, 0),
+    ("brahe1602-sextant-steel.jpg", PLATE, [], 210, 0, 0),
+    ("brahe1602-semicircle-azimuthal.jpg", PLATE, [], 210, 0, 0),
+    ("brahe1602-arc-bipartite.jpg", PLATE, [], 210, 0, 0),
+    ("brahe1602-sextant-v-frame.jpg", PLATE, [], 210, 0, 0),
+    ("brahe1602-quadrant-great-steel-square.jpg", PLATE, [], 210, 0, 0),
+    ("brahe1602-quadrant-small-gilt.jpg", PLATE, [], 210, 0, 0),
+]
+ASTRONOMER_BASE = len(ZODIAC)                            # (its first in scenes.bin)
+
+
+def engraving(path, crop=None, wipe=(), width=WIDTH, thresh=0.78, grow=0.3):
+    """A copper engraving's line work at `width` pixels wide, kept where a woodcut's reading would lose it: the dark
+    lines first thickened by `grow` of a pixel's span on the scan (so a hair line survives the reduction), each pixel
+    then judged against the paper round it (the plate's tone varies), and solid masses (close hatching run together)
+    lightened to every other pixel, as an engraver tints. A bool array, True where the plate printed."""
+    im = Image.open(path).convert("L")
+    if crop:
+        W, H = im.size
+        im = im.crop((int(crop[0] * W), int(crop[1] * H), int(crop[2] * W), int(crop[3] * H)))
+    im = ImageOps.autocontrast(im, cutoff=1)
+    if wipe:
+        a = np.asarray(im).copy()
+        H, W = a.shape
+        for x0, y0, x1, y1 in wipe:
+            a[int(y0 * H):int(y1 * H), int(x0 * W):int(x1 * W)] = int(np.percentile(a, 90))
+        im = Image.fromarray(a)
+    im = im.filter(ImageFilter.MinFilter(max(3, int(im.width / width * grow) | 1)))
+    h = round(im.height * width / im.width)
+    small = np.asarray(im.resize((width, h), Image.BOX), float)
+    paper = np.asarray(Image.fromarray(small.astype("uint8")).filter(ImageFilter.MaxFilter(9))
+                       .filter(ImageFilter.GaussianBlur(4)), float)
+    ink = small < paper * thresh
+    full = ink.copy()                                   # solid: inked with all eight neighbours inked
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            full &= np.roll(np.roll(ink, dy, 0), dx, 1)
+    yy, xx = np.indices(ink.shape)
+    ink &= ~(full & ((xx + yy) % 2 == 1))
+    return clean(ink)
+
 
 def digitize(path, crop=None, wipe=(), width=WIDTH, thresh=0.62, blur=1.2, rotate=0):
     """A woodcut's line work at `width` pixels wide (after turning it `rotate` degrees anticlockwise, the scan itself,
@@ -95,42 +146,146 @@ def clean(ink, least=5):
     return out
 
 
-def packbits(b):
-    """PackBits (as Apple's): a count n then n + 1 bytes as they are (n < 128), or 257 - n then a byte to repeat."""
-    out, i = bytearray(), 0
-    while i < len(b):
-        j = i
-        while j < len(b) and j - i < 128 and b[j] == b[i]:
-            j += 1
-        if j - i >= 3:
-            out += bytes([257 - (j - i), b[i]])
-            i = j
-            continue
-        lit = bytearray()
-        while i < len(b) and len(lit) < 128 and not (i + 2 < len(b) and b[i] == b[i + 1] == b[i + 2]):
-            lit.append(b[i])
-            i += 1
-        out += bytes([len(lit) - 1]) + lit
+# the coding of scenes.bin: each pixel foretold from seven of its neighbours already decoded (two rows up: above it;
+# one row up: from one left to two right; its own row: the two left of it, the first the high bit of the context), its
+# chance of ink kept for each of the 128 contexts in twelve bits and moved a sixteenth of the way to each pixel as it
+# comes, and the pixels so weighed coded with a binary range coder (LZMA's): line work in about a fifth of PackBits.
+NEIGHBOURS = [(-2, 0), (-1, -1), (-1, 0), (-1, 1), (-1, 2), (0, -2), (0, -1)]
+PROB_BITS, PROB_SHIFT = 12, 4
+
+
+def contexts(ink):
+    """Each pixel's context (an int array the image's shape)."""
+    h, w = ink.shape
+    p = np.pad(ink, ((2, 0), (2, 2))).astype(int)
+    c = np.zeros((h, w), int)
+    for dy, dx in NEIGHBOURS:
+        c = (c << 1) | p[2 + dy:2 + dy + h, 2 + dx:2 + dx + w]
+    return c
+
+
+def encode(ink):
+    """The image coded (plan_decor.c scene decodes it)."""
+    prob = [1 << (PROB_BITS - 1)] * (1 << len(NEIGHBOURS))
+    low, rng, cache, pending, out = 0, 0xFFFFFFFF, 0, 1, bytearray()
+
+    def shift():
+        nonlocal low, cache, pending
+        if low < 0xFF000000 or low >= 1 << 32:
+            carry, t = low >> 32, cache
+            while pending:
+                out.append((t + carry) & 255)
+                t, pending = 0xFF, pending - 1
+            cache = (low >> 24) & 255
+        pending += 1
+        low = (low << 8) & 0xFFFFFFFF
+    for k, b in zip(contexts(ink).ravel().tolist(), ink.ravel().tolist()):
+        p = prob[k]
+        bound = (rng >> PROB_BITS) * p
+        if b:
+            low, rng, prob[k] = low + bound, rng - bound, p - (p >> PROB_SHIFT)
+        else:
+            rng, prob[k] = bound, p + (((1 << PROB_BITS) - p) >> PROB_SHIFT)
+        while rng < 1 << 24:
+            rng = (rng << 8) & 0xFFFFFFFF
+            shift()
+    for _ in range(5):
+        shift()
     return bytes(out)
+
+
+def decode(data, h, w):
+    """encode's inverse (as plan_decor.c scene), to hold the two to each other."""
+    prob = [1 << (PROB_BITS - 1)] * (1 << len(NEIGHBOURS))
+    data = bytes(data) + bytes(8)
+    rng, code, i = 0xFFFFFFFF, int.from_bytes(data[:5], "big") & 0xFFFFFFFF, 5
+    p_ = np.zeros((h + 2, w + 4), bool)
+    for y in range(h):
+        for x in range(w):
+            k = 0
+            for dy, dx in NEIGHBOURS:
+                k = (k << 1) | int(p_[2 + y + dy, 2 + x + dx])
+            p = prob[k]
+            bound = (rng >> PROB_BITS) * p
+            if code < bound:
+                rng, prob[k] = bound, p + (((1 << PROB_BITS) - p) >> PROB_SHIFT)
+            else:
+                code, rng, prob[k] = code - bound, rng - bound, p - (p >> PROB_SHIFT)
+                p_[2 + y, 2 + x] = True
+            while rng < 1 << 24:
+                rng, code, i = (rng << 8) & 0xFFFFFFFF, ((code << 8) | data[i]) & 0xFFFFFFFF, i + 1
+    return p_[2:, 2:-2]
+
+
+# where a scene can ever show: on the card of either watch at any latitude (the Round 2's window moves and changes with
+# it, the Time 2's only narrows), a pixel round; what is never on the card is never kept. For each screen a mask of its
+# columns by the rows from its window's middle (offset by the screen's height), cached in build/ under the windows' own
+# hash.
+def reach():
+    import hashlib
+    import plates
+    dials = {"emery": lambda lat: plates.RectDial(200, 228, lat, 0.0),
+             "gabbro": lambda lat: plates.RoundDial(260, 260, lat, 0.0)}
+    key = hashlib.sha1(b"".join(np.packbits(plates.window_mask(d(lat))).tobytes() + np.packbits(
+        plates.inner_region(d(lat))).tobytes() for d in dials.values() for lat in (-90, -41, 0, 23, 67))).hexdigest()[:16]
+    path = ROOT / "build" / f"scene-reach-{key}.npz"
+    if path.exists():
+        z = np.load(path)
+        return {s: z[s] for s in dials}
+    out = {}
+    for screen, dial in dials.items():
+        acc = None
+        for lat in range(-90, 91):
+            d = dial(float(lat))
+            inside, inner = plates.window_mask(d), plates.inner_region(d)
+            card = inner & ~plates.grow(inside, 3) & ~plates.grow(~inner, 3)
+            H, W = card.shape
+            if acc is None:
+                acc = np.zeros((2 * H, W), bool)
+            rows = np.nonzero(inside.any(axis=1))[0]
+            wy = (int(rows[0]) + int(rows[-1])) // 2
+            acc[H - wy:2 * H - wy] |= card
+        out[screen] = plates.grow(acc, 1)
+    path.parent.mkdir(exist_ok=True)
+    np.savez_compressed(path, **out)
+    return out
+
+
+def within_reach(ink, dx, dy, masks):
+    """The image less what can never show, placed as the watch places it."""
+    h, w = ink.shape
+    keep = np.zeros_like(ink)
+    for m in masks.values():
+        H2, W = m.shape
+        ys, xs = np.mgrid[0:h, 0:w]
+        Y, X = ys - h // 2 + dy + H2 // 2, xs + (W - w) // 2 + dx
+        ok = (Y >= 0) & (Y < H2) & (X >= 0) & (X < W)
+        keep[ok] |= m[Y[ok], X[ok]]
+    return ink & keep
 
 
 _SCENES = None
 
 
 def scenes():
-    """Every woodcut, in order: the zodiac's twelve (Aries first). (key, ink, dx, dy: its middle right of and below the
+    """Every woodcut, in order: the zodiac's twelve (Aries first), the astronomer's (January first). (key, ink, dx, dy: its middle right of and below the
     window's middle)"""
     global _SCENES
     if _SCENES is None:
         _SCENES = [(f"zodiac{k}", digitize(THEMES / "zodiac" / "images" / file, crop, wipe, width=width, rotate=rot),
                     dx, dy) for k, (file, crop, wipe, rot, width, dx, dy) in enumerate(ZODIAC)]
+        _SCENES += [(f"astronomer{k}", engraving(THEMES / "astronomer" / "images" / file, crop, wipe, width=width),
+                     dx, dy) for k, (file, crop, wipe, width, dx, dy) in enumerate(ASTRONOMER)]
+        masks = reach()
+        _SCENES = [(key, within_reach(ink, dx, dy, masks), dx, dy) for key, ink, dx, dy in _SCENES]
     return _SCENES
 
 
 def blob():
     """scenes.bin: the count (uint16), then for each its offset (uint32, from the file's start), width and height
-    (uint16), and where its middle stands right of and below the window's middle (int16 each, pixels), then the images:
-    rows of bits, the first pixel the high bit, each row ceil(width / 8) bytes, the whole PackBits-coded."""
+    (uint16), and where its middle stands right of and below the window's middle (int16 each, pixels), then the images,
+    each coded by encode (at most 264 pixels wide: the decoder's rows), then 64 zeros (the watch reads 64 bytes at a time,
+    and a read past a resource's end may bring nothing)."""
     items = scenes()
     head = 2 + 12 * len(items)
     table, data = bytearray(len(items).to_bytes(2, "little")), bytearray()
@@ -138,5 +293,6 @@ def blob():
         h, w = ink.shape
         table += ((head + len(data)).to_bytes(4, "little") + w.to_bytes(2, "little") + h.to_bytes(2, "little") +
                   dx.to_bytes(2, "little", signed=True) + dy.to_bytes(2, "little", signed=True))
-        data += packbits(np.packbits(ink, axis=1).tobytes())
-    return bytes(table + data)
+        assert w <= 264, key
+        data += encode(ink)
+    return bytes(table + data + bytes(64))
