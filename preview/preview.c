@@ -42,11 +42,17 @@ EMSCRIPTEN_KEEPALIVE int pv_row_x1(int y) { return row_x1[y]; }
 EMSCRIPTEN_KEEPALIVE int pv_plates(void) { return PLATE_COUNT; }
 
 /* the scene blob, linked in: the labours and the corner tools (tools.bin from memory) */
+/* a table in memory, read as the watch reads its resources (zeros past its end) */
+typedef struct { const uint8_t *at; uint32_t size; } Mem;
+static void mem_read(void *ctx, uint32_t at, void *buf, uint32_t n) {
+  const Mem *m = ctx;
+  for (uint32_t i = 0; i < n; i++) ((uint8_t *)buf)[i] = at + i < m->size ? m->at[at + i] : 0;
+}
 static bool pv_decor(void *ctx, const DecorCtx *dc) {
   (void)ctx;
-  FeastReader rd;
-  plan_feast_memory(&rd, BLOB_TOOLS);
-  return plan_decor(dc, &rd);
+  static Mem tools_mem = {BLOB_TOOLS, sizeof BLOB_TOOLS}, scenes_mem = {BLOB_SCENES, sizeof BLOB_SCENES};
+  FeastReader rd = {mem_read, &tools_mem}, scenes = {mem_read, &scenes_mem};
+  return plan_decor(dc, &rd, &scenes);
 }
 /* What the face shows: the plate, the clock, names in the sky, the temperature's scale, the place, the labours, the
  * minute written, the village's life (of the events, EV_VILLAGE alone: the passing ones are left to the watch) and

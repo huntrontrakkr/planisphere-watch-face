@@ -3107,8 +3107,11 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   /* the scene in the card (the labours) and the Time 2's corner tools, by the scene blob (plan_decor.c, Face.decor):
    * now, while the frame's memory is low, before the grid */
   if (f->decor && (f->theme || (f->tools && r->rect))) {
-    DecorCtx dc = {p, (r->local.month - 1 + (r->south ? 6 : 0)) % 12, r->col, r->cx, r->tint, P->ink, f->theme,
-                   f->tools && r->rect, r->paper || r->red, alloc, release};
+    float mlon, mlat;
+    eq_to_ecl(r->sky.moon_ra, r->sky.moon_dec, r->sky.eps, &mlon, &mlat);
+    DecorCtx dc = {p, (r->local.month - 1 + (r->south ? 6 : 0)) % 12, r->col, r->cx, r->tint, P->ink, P->accent,
+                   (uint8_t)((int)(r->sky.sun_lon / 30) % 12), (uint8_t)((int)(mlon / 30) % 12), f->theme,
+                   f->tools && r->rect, r->paper || r->red, alloc, release, NULL};
     f->decor(f->decor_ctx, &dc);
   }
   r->ik = 1 / r->k;

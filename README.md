@@ -216,6 +216,10 @@ The village keeps the year, as an almanac's cuts of the months do. The season co
 
 ![The Labours' tools in the Time 2's corners, January to December](docs/gallery-tools.gif)
 
+- Another theme for the card, **the zodiac**: behind the face the woodcut of the sign the Sun is in, from Erhard Ratdolt's cuts for Hyginus's *Poeticon astronomicon* (Venice, 1482), drawn faint in the card and covered by the window and the type, so that only what falls on the open card shows: a hidden detail, the ram's head looking out above the window, the crab's claws raised either side of the time. The woodcuts are digitized from the Boston Public Library's copy (`research/themes/zodiac/`): smoothed to the watch's scale and thresholded against the paper, their printed names wiped, the scan's specks and slivers cleared (`proto/woodcuts.py`). Each was placed by a search over both watches (about the window's width, a quarter of it showing in pieces as whole as may be, the two sides balanced, the head whole), then looked over: the crab turned to raise its claws, Libra the Scorpion holding the balance in its claw as Hyginus has it, set high. The watch streams the one it needs from its resources (`scenes.bin`, 38 KB for the twelve). On the Time 2 the theme's corners hold the Sun and the Moon and the signs they are in, their glyphs as the Venetian printers cut them (Sacrobosco's *Sphaerae mundi*, 1490), each in a roundel after the Shepherds' Calendar's.
+
+![The zodiac behind the face, Aries to Pisces, on both watches](docs/gallery-zodiac.gif)
+
 ![The year at eleven in the morning: blossom in April, leaf in July, gold in October, snow in January; below, the village up close: blossom, high summer, autumn leaves, frost and snow; a frosty evening with chimney smoke and lit windows, fog, a summer gale, a snowy night](docs/seasons.png)
 
 And the filigree, all drawn by hand:

@@ -121,7 +121,7 @@ check(lit > 10000, `the preview drew the face (${lit} lit pixels)`);
 const tap = async (sel, text) => { await page.locator(sel, { hasText: text }).first().click(); await page.waitForTimeout(200); };
 await tap('.plate', 'Astrolabe');
 await tap('.seg button', '24-hour');
-await tap('label.switch', 'The labours of the months');
+await tap('.seg button', 'The labours');
 await tap('.calendar label.switch', 'The United States');
 // the fireworks display: from the first of July the United States' next day is Independence Day, which its button
 // shows at nine at night
@@ -166,7 +166,7 @@ check(wrote[0] > 0 && settled === 0,               // (the new figures not there
       `the minute written in the preview (pixels still to write: ${wrote.join(', ')}; after: ${settled})`);
 // the Labours' tools in the corners: the Time 2's corners change, and only its corners; the Round 2 has none
 const plain = await grab();
-await page.locator('label.switch', { hasText: 'tools in the corners' }).first().click();
+await page.locator('label.switch', { hasText: 'theme in the corners' }).first().click();
 await page.waitForTimeout(400);
 const tooled = await grab();
 const cw = await page.evaluate(() => document.getElementById('screen').width);
@@ -179,8 +179,17 @@ for (let i = 0; i < plain.length; i += 4) {
 }
 check(platform === 'gabbro' ? corner + elsewhere === 0 : corner > 0 && elsewhere === 0,
       `the tools in the corners (pixels changed in the corners: ${corner}; elsewhere: ${elsewhere})`);
-await page.locator('label.switch', { hasText: 'tools in the corners' }).first().click();
+await page.locator('label.switch', { hasText: 'theme in the corners' }).first().click();
 await page.waitForTimeout(300);
+// the zodiac behind the face: the card changes from the labours' (its woodcut), and back
+const withLabours = await grab();
+await tap('.seg button', 'The zodiac');
+await page.waitForTimeout(400);
+const zodiacal = differ(withLabours, await grab());
+await tap('.seg button', 'The labours');
+await page.waitForTimeout(400);
+check(zodiacal > 50 && differ(withLabours, await grab()) === 0,
+      `the zodiac behind the face (pixels changed from the labours: ${zodiacal}; back again: the same)`);
 await tap('.calendar label.switch', 'The Hebrew calendar');
 await tap('.seg button', 'Snow');
 await tap('.seg button', '°C');

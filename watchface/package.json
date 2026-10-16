@@ -1,7 +1,7 @@
 {
   "name": "planisphere",
   "author": "huntrontrakkr",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "private": true,
   "keywords": [
     "pebble-app"
@@ -86,6 +86,11 @@
           "name": "PLAN_TOOLS",
           "file": "data/tools.bin",
           "targetPlatforms": ["emery"]
+        },
+        {
+          "type": "raw",
+          "name": "PLAN_SCENES",
+          "file": "data/scenes.bin"
         },
         {
           "type": "raw",

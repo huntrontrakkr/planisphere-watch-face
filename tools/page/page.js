@@ -121,13 +121,16 @@
              'marine model; nothing inland.'}
     ]},
     {title: 'The card', items: [
-      {key: 'LABOURS', type: 'switch', label: 'The labours of the months',
-       desc: 'The month’s work, faint in the card round the window, as the old calendars’ woodcuts show it: ' +
-             'January’s feast, the March pruning, October’s sowing. In the south, by the seasons there.'},
-      {key: 'TOOLS', type: 'switch', label: 'The labours’ tools in the corners',
-       desc: 'On the Time 2: the month’s tools in the four corners instead of the season’s sprigs, as the ' +
-             'Shepherds’ Calendar draws them: the scythe and the hay rake in June, the flail in August, the baker’s ' +
-             'peel in December.'}
+      {key: 'LABOURS', type: 'seg', label: 'Behind the face', options: [[0, 'Plain'], [1, 'The labours'],
+       [2, 'The zodiac']],
+       desc: 'Faint in the card round the window. The labours of the months: the month’s work as the old ' +
+             'calendars’ woodcuts show it, January’s feast, the March pruning, October’s sowing (in the south, by ' +
+             'the seasons there). The zodiac: the sign the Sun is in, its woodcut from Ratdolt’s Hyginus (Venice, ' +
+             '1482) filling the card behind the face, seen only where the window and the type leave it open.'},
+      {key: 'TOOLS', type: 'switch', label: 'The theme in the corners',
+       desc: 'On the Time 2, instead of the season’s sprigs. With the labours, the month’s tools as the Shepherds’ ' +
+             'Calendar draws them: the scythe and the hay rake in June, the flail in August. With the zodiac, the Sun ' +
+             'and the Moon and the signs they are in, as the Venetian printers cut their glyphs, each in a roundel.'}
     ]},
     {title: 'The calendar', items: [
       {type: 'calendars', desc: 'Keep the days of the calendars you choose: the almanac’s line names the day in red, ' +
@@ -434,7 +437,7 @@
   function setup(plate, main) {
     var p = place();
     M._pv_face(plate, settings.CLOCK === 2 || (settings.CLOCK === 0 && clock24Here()) ? 1 : 0, settings.NAMES ? 1 : 0,
-               fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0, settings.LABOURS ? 1 : 0, settings.CALENDARS >>> 0,
+               fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0, settings.LABOURS | 0, settings.CALENDARS >>> 0,
                main && settings.ANIMATIONS & ANIM_MINUTE ? 1 : 0, settings.ANIMATIONS & ANIM_VILLAGE ? 8 : 0,
                settings.TOOLS ? 1 : 0);
     M.stringToUTF8(p.city || '', M._pv_city(), 48);

@@ -63,13 +63,19 @@ static void uncounted(void *p) {
 }
 
 /* the scene blob, linked in: the labours and the corner tools (tools.bin from memory) */
+/* a table in memory, read as the watch reads its resources (zeros past its end) */
+typedef struct { const uint8_t *at; uint32_t size; } Mem;
+static void mem_read(void *ctx, uint32_t at, void *buf, uint32_t n) {
+  const Mem *m = ctx;
+  for (uint32_t i = 0; i < n; i++) ((uint8_t *)buf)[i] = at + i < m->size ? m->at[at + i] : 0;
+}
 static bool host_decor(void *ctx, const DecorCtx *dc) {
   (void)ctx;
-  FeastReader rd;
-  plan_feast_memory(&rd, BLOB_TOOLS);
+  static Mem tools_mem = {BLOB_TOOLS, sizeof BLOB_TOOLS}, scenes_mem = {BLOB_SCENES, sizeof BLOB_SCENES};
+  FeastReader rd = {mem_read, &tools_mem}, scenes = {mem_read, &scenes_mem};
   in_decor = true;
   if (mem_now > decor_peak) decor_peak = mem_now;
-  bool ok = plan_decor(dc, &rd);
+  bool ok = plan_decor(dc, &rd, &scenes);
   in_decor = false;
   return ok;
 }

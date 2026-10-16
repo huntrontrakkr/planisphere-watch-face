@@ -640,6 +640,42 @@ def faint_tone(P, how=None):
     return np.minimum(j + np.array([0, 0, 85]), 255) if j[2] < 255 else j - np.array([0, 0, 85])
 
 
+THEME_NONE, THEME_LABOURS, THEME_ZODIAC, THEME_ASTRONOMER, THEME_SEA, THEME_HERBAL = range(6)   # (plan.h THEME_*)
+
+
+def woodcut_scene(img, inside, inner, P, k):
+    """The card's woodcut `k` (proto/woodcuts.py) behind the face, as plan_decor.c scene draws it: faint, its middle
+    where it was placed from the window's middle, only on the card (inside the ring's inner edge by 3, not within 3 of the
+    window), so the window and all drawn after it cover the rest."""
+    import woodcuts
+    key, ink, dx, dy = woodcuts.scenes()[k]
+    H, W = inside.shape
+    card = inner & ~grow(inside, 3) & ~grow(~inner, 3)
+    rows = np.nonzero(inside.any(axis=1))[0]
+    h, w = ink.shape
+    ox, oy = (W - w) // 2 + dx, (int(rows[0]) + int(rows[-1])) // 2 - h // 2 + dy
+    tone = faint_tone(P)
+    ys, xs = np.nonzero(ink)
+    for y, x in zip(ys + oy, xs + ox):
+        if 0 <= y < H and 0 <= x < W and card[y, x]:
+            img[y, x] = tone
+
+
+def zodiac_corners(img, P, sun_sign, moon_sign):
+    """The Time 2's corners on the zodiac's theme (plan_decor.c zodiac_corners): the Sun and its sign above, the Moon
+    and its sign below, each glyph (proto/zodiac_art.py) in the plate's red in a roundel of its ink."""
+    import zodiac_art as z
+    H, W = img.shape[:2]
+    names = z.ORDER + ["sun", "moon"]
+    for k, which in enumerate((12, sun_sign, 13, moon_sign)):
+        x0, y0 = (W - 17 if k & 1 else 2), (H - 17 if k & 2 else 2)
+        for rows, ox, oy, c in ((z.ROUNDEL, x0, y0, P["ink"]), (z.GLYPHS[names[which]], x0 + 3, y0 + 3, P["accent"])):
+            for j, r in enumerate(rows):
+                for i, ch in enumerate(r):
+                    if ch == "#":
+                        img[oy + j, ox + i] = c
+
+
 def labour_scene(img, dial, inside, inner, P, month):
     """The month's labour, faint in the card between the window and the ring: its field runs on behind the window
     (from a point hidden behind the oval's top: furrows, rows of vines, stubble, grass or snow, and a far line of
@@ -747,7 +783,7 @@ def widest_time(style, screen, clock24):
 
 def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=False, sky_offset=None, extras=None,
            names=True, weather=None, fahrenheit=False, weather_clock=None, labours=False, feast=None, calendars=0,
-           tools=False):
+           tools=False, theme=None):
     """The face at `when`. Its sky may be drawn at another time (`sky_offset`, for the hourly turn) while the clock
     keeps `when`; `extras(img, ctx)` draws passing things (meteors, birds) into the sky, under the names. With
     `weather` (weather.Weather) the window shows the place's clouds, rain or snow, the village its weather, and
@@ -858,9 +894,14 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                                                                        for l_ in np.arange(0, 361, 1))], fill=255, width=4)
             img[(np.asarray(line_, np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3)) > 110) & zband] = P["accent"]
     ground = img.copy()
-    if labours:                                          # the month's labour, faint behind the window (an option,
+    theme = theme if theme is not None else (THEME_LABOURS if labours else 0)
+    sun_sign = int(pos["sun_lon"] // 30) % 12
+    moon_sign = int(eq_to_ecl(*pos["moon"], pos["eps"])[0] // 30) % 12
+    if theme == THEME_LABOURS:                           # the month's labour, faint behind the window (an option,
         labour_scene(img, dial, inside, inner_region(dial), P,              # half a year round in the south)
                      (local.month - 1 + (6 if dial.lat < 0 else 0)) % 12 + 1)
+    elif theme == THEME_ZODIAC:                          # the woodcut of the Sun's sign, behind the face
+        woodcut_scene(img, inside, inner_region(dial), P, sun_sign)
     faint = float(np.interp(s_eff, [-16, -10, -5, -1.5], [4.6, 3.4, 2.0, 0.4])) if not paper else 4.6
     if not paper and s_eff > -1.5:
         faint = -9
@@ -1645,7 +1686,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             gx += g.shape[1] + track
     # the Time 2's corners, outside the ring: the month's tools (an option, proto/labour_tools.py), else a sprig turning
     # into each, where the corner has most room, in the season's dress (blossom, leaf, gold leaf, bare twig)
-    if rect and tools:
+    if rect and tools and theme == THEME_ZODIAC:        # the Sun and the Moon and their signs, in roundels
+        zodiac_corners(img, P, sun_sign, moon_sign)
+    elif rect and tools:
         import labour_tools
         labour_tools.paint(img, dial, (local.month - 1 + (6 if dial.lat < 0 else 0)) % 12 + 1,
                            P["ink"] if P["window"] in ("paper", "red") else None)

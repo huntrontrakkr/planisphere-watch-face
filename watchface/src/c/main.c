@@ -171,12 +171,14 @@ static bool decor_draw(void *ctx, const DecorCtx *dc) {
   bool ok = false;
   if (api && api->magic == DECOR_API_MAGIC && api->layout == PLAN_LAYOUT) {
     g_decor_heap = heap_bytes_free();
+    ResHandle sh = resource_get_handle(RESOURCE_ID_PLAN_SCENES);
+    FeastReader scenes = {resource_read, &sh};
 #if PBL_RECT
     ResHandle h = resource_get_handle(RESOURCE_ID_PLAN_TOOLS);
     FeastReader rd = {resource_read, &h};
-    ok = api->draw(dc, &rd);
+    ok = api->draw(dc, &rd, &scenes);
 #else
-    ok = api->draw(dc, NULL);
+    ok = api->draw(dc, NULL, &scenes);
 #endif
   }
   free(mem);

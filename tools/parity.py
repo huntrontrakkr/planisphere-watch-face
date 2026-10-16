@@ -73,6 +73,11 @@ CASES = {
     "labours-nov-r2": ("gabbro", "apian", datetime(2026, 11, 16, 2, 30, tzinfo=timezone.utc), NY, {"labours": True}),
     "labours-sydney-t2": ("emery", "flamsteed", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc), (-33.87, 151.21, 660),
                           {"labours": True}),
+    # the zodiac: the Sun's sign's woodcut behind the face, the glyphs in the Time 2's corners
+    "zodiac-jul-t2": ("emery", "planisphere", datetime(2026, 7, 13, 15, 33, tzinfo=timezone.utc), NY, {"theme": 2, "tools": True}),
+    "zodiac-oct-r2": ("gabbro", "hours", datetime(2026, 10, 15, 1, 30, tzinfo=timezone.utc), NY, {"theme": 2}),
+    "zodiac-apr-paper-t2": ("emery", "flamsteed", datetime(2026, 4, 12, 23, 20, tzinfo=timezone.utc), NY,
+                            {"theme": 2, "tools": True}),
     # near the equator: the Time 2's window cut by its ring, the place's names beside the fleur-de-lis
     "quito-t2": ("emery", "planisphere", datetime(2026, 10, 15, 3, 0, tzinfo=timezone.utc), (-0.1807, -78.4678, -300), {}),
     "quito-hours-t2": ("emery", "hours", datetime(2026, 10, 14, 22, 0, tzinfo=timezone.utc), (-0.1807, -78.4678, -300),
@@ -136,6 +141,8 @@ def c_render(screen, plate, when, place, opts, path):
         args.append("--labours")
     if opts.get("tools"):
         args.append("--tools")
+    if opts.get("theme"):
+        args += ["--theme", str(opts["theme"])]
     if opts.get("calendars"):
         args += ["--calendars", str(opts["calendars"])]
     if opts.get("show") is not None:
@@ -163,6 +170,7 @@ def py_render(screen, plate, when, place, opts, sky):
         return plates.render(when, dial, sky, tz, plate, round_screen=screen == "gabbro",
                              clock24=opts.get("clock24", False), weather=w, labours=opts.get("labours", False),
                              calendars=opts.get("calendars", 0), tools=opts.get("tools", False),
+                             theme=opts.get("theme"),
                              extras=extras).astype(np.uint8)
     if opts.get("show") is None:
         return face()

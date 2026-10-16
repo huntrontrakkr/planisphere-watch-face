@@ -6,6 +6,7 @@
 #include <string.h>
 #include "plan.h"
 #include "plan_math.h"
+#include "decor_data.h"
 
 #define NONE16 0x7fff
 typedef struct { uint32_t bit; uint8_t w, h; uint16_t pad; } MaskIndex;
@@ -32,7 +33,7 @@ static inline const int16_t *sec16(const uint8_t *blob, int i) { return (const i
 typedef struct { const MaskIndex *mi; bool mirror; int x0, y0; } LabFig;
 typedef struct {
   const DecorCtx *r;
-  const int16_t (*card)[4];
+  const uint8_t (*card)[4];
   LabFig fig[6];
   int nfig;
   uint8_t tone;
@@ -40,7 +41,7 @@ typedef struct {
 
 /* the card in row y, as the prototype grows things (a pixel at a time, four ways): inside the ring's inner edge by
  * 3 px, [c0, c1], and not within 3 px of the window, [c2, c3] */
-static void card_row(const DecorCtx *r, const int16_t *inner, int y, int16_t c[4]) {
+static void card_row(const DecorCtx *r, const int16_t *inner, int y, uint8_t c[4]) {
   Plan *p = r->p;
   int lo = -NONE16, hi = NONE16, glo = NONE16, ghi = -NONE16;
   for (int dy = -3; dy <= 3; dy++) {
@@ -53,12 +54,14 @@ static void card_row(const DecorCtx *r, const int16_t *inner, int y, int16_t c[4
     if (p->wx0[v] - g < glo) glo = p->wx0[v] - g;
     if (p->wx1[v] + g > ghi) ghi = p->wx1[v] + g;
   }
-  c[0] = (int16_t)lo, c[1] = (int16_t)hi, c[2] = (int16_t)glo, c[3] = (int16_t)ghi;
+  /* (a byte each: the screens' pixels from 0 to 259 and the card's from 3 in; no window: 255, 0) */
+  c[0] = (uint8_t)(lo < 0 ? 0 : lo > 255 ? 255 : lo), c[1] = (uint8_t)(hi < 0 ? 0 : hi > 255 ? 255 : hi);
+  c[2] = (uint8_t)(glo < 0 ? 0 : glo > 255 ? 255 : glo), c[3] = (uint8_t)(ghi < 0 ? 0 : ghi > 255 ? 255 : ghi);
 }
-static inline bool in_card(const int16_t c[4], int x) { return x >= c[0] && x <= c[1] && (x < c[2] || x > c[3]); }
+static inline bool in_card(const uint8_t c[4], int x) { return x >= c[0] && x <= c[1] && (x < c[2] || x > c[3]); }
 
 /* in row v, how far x stands from the nearest pixel off the field's ground (the card below the hills): 0 on one */
-static int lab_room(const DecorCtx *r, const int16_t c[4], bool ok, int x) {
+static int lab_room(const DecorCtx *r, const uint8_t c[4], bool ok, int x) {
   if (!ok || !in_card(c, x)) return 0;
   int a = c[0], b = c[1];
   if (c[2] <= c[3]) {
@@ -71,7 +74,7 @@ static int lab_room(const DecorCtx *r, const int16_t c[4], bool ok, int x) {
 
 /* where the labourer and the month's thing stand: on each side of the middle, the pixel of the field's ground standing
  * clearest of its edges (Chebyshev, up to 14 px), the first such in reading order */
-static void labour_places(const DecorCtx *r, const int16_t (*card)[4], int vy) {
+static void labour_places(const DecorCtx *r, const uint8_t (*card)[4], int vy) {
   Plan *p = r->p;
   int best[2] = {0, 0};
   for (int s = 0; s < 2; s++) p->lab_at[s][0] = 0, p->lab_at[s][1] = 0;
@@ -110,12 +113,18 @@ static void lab_mark(Lab *l, int x, int y) {
   put(l->r, x, y, l->tone);
 }
 
+static void scene(const DecorCtx *r, const uint8_t (*card)[4], const FeastReader *rd, int k);
 static void labours(const DecorCtx *r) {
   Plan *p = r->p;
-  int16_t (*card)[4] = r->alloc((size_t)r->p->h * sizeof *card);
+  uint8_t (*card)[4] = r->alloc((size_t)r->p->h * sizeof *card);
   if (!card) return;
   const int16_t *inner = sec16(p->geom, GEO_INNER);
   for (int y = 0; y < r->p->h; y++) card_row(r, inner, y, card[y]);
+  if (r->theme == THEME_ZODIAC) {                /* (the zodiac's woodcut fills the card behind the window) */
+    if (r->scenes) scene(r, (const uint8_t (*)[4])card, r->scenes, r->sun_sign);
+    r->release(card);
+    return;
+  }
   int month = r->month;                                            /* (half a year round in the south) */
   const Labour *L = &LABOURS[month];
   int top = 0;
@@ -123,8 +132,8 @@ static void labours(const DecorCtx *r) {
     if (inside(r, r->col, y)) { top = y; break; }
   float vx = r->cx;
   int vy = top + 6;
-  if (!p->lab_ok) labour_places(r, (const int16_t (*)[4])card, vy), p->lab_ok = true;
-  Lab l = {r, (const int16_t (*)[4])card, {{0}}, 0, r->tone};
+  if (!p->lab_ok) labour_places(r, (const uint8_t (*)[4])card, vy), p->lab_ok = true;
+  Lab l = {r, (const uint8_t (*)[4])card, {{0}}, 0, r->tone};
   for (int s = 0; s < 2; s++) {
     const LabourFigure *lf = &L->side[s];
     const MaskIndex *mi = mask(r, lf->mask);
@@ -212,8 +221,59 @@ static void corner_tools(const DecorCtx *r, const uint8_t *rec) {
   }
 }
 
-bool plan_decor(const DecorCtx *d, const FeastReader *tools) {
-  if (d->theme == THEME_LABOURS) labours(d);
+/* ---- the zodiac: behind the face the woodcut of the sign the Sun is in, from Ratdolt's Hyginus (Venice, 1482),
+ * faint, showing wherever the card is open; in the Time 2's corners the Sun and the Moon and the signs they are in,
+ * their glyphs as the Venetian printers cut them (Sacrobosco, 1490: proto/zodiac_art.py), each in its roundel ----- */
+/* the woodcut `k` of scenes.bin (proto/woodcuts.py) behind the face, faint, its middle where it was placed from the
+ * window's middle, wherever the card is open: streamed from the table a few bytes at a time and unpacked as it goes */
+typedef struct { const FeastReader *rd; uint32_t at; uint8_t buf[64]; int have, pos; } Stream;
+static int next_byte(Stream *s) {
+  if (s->pos == s->have) s->rd->read(s->rd->ctx, s->at, s->buf, sizeof s->buf), s->at += sizeof s->buf, s->have = sizeof s->buf, s->pos = 0;
+  return s->buf[s->pos++];
+}
+static void scene(const DecorCtx *r, const uint8_t (*card)[4], const FeastReader *rd, int k) {
+  Plan *p = r->p;
+  uint8_t e[12];
+  rd->read(rd->ctx, 2 + 12 * (uint32_t)k, e, 12);
+  Stream st = {rd, e[0] | e[1] << 8 | e[2] << 16 | (uint32_t)e[3] << 24, {0}, 0, 0};
+  int w = e[4] | e[5] << 8, h = e[6] | e[7] << 8, dx = (int16_t)(e[8] | e[9] << 8), dy = (int16_t)(e[10] | e[11] << 8);
+  int rowb = (w + 7) / 8, ox = (p->w - w) / 2 + dx, oy = (p->win_top + p->win_bottom) / 2 - h / 2 + dy, n = 0;
+  int total = rowb * h;
+  while (n < total) {
+    int c = next_byte(&st), count = c < 128 ? c + 1 : c > 128 ? 257 - c : 0, v = c > 128 ? next_byte(&st) : 0;
+    for (int i = 0; i < count && n < total; i++, n++) {
+      int byte = c < 128 ? next_byte(&st) : v, y = oy + n / rowb, x = ox + (n % rowb) * 8;
+      for (int b = 0; b < 8 && byte; b++)
+        if (byte & (0x80 >> b) && on_screen(r, x + b, y) && in_card(card[y], x + b)) put(r, x + b, y, r->tone);
+    }
+  }
+}
+static void glyph(const DecorCtx *r, const uint8_t *bits, int w, int h, int x0, int y0, uint8_t c) {
+  for (int j = 0; j < h; j++)
+    for (int i = 0; i < w; i++) {
+      int b = j * w + i;
+      if (bits[b >> 3] >> (b & 7) & 1) put(r, x0 + i, y0 + j, c);
+    }
+}
+static void zodiac_corners(const DecorCtx *r) {
+  int W = r->p->w, H = r->p->h;
+  const uint8_t which[4] = {12, r->sun_sign, 13, r->moon_sign};   /* the Sun, its sign; the Moon, its sign */
+  for (int k = 0; k < 4; k++) {
+    int x0 = k & 1 ? W - 17 : 2, y0 = k & 2 ? H - 17 : 2;
+    glyph(r, ZODIAC_ROUNDEL, 15, 15, x0, y0, r->ink);
+    glyph(r, ZODIAC_GLYPHS[which[k]], 9, 9, x0 + 3, y0 + 3, r->accent);
+  }
+}
+
+bool plan_decor(const DecorCtx *dc, const FeastReader *tools, const FeastReader *scenes) {
+  DecorCtx copy = *dc;                           /* (the woodcuts' table with it) */
+  copy.scenes = scenes;
+  const DecorCtx *d = &copy;
+  if (d->theme == THEME_LABOURS || d->theme == THEME_ZODIAC) labours(d);
+  if (d->tools && d->theme == THEME_ZODIAC) {
+    zodiac_corners(d);
+    return true;
+  }
   if (d->tools && tools) {                       /* the month's record of tools.bin: its clearance, its two pieces */
     uint8_t o[4];
     tools->read(tools->ctx, TOOLS_CLIP + 2 * (uint32_t)d->month, o, 4);

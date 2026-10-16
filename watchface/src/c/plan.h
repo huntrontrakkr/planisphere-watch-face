@@ -284,15 +284,18 @@ typedef struct DecorCtx {
   int month;                   /* the labours' month, 0..11 (half a year round in the south) */
   int col;                     /* the meridian's column */
   float cx;                    /* the pole's x */
-  uint8_t tone, ink;           /* the labours' tone (the ring hatching's); the plate's ink */
+  uint8_t tone, ink, accent;   /* the scene's tone (the ring hatching's); the plate's ink and its red */
+  uint8_t sun_sign, moon_sign; /* the signs the Sun and the Moon are in, 0 Aries .. 11 Pisces */
   uint8_t theme;               /* the scene to draw (THEME_*) */
   bool tools, line_only;       /* the theme's corner pieces; those as their outlines alone, in the ink */
   void *(*alloc)(size_t);
   void (*release)(void *);
+  const FeastReader *scenes;   /* (set by plan_decor: the woodcuts' table) */
 } DecorCtx;
 #define DECOR_API_MAGIC 0x524F4344u          /* "DCOR" */
 typedef struct {
   uint32_t magic, layout;
-  bool (*draw)(const DecorCtx *d, const FeastReader *tools);
+  bool (*draw)(const DecorCtx *d, const FeastReader *tools, const FeastReader *scenes);
 } DecorApi;
-bool plan_decor(const DecorCtx *d, const FeastReader *tools);   /* tools: tools.bin, read as it goes (NULL: none) */
+/* tools: tools.bin, scenes: scenes.bin (proto/woodcuts.py), each read as it goes (NULL: none) */
+bool plan_decor(const DecorCtx *d, const FeastReader *tools, const FeastReader *scenes);
