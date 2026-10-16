@@ -16,7 +16,8 @@ as the store expects (docs/screenshots/store), and the same reels for the README
      out of the Orionids' radiant on the night of their peak
 and for the README alone: the Time 2's Labours' tools in its corners, month by month (docs/gallery-tools.gif), and the
 zodiac behind the face, sign by sign (docs/gallery-zodiac.gif); the astronomer, month by month
-(docs/gallery-astronomer.gif); the sea, month by month and through a tide (docs/gallery-sea.gif, gallery-sea-tide.gif).
+(docs/gallery-astronomer.gif); the sea, month by month and through a tide (docs/gallery-sea.gif, gallery-sea-tide.gif); the herbal
+(docs/gallery-herbal.gif).
 
     tools/build-host.sh && cd proto && uv run python ../tools/store_gallery.py
 """
@@ -235,6 +236,7 @@ def main():
               for y, m, d in signs], ROOT / "docs" / "gallery-zodiac.gif", 1200)
     astronomer_gallery()
     sea_gallery()
+    herbal_gallery()
     save_gif([frame("emery", "planisphere", local(2026, m, 15, 21, 30, -240 if 3 < m < 11 else -300), NY,
                     -240 if 3 < m < 11 else -300, tools=True) for m in range(1, 13)], ROOT / "docs" / "gallery-tools.gif", 1200)
     for f in sorted(OUT.iterdir()):
@@ -264,6 +266,14 @@ def sea_gallery():
                                     tides=tide(at)) for p in ("emery", "gabbro")))
     save_gif([faces(m, m * 61 % 745) for m in range(1, 13)], ROOT / "docs" / "gallery-sea.gif", 1200)
     save_gif([faces(1, h * 31) for h in range(24)], ROOT / "docs" / "gallery-sea-tide.gif", 300)
+
+
+def herbal_gallery():
+    """The herbal behind the face, month by month (Fuchs's plant; the gardener's Moon in the Time 2's corners), on
+    both watches side by side (docs/gallery-herbal.gif)."""
+    save_gif([side_by_side(*(frame(p, "planisphere", local(2026, m, 15, 21, 30, -240 if 3 < m < 11 else -300), NY,
+                                   -240 if 3 < m < 11 else -300, theme=5, tools=True) for p in ("emery", "gabbro")))
+              for m in range(1, 13)], ROOT / "docs" / "gallery-herbal.gif", 1200)
 
 
 if __name__ == "__main__":
