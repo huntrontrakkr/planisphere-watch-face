@@ -179,13 +179,12 @@ bool plan_decor(const DecorCtx *dc, const FeastReader *tools, const FeastReader 
   DecorCtx copy = *dc;                           /* (the woodcuts' table with it) */
   copy.scenes = scenes;
   const DecorCtx *d = &copy;
-  if (d->scenes && d->theme >= THEME_ZODIAC) {   /* the woodcut: the Sun's sign's, or the month's of the theme's twelve after
-                                                    the zodiac's (the sea's plates fewer: the months take them in turn) */
-    uint8_t n[2];
-    d->scenes->read(d->scenes->ctx, 0, n, 2);
-    int k = d->theme == THEME_ZODIAC ? d->sun_sign : d->theme == THEME_ASTRONOMER ? 12 + d->month
-                                                   : 24 + d->month % ((n[0] | n[1] << 8) - 24);
-    scene(d, sec16(d->p->geom, GEO_INNER), d->scenes, k);
+  if (d->scenes && d->theme >= THEME_ZODIAC) {   /* the woodcut: the Sun's sign's, or the month's of the theme's twelve
+                                                    after the zodiac's (the herbal's by the seasons: in the south half
+                                                    a year round) */
+    int m = d->theme == THEME_HERBAL && d->south ? (d->month + 6) % 12 : d->month;
+    scene(d, sec16(d->p->geom, GEO_INNER), d->scenes, d->theme == THEME_ZODIAC ? d->sun_sign
+                                                      : 12 * (d->theme - THEME_ZODIAC) + m);
   }
   if (d->corners == THEME_ZODIAC) {
     zodiac_corners(d);

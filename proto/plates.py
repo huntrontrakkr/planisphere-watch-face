@@ -980,6 +980,10 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     elif theme == THEME_ASTRONOMER:                      # the month's instrument of Tycho's, behind the face
         import woodcuts
         woodcut_scene(img, inside, inner_region(dial), P, woodcuts.ASTRONOMER_BASE + local.month - 1)
+    elif theme == THEME_HERBAL:                          # the month's plant, behind the face (the south's season)
+        import woodcuts
+        woodcut_scene(img, inside, inner_region(dial), P,
+                      woodcuts.HERBAL_BASE + (local.month - 1 + (6 if dial.lat < 0 else 0)) % 12)
     elif theme == THEME_SEA:                             # the month's ships, riding the tide, behind the face
         import woodcuts
         woodcut_scene(img, inside, inner_region(dial), P, woodcuts.SEA_BASE + (local.month - 1) % len(woodcuts.SEA),

@@ -100,6 +100,11 @@ CASES = {
                           {"theme": 4, "tools": True}),
     "sea-sydney-t2": ("emery", "hours", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc), (-33.87, 151.21, 660),
                       {"theme": 4, "tools": True, "tides": [(-300, True, 150), (70, False, 40), (440, True, 155)]}),
+    # the herbal: Fuchs's plant of the month behind the face (in the south, by the seasons there)
+    "herbal-apr-t2": ("emery", "planisphere", datetime(2026, 4, 16, 1, 30, tzinfo=timezone.utc), NY, {"theme": 5}),
+    "herbal-oct-r2": ("gabbro", "hours", datetime(2026, 10, 15, 1, 30, tzinfo=timezone.utc), NY, {"theme": 5}),
+    "herbal-sydney-r2": ("gabbro", "apian", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc), (-33.87, 151.21, 660),
+                         {"theme": 5}),
     # the corners apart from the backdrop: each blob's backdrop with the other's corners, a backdrop with the sprigs,
     # the plain card with a theme's corners
     "mix-labours-sea-t2": ("emery", "planisphere", datetime(2026, 7, 16, 1, 30, tzinfo=timezone.utc), NY,

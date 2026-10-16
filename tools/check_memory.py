@@ -116,7 +116,7 @@ def show_most():
     return most
 
 
-THEMES = 5                                   # (plan.h THEME_*: the labours, the zodiac, the astronomer, the sea)
+THEMES = 6                                   # (plan.h THEME_*: the labours, the zodiac, the astronomer, the sea, the herbal)
 
 
 def main():

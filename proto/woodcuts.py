@@ -56,6 +56,35 @@ ASTRONOMER = [
 ]
 ASTRONOMER_BASE = len(ZODIAC)                            # (its first in scenes.bin)
 
+# the herbal (THEME_HERBAL), the month's: Leonhart Fuchs's plants, De historia stirpium (Basel, 1542), cut in open
+# outline, January first (in the south half a year round, by the seasons there): each (file, crop or None, its printed
+# names and page number to wipe as fractions of the crop, width, dx, dy) as the zodiac's, read as engravings (the scans
+# faint, the reverse's text showing through: each line judged against the paper round it). Each placed by a search
+# over both watches at 40 degrees north for about the same ink showing on the open card (a sparse plant larger, the
+# oak's dense crown smaller and lower), near hanging a little low: the flowers and leaves above the window, the roots
+# running off below.
+HERBAL = [
+    ("fuchs1542-hellebore.jpg", None, [(0.06, 0.68, 0.44, 0.76), (0.64, 0.69, 0.90, 0.75), (0.0, 0.0, 0.12, 0.07)],
+     190, 0, 30),
+    ("fuchs1542-hazel.jpg", None, [(0.0, 0.77, 0.32, 0.85), (0.53, 0.78, 0.74, 0.84), (0.70, 0.84, 0.84, 0.90),
+                                   (0.84, 0.0, 1.0, 0.07)], 190, 0, 50),
+    ("fuchs1542-violet.jpg", (0.0, 0.24, 1.0, 0.73), [], 260, 0, -30),
+    ("fuchs1542-cowslip.jpg", None, [(0.10, 0.27, 0.47, 0.34), (0.56, 0.28, 0.94, 0.34), (0.80, 0.0, 0.94, 0.08)],
+     260, 0, 40),
+    ("fuchs1542-lily-of-the-valley.jpg", None, [(0.23, 0.60, 0.57, 0.67), (0.70, 0.60, 0.94, 0.67),
+                                                (0.0, 0.02, 0.14, 0.08)], 260, 0, 40),
+    ("fuchs1542-rose.jpg", None, [(0.0, 0.77, 0.17, 0.84), (0.58, 0.77, 0.77, 0.84)], 190, 0, 50),
+    ("fuchs1542-corn-poppy.jpg", None, [(0.74, 0.59, 1.0, 0.69), (0.78, 0.07, 0.92, 0.14)], 210, 0, 40),
+    ("fuchs1542-chamomile.jpg", None, [(0.0, 0.69, 0.34, 0.76), (0.56, 0.69, 0.77, 0.75), (0.86, 0.65, 0.96, 0.71),
+                                       (0.80, 0.02, 0.94, 0.09)], 260, 0, 50),
+    ("fuchs1542-grape-vine.jpg", None, [(0.10, 0.79, 0.47, 0.85), (0.68, 0.78, 0.87, 0.84), (0.10, 0.02, 0.27, 0.09)],
+     260, 0, 40),
+    ("fuchs1542-oak.jpg", None, [(0.06, 0.65, 0.37, 0.71), (0.60, 0.64, 0.82, 0.71)], 190, 0, 70),
+    ("fuchs1542-ivy.jpg", None, [(0.18, 0.89, 0.72, 0.98), (0.83, 0.0, 0.97, 0.07)], 210, 0, 30),
+    ("fuchs1542-mistletoe.jpg", None, [(0.33, 0.63, 0.67, 0.74), (0.83, 0.02, 0.97, 0.08)], 210, 0, 20),
+]
+
+
 # the sea (THEME_SEA), the month's, January first: ships afloat as the Dutch etchers drew them, Wenceslaus Hollar's
 # from his Navium variae figurae et formae (Antwerp, 1647) and his calm sea of the 1630s, between them Reinier Nooms's
 # ("Zeeman", the 1650s), each (file, crop, words to wipe as fractions of the crop, its horizon and its waterline: where the
@@ -83,6 +112,7 @@ SEA = [
 ]
 SEA_WIDTH = 150
 SEA_BASE = ASTRONOMER_BASE + len(ASTRONOMER)
+HERBAL_BASE = SEA_BASE + 12                              # (the sea's twelve before it)
 SEA_ABOVE = 4                                            # the waterline's rows above the window's top at mean water
 TIDE_SHIFT = 12                                          # pixels the plate rises at high water and falls at low
 
@@ -424,7 +454,7 @@ _SCENES = None
 
 def scenes():
     """Every woodcut, in order: the zodiac's twelve (Aries first), the astronomer's (January first), the sea's (January
-    first): (key, ink, dx, dy, the waterline's row or -1: then the plate hangs by it from the window's top, its dx, dy
+    first), the herbal's (January first): (key, ink, dx, dy, the waterline's row or -1: then the plate hangs by it from the window's top, its dx, dy
     unused, the horizon's row). (key, ink, dx, dy: its middle right of and below the
     window's middle)"""
     global _SCENES
@@ -434,6 +464,9 @@ def scenes():
         _SCENES += [(f"astronomer{k}", engraving(THEMES / "astronomer" / "images" / file, crop, wipe, width=width),
                      dx, dy) for k, (file, crop, wipe, width, dx, dy) in enumerate(ASTRONOMER)]
         _SCENES = [s + (-1, -1) for s in _SCENES]
+        herbal = [(f"herbal{k}", engraving(THEMES / "herbal" / "images" / file, crop, wipe, width=width, thresh=0.75,
+                                           grow=0.4), dx, dy, -1, -1)
+                  for k, (file, crop, wipe, width, dx, dy) in enumerate(HERBAL)]
         masks = reach()
         _SCENES = [(key, within_reach(ink, dx, dy, masks["mid"]), dx, dy, water, far)
                    for key, ink, dx, dy, water, far in _SCENES]
@@ -443,6 +476,8 @@ def scenes():
             for shift in range(-TIDE_SHIFT, TIDE_SHIFT + 1):
                 keep |= within_reach(np.ones_like(ink), 0, ink.shape[0] // 2 - (SEA_ABOVE + water + shift), masks["top"])
             _SCENES.append((f"sea{k}", ink & keep, 0, 0, water, round(far * full)))
+        _SCENES += [(key, within_reach(ink, dx, dy, masks["mid"]), dx, dy, water, far)
+                    for key, ink, dx, dy, water, far in herbal]
     return _SCENES
 
 
