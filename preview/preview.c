@@ -54,7 +54,7 @@ static bool pv_decor(void *ctx, const DecorCtx *dc) {
 EMSCRIPTEN_KEEPALIVE void pv_face(int plate, int clock24, int names, int fahrenheit, float lat, float lon, int coords,
                                   int labours, int calendars, int scribe, int events, int tools) {
   F.plate = (uint8_t)(plate >= 0 && plate < PLATE_COUNT ? plate : 0);
-  F.clock24 = clock24 != 0, F.names = names != 0, F.fahrenheit = fahrenheit != 0, F.labours = labours != 0;
+  F.clock24 = clock24 != 0, F.names = names != 0, F.fahrenheit = fahrenheit != 0, F.theme = (uint8_t)(labours >= 0 && labours < THEME_COUNT ? labours : 0);
   F.calendars = (uint32_t)calendars, F.scribe = scribe != 0, F.events = (uint8_t)(events & EV_VILLAGE);
   F.tools = tools != 0, F.decor = pv_decor;
   F.lat = lat, F.lon = lon, F.coords = coords != 0;
@@ -64,6 +64,15 @@ EMSCRIPTEN_KEEPALIVE void pv_face(int plate, int clock24, int names, int fahrenh
  * forms, "|" between) */
 EMSCRIPTEN_KEEPALIVE char *pv_city(void) { return city; }
 EMSCRIPTEN_KEEPALIVE char *pv_country(void) { return country; }
+
+/* The tide's turns (as the phone sends them: six bytes each, tides.js), one at a time from the first, and whether the
+ * face sets the next high and low water (Face.tide_times). */
+static Tides TD;
+EMSCRIPTEN_KEEPALIVE void pv_tide(int k, double minutes_high, int cm, int on) {
+  if (k <= 0) memset(&TD, 0, sizeof TD);         /* (k < 0: none, only the switch) */
+  if (k >= 0 && k < TIDE_TURNS) TD.at[k] = (uint32_t)minutes_high, TD.cm[k] = (int16_t)cm, TD.n = (uint8_t)(k + 1);
+  F.tides = TD.n ? &TD : NULL, F.tide_times = on != 0;
+}
 
 /* The weather (as the phone sends it), or none with code < 0. */
 EMSCRIPTEN_KEEPALIVE void pv_weather(int code, int temp10, int low, int mid, int high, int wind, int from, int pressure,

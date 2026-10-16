@@ -137,10 +137,12 @@ class Emu:
 
     def settings(self, values):
         """Send settings the way the phone does: {KEY: int or text}."""
-        from libpebble2.services.appmessage import AppMessageService, Int32, CString
+        from libpebble2.services.appmessage import AppMessageService, Int32, CString, ByteArray
         keys = json.loads((APP / "build/js/message_keys.json").read_text())
         svc = AppMessageService(self.conn)
         def value(v):
+            if isinstance(v, str) and v.startswith("hex:"):        # a byte array, as the phone sends the tide's turns
+                return ByteArray(bytes.fromhex(v[4:]))
             try:
                 return Int32(int(v))
             except ValueError:
@@ -287,7 +289,8 @@ def main():
     ap.add_argument("--fn", nargs="*", default=["update"])
     ap.add_argument("--boot", type=float, default=8.0)
     ap.add_argument("--wait", type=float, default=2.0)
-    ap.add_argument("--set", nargs="*", default=[], help="KEY=value settings sent after start, e.g. THEME=2")
+    ap.add_argument("--set", nargs="*", default=[], help="KEY=value settings sent after start, e.g. THEME=2 "
+                    "(hex:0a0b... a byte array)")
     ap.add_argument("--set-at", type=float, default=1.0, help="seconds after start to send --set")
     ap.add_argument("--then", nargs="*", default=[], help="a second message, KEY=value, sent at --then-at")
     ap.add_argument("--then-at", type=float, default=3.0)

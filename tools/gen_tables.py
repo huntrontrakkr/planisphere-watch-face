@@ -254,8 +254,9 @@ def shared(h):
     blob.add("MASK_INDEX", index)
     blob.add("MASK_DATA", bits(np.concatenate(flat)))
     h.append("enum { " + ", ".join(f"M_{n}" for n, _ in masks) + ", M_COUNT };")
-    tiny_map = "".join(c if c != "°" else "\\x01" for c in tiny_chars)
-    h.append(f'static const char TINY_CHARS[] = "{tiny_map}";  /* \\x01 the degree sign; M_TINY0 onward */')
+    tiny_map = "".join({"°": "\\x01", "▲": "\\x02", "▼": "\\x03"}.get(c, c) for c in tiny_chars)
+    h.append(f'static const char TINY_CHARS[] = "{tiny_map}";  /* \\x01 the degree sign, \\x02 high water, \\x03 low; '
+             'M_TINY0 onward */')
     h.append("enum { " + ", ".join(f"NW_{ident(k)}" for k in needle) + ", NW_COUNT };")
     # the labours of the months: each side's figure (a mask) and where its copies stand, and the field behind
     grounds = ["snow", "vines", "grass", "stubble", "furrows"]

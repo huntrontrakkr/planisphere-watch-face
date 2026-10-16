@@ -213,7 +213,7 @@ static void corner_tools(const DecorCtx *r, const uint8_t *rec) {
 }
 
 bool plan_decor(const DecorCtx *d, const FeastReader *tools) {
-  if (d->labours) labours(d);
+  if (d->theme == THEME_LABOURS) labours(d);
   if (d->tools && tools) {                       /* the month's record of tools.bin: its clearance, its two pieces */
     uint8_t o[4];
     tools->read(tools->ctx, TOOLS_CLIP + 2 * (uint32_t)d->month, o, 4);

@@ -38,10 +38,19 @@ typedef struct {
 } Weather;
 
 struct DecorCtx;
+/* the card's themes: none, the labours of the months, the zodiac, the astronomer, the sea and the Moon, the herbal */
+enum { THEME_NONE, THEME_LABOURS, THEME_ZODIAC, THEME_ASTRONOMER, THEME_SEA, THEME_HERBAL, THEME_COUNT };
+/* The tide where the phone is (watchface/src/pkjs/tides.js): its turns in order, each when (minutes since 1970, the
+ * top bit set for a high water) and how high (centimetres). */
+#define TIDE_TURNS 8
+#define TIDE_HIGH 0x80000000u
+typedef struct { uint8_t n; uint32_t at[TIDE_TURNS]; int16_t cm[TIDE_TURNS]; } Tides;
+
 /* What the face shows, settled from the owner's settings and the watch. */
 typedef struct {
   uint8_t plate;               /* PLATE_* */
-  bool clock24, names, labours, fahrenheit;
+  bool clock24, names, fahrenheit;
+  uint8_t theme;               /* the scene in the card behind the face (THEME_*), and the Time 2's corner pieces' */
   float lat, lon;              /* degrees, north and east positive */
   const char *city, *country;  /* the place's names on the ring (NULL or "": none) */
   bool coords;                 /* its latitude and longitude on the ring (false while the place is not yet known) */
@@ -51,6 +60,8 @@ typedef struct {
   uint8_t events;              /* the passing events the face may bring (EV_*: Plan.event), and the village's life */
   uint8_t figs_part;           /* the figures drawn in at dusk: drawn this many EVENT_FIGS_FRAMES-ths along (0: all) */
   bool tools;                  /* the Time 2's corners: the month's tools instead of the sprigs (tools.bin) */
+  const Tides *tides;          /* the tide here (NULL: none known, or inland) */
+  bool tide_times;             /* the next high and low waters set low on the face (on the Round 2 for the coordinates) */
   /* the scene blob (plan_decor.c), called where the card is laid when the labours or the tools are asked for: the
    * watch loads it for the moment and lets it go; elsewhere it is plan_decor itself. NULL: neither drawn. */
   bool (*decor)(void *ctx, const struct DecorCtx *dc);
@@ -274,7 +285,8 @@ typedef struct DecorCtx {
   int col;                     /* the meridian's column */
   float cx;                    /* the pole's x */
   uint8_t tone, ink;           /* the labours' tone (the ring hatching's); the plate's ink */
-  bool labours, tools, line_only;   /* the labours; the corner tools; those as their outlines alone, in the ink */
+  uint8_t theme;               /* the scene to draw (THEME_*) */
+  bool tools, line_only;       /* the theme's corner pieces; those as their outlines alone, in the ink */
   void *(*alloc)(size_t);
   void (*release)(void *);
 } DecorCtx;

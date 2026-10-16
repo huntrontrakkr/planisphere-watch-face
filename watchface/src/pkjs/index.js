@@ -2,10 +2,12 @@
 // settings page with its live preview of the face (page.js, built by tools/build_page.py).
 var page = require('./page');
 var names = require('./names');
+var tides = require('./tides');
 var keys = require('message_keys');
 
 var STORE = 'plan-settings', PLACE = 'plan-place', WEATHER = 'plan-weather', WATCH24 = 'plan-watch24';
 var LADDERS = 'plan-ladders';
+var TIDES = 'plan-tides';
 
 function saved(k) {
   try { return JSON.parse(localStorage.getItem(k)) || null; } catch (e) { return null; }
@@ -47,6 +49,7 @@ function settingsMessage(s) {
   m[keys.NAMES] = s.NAMES ? 1 : 0;
   m[keys.LABOURS] = s.LABOURS ? 1 : 0;
   m[keys.TOOLS] = s.TOOLS ? 1 : 0;
+  m[keys.TIDE_TIMES] = s.TIDE_TIMES ? 1 : 0;
   m[keys.CALENDARS] = s.CALENDARS | 0;
   // a bit an animation: 1 the minute written, 2 fireworks, 4 .. 32 the passing events and the village's life (0.1.3's
   // ANIMATE was the minute alone; settings from before the events, without ANIMV, have them turned on)
@@ -71,6 +74,7 @@ Pebble.addEventListener('showConfiguration', function () {
     platform: info && info.platform ? info.platform : 'emery',
     place: saved(PLACE),
     weather: saved(WEATHER),
+    tides: (saved(TIDES) || {}).bytes || null,   // the tide's turns as last sent (the preview's high and low water)
     watch24: saved(WATCH24),            // the watch's own 12/24-hour clock, as it last said
     // the emulator's phone fills in its own return address
     returnTo: Pebble.platform === 'pypkjs' ? '$$$RETURN_TO$$$' : 'pebblejs://close#'
@@ -88,6 +92,7 @@ Pebble.addEventListener('webviewclosed', function (e) {
   localStorage.setItem(STORE, JSON.stringify(s));
   send(settingsMessage(s));
   if (!s.PLACE) refresh();
+  else tide(s.PLACE_LAT / 1e4, s.PLACE_LON / 1e4, s.PLACE_CC);
 });
 
 Pebble.addEventListener('ready', function () {
@@ -131,6 +136,9 @@ function refresh() {
     send(m);
     if (moved || !place.city || place.cc === undefined) named(lat, lon);
     weather(lat, lon);
+    var s = saved(STORE) || {};                               // (the tide is for the face's place)
+    if (s.PLACE) tide(s.PLACE_LAT / 1e4, s.PLACE_LON / 1e4, s.PLACE_CC);
+    else tide(lat, lon, place.cc);
   }, function (err) { console.log('No location: ' + (err && err.message)); },
   {timeout: 20000, maximumAge: 30 * 60 * 1000});
 }
@@ -150,6 +158,20 @@ function named(lat, lon) {
     var m = {};
     m[keys.CITY] = names.cityLadder(place.city);
     m[keys.COUNTRY] = names.regionLadder(cc, place.regionCode || place.region, place.country);
+    send(m);
+  });
+}
+
+// the tide here (tides.js), when the face shows it, asked again every six hours or when the phone has moved
+function tide(lat, lon, cc) {
+  var s = saved(STORE) || {};
+  if (!s.TIDE_TIMES && s.LABOURS !== 4) return;              // (neither the tide's times nor the sea's theme)
+  var t = saved(TIDES);
+  if (t && Math.abs(t.lat - lat) < 0.05 && Math.abs(t.lon - lon) < 0.05 && Date.now() - t.time < 6 * 3600 * 1000) return;
+  tides.fetch(get, lat, lon, cc === undefined || cc === 'US', function (bytes) {
+    localStorage.setItem(TIDES, JSON.stringify({lat: lat, lon: lon, time: Date.now(), bytes: bytes}));
+    var m = {};
+    m[keys.TIDES] = bytes.length ? bytes : [0];          // (one byte: no tide here)
     send(m);
   });
 }

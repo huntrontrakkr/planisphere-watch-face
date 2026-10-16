@@ -2405,11 +2405,13 @@ static int next_form(const char **t, char form[40]) {
   return k;
 }
 
-/* the window's top in a column: its first row there, or -1 */
-static int window_top(R *r, int x) {
+/* the window's top in a column (or with `bottom` its foot): its first (last) row there, or -1 */
+static int window_top(R *r, int x, bool bottom) {
   Plan *p = r->p;
-  for (int y = p->win_top; y >= 0 && y <= p->win_bottom; y++)
+  for (int k = 0; p->win_top >= 0 && k <= p->win_bottom - p->win_top; k++) {
+    int y = bottom ? p->win_bottom - k : p->win_top + k;
     if (x >= p->wx0[y] && x <= p->wx1[y]) return y;
+  }
   return -1;
 }
 
@@ -2424,7 +2426,7 @@ static int round_div(int v, int d) {
  * with cy NULL its foot four pixels above the window's top under it (the higher of the tops under its two edges: clear
  * of the window's rims), as the fleur-de-lis stands. With `draw` false, only whether every letter beside the fleur
  * falls inside the ring's inner edge by two. (Integers: positions are 32nds exactly.) */
-static bool engrave(R *r, const char *form, int x0, int span, const int16_t *cy, uint8_t c, bool draw) {
+static bool engrave(R *r, const char *form, int x0, int span, const int16_t *cy, uint8_t c, bool draw, bool below) {
   const int16_t *inner = sec16(r->p->geom, GEO_INNER);
   int n = 0, ink = tiny_width(r, form);
   for (const char *s = form; *s; s++) n += *s == ' ' || tiny_mask(*s) >= 0;
@@ -2438,10 +2440,10 @@ static bool engrave(R *r, const char *form, int x0, int span, const int16_t *cy,
       if (xi < 0) xi = 0, f = 0;
       if (xi >= r->W - 1) xi = r->W - 2, f = 32;
       y0 = round_div(cy[xi] * (32 - f) + cy[xi + 1] * f - 1280, 512);   /* (its middle 2.5 below its top) */
-    } else {                                     /* above the higher of the window's tops under its two edges */
-      int xr = xl + gw - 1, tl = window_top(r, xl), tr = window_top(r, xr);
+    } else {                                     /* clear of the window's rims under its two edges */
+      int xr = xl + gw - 1, tl = window_top(r, xl, below), tr = window_top(r, xr, below);
       if (tl < 0 || tr < 0) return false;
-      y0 = (tl < tr ? tl : tr) - 8;
+      y0 = below ? (tl > tr ? tl : tr) + 4 : (tl < tr ? tl : tr) - 8;
       for (int y = y0; y <= y0 + 4; y += 4)      /* (the band's inner edge convex: its top and foot rows enough) */
         if (y < 0 || xl < inner[2 * y] + 2 || xr > inner[2 * y + 1] - 2) return false;
     }
@@ -2449,6 +2451,44 @@ static bool engrave(R *r, const char *form, int x0, int span, const int16_t *cy,
     gx += gw * 32 + gap;
   }
   return true;
+}
+
+/* the tide's next high and low waters (an option, Face.tide_times), as tide tables mark them (a triangle up for high water,
+ * down for low, after the Dymaxion face), in the ring's smallest figures: on the Time 2 beneath the window, either side
+ * of the south star, following the window's foot, as near the star as they fit on the card, each the same way out; on
+ * the Round 2, whose window meets its band below, in the band beside NOON in the coordinates' place */
+static int hour_of(int h, bool clock24);
+/* the tide's next high (text[0]) and low (text[1]) as the marks read: a triangle and the time; false if neither */
+static bool tide_texts(R *r, char text[2][12]) {
+  const Tides *td = r->f->tide_times ? r->f->tides : NULL;
+  text[0][0] = text[1][0] = 0;
+  for (int k = 0; td && k < td->n; k++) {
+    int64_t at = (int64_t)(td->at[k] & ~TIDE_HIGH) * 60;
+    int s = td->at[k] & TIDE_HIGH ? 0 : 1;
+    if (at <= r->utc || text[s][0]) continue;
+    Civil c;
+    plan_civil(at + r->offset, &c);
+    char *q = text[s];
+    *q++ = (char)(s ? '\x03' : '\x02');
+    number(q, hour_of(c.hour, r->clock24), 1);
+    q += strlen(q);
+    *q++ = ':', *q++ = (char)('0' + c.minute / 10), *q++ = (char)('0' + c.minute % 10), *q = 0;
+  }
+  return text[0][0] || text[1][0];
+}
+static void tide_marks(R *r) {
+  char text[2][12];
+  if (!r->rect || !tide_texts(r, text)) return;  /* (the Round 2's window meets its band below: the marks by NOON) */
+  int w[2] = {tiny_width(r, text[0]), tiny_width(r, text[1])};
+  for (int off = 6; off < 70; off++) {           /* (as near the star as both fit) */
+    bool ok = true;
+    for (int s = 0; s < 2 && ok; s++)
+      ok = !text[s][0] || engrave(r, text[s], 32 * (s ? r->col + off : r->col - off - w[s]), w[s], NULL, 0, false, true);
+    if (!ok) continue;
+    for (int s = 0; s < 2; s++)
+      if (text[s][0]) engrave(r, text[s], 32 * (s ? r->col + off : r->col - off - w[s]), w[s], NULL, r->P->ink, true, true);
+    return;
+  }
 }
 
 /* the place on the ring: city and country (or state) either side of MIDNIGHT, latitude and longitude either side of
@@ -2470,6 +2510,8 @@ static void inscriptions(R *r, int style) {
     dms[k][n++] = '\'', dms[k][n++] = k ? (v >= 0 ? 'E' : 'W') : (v >= 0 ? 'N' : 'S'), dms[k][n] = 0;
   }
   const char *texts[4] = {r->f->city, r->f->country, r->f->coords ? dms[0] : NULL, r->f->coords ? dms[1] : NULL};
+  char tides[2][12];
+  if (!r->rect && tide_texts(r, tides)) texts[2] = tides[0], texts[3] = tides[1];
   (void)style;
   const int16_t *curves = sec16(r->p->geom, GEO_CURVES);
   bool by_fleur = false;
@@ -2487,7 +2529,7 @@ static void inscriptions(R *r, int style) {
       pick[slot][0] = 0;
       while (t && next_form(&t, form)) {
         int w = tiny_width(r, form);
-        if (engrave(r, form, 32 * (slot ? r->fl_x0 + r->fl_w + 5 : r->fl_x0 - 5 - w), w, NULL, 0, false)) {
+        if (engrave(r, form, 32 * (slot ? r->fl_x0 + r->fl_w + 5 : r->fl_x0 - 5 - w), w, NULL, 0, false, false)) {
           memcpy(pick[slot], form, sizeof form);
           if (w > span) span = w;
           break;
@@ -2496,15 +2538,16 @@ static void inscriptions(R *r, int style) {
     }
     for (int slot = 0; slot < 2; slot++)
       if (pick[slot][0])
-        engrave(r, pick[slot], 32 * (slot ? r->fl_x0 + r->fl_w + 5 : r->fl_x0 - 5 - span), span, NULL, r->P->ink, true);
+        engrave(r, pick[slot], 32 * (slot ? r->fl_x0 + r->fl_w + 5 : r->fl_x0 - 5 - span), span, NULL, r->P->ink, true, false);
   }
   for (int slot = by_fleur ? 2 : 0; slot < 4; slot++) {
     const char *t = texts[slot];
     int lo = r->p->ins_lo[slot], hi = r->p->ins_hi[slot], width = 0;   /* (1/16 px) */
     bool ok = false;
     while (t && !ok && next_form(&t, form)) ok = (width = tiny_width(r, form)) * 16 <= hi - lo;
-    if (ok) engrave(r, form, lo + hi - width * 16, width, curves + (slot < 2 ? 0 : r->W), r->P->ring_ink, true);
+    if (ok) engrave(r, form, lo + hi - width * 16, width, curves + (slot < 2 ? 0 : r->W), r->P->ring_ink, true, false);
   }
+  tide_marks(r);
 }
 
 static void put_thread(R *r, int x, int y, void *ctx) {
@@ -3063,8 +3106,8 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
     for (int x = p->rx0[y]; x <= p->rx1[y]; x++) p->rows[y][x] = card_at(r, x, y);
   /* the scene in the card (the labours) and the Time 2's corner tools, by the scene blob (plan_decor.c, Face.decor):
    * now, while the frame's memory is low, before the grid */
-  if (f->decor && (f->labours || (f->tools && r->rect))) {
-    DecorCtx dc = {p, (r->local.month - 1 + (r->south ? 6 : 0)) % 12, r->col, r->cx, r->tint, P->ink, f->labours,
+  if (f->decor && (f->theme || (f->tools && r->rect))) {
+    DecorCtx dc = {p, (r->local.month - 1 + (r->south ? 6 : 0)) % 12, r->col, r->cx, r->tint, P->ink, f->theme,
                    f->tools && r->rect, r->paper || r->red, alloc, release};
     f->decor(f->decor_ctx, &dc);
   }

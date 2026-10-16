@@ -21,7 +21,7 @@
   // events (0.1.5, ANIMV 2) turned on in settings from before them
   var ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32;
   var ANIM_EVENTS = 60;
-  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, TOOLS: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
+  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, TOOLS: 0, TIDE_TIMES: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
                   WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: '', PLACE_CC: ''};
   var settings = {};
   function reset(from) {
@@ -113,7 +113,12 @@
     ]},
     {title: 'The sky', items: [
       {key: 'NAMES', type: 'switch', label: 'Names in the sky',
-       desc: 'The Moon and the planets, the brightest stars and three constellations, set where there is room.'}
+       desc: 'The Moon and the planets, the brightest stars and three constellations, set where there is room.'},
+      {key: 'TIDE_TIMES', type: 'switch', label: 'High and low water',
+       desc: 'The next high and low tides where you are, in the smallest figures low on the face, marked as tide ' +
+             'tables mark them (▲ high, ▼ low): on the Time 2 beneath the window, on the Round 2 in place of the ' +
+             'coordinates beside NOON. From NOAA’s nearest station in the United States, elsewhere Open-Meteo’s ' +
+             'marine model; nothing inland.'}
     ]},
     {title: 'The card', items: [
       {key: 'LABOURS', type: 'switch', label: 'The labours of the months',
@@ -437,6 +442,11 @@
     var w = !settings.WEATHER ? null : trySky === 'phone' ? phoneWeather && [phoneWeather.code, phoneWeather.temp10,
       phoneWeather.low, phoneWeather.mid, phoneWeather.high, phoneWeather.wind, phoneWeather.from, phoneWeather.pressure,
       phoneWeather.snow_mm, phoneWeather.vis_dam] : SAMPLES[trySky];
+    var tb = STATE.tides || [];                   // the tide's turns as the phone last sent them
+    M._pv_tide(-1, 0, 0, settings.TIDE_TIMES ? 1 : 0);
+    for (var k = 0; k * 6 + 6 <= tb.length && k < 8; k++)
+      M._pv_tide(k, ((tb[6 * k] | tb[6 * k + 1] << 8 | tb[6 * k + 2] << 16) >>> 0) + tb[6 * k + 3] * 16777216,
+                 (tb[6 * k + 4] | tb[6 * k + 5] << 8) << 16 >> 16, settings.TIDE_TIMES ? 1 : 0);
     if (w) M._pv_weather(w[0], w[1], w[2], w[3], w[4], w[5], w[6], w[7], w[8], w[9]);
     else M._pv_weather(-1, 0, 0, 0, 0, 0, 0, 0, 0, 0);
   }

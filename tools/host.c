@@ -25,7 +25,10 @@
  *     --event-frame K   and play it to frame K, as the watch plays it (the meteor or the birds over the face, plan_event;
  *                       the figures drawn in, the face drawn again so far along)
  *     --event-check     play all of it and check the face is put back exactly (the meteor, the birds)
- *     --tools           the Labours' tools in the Time 2's corners (tools.bin's record for the month)
+ *     --tools           the theme's pieces in the Time 2's corners (the labours': tools.bin's record for the month)
+ *     --theme N         the card's scene, THEME_* (1 the labours, as --labours)
+ *     --tides LIST      the tide's turns: MINUTES-SINCE-1970:H|L:CM, comma-separated
+ *     --tide-times      the next high and low waters set low on the face (as Face.tide_times)
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -100,7 +103,8 @@ int main(int argc, char **argv) {
     if (!strcmp(argv[i], "--24")) f.clock24 = true;
     else if (!strcmp(argv[i], "--no-names")) f.names = false;
     else if (!strcmp(argv[i], "--no-coords")) f.coords = false;
-    else if (!strcmp(argv[i], "--labours")) f.labours = true;
+    else if (!strcmp(argv[i], "--labours")) f.theme = THEME_LABOURS;
+    else if (!strcmp(argv[i], "--theme") && i + 1 < argc) f.theme = (uint8_t)atoi(argv[++i]);
     else if (!strcmp(argv[i], "--fahrenheit")) f.fahrenheit = true;
     else if (!strcmp(argv[i], "--city") && i + 1 < argc) f.city = argv[++i];
     else if (!strcmp(argv[i], "--country") && i + 1 < argc) f.country = argv[++i];
@@ -115,6 +119,19 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--event-frame") && i + 1 < argc) event_frame = atoi(argv[++i]);
     else if (!strcmp(argv[i], "--event-check")) event_check = true;
     else if (!strcmp(argv[i], "--tools")) tools = true;
+    else if (!strcmp(argv[i], "--tide-times")) f.tide_times = true;
+    else if (!strcmp(argv[i], "--tides") && i + 1 < argc) {       /* turns: "MINUTES:H|L:CM,..." */
+      static Tides td;
+      memset(&td, 0, sizeof td);
+      for (char *q = argv[++i]; *q && td.n < TIDE_TURNS;) {
+        unsigned long m = strtoul(q, &q, 10);
+        bool high = q[0] == ':' && q[1] == 'H';
+        q += 3;
+        td.at[td.n] = (uint32_t)m | (high ? TIDE_HIGH : 0), td.cm[td.n] = (int16_t)strtol(q, &q, 10), td.n++;
+        if (*q == ',') q++;
+      }
+      f.tides = &td;
+    }
     else if (!strcmp(argv[i], "--calendars") && i + 1 < argc) f.calendars = (uint32_t)strtoul(argv[++i], NULL, 0);
     else if (!strcmp(argv[i], "--weather") && i + 1 < argc) {
       int v[10] = {0};

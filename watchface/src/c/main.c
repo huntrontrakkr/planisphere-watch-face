@@ -19,18 +19,21 @@ enum { ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, 
 #define KEY_SETTINGS 1
 #define KEY_PLACE 2
 #define KEY_WEATHER 3
+#define KEY_TIDES 4
 #define INBOX 320                        /* bytes: the whole settings message (about 150), with room to grow */
 #define WEATHER_FRESH (3 * 3600)         /* s: the weather is shown this long after it came */
 #define ASK_EVERY (30 * 60)              /* and the phone asked for it again after this */
 #define ASK_RETRY (10 * 60)              /* asking at most this often */
 
 typedef struct {
-  uint8_t version, plate, clock, names, weather, units, place, labours;
+  uint8_t version, plate, clock, names, weather, units, place;
+  uint8_t theme;                        /* the card's scene, THEME_* (to version 7: 1 the labours, so as before) */
   int32_t lat_e4, lon_e4;               /* the place given on the settings page (PLACE 1) */
   uint32_t calendars;                   /* the calendars whose days the face keeps (bit n for CAL_* n) */
   char city[40], country[28];           /* each a ladder of shorter forms, "|" between (from version 7) */
   uint8_t animations;                   /* a bit an animation, ANIM_* (from version 3; these bits from 4 and 5) */
-  uint8_t tools;                        /* the Time 2's corners: the Labours' tools (from version 6) */
+  uint8_t tools;                        /* the Time 2's corners: the theme's pieces (from version 6: the labours' tools) */
+  uint8_t tide_times;                   /* the next high and low waters low on the face (in version 7's spare byte: 0 before) */
 } Settings;
 typedef struct {                        /* versions 2 to 6, the names' room smaller (version 2's ends at animations) */
   uint8_t version, plate, clock, names, weather, units, place, labours;
@@ -71,6 +74,7 @@ static uint8_t *s_code, *s_data, *s_geom;
 static Settings s_settings;
 static Place s_place;
 static Stored s_weather;
+static Tides s_tides;                   /* the tide here, as the phone last sent it (n 0: none) */
 static uint32_t s_asked;
 
 static void defaults(Settings *s) {
@@ -184,7 +188,7 @@ static void face_of(Face *f) {
   memset(f, 0, sizeof *f);
   f->plate = s_settings.plate < PLATE_COUNT ? s_settings.plate : 0;
   f->clock24 = s_settings.clock == 0 ? clock_is_24h_style() : s_settings.clock == 2;
-  f->names = s_settings.names, f->labours = s_settings.labours, f->calendars = s_settings.calendars;
+  f->names = s_settings.names, f->theme = s_settings.theme < THEME_COUNT ? s_settings.theme : 0, f->calendars = s_settings.calendars;
   f->scribe = animations() & ANIM_MINUTE;
   f->events = (uint8_t)((animations() & ANIM_EVENTS) >> 2);
   f->fahrenheit = s_settings.units == 2;
@@ -203,6 +207,7 @@ static void face_of(Face *f) {
   f->decor = decor_draw;
   uint32_t now = (uint32_t)time(NULL);
   if (s_settings.weather && s_weather.time && now - s_weather.time < WEATHER_FRESH) f->weather = &s_weather.w;
+  f->tides = s_tides.n ? &s_tides : NULL, f->tide_times = s_settings.tide_times;
 }
 
 static const void *load_blob(uint32_t resource, uint8_t **mem);
@@ -453,7 +458,7 @@ static const struct { const uint32_t *key; uint8_t rec, type, off, size; } KEYS[
   IN(PLATE, IN_SETTINGS, IN_U8, Settings, plate), IN(CLOCK, IN_SETTINGS, IN_U8, Settings, clock),
   IN(NAMES, IN_SETTINGS, IN_U8, Settings, names), IN(WEATHER, IN_SETTINGS, IN_U8, Settings, weather),
   IN(UNITS, IN_SETTINGS, IN_U8, Settings, units), IN(PLACE, IN_SETTINGS, IN_U8, Settings, place),
-  IN(LABOURS, IN_SETTINGS, IN_U8, Settings, labours), IN(TOOLS, IN_SETTINGS, IN_U8, Settings, tools), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
+  IN(LABOURS, IN_SETTINGS, IN_U8, Settings, theme), IN(TOOLS, IN_SETTINGS, IN_U8, Settings, tools), IN(TIDE_TIMES, IN_SETTINGS, IN_U8, Settings, tide_times), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
   IN(PLACE_LON, IN_SETTINGS, IN_I32, Settings, lon_e4), IN(PLACE_CITY, IN_SETTINGS, IN_TEXT, Settings, city),
   IN(PLACE_COUNTRY, IN_SETTINGS, IN_TEXT, Settings, country), IN(CALENDARS, IN_SETTINGS, IN_I32, Settings, calendars),
   IN(ANIMATIONS, IN_SETTINGS, IN_U8, Settings, animations),
@@ -469,7 +474,16 @@ static const struct { const uint32_t *key; uint8_t rec, type, off, size; } KEYS[
 static void inbox(DictionaryIterator *it, void *context) {
   uint8_t *rec[3] = {(uint8_t *)&s_settings, (uint8_t *)&s_place, (uint8_t *)&s_weather};
   bool got[3] = {false, false, false};
-  for (Tuple *t = dict_read_first(it); t; t = dict_read_next(it))
+  for (Tuple *t = dict_read_first(it); t; t = dict_read_next(it)) {
+    if (t->key == MESSAGE_KEY_TIDES && t->type == TUPLE_BYTE_ARRAY) {    /* the tide's turns, six bytes each */
+      const uint8_t *b = t->value->data;
+      memset(&s_tides, 0, sizeof s_tides);
+      for (int k = 0; k < TIDE_TURNS && 6 * k + 6 <= t->length; k++, b += 6)
+        s_tides.at[k] = b[0] | b[1] << 8 | b[2] << 16 | (uint32_t)b[3] << 24, s_tides.cm[k] = (int16_t)(b[4] | b[5] << 8),
+        s_tides.n = (uint8_t)(k + 1);
+      persist_write_data(KEY_TIDES, &s_tides, sizeof s_tides);
+      continue;
+    }
     for (unsigned i = 0; i < sizeof KEYS / sizeof KEYS[0]; i++) {
       if (t->key != *KEYS[i].key) continue;
       uint8_t *at = rec[KEYS[i].rec] + KEYS[i].off;
@@ -481,6 +495,7 @@ static void inbox(DictionaryIterator *it, void *context) {
       got[KEYS[i].rec] = true;
       break;
     }
+  }
   uint32_t now = (uint32_t)time(NULL);
   if (got[IN_SETTINGS]) persist_write_data(KEY_SETTINGS, &s_settings, sizeof s_settings);
   if (got[IN_PLACE]) s_place.time = now, persist_write_data(KEY_PLACE, &s_place, sizeof s_place);
@@ -586,6 +601,7 @@ static void init(void) {
     memcpy(s_place.city, o.city, sizeof o.city), memcpy(s_place.country, o.country, sizeof o.country);
   } else if (got != (int)sizeof s_place) memset(&s_place, 0, sizeof s_place);
   if (persist_read_data(KEY_WEATHER, &s_weather, sizeof s_weather) != (int)sizeof s_weather) memset(&s_weather, 0, sizeof s_weather);
+  if (persist_read_data(KEY_TIDES, &s_tides, sizeof s_tides) != (int)sizeof s_tides) memset(&s_tides, 0, sizeof s_tides);
   app_message_register_inbox_received(inbox);
   app_message_open(INBOX, 64);                   /* before the face's data takes its memory */
   load_data();
