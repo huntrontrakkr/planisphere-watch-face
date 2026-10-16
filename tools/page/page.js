@@ -21,7 +21,7 @@
   // events (0.1.5, ANIMV 2) turned on in settings from before them
   var ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32;
   var ANIM_EVENTS = 60;
-  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
+  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, TOOLS: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
                   WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: ''};
   var settings = {};
   function reset(from) {
@@ -118,7 +118,11 @@
     {title: 'The card', items: [
       {key: 'LABOURS', type: 'switch', label: 'The labours of the months',
        desc: 'The month’s work, faint in the card round the window, as the old calendars’ woodcuts show it: ' +
-             'January’s feast, the March pruning, October’s sowing. In the south, by the seasons there.'}
+             'January’s feast, the March pruning, October’s sowing. In the south, by the seasons there.'},
+      {key: 'TOOLS', type: 'switch', label: 'The labours’ tools in the corners',
+       desc: 'On the Time 2: the month’s tools in the four corners instead of the season’s sprigs, as the ' +
+             'Shepherds’ Calendar draws them: the scythe and the hay rake in June, the flail in August, the baker’s ' +
+             'peel in December.'}
     ]},
     {title: 'The calendar', items: [
       {type: 'calendars', desc: 'Keep the days of the calendars you choose: the almanac’s line names the day in red, ' +
@@ -422,7 +426,8 @@
     var p = place();
     M._pv_face(plate, settings.CLOCK === 2 || (settings.CLOCK === 0 && clock24Here()) ? 1 : 0, settings.NAMES ? 1 : 0,
                fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0, settings.LABOURS ? 1 : 0, settings.CALENDARS >>> 0,
-               main && settings.ANIMATIONS & ANIM_MINUTE ? 1 : 0, settings.ANIMATIONS & ANIM_VILLAGE ? 8 : 0);
+               main && settings.ANIMATIONS & ANIM_MINUTE ? 1 : 0, settings.ANIMATIONS & ANIM_VILLAGE ? 8 : 0,
+               settings.TOOLS ? 1 : 0);
     M.stringToUTF8(p.city || '', M._pv_city(), 32);
     M.stringToUTF8(p.country || '', M._pv_country(), 32);
     var w = !settings.WEATHER ? null : trySky === 'phone' ? phoneWeather && [phoneWeather.code, phoneWeather.temp10,

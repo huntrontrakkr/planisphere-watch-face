@@ -49,6 +49,7 @@ function settingsMessage(s) {
   m[keys.CLOCK] = s.CLOCK | 0;
   m[keys.NAMES] = s.NAMES ? 1 : 0;
   m[keys.LABOURS] = s.LABOURS ? 1 : 0;
+  m[keys.TOOLS] = s.TOOLS ? 1 : 0;
   m[keys.CALENDARS] = s.CALENDARS | 0;
   // a bit an animation: 1 the minute written, 2 fireworks, 4 .. 32 the passing events and the village's life (0.1.3's
   // ANIMATE was the minute alone; settings from before the events, without ANIMV, have them turned on)

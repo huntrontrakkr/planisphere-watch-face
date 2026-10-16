@@ -2637,6 +2637,29 @@ static void hand_index(R *r, int x, int y, void *ctx) {
   if (!on && h->n < 48) h->pts[h->n][0] = (int16_t)x, h->pts[h->n][1] = (int16_t)y, h->n++;
 }
 
+/* the Labours' tools in the Time 2's corners (Face.tools, proto/labour_tools.py): the top piece in the top corners and
+ * the bottom piece in the bottom ones, mirrored on the right, where the corner is clear of the ring; on a printed or
+ * a red plate their outlines alone, in its ink */
+static void corner_tools(R *r, const uint8_t *rec) {
+  const uint8_t *pc = rec + TOOLS_CLIP;
+  bool ink = r->paper || r->red;
+  for (int k = 0; k < 2; k++) {
+    int w = pc[0], h = pc[1], x0 = pc[2], y0 = pc[3], n = pc[4];
+    const uint8_t *cols = pc + 5, *px = cols + n;
+    for (int j = 0; j < h; j++)
+      for (int i = 0; i < w; i++) {
+        int b = j * w + i, v = (px[b >> 1] >> ((b & 1) * 4)) & 15, x = x0 + i, row = y0 + j;
+        if (!v || x >= rec[k ? TOOLS_CLIP - 1 - row : row]) continue;
+        uint8_t c = cols[v - 1];
+        if (ink && (c & 0x40)) continue;
+        c = ink ? r->P->ink : (uint8_t)(c | 0xC0);
+        int y = k ? r->H - TOOLS_CLIP + row : row;
+        put(r, x, y, c), put(r, r->W - 1 - x, y, c);
+      }
+    pc = px + (w * h + 1) / 2;
+  }
+}
+
 static void ring(R *r, int season) {
   const Plate *P = r->P;
   Plan *p = r->p;
@@ -2727,8 +2750,9 @@ static void ring(R *r, int season) {
   const int16_t *loz = sec16(p->geom, GEO_WORD_LOZENGES);
   for (int i = 0; i < 4; i++) paint(r, D_LOZENGE, loz[2 * i] / 16.0f - 0.5f, loz[2 * i + 1] / 16.0f - 0.5f, scol, false);
   inscriptions(r, style);
-  /* the Time 2's corners: a sprig in each, in the season's dress */
-  if (r->rect) {
+  /* the Time 2's corners: the month's tools (an option), else a sprig in each, in the season's dress */
+  if (r->rect && r->f->tools) corner_tools(r, r->f->tools);
+  else if (r->rect) {
     const int16_t *cs = sec16(p->geom, GEO_CORNERS);
     static const uint8_t CORNER_OF_SEASON[6] = {D_CORNER_BARE, D_CORNER_BLOSSOM, D_CORNER_LEAF, D_CORNER_LEAF,
                                                 D_CORNER_AUTUMN, D_CORNER_AUTUMN};

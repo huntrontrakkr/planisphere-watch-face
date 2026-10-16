@@ -11,7 +11,7 @@
 /* Nothing here is in a hot loop: built for size. */
 #pragma GCC optimize("Os")
 
-#define SETTINGS_VERSION 5
+#define SETTINGS_VERSION 6
 /* the animations, a bit each (Settings.animations): the passing events (from version 5) are Face.events' bits, two up */
 enum { ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32 };
 #define ANIM_ALL 63
@@ -30,6 +30,7 @@ typedef struct {
   uint32_t calendars;                   /* the calendars whose days the face keeps (bit n for CAL_* n) */
   char city[24], country[20];
   uint8_t animations;                   /* a bit an animation, ANIM_* (from version 3; these bits from 4 and 5) */
+  uint8_t tools;                        /* the Time 2's corners: the Labours' tools (from version 6) */
 } Settings;
 
 typedef struct {                        /* where the phone last was */
@@ -146,6 +147,26 @@ static int animations(void) {
   return battery.charge_percent >= 20 || battery.is_charging ? s_settings.animations : 0;
 }
 
+#if PBL_RECT
+/* the month's tools for the Time 2's corners (Face.tools): its record read from tools.bin, kept for the month */
+static uint8_t *s_tools;
+static int8_t s_tools_m = -1;
+static const uint8_t *tools_of(int m) {
+  if (s_tools_m == m) return s_tools;
+  free(s_tools), s_tools = NULL, s_tools_m = -1;          /* (let go when the option is off: m < 0) */
+  if (m < 0) return NULL;
+  ResHandle h = resource_get_handle(RESOURCE_ID_PLAN_TOOLS);
+  uint8_t o[4];
+  resource_load_byte_range(h, TOOLS_CLIP + 2 * m, o, 4);
+  int a = o[0] | o[1] << 8, n = (o[2] | o[3] << 8) - a;
+  if (n <= 0 || !(s_tools = malloc(TOOLS_CLIP + n))) return NULL;
+  resource_load_byte_range(h, 0, s_tools, TOOLS_CLIP);
+  resource_load_byte_range(h, a, s_tools + TOOLS_CLIP, n);
+  s_tools_m = (int8_t)m;
+  return s_tools;
+}
+#endif
+
 static int32_t s_where[2];              /* the face's place as face_of sets it, 1e-4 degrees (latitude, longitude) */
 static void face_of(Face *f) {
   memset(f, 0, sizeof *f);
@@ -166,6 +187,10 @@ static void face_of(Face *f) {
     s_where[0] = 400000, s_where[1] = utc_offset(time(NULL)) / 240 * 10000;
   }
   s_api->place(f, s_where[0], s_where[1]);
+#if PBL_RECT
+  time_t t = time(NULL);
+  f->tools = tools_of(s_settings.tools ? plan_tools_month(localtime(&t)->tm_mon + 1, s_where[0] < 0) : -1);
+#endif
   uint32_t now = (uint32_t)time(NULL);
   if (s_settings.weather && s_weather.time && now - s_weather.time < WEATHER_FRESH) f->weather = &s_weather.w;
 }
@@ -418,7 +443,7 @@ static const struct { const uint32_t *key; uint8_t rec, type, off, size; } KEYS[
   IN(PLATE, IN_SETTINGS, IN_U8, Settings, plate), IN(CLOCK, IN_SETTINGS, IN_U8, Settings, clock),
   IN(NAMES, IN_SETTINGS, IN_U8, Settings, names), IN(WEATHER, IN_SETTINGS, IN_U8, Settings, weather),
   IN(UNITS, IN_SETTINGS, IN_U8, Settings, units), IN(PLACE, IN_SETTINGS, IN_U8, Settings, place),
-  IN(LABOURS, IN_SETTINGS, IN_U8, Settings, labours), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
+  IN(LABOURS, IN_SETTINGS, IN_U8, Settings, labours), IN(TOOLS, IN_SETTINGS, IN_U8, Settings, tools), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
   IN(PLACE_LON, IN_SETTINGS, IN_I32, Settings, lon_e4), IN(PLACE_CITY, IN_SETTINGS, IN_TEXT, Settings, city),
   IN(PLACE_COUNTRY, IN_SETTINGS, IN_TEXT, Settings, country), IN(CALENDARS, IN_SETTINGS, IN_I32, Settings, calendars),
   IN(ANIMATIONS, IN_SETTINGS, IN_U8, Settings, animations),
@@ -533,6 +558,7 @@ static void init(void) {
     s_settings = s, s_settings.version = SETTINGS_VERSION;
     if (s.version == 3) s.animations = (s.animations ? ANIM_MINUTE : 0) | ANIM_FIREWORKS;   /* the minute alone */
     if (s.version < 5) s_settings.animations = s.animations | ANIM_EVENTS;   /* (the events new, and on) */
+    if (s.version < 6) s_settings.tools = 0;                                 /* (the corners' tools new, and off) */
   } else if (got == (int)offsetof(Settings, animations) && s.version == 2) {   /* version 2's: no animations kept */
     memcpy(&s_settings, &s, offsetof(Settings, animations));
     s_settings.version = SETTINGS_VERSION, s_settings.animations = ANIM_ALL;

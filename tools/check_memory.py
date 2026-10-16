@@ -108,6 +108,17 @@ def show_most():
     return most
 
 
+def tools_need(screen):
+    """The Labours' tools for the Time 2's corners (an option): the month's record of tools.bin, kept with the face
+    (main.c tools_of), the largest month's with the heap's header."""
+    if screen != "emery":
+        return 0
+    b = (DATA / "tools.bin").read_bytes()
+    clip = 22
+    offs = struct.unpack("<13H", b[clip: clip + 26])
+    return ((clip + max(offs[i + 1] - offs[i] for i in range(12)) + 3) & ~3) + 4
+
+
 def main():
     bad = False
     for screen in ("emery", "gabbro"):
@@ -117,9 +128,11 @@ def main():
                 n = peak([screen, "0", str(t), str(lat), "-74", "-240"], ["--labours", "--weather", SNOW, "--scribe"])
                 if n > worst:
                     worst, at = n, (lat, t)
+        worst += tools_need(screen)            # (kept from frame to frame while the option is on)
         budget = heap(screen) - HEADROOM
         need, show = lookup_need(screen), show_need()
-        print(f"{screen}: a frame needs {worst:,} bytes at most (latitude {at[0]}), the day's feast lookup {need:,}, "
+        print(f"{screen}: a frame needs {worst:,} bytes at most (latitude {at[0]}; the corners' tools "
+              f"{tools_need(screen)} of them), the day's feast lookup {need:,}, "
               f"a fireworks display {show:,}; budget {budget:,}")
         bad |= worst > budget or need > budget or show > budget
     most = show_most()

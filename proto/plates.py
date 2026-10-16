@@ -674,7 +674,8 @@ def widest_time(style, screen, clock24):
 
 
 def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=False, sky_offset=None, extras=None,
-           names=True, weather=None, fahrenheit=False, weather_clock=None, labours=False, feast=None, calendars=0):
+           names=True, weather=None, fahrenheit=False, weather_clock=None, labours=False, feast=None, calendars=0,
+           tools=False):
     """The face at `when`. Its sky may be drawn at another time (`sky_offset`, for the hourly turn) while the clock
     keeps `when`; `extras(img, ctx)` draws passing things (meteors, birds) into the sky, under the names. With
     `weather` (weather.Weather) the window shows the place's clouds, rain or snow, the village its weather, and
@@ -1535,9 +1536,13 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
                 if 0 <= y0_ + j < H and 0 <= x0_ + i < W:
                     img[y0_ + j, x0_ + i] = ring_ink
             gx += g.shape[1] + track
-    # the Time 2's corners, outside the ring: a sprig turning into each, where the corner has most room, in the
-    # season's dress (blossom, leaf, gold leaf, bare twig)
-    if rect:
+    # the Time 2's corners, outside the ring: the month's tools (an option, proto/labour_tools.py), else a sprig turning
+    # into each, where the corner has most room, in the season's dress (blossom, leaf, gold leaf, bare twig)
+    if rect and tools:
+        import labour_tools
+        labour_tools.paint(img, dial, (local.month - 1 + (6 if dial.lat < 0 else 0)) % 12 + 1,
+                           P["ink"] if P["window"] in ("paper", "red") else None)
+    elif rect:
         spandrel = dial.outline.grid(W, H) < 0.5
         edge = np.zeros((H, W), bool)
         edge[0], edge[-1], edge[:, 0], edge[:, -1] = True, True, True, True

@@ -25,6 +25,7 @@
  *     --event-frame K   and play it to frame K, as the watch plays it (the meteor or the birds over the face, plan_event;
  *                       the figures drawn in, the face drawn again so far along)
  *     --event-check     play all of it and check the face is put back exactly (the meteor, the birds)
+ *     --tools           the Labours' tools in the Time 2's corners (tools.bin's record for the month)
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,7 +80,7 @@ int main(int argc, char **argv) {
   int repeat = 1;
   bool mem = false, show_check = false, scribe_check = false;
   int show = -1, scribe_frame = -1, event_frame = -1;
-  bool event_check = false;
+  bool event_check = false, tools = false;
   for (int i = 8; i < argc; i++) {
     if (!strcmp(argv[i], "--24")) f.clock24 = true;
     else if (!strcmp(argv[i], "--no-names")) f.names = false;
@@ -98,6 +99,7 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--events") && i + 1 < argc) f.events = (uint8_t)strtoul(argv[++i], NULL, 0);
     else if (!strcmp(argv[i], "--event-frame") && i + 1 < argc) event_frame = atoi(argv[++i]);
     else if (!strcmp(argv[i], "--event-check")) event_check = true;
+    else if (!strcmp(argv[i], "--tools")) tools = true;
     else if (!strcmp(argv[i], "--calendars") && i + 1 < argc) f.calendars = (uint32_t)strtoul(argv[++i], NULL, 0);
     else if (!strcmp(argv[i], "--weather") && i + 1 < argc) {
       int v[10] = {0};
@@ -113,6 +115,13 @@ int main(int argc, char **argv) {
     /* the round screen: the pixels its display lights (proto/screen.py) */
     int a = ROUND2_TOPLEFT[y < 130 ? y : 259 - y];
     rx0[y] = (int16_t)a, rx1[y] = (int16_t)(259 - a);
+  }
+  static uint8_t record[1024];
+  if (tools) {
+    Civil c;
+    plan_civil(utc + offset, &c);
+    plan_tools_record(BLOB_TOOLS, plan_tools_month(c.month, f.lat < 0), record);
+    f.tools = record;
   }
   static Plan p;
   plan_init(&p, W, H, BLOB_PLAN, round ? BLOB_GABBRO : BLOB_EMERY);

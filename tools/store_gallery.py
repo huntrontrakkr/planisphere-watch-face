@@ -14,6 +14,7 @@ as the store expects (docs/screenshots/store), and the same reels for the README
   9  the sky's news: a total eclipse of the Sun, the Moon eclipsed, Venus meeting Jupiter, a meteor shower's peak
  10  the passing events, as the watch plays them: the figures drawn in at dusk, a skein of birds at twilight, meteors
      out of the Orionids' radiant on the night of their peak
+and for the README alone, the Time 2's: the Labours' tools in its corners, month by month (docs/gallery-tools.gif).
 
     tools/build-host.sh && cd proto && uv run python ../tools/store_gallery.py
 """
@@ -38,7 +39,7 @@ DALLAS = (32.7767, -96.797)
 
 
 def frame(platform, plate, when, place, offset, labours=False, weather=None, calendars=0, show=None, clock24=False,
-          names=True, fahrenheit=False, city=None, scribe=None, events=0, event=None):
+          names=True, fahrenheit=False, city=None, scribe=None, events=0, event=None, tools=False):
     """One face, as the watch draws it: when (aware datetime), place (lat, lon), offset (minutes ahead of UTC); the
     calendars kept (bit n for feasts.CALENDARS[n]), the frame of the fireworks display due then, if any; the clock,
     the names in the sky, the temperature's scale, and the place's name on the ring ((city, country); else the
@@ -64,6 +65,8 @@ def frame(platform, plate, when, place, offset, labours=False, weather=None, cal
         args += ["--show", str(show)]
     if scribe is not None:                          # the minute written (the minute before drawn first), to a frame
         args += ["--scribe-frame", str(scribe)]
+    if tools:
+        args.append("--tools")
     if events:                                      # the passing events allowed (EV_*), and the one chosen to a frame
         args += ["--events", str(events)] + (["--event-frame", str(event)] if event is not None else [])
     if weather:
@@ -213,6 +216,8 @@ def main():
         if name in ("minute", "variations", "anywhere", "weather", "fireworks", "almanac"):
             (a, ms), (b, _) = reels[name, "emery"], reels[name, "gabbro"]
             save_gif([side_by_side(x, y) for x, y in zip(a, b)], ROOT / "docs" / f"gallery-{name}.gif", ms)
+    save_gif([frame("emery", "planisphere", local(2026, m, 15, 21, 30, -240 if 3 < m < 11 else -300), NY,
+                    -240 if 3 < m < 11 else -300, tools=True) for m in range(1, 13)], ROOT / "docs" / "gallery-tools.gif", 1200)
     for f in sorted(OUT.iterdir()):
         print(f"{f.stat().st_size:>9,}  {f.relative_to(ROOT)}")
     for f in sorted((ROOT / "docs").glob("gallery-*.gif")):

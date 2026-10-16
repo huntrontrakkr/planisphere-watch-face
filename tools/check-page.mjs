@@ -164,6 +164,23 @@ const wrote = scribed.map((f) => differ(f, written));
 const settled = differ(written, await grab());
 check(wrote[0] > 0 && settled === 0,               // (the new figures not there at once; then written and still)
       `the minute written in the preview (pixels still to write: ${wrote.join(', ')}; after: ${settled})`);
+// the Labours' tools in the corners: the Time 2's corners change, and only its corners; the Round 2 has none
+const plain = await grab();
+await page.locator('label.switch', { hasText: 'tools in the corners' }).first().click();
+await page.waitForTimeout(400);
+const tooled = await grab();
+const cw = await page.evaluate(() => document.getElementById('screen').width);
+let corner = 0, elsewhere = 0;
+for (let i = 0; i < plain.length; i += 4) {
+  const x = (i / 4) % cw, y = Math.floor(i / 4 / cw), ch = cw / 200, cH = plain.length / 4 / cw;
+  const near = (x < 26 * ch || x >= cw - 26 * ch) && (y < 24 * ch || y >= cH - 24 * ch);
+  const d = plain[i] !== tooled[i] || plain[i + 1] !== tooled[i + 1] || plain[i + 2] !== tooled[i + 2];
+  if (d && near) corner++; else if (d) elsewhere++;
+}
+check(platform === 'gabbro' ? corner + elsewhere === 0 : corner > 0 && elsewhere === 0,
+      `the tools in the corners (pixels changed in the corners: ${corner}; elsewhere: ${elsewhere})`);
+await page.locator('label.switch', { hasText: 'tools in the corners' }).first().click();
+await page.waitForTimeout(300);
 await tap('.calendar label.switch', 'The Hebrew calendar');
 await tap('.seg button', 'Snow');
 await tap('.seg button', '°C');

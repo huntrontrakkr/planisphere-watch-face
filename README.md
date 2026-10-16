@@ -196,6 +196,25 @@ The village keeps the year, as an almanac's cuts of the months do. The season co
 
 ![The labours of the months, January to December, faint in the card either side of the window's top](docs/labours.png)
 
+- Another option, on the Time 2 alone (also off by default): the month's tools in its four corners instead of the season's sprigs. A tool hangs in each top corner, its head up as on a peg, and one is propped in each bottom corner, its head on the floor; the right corners mirror the left. They are drawn after the woodcuts of the Shepherds' Calendar (Troyes, 1529, from Marchant's Paris blocks of the 1490s) and of the Book of Hours Pigouchet printed for Simon Vostre (Paris, 1496), which `research/labours/` collects, and in pixels as tools are drawn in pixel art: a one-pixel haft outlined on both sides, iron with a dark back and a bright edge, everything lit from the top left. On a printed plate (or the red one) only their outlines are drawn, in its ink. South of the equator they turn half a year with the labours.
+
+| Month | Top corners | Bottom corners |
+| --- | --- | --- |
+| January | the pewter flagon | a loaf with the knife in it |
+| February | the cauldron on its pothook over the fire | a faggot of firewood |
+| March | the billhook | the spade |
+| April | a garland on its peg | a posy |
+| May | the hooded falcon on its perch | the May bough |
+| June | the scythe | the hay rake |
+| July | the sickle | a sheaf |
+| August | the flail, its swingle hanging | the grain sack |
+| September | a basket of grapes | the hooped vat |
+| October | the seed bag | the harrow |
+| November | the pole that beats down the acorns | the axe |
+| December | the baker's peel | the cleaver in its block |
+
+![The Labours' tools in the Time 2's corners, January to December](docs/gallery-tools.gif)
+
 ![The year at eleven in the morning: blossom in April, leaf in July, gold in October, snow in January; below, the village up close: blossom, high summer, autumn leaves, frost and snow; a frosty evening with chimney smoke and lit windows, fog, a summer gale, a snowy night](docs/seasons.png)
 
 And the filigree, all drawn by hand:

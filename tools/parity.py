@@ -73,6 +73,11 @@ CASES = {
     "labours-nov-r2": ("gabbro", "apian", datetime(2026, 11, 16, 2, 30, tzinfo=timezone.utc), NY, {"labours": True}),
     "labours-sydney-t2": ("emery", "flamsteed", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc), (-33.87, 151.21, 660),
                           {"labours": True}),
+    # the Labours' tools in the Time 2's corners: in colour, on a printed plate (their outlines in its ink), the south
+    "tools-jun-t2": ("emery", "planisphere", datetime(2026, 6, 16, 3, 30, tzinfo=timezone.utc), NY, {"tools": True}),
+    "tools-feb-paper-t2": ("emery", "burritt", datetime(2026, 2, 16, 2, 30, tzinfo=timezone.utc), NY, {"tools": True}),
+    "tools-sydney-t2": ("emery", "hours", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc), (-33.87, 151.21, 660),
+                        {"tools": True}),
     # the calendars' days (all kept): the name on the almanac's line, the emblem, the lights and the fires
     "feast-july4-t2": ("emery", "planisphere", datetime(2026, 7, 5, 1, 40, tzinfo=timezone.utc), NY, {"calendars": 4095}),
     "feast-christmas-eve-r2": ("gabbro", "planisphere", datetime(2026, 12, 25, 2, 0, tzinfo=timezone.utc), (40.71, -74.01, -300),
@@ -125,6 +130,8 @@ def c_render(screen, plate, when, place, opts, path):
         args.append("--24")
     if opts.get("labours"):
         args.append("--labours")
+    if opts.get("tools"):
+        args.append("--tools")
     if opts.get("calendars"):
         args += ["--calendars", str(opts["calendars"])]
     if opts.get("show") is not None:
@@ -151,7 +158,8 @@ def py_render(screen, plate, when, place, opts, sky):
     def face(extras=None):
         return plates.render(when, dial, sky, tz, plate, round_screen=screen == "gabbro",
                              clock24=opts.get("clock24", False), weather=w, labours=opts.get("labours", False),
-                             calendars=opts.get("calendars", 0), extras=extras).astype(np.uint8)
+                             calendars=opts.get("calendars", 0), tools=opts.get("tools", False),
+                             extras=extras).astype(np.uint8)
     if opts.get("show") is None:
         return face()
     # a frame of the fireworks display due at the top of the hour, over the face as drawn then

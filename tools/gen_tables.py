@@ -27,6 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "proto"))
 
 import figures                     # noqa: E402
+import labour_tools                # noqa: E402
 import pixeltext                   # noqa: E402
 import plates                      # noqa: E402
 import sprites                     # noqa: E402
@@ -714,7 +715,8 @@ def main():
     ge, gg = geometry(t2, True), geometry(r2, False)
     assert ge.names == gg.names
     RES.mkdir(parents=True, exist_ok=True)
-    blobs = {"plan.bin": sh.bytes(), "geom~emery.bin": ge.bytes(), "geom~gabbro.bin": gg.bytes(), "feasts.bin": feast_bin}
+    blobs = {"plan.bin": sh.bytes(), "geom~emery.bin": ge.bytes(), "geom~gabbro.bin": gg.bytes(), "feasts.bin": feast_bin,
+             "tools.bin": labour_tools.blob(t2)}
     for name, data in blobs.items():
         (RES / name).write_bytes(data)
     for old in ("geom_emery.bin", "geom_gabbro.bin"):
