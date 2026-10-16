@@ -52,7 +52,7 @@ static bool pv_decor(void *ctx, const DecorCtx *dc) {
   (void)ctx;
   static Mem tools_mem = {BLOB_TOOLS, sizeof BLOB_TOOLS}, scenes_mem = {BLOB_SCENES, sizeof BLOB_SCENES};
   FeastReader rd = {mem_read, &tools_mem}, scenes = {mem_read, &scenes_mem};
-  return plan_decor(dc, &rd, &scenes);
+  return (decor_labours(dc->theme) ? plan_labours : plan_decor)(dc, &rd, &scenes);
 }
 /* What the face shows: the plate, the clock, names in the sky, the temperature's scale, the place, the labours, the
  * minute written, the village's life (of the events, EV_VILLAGE alone: the passing ones are left to the watch) and

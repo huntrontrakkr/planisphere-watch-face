@@ -90,6 +90,16 @@ CASES = {
                               {"theme": 3, "tools": True}),
     "astronomer-dawn-t2": ("emery", "planisphere", datetime(2026, 3, 20, 9, 0, tzinfo=timezone.utc), NY,
                            {"theme": 3, "tools": True}),
+    # the sea: the month's ships riding the tide (rising here, falling there; none known: at mean water, the hourglass),
+    # the Moon's phase (mirrored in the south) and the tide in the Time 2's corners
+    "sea-rising-t2": ("emery", "planisphere", datetime(2026, 1, 16, 2, 30, tzinfo=timezone.utc), NY,
+                      {"theme": 4, "tools": True, "tides": [(-150, False, 20), (222, True, 180), (595, False, 25)]}),
+    "sea-falling-r2": ("gabbro", "hours", datetime(2026, 4, 16, 1, 30, tzinfo=timezone.utc), NY,
+                       {"theme": 4, "tides": [(-60, True, 160), (312, False, 30), (684, True, 170)]}),
+    "sea-none-paper-t2": ("emery", "flamsteed", datetime(2026, 6, 12, 23, 20, tzinfo=timezone.utc), NY,
+                          {"theme": 4, "tools": True}),
+    "sea-sydney-t2": ("emery", "hours", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc), (-33.87, 151.21, 660),
+                      {"theme": 4, "tools": True, "tides": [(-300, True, 150), (70, False, 40), (440, True, 155)]}),
     # near the equator: the Time 2's window cut by its ring, the place's names beside the fleur-de-lis
     "quito-t2": ("emery", "planisphere", datetime(2026, 10, 15, 3, 0, tzinfo=timezone.utc), (-0.1807, -78.4678, -300), {}),
     "quito-hours-t2": ("emery", "hours", datetime(2026, 10, 14, 22, 0, tzinfo=timezone.utc), (-0.1807, -78.4678, -300),
@@ -155,6 +165,9 @@ def c_render(screen, plate, when, place, opts, path):
         args.append("--tools")
     if opts.get("theme"):
         args += ["--theme", str(opts["theme"])]
+    if opts.get("tides"):                        # (the turns' minutes from the case's moment)
+        now = int(when.timestamp()) // 60
+        args += ["--tides", ",".join(f"{now + m}:{'H' if hi else 'L'}:{cm}" for m, hi, cm in opts["tides"])]
     if opts.get("calendars"):
         args += ["--calendars", str(opts["calendars"])]
     if opts.get("show") is not None:
@@ -183,6 +196,7 @@ def py_render(screen, plate, when, place, opts, sky):
                              clock24=opts.get("clock24", False), weather=w, labours=opts.get("labours", False),
                              calendars=opts.get("calendars", 0), tools=opts.get("tools", False),
                              theme=opts.get("theme"),
+                             tides=[(int(when.timestamp()) // 60 + m, hi, cm) for m, hi, cm in opts.get("tides", [])],
                              extras=extras).astype(np.uint8)
     if opts.get("show") is None:
         return face()

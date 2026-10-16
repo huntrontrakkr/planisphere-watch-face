@@ -42,9 +42,10 @@ def main():
     # the scene blob runs inside the renderer's frame: called through Face.decor from plan_render itself, by main.c's
     # decor_draw (APP_FRAME for it and its loader)
     at = max((d for d, path in depths["plan_code"][1] if path == "plan_render"), default=0)
-    nested = at + APP_FRAME + depths["decor_code"][0]
-    print(f"the scene blob within the renderer: {at} + {APP_FRAME} (main.c) + {depths['decor_code'][0]} = {nested} bytes")
-    worst_all = max(worst_all, nested)
+    for blob in ("decor_code", "labours_code"):
+        nested = at + APP_FRAME + depths[blob][0]
+        print(f"{blob} within the renderer: {at} + {APP_FRAME} (main.c) + {depths[blob][0]} = {nested} bytes")
+        worst_all = max(worst_all, nested)
     if dynamic_all or (a.budget and worst_all > a.budget):
         sys.exit(f"A blob goes {worst_all} bytes deep (budget {a.budget}), or has frames sized at run time.")
 

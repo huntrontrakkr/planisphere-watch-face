@@ -293,11 +293,18 @@ typedef struct DecorCtx {
   void (*release)(void *);
   const FeastReader *scenes;   /* (set by plan_decor: the woodcuts' table) */
   uint8_t planets[4];          /* the brightest planets above the horizon, brightest first (VENUS ..; 255 none) */
+  const Tides *tides;          /* the tide here (NULL: none), and the minute (since 1970), for the sea's water */
+  uint32_t minute;
+  uint8_t moon_phase;          /* the Moon's phase as the sea's corner draws it, 0 new .. 4 full .. 7 (mirrored south) */
 } DecorCtx;
 #define DECOR_API_MAGIC 0x524F4344u          /* "DCOR" */
 typedef struct {
   uint32_t magic, layout;
   bool (*draw)(const DecorCtx *d, const FeastReader *tools, const FeastReader *scenes);
 } DecorApi;
-/* tools: tools.bin, scenes: scenes.bin (proto/woodcuts.py), each read as it goes (NULL: none) */
+/* tools: tools.bin, scenes: scenes.bin (proto/woodcuts.py), each read as it goes (NULL: none). Two blobs: the labours
+ * and the corner tools (plan_labours.c) for the plain card and the labours, the woodcuts and their roundels
+ * (plan_decor.c) for the rest; decor_labours says which a theme's is. */
 bool plan_decor(const DecorCtx *d, const FeastReader *tools, const FeastReader *scenes);
+bool plan_labours(const DecorCtx *d, const FeastReader *tools, const FeastReader *scenes);
+static inline bool decor_labours(int theme) { return theme <= THEME_LABOURS; }

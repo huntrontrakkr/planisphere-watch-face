@@ -99,6 +99,11 @@
         },
         {
           "type": "raw",
+          "name": "PLAN_LABOURS_CODE",
+          "file": "data/labours_code.bin"
+        },
+        {
+          "type": "raw",
           "name": "PLAN_SHOW_CODE",
           "file": "data/show_code.bin"
         }

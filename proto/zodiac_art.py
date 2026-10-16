@@ -50,10 +50,46 @@ GLYPHS = {
                 "....#...."],
     "nova": ["....#....", ".#..#..#.", "..#.#.#..", "...###...", "#########", "...###...", "..#.#.#..", ".#..#..#.",
              "....#...."],
+    # the sea's corners: the tide rising and falling (over the waves), an hourglass where the tide is not known, the
+    # compass rose and the anchor
+    "tide_rising": ["....#....", "...###...", "..#.#.#..", "....#....", "....#....", ".........", "##..#..##",
+                    "..##.##..", "........."],
+    "tide_falling": [".........", "....#....", "....#....", "..#.#.#..", "...###...", "....#....", "##.....##",
+                     "..##.##..", "........."],
+    "hourglass": ["#########", ".#.....#.", "..#...#..", "...#.#...", "....#....", "...#.#...", "..#.#.#..",
+                  ".#.###.#.", "#########"],
+    "compass": ["....#....", "...###...", "...###...", "..#.#.#..", "#########", "..#.#.#..", "...###...",
+                "...###...", "....#...."],
+    "anchor": ["...###...", "...#.#...", "...###...", "....#....", ".#######.", "....#....", "#...#...#",
+               ".#..#..#.", "..#####.."],
 }
+# the Moon's eight phases as the sea's corner draws them, new first, lit on the right as it waxes (in the south the
+# watch shows them mirrored): the disc's edge always, the lit columns filled
+_DISC = ["...###...", ".#######.", ".#######.", "#########", "#########", "#########", ".#######.", ".#######.",
+         "...###..."]
+
+
+def _moon(lit):
+    rows = []
+    for j, r in enumerate(_DISC):
+        row = ""
+        for i, c in enumerate(r):
+            edge = c == "#" and (j in (0, 8) or i in (0, 8) or r[i - 1] == "." or r[i + 1 - (i == 8)] == "." or
+                                 _DISC[j - 1][i] == "." or _DISC[min(j + 1, 8)][i] == ".")
+            row += "#" if c == "#" and (edge or lit(i)) else "."
+        rows.append(row)
+    return rows
+
+
+for _k, _lit in enumerate([lambda i: False, lambda i: i >= 6, lambda i: i >= 4, lambda i: i >= 3, lambda i: True,
+                           lambda i: i <= 5, lambda i: i <= 4, lambda i: i <= 2]):
+    GLYPHS[f"moon{_k}"] = _moon(_lit)
 PLANETS = ["venus", "jupiter", "mars", "saturn", "mercury"]
-# the glyph table's order (decor_data.h ZODIAC_GLYPHS): the signs, the Sun, the Moon, the planets, the new star
-TABLE = ORDER + ["sun", "moon"] + PLANETS + ["nova"]
+# the glyph table's order (decor_data.h ZODIAC_GLYPHS): the signs, the Sun, the Moon, the planets, the new star, the
+# Moon's phases, the tide's, the instruments
+TABLE = ORDER + ["sun", "moon"] + PLANETS + ["nova"] + [f"moon{k}" for k in range(8)] + ["tide_rising",
+                                                                                           "tide_falling", "hourglass",
+                                                                                           "compass", "anchor"]
 # the roundel round each glyph in the corners, as the Shepherds' Calendar frames its signs
 ROUNDEL = [".....#####.....", "...##.....##...", "..#.........#..", ".#...........#.", ".#...........#.",
            "#.............#", "#.............#", "#.............#", "#.............#", "#.............#",

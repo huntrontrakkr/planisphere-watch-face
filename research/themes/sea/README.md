@@ -265,8 +265,54 @@ Further period tide sources, not downloaded:
 
 ## Notes
 
-- 58 images in `images/`: 32 from the first session, 26 added here (12
-  Hollar, 8 more Olaus Magnus, 3 Schedel, 3 Seller).
+- 67 images in `images/`: 32 from the first session, 26 added here (12
+  Hollar, 8 more Olaus Magnus, 3 Schedel, 3 Seller), 9 afloat ships (2
+  Hollar, 7 Nooms; see "Afloat ships, more" at the end).
 - The first session's interrupted brief (a 60 x 25 px coast scene and 20-24
   px instruments) is superseded: the scene is now a full-card plate per month.
 - Nothing here is committed.
+
+## Afloat ships, more (for the twelve months)
+
+Added 2026-10-16 to replace the plates where the ship is not afloat (slipway,
+careened, aground, on the flats). All are etchings of ships on the water, side
+on, with a level waterline and open sky, from the Rijksmuseum (CC0), fetched
+through its linked-data API (`https://data.rijksmuseum.nl/search/collection`,
+`https://id.rijksmuseum.nl/...`) and IIIF (`iiif.micr.io`), saved greyscale at
+1920 px wide (or the original width if smaller). Reinier Nooms ("Zeeman",
+c. 1623-1664) worked in Amsterdam in the 1650s in a line very close to
+Hollar's. Where the Rijksmuseum has several states, the first state (without
+the later publisher's address lettering) was chosen.
+
+| File | Artist, title | Institution | Object number | Date | Source URL | Licence | Size (px) |
+|---|---|---|---|---|---|---|---|
+| `hollar1636-ships-at-anchor-calm-sea.jpg` | Wenceslaus Hollar, *Schepen op kalme zee* (series *Kleine zeegezichten*) | Rijksmuseum, Amsterdam | RP-P-1908-2001 | 1627-1636 | https://www.rijksmuseum.nl/en/collection/RP-P-1908-2001 ; IIIF https://iiif.micr.io/mpcRv/full/max/0/default.jpg ; http://hdl.handle.net/10934/RM0001.COLLECT.32402 | CC0 1.0 (Rijksmuseum) | 1920 x 789 (original 7862 x 3232) |
+| `nooms1650-ship-at-anchor-rowing-boat.jpg` | Reinier Nooms (Zeeman), *Groot zeilschip en een roeiboot* (series *Dertien scènes met schepen*), first state, no lettering | Rijksmuseum, Amsterdam | RP-P-1881-A-4739 | 1650-1664 | https://www.rijksmuseum.nl/en/collection/RP-P-1881-A-4739 ; IIIF https://iiif.micr.io/FheSL/full/max/0/default.jpg ; http://hdl.handle.net/10934/RM0001.COLLECT.39900 | CC0 1.0 (Rijksmuseum) | 1920 x 1310 (original 6122 x 4176) |
+| `nooms1650-two-warships-under-sail.jpg` | Reinier Nooms (Zeeman), *Twee grote oorlogsschepen* (*Dertien scènes met schepen*), first state | Rijksmuseum, Amsterdam | RP-P-1881-A-4740 | 1650-1664 | https://www.rijksmuseum.nl/en/collection/RP-P-1881-A-4740 ; IIIF https://iiif.micr.io/zjEXh/full/max/0/default.jpg ; http://hdl.handle.net/10934/RM0001.COLLECT.39916 | CC0 1.0 (Rijksmuseum) | 1920 x 1353 (original 6436 x 4536) |
+| `nooms1650-warships-and-yacht.jpg` | Reinier Nooms (Zeeman), *Twee oorlogsschepen en een jacht* (*Dertien scènes met schepen*), first state | Rijksmuseum, Amsterdam | RP-P-1881-A-4743 | 1650-1664 | https://www.rijksmuseum.nl/en/collection/RP-P-1881-A-4743 ; IIIF https://iiif.micr.io/QaatZ/full/max/0/default.jpg ; http://hdl.handle.net/10934/RM0001.COLLECT.39929 | CC0 1.0 (Rijksmuseum) | 1920 x 1340 (original 6570 x 4586) |
+| `nooms1650-fluyt-calm-water.jpg` | Reinier Nooms (Zeeman), *Binnenwater met een fluitschip* (*Dertien scènes met schepen*), first state | Rijksmuseum, Amsterdam | RP-P-1881-A-4744 | 1650-1664 | https://www.rijksmuseum.nl/en/collection/RP-P-1881-A-4744 ; IIIF https://iiif.micr.io/Vfahb/full/max/0/default.jpg ; http://hdl.handle.net/10934/RM0001.COLLECT.39934 | CC0 1.0 (Rijksmuseum) | 1920 x 1321 (original 6586 x 4530) |
+| `nooms1652-salamander-eastindiaman.jpg` | Reinier Nooms (Zeeman), *Het schip De Salamander* ("De Salemander een Oostindis Vaerder"), *Verscheyde Schepen en Gesichten van Amstelredam*, part 1 | Rijksmuseum, Amsterdam | RP-P-OB-20.528 | 1652-1654 | https://www.rijksmuseum.nl/en/collection/RP-P-OB-20.528 ; IIIF https://iiif.micr.io/PQIhd/full/max/0/default.jpg ; http://hdl.handle.net/10934/RM0001.COLLECT.39812 | CC0 1.0 (Rijksmuseum) | 1920 x 1095 (original 6142 x 3504) |
+| `nooms1654-three-sailing-ships-calm.jpg` | Reinier Nooms (Zeeman), *Drie zeilschepen in kalm water* (series *Verscheyde Binne-Waters*) | Rijksmuseum, Amsterdam | RP-P-OB-12.974 | 1654-1658 | https://www.rijksmuseum.nl/en/collection/RP-P-OB-12.974 ; IIIF https://iiif.micr.io/oBUHj/full/max/0/default.jpg ; http://hdl.handle.net/10934/RM0001.COLLECT.39728 | CC0 1.0 (Rijksmuseum) | 1920 x 1290 (original 5390 x 3622) |
+| `nooms1654-two-sailing-ships-rowing-boat.jpg` | Reinier Nooms (Zeeman), *Twee zeilschepen en een roeiboot* (*Verscheyde Binne-Waters*) | Rijksmuseum, Amsterdam | RP-P-OB-12.980 | 1654-1658 | https://www.rijksmuseum.nl/en/collection/RP-P-OB-12.980 ; IIIF https://iiif.micr.io/wXKAm/full/max/0/default.jpg ; http://hdl.handle.net/10934/RM0001.COLLECT.39735 | CC0 1.0 (Rijksmuseum) | 1920 x 1290 (original 5258 x 3534) |
+| `hollar1636-kaag-and-ships-choppy-sea.jpg` | Wenceslaus Hollar, *Zeegezicht met zeilschepen* (series *Zeegezichten*), signed "WHollar fecit" | Rijksmuseum, Amsterdam | RP-P-1907-3786 | 1627-1636 | https://www.rijksmuseum.nl/en/collection/RP-P-1907-3786 ; IIIF https://iiif.micr.io/yrSpe/full/max/0/default.jpg ; http://hdl.handle.net/10934/RM0001.COLLECT.32404 | CC0 1.0 (Rijksmuseum) | 1920 x 1074 (original 7316 x 4094) |
+
+What each shows, and whether the ship is clearly afloat on a level waterline:
+
+| File | What it is | Afloat / waterline |
+|---|---|---|
+| `hollar1636-ships-at-anchor-calm-sea` | A three-master with sails furled at anchor, broadside, a second ship behind it, a fleet strung along a dead-flat horizon, a buoy; very long narrow plate (about 2.4 : 1) in a wide paper margin (crop to the plate line) | **yes**, flat calm, waterline at about 80% of the plate |
+| `nooms1650-ship-at-anchor-rowing-boat` | A big three-master at anchor seen broadside (sails furled, large stern flag), a rowing boat in front, a ship under sail at right | **yes**, calm, waterline about 80%; the closest in feel to Hollar 348/354 |
+| `nooms1650-two-warships-under-sail` | Two warships under full sail, the large one broadside heading right, choppy water in short strokes | **yes**, horizon level at about 75%, small waves in front |
+| `nooms1650-warships-and-yacht` | A state yacht under sail (right), two warships at left, a rowing boat, low distant shore; much open sky | **yes**, calm, level |
+| `nooms1650-fluyt-calm-water` | A fluyt with sails set in a calm, reflections, small craft and a ship beyond, a rowing boat | **yes**, mirror-calm, waterline about 70% |
+| `nooms1652-salamander-eastindiaman` | The East Indiaman *De Salamander* at anchor broadside, rigging in single lines, a boat at left; the most Hollar-like single ship | **yes**, calm, level; the title "De Salemander een Oostindis Vaerder" and plate number are in the bottom margin and crop off cleanly |
+| `nooms1654-three-sailing-ships-calm` | Three small sailing craft (kaag/smalschip type) under sail in a flat calm, a small boat at left, clouds; very open | **yes**, calm, waterline about 75%; tiny "R Zeeman" signature bottom right |
+| `nooms1654-two-sailing-ships-rowing-boat` | Two small sailing vessels under sail, a man rowing in front beside posts with a beacon, a town on the horizon | **yes**, calm, level; "S R Zeeman" bottom left; the posts touch the lower edge |
+| `hollar1636-kaag-and-ships-choppy-sea` | A small spritsail vessel heeling in big waves, ships under sail beyond; signed "WHollar fecit" | afloat, but the foreground waves are high and curled, so the waterline is not level: a "storm month" spare, not a tide plate |
+
+Suggested swaps in the twelve-month shortlist (replacing plates where the hull
+is on the slip, careened or aground): `nooms1652-salamander-eastindiaman` for
+Feb (347), `nooms1650-ship-at-anchor-rowing-boat` for Sep (352),
+`nooms1650-fluyt-calm-water` and `nooms1654-three-sailing-ships-calm` as calm
+summer alternates, `nooms1650-two-warships-under-sail` for Nov,
+`hollar1636-ships-at-anchor-calm-sea` for Dec.

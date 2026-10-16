@@ -160,14 +160,16 @@ static int animations(void) {
   return battery.charge_percent >= 20 || battery.is_charging ? s_settings.animations : 0;
 }
 
-/* the scene blob (plan_decor.c): loaded when the renderer asks for the card's scene or the corner tools (Face.decor),
- * for the moment it draws, and let go; on the Time 2 it reads the month's tools from their table as it goes */
+/* the scene blob (plan_decor.c, the woodcuts' themes) or the labours' (plan_labours.c, the labours and the corner tools):
+ * loaded when the renderer asks for the card's scene or the corners (Face.decor), for the moment it draws, and let go;
+ * on the Time 2 the labours' reads the month's tools from their table as it goes */
 static const void *load_blob(uint32_t resource, uint8_t **mem);
 static void resource_read(void *ctx, uint32_t at, void *buf, uint32_t n);
 volatile uint32_t g_decor_heap = 0;      /* the heap free while the scene blob is loaded */
 static bool decor_draw(void *ctx, const DecorCtx *dc) {
   uint8_t *mem;
-  const DecorApi *api = load_blob(RESOURCE_ID_PLAN_DECOR_CODE, &mem);
+  const DecorApi *api = load_blob(decor_labours(dc->theme) ? RESOURCE_ID_PLAN_LABOURS_CODE : RESOURCE_ID_PLAN_DECOR_CODE,
+                                  &mem);
   bool ok = false;
   if (api && api->magic == DECOR_API_MAGIC && api->layout == PLAN_LAYOUT) {
     g_decor_heap = heap_bytes_free();

@@ -643,22 +643,31 @@ def faint_tone(P, how=None):
 THEME_NONE, THEME_LABOURS, THEME_ZODIAC, THEME_ASTRONOMER, THEME_SEA, THEME_HERBAL = range(6)   # (plan.h THEME_*)
 
 
-def woodcut_scene(img, inside, inner, P, k):
+def woodcut_scene(img, inside, inner, P, k, tides=(), minute=0):
     """The card's woodcut `k` (proto/woodcuts.py) behind the face, as plan_decor.c scene draws it: faint, its middle
     where it was placed from the window's middle, only on the card (inside the ring's inner edge by 3, not within 3 of the
     window), so the window and all drawn after it cover the rest."""
     import woodcuts
-    key, ink, dx, dy = woodcuts.scenes()[k]
+    key, ink, dx, dy, water = woodcuts.scenes()[k]
     H, W = inside.shape
     card = inner & ~grow(inside, 3) & ~grow(~inner, 3)
     rows = np.nonzero(inside.any(axis=1))[0]
     h, w = ink.shape
     ox, oy = (W - w) // 2 + dx, (int(rows[0]) + int(rows[-1])) // 2 - h // 2 + dy
+    if water >= 0:                                       # (the sea's: hung by its waterline, riding the tide)
+        oy = int(rows[0]) - woodcuts.SEA_ABOVE - water - woodcuts.tide_shift(tides, minute)
     tone = faint_tone(P)
     ys, xs = np.nonzero(ink)
     for y, x in zip(ys + oy, xs + ox):
         if 0 <= y < H and 0 <= x < W and card[y, x]:
             img[y, x] = tone
+    if water >= 0:                                       # the sea below the waterline, across the card
+        for n, (down, _, _) in enumerate(woodcuts.SEA_STROKES):
+            for x in range(W):
+                dip = woodcuts.sea_stroke(x, n)
+                y = oy + water + down + (dip or 0)
+                if dip is not None and 0 <= y < H and card[y, x]:
+                    img[y, x] = tone
 
 
 def zodiac_corners(img, P, sun_sign, moon_sign):
@@ -686,6 +695,30 @@ def brightest_up(pos, lst, lat):
     import zodiac_art as z
     up = [p for p in z.PLANETS if astro.altitude(*pos[p], lst, lat) > 0]
     return sorted(up, key=lambda p: (LIGHT[p] * pos[p + "_far"], z.PLANETS.index(p)))[:4]
+
+
+def moon_phase8(pos, south):
+    """The Moon's phase among eight, new first, as the sea's corner draws it (plan_render.c moon_phase8)."""
+    f = pos["moon_phase"]
+    k = 0 if f < 0.06 else 4 if f > 0.94 else ((1 if f < 0.35 else 2 if f < 0.65 else 3) if pos["moon_waxing"] else
+                                                (5 if f > 0.65 else 6 if f > 0.35 else 7))
+    return (8 - k) % 8 if south else k
+
+
+def sea_corners(img, P, moon, tides, minute):
+    """The Time 2's corners on the sea's theme (plan_decor.c sea_corners): the Moon's phase, the tide rising or falling
+    (an hourglass where it is not known), the compass rose and the anchor, each in its roundel."""
+    import zodiac_art as z
+    nxt = next((high for t, high, _ in tides if t > minute), None)
+    tide = "hourglass" if nxt is None else "tide_rising" if nxt else "tide_falling"
+    H, W = img.shape[:2]
+    for k, name in enumerate((f"moon{moon}", tide, "compass", "anchor")):
+        x0, y0 = (W - 17 if k & 1 else 2), (H - 17 if k & 2 else 2)
+        for rows, ox, oy, c in ((z.ROUNDEL, x0, y0, P["ink"]), (z.GLYPHS[name], x0 + 3, y0 + 3, P["accent"])):
+            for j, r in enumerate(rows):
+                for i, ch in enumerate(r):
+                    if ch == "#":
+                        img[oy + j, ox + i] = c
 
 
 def astronomer_corners(img, P, planets):
@@ -811,7 +844,7 @@ def widest_time(style, screen, clock24):
 
 def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=False, sky_offset=None, extras=None,
            names=True, weather=None, fahrenheit=False, weather_clock=None, labours=False, feast=None, calendars=0,
-           tools=False, theme=None):
+           tools=False, theme=None, tides=()):
     """The face at `when`. Its sky may be drawn at another time (`sky_offset`, for the hourly turn) while the clock
     keeps `when`; `extras(img, ctx)` draws passing things (meteors, birds) into the sky, under the names. With
     `weather` (weather.Weather) the window shows the place's clouds, rain or snow, the village its weather, and
@@ -933,6 +966,10 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     elif theme == THEME_ASTRONOMER:                      # the month's instrument of Tycho's, behind the face
         import woodcuts
         woodcut_scene(img, inside, inner_region(dial), P, woodcuts.ASTRONOMER_BASE + local.month - 1)
+    elif theme == THEME_SEA:                             # the month's ships, riding the tide, behind the face
+        import woodcuts
+        woodcut_scene(img, inside, inner_region(dial), P, woodcuts.SEA_BASE + (local.month - 1) % len(woodcuts.SEA),
+                      tides, int(when.timestamp()) // 60)
     faint = float(np.interp(s_eff, [-16, -10, -5, -1.5], [4.6, 3.4, 2.0, 0.4])) if not paper else 4.6
     if not paper and s_eff > -1.5:
         faint = -9
@@ -1721,6 +1758,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         zodiac_corners(img, P, sun_sign, moon_sign)
     elif rect and tools and theme == THEME_ASTRONOMER:  # the brightest planets up, in roundels
         astronomer_corners(img, P, brightest_up(pos, lst, dial.lat))
+    elif rect and tools and theme == THEME_SEA:         # the Moon, the tide, the compass rose, the anchor
+        sea_corners(img, P, moon_phase8(pos, dial.lat < 0), tides, int(when.timestamp()) // 60)
     elif rect and tools and theme > THEME_LABOURS:      # (the theme's own corners: none yet for the rest)
         pass
     elif rect and tools:

@@ -3038,6 +3038,15 @@ static __attribute__((noinline)) void time_block(R *r, int fy0, int season, void
   if (fits) stamp(r, fits, r->cx, ring_in + span * 0.915f, P->accent, false, false, 0);
 }
 
+/* the Moon's phase among eight, new first, as the sea's corner draws it (lit on the right as it waxes; in the south,
+ * where it is seen the other way up, mirrored) */
+static uint8_t moon_phase8(const R *r) {
+  float f = r->sky.moon_phase;
+  int k = f < 0.06f ? 0 : f > 0.94f ? 4 : r->sky.moon_waxing ? (f < 0.35f ? 1 : f < 0.65f ? 2 : 3)
+                                                              : (f > 0.65f ? 5 : f > 0.35f ? 6 : 7);
+  return (uint8_t)(r->south ? (8 - k) % 8 : k);
+}
+
 /* the planets above the horizon, the brightest first, as many as four (255 past them), for the astronomer's corners:
  * each one's light its full-phase magnitude's, a constant times its distances from the Sun and from us (the constant
  * 10^(H/5) from its magnitude at a unit's distance, Venus -4.40, Jupiter -9.40, Mars -1.52, Saturn -8.88 with its
@@ -3132,7 +3141,8 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
                                                                                          a year round in the south) */
     DecorCtx dc = {p, month, r->col, r->cx, r->tint, P->ink, P->accent,
                    (uint8_t)((int)(r->sky.sun_lon / 30) % 12), (uint8_t)((int)(mlon / 30) % 12), f->theme,
-                   f->tools && r->rect, r->paper || r->red, alloc, release, NULL, {255, 255, 255, 255}};
+                   f->tools && r->rect, r->paper || r->red, alloc, release, NULL, {255, 255, 255, 255},
+                   f->tides, (uint32_t)utc / 60u, moon_phase8(r)};   /* (32 bits: no 64-bit division) */
     brightest_up(r, (float)f->lat, dc.planets);
     f->decor(f->decor_ctx, &dc);
   }

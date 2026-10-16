@@ -10,4 +10,5 @@ release-artifacts/
 watchface/resources/data/feast_code.bin
 watchface/resources/data/show_code.bin
 watchface/resources/data/decor_code.bin
+watchface/resources/data/labours_code.bin
 node_modules/

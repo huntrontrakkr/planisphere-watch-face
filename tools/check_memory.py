@@ -46,9 +46,10 @@ def peak(args, flags):
     return int(m.group(1)), int(m.group(2))
 
 
-def decor_code():
-    """The scene blob as it loads (main.c decor_draw): its code, with the heap's header and the code's alignment."""
-    return struct.unpack("<5I", (DATA / "decor_code.bin").read_bytes()[:20])[1] + 4 + 4
+def decor_code(name="decor_code"):
+    """A scene blob as it loads (main.c decor_draw: decor_code, the woodcuts', or labours_code): its code, with the
+    heap's header and the code's alignment."""
+    return struct.unpack("<5I", (DATA / f"{name}.bin").read_bytes()[:20])[1] + 4 + 4
 
 
 def app_size(screen):
@@ -115,6 +116,9 @@ def show_most():
     return most
 
 
+THEMES = 5                                   # (plan.h THEME_*: the labours, the zodiac, the astronomer, the sea)
+
+
 def main():
     bad = False
     for screen in ("emery", "gabbro"):
@@ -126,7 +130,13 @@ def main():
                 if n > worst:
                     worst, at = n, (lat, t)
                 scene = max(scene, d)
-        scene += decor_code()                  # (the scene blob loaded while it draws, the tools' record within it)
+        scene += decor_code("labours_code")    # (the labours' blob loaded while it draws, the tools' record within it)
+        for theme in range(2, THEMES):         # (the woodcuts' themes, by the scene blob: each measured too)
+            for lat in range(-89, 90, 8):
+                for t in MOMENTS:
+                    _, d = peak([screen, "0", str(t), str(lat), "-74", "-240"],
+                                ["--theme", str(theme), "--tools", "--weather", SNOW, "--scribe"])
+                    scene = max(scene, d + decor_code())
         budget = heap(screen) - HEADROOM
         need, show = lookup_need(screen), show_need()
         print(f"{screen}: a frame needs {worst:,} bytes at most (latitude {at[0]}), {scene:,} while the scene blob "

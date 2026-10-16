@@ -75,7 +75,7 @@ static bool host_decor(void *ctx, const DecorCtx *dc) {
   FeastReader rd = {mem_read, &tools_mem}, scenes = {mem_read, &scenes_mem};
   in_decor = true;
   if (mem_now > decor_peak) decor_peak = mem_now;
-  bool ok = plan_decor(dc, &rd, &scenes);
+  bool ok = (decor_labours(dc->theme) ? plan_labours : plan_decor)(dc, &rd, &scenes);
   in_decor = false;
   return ok;
 }
