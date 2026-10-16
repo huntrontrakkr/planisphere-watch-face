@@ -733,6 +733,21 @@ def sea_corners(img, P, moon, tides, minute):
                         img[oy + j, ox + i] = c
 
 
+def herbal_corners(img, P, moon, south):
+    """The Time 2's corners on the herbal's theme, the gardener's Moon (plan_decor.c herbal_corners): the Moon's phase,
+    sow while it waxes and gather while it wanes, the spade and the watering pot, each in its roundel."""
+    import zodiac_art as z
+    k = (8 - moon) % 8 if south else moon
+    H, W = img.shape[:2]
+    for i, name in enumerate((f"moon{moon}", "sow" if k < 4 else "gather", "spade", "pot")):
+        x0, y0 = (W - 17 if i & 1 else 2), (H - 17 if i & 2 else 2)
+        for rows, ox, oy, c in ((z.ROUNDEL, x0, y0, P["ink"]), (z.GLYPHS[name], x0 + 3, y0 + 3, P["accent"])):
+            for j, r in enumerate(rows):
+                for x, ch in enumerate(r):
+                    if ch == "#":
+                        img[oy + j, ox + x] = c
+
+
 def astronomer_corners(img, P, planets):
     """The Time 2's corners on the astronomer's theme (plan_decor.c astronomer_corners): the brightest planets above
     the horizon in roundels, brightest first (top left, top right, bottom left, bottom right), Tycho's new star of 1572
@@ -1778,8 +1793,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         astronomer_corners(img, P, brightest_up(pos, lst, dial.lat))
     elif rect and corners == THEME_SEA:                 # the Moon, the tide, the compass rose, the anchor
         sea_corners(img, P, moon_phase8(pos, dial.lat < 0), tides, int(when.timestamp()) // 60)
-    elif rect and corners and corners != THEME_LABOURS:  # (a theme's own corners: none yet for the rest)
-        pass
+    elif rect and corners == THEME_HERBAL:              # the gardener's Moon: its phase, sow or gather, spade and pot
+        herbal_corners(img, P, moon_phase8(pos, dial.lat < 0), dial.lat < 0)
     elif rect and corners:
         import labour_tools
         labour_tools.paint(img, dial, (local.month - 1 + (6 if dial.lat < 0 else 0)) % 12 + 1,

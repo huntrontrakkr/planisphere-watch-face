@@ -62,6 +62,16 @@ GLYPHS = {
                 "...###...", "....#...."],
     "anchor": ["...###...", "...#.#...", "...###...", "....#....", ".#######.", "....#....", "#...#...#",
                ".#..#..#.", "..#####.."],
+    # the herbal's corners, the gardener's Moon (as Hill's Gardener's Labyrinth, 1577, and Tusser teach): sow while the
+    # Moon waxes, gather while it wanes; the spade and the watering pot
+    "sow": [".........", "##.....##", "###...###", ".##.#.##.", "...###...", "....#....", "....#....", "#########",
+            ".#.#.#.#."],
+    "gather": ["....###..", "......##.", ".......#.", ".......##", ".......#.", "......#..", "....##...", "..##.....",
+               "##......."],
+    "spade": ["..#####..", "....#....", "....#....", "....#....", "..#####..", "..#...#..", "..#...#..",
+              "...#.#...", "....#...."],
+    "pot": ["...##....", "..#..#...", ".######.#", ".#....##.", ".#....#..", ".#....#..", ".#....#..", ".######..",
+            "........."],
 }
 # the Moon's eight phases as the sea's corner draws them, new first, lit on the right as it waxes (in the south the
 # watch shows them mirrored): the disc's edge always, the lit columns filled
@@ -89,7 +99,8 @@ PLANETS = ["venus", "jupiter", "mars", "saturn", "mercury"]
 # Moon's phases, the tide's, the instruments
 TABLE = ORDER + ["sun", "moon"] + PLANETS + ["nova"] + [f"moon{k}" for k in range(8)] + ["tide_rising",
                                                                                            "tide_falling", "hourglass",
-                                                                                           "compass", "anchor"]
+                                                                                           "compass", "anchor", "sow",
+                                                                                           "gather", "spade", "pot"]
 # the roundel round each glyph in the corners, as the Shepherds' Calendar frames its signs
 ROUNDEL = [".....#####.....", "...##.....##...", "..#.........#..", ".#...........#.", ".#...........#.",
            "#.............#", "#.............#", "#.............#", "#.............#", "#.............#",

@@ -168,6 +168,13 @@ static void sea_corners(const DecorCtx *r) {
   const uint8_t which[4] = {(uint8_t)(20 + r->moon_phase), tide, 31, 32};
   roundels(r, which);
 }
+/* the herbal's, the gardener's Moon: its phase; sow while it waxes (new to the last before full), gather while it
+ * wanes (the phase drawn mirrored in the south, the waxing the same); the spade and the watering pot */
+static void herbal_corners(const DecorCtx *r) {
+  int k = r->south ? (8 - r->moon_phase) % 8 : r->moon_phase;
+  const uint8_t which[4] = {(uint8_t)(20 + r->moon_phase), (uint8_t)(k < 4 ? 33 : 34), 35, 36};
+  roundels(r, which);
+}
 /* the astronomer's: the brightest planets above the horizon, brightest first, and in a corner none takes Tycho's new
  * star of 1572 */
 static void astronomer_corners(const DecorCtx *r) {
@@ -192,6 +199,10 @@ bool plan_decor(const DecorCtx *dc, const FeastReader *tools, const FeastReader 
   }
   if (d->corners == THEME_ASTRONOMER) {
     astronomer_corners(d);
+    return true;
+  }
+  if (d->corners == THEME_HERBAL) {
+    herbal_corners(d);
     return true;
   }
   if (d->corners == THEME_SEA) {

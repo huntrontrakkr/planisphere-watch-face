@@ -26,18 +26,22 @@ function vowel(c) { return 'AEIOUY'.indexOf(c) >= 0; }
 
 // where a word may be cut: after the consonants closing each syllable (a cluster of three or more also after its
 // first), keeping four letters at least and cutting three at least (the full stop takes one back)
-function cuts(w) {
+function cuts(w, least) {
   var out = [], i = 0;
+  least = least || 4;
   while (i < w.length) {
     while (i < w.length && !vowel(w[i])) i++;
     while (i < w.length && vowel(w[i])) i++;
     var j = i;
     while (j < w.length && !vowel(w[j])) j++;
     if (j >= w.length) break;
-    var at = j - i >= 3 ? [i + 1, j - 1] : [j];
-    at.forEach(function (k) { if (k >= 4 && w.length - k >= 3 && out.indexOf(k) < 0) out.push(k); });
+    var at = j - i >= 3 ? [i + 1, j - 1] : j - i === 2 && least < 4 ? [i + 1, j] : [j];
+    at.forEach(function (k) { if (k >= least && w.length - k >= 3 && out.indexOf(k) < 0) out.push(k); });
     i = j;
   }
+  // a word with nowhere else to cut, cut after its first syllable, three letters kept, a pair of consonants parted as
+  // the syllables part them (SYD-NEY: SYD., as the newspapers had it)
+  if (!out.length && least === 4) return cuts(w, 3);
   return out.sort(function (a, b) { return a - b; });
 }
 

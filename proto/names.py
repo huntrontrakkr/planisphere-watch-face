@@ -21,7 +21,7 @@ def vowel(c):
     return c in "AEIOUY"
 
 
-def cuts(w):
+def cuts(w, least=4):
     out, i = [], 0
     while i < len(w):
         while i < len(w) and not vowel(w[i]):
@@ -33,10 +33,12 @@ def cuts(w):
             j += 1
         if j >= len(w):
             break
-        for k in ([i + 1, j - 1] if j - i >= 3 else [j]):
-            if k >= 4 and len(w) - k >= 3 and k not in out:
+        for k in ([i + 1, j - 1] if j - i >= 3 else [i + 1, j] if j - i == 2 and least < 4 else [j]):
+            if k >= least and len(w) - k >= 3 and k not in out:
                 out.append(k)
         i = j
+    if not out and least == 4:                           # (nowhere else: after the first syllable, three letters kept)
+        return cuts(w, 3)
     return sorted(out)
 
 

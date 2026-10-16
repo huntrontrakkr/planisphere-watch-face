@@ -105,6 +105,10 @@ CASES = {
     "herbal-oct-r2": ("gabbro", "hours", datetime(2026, 10, 15, 1, 30, tzinfo=timezone.utc), NY, {"theme": 5}),
     "herbal-sydney-r2": ("gabbro", "apian", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc), (-33.87, 151.21, 660),
                          {"theme": 5}),
+    "herbal-moon-t2": ("emery", "hours", datetime(2026, 5, 16, 1, 30, tzinfo=timezone.utc), NY,
+                       {"theme": 5, "corners": 5}),
+    "herbal-moon-sydney-t2": ("emery", "planisphere", datetime(2026, 10, 25, 10, 30, tzinfo=timezone.utc),
+                              (-33.87, 151.21, 660), {"theme": 5, "corners": 5}),
     # the corners apart from the backdrop: each blob's backdrop with the other's corners, a backdrop with the sprigs,
     # the plain card with a theme's corners
     "mix-labours-sea-t2": ("emery", "planisphere", datetime(2026, 7, 16, 1, 30, tzinfo=timezone.utc), NY,

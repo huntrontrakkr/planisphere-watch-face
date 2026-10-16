@@ -137,7 +137,10 @@
          'Uraniborg itself.'],
         [4, 'The sea', 'Each month a ship as Hollar or Nooms etched them in the 1640s and 50s, riding the tide ' +
          'where you are: down behind the window at low water, up at high, the sea drawn round it. Inland, or ' +
-         'until the tide is known, at its mean.']]},
+         'until the tide is known, at its mean.'],
+        [5, 'The herbal', 'Each month a plant as Leonhart Fuchs had it cut for his herbal (Basel, 1542): the ' +
+         'hellebore in January, the cowslip in April, the rose in June, the vine in September, the mistletoe in ' +
+         'December. In the south, by the seasons there.']]},
       {key: 'CORNERS', type: 'seg', label: 'In the corners (Time 2)', options: [
         [0, 'Sprigs', 'A sprig turning into each corner, in the season’s dress: blossom, leaf, gold leaf, bare ' +
          'twig.'],
@@ -148,7 +151,9 @@
         [3, 'Planets', 'The brightest planets above the horizon, brightest first, each in a roundel; where there ' +
          'is none, Tycho’s new star of 1572.'],
         [4, 'Moon & tide', 'The Moon’s phase and the tide, rising or falling (an hourglass until it is known); ' +
-         'below, the compass rose and the anchor.']]}
+         'below, the compass rose and the anchor.'],
+        [5, 'Gardener’s Moon', 'The Moon’s phase and what the old gardening books say to do by it: sow while it ' +
+         'waxes, gather while it wanes; below, the spade and the watering pot.']]}
     ]},
     {title: 'The calendar', items: [
       {type: 'calendars', desc: 'Keep the days of the calendars you choose: the almanac’s line names the day in red, ' +
