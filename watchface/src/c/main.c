@@ -11,8 +11,11 @@
 /* Nothing here is in a hot loop: built for size. */
 #pragma GCC optimize("Os")
 
-#define SETTINGS_VERSION 4
-enum { ANIM_MINUTE = 1, ANIM_FIREWORKS = 2 };   /* the animations, a bit each (Settings.animations) */
+#define SETTINGS_VERSION 5
+/* the animations, a bit each (Settings.animations): the passing events (from version 5) are Face.events' bits, two up */
+enum { ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32 };
+#define ANIM_ALL 63
+#define ANIM_EVENTS 60
 #define KEY_SETTINGS 1
 #define KEY_PLACE 2
 #define KEY_WEATHER 3
@@ -26,7 +29,7 @@ typedef struct {
   int32_t lat_e4, lon_e4;               /* the place given on the settings page (PLACE 1) */
   uint32_t calendars;                   /* the calendars whose days the face keeps (bit n for CAL_* n) */
   char city[24], country[20];
-  uint8_t animations;                   /* a bit an animation, ANIM_* (from version 3; these bits from 4) */
+  uint8_t animations;                   /* a bit an animation, ANIM_* (from version 3; these bits from 4 and 5) */
 } Settings;
 
 typedef struct {                        /* where the phone last was */
@@ -48,6 +51,7 @@ volatile uint32_t g_feast_heap = 0;      /* the heap free while the calendars' c
 volatile uint32_t g_show_frames = 0, g_show_ms = 0, g_show_heap = 0, g_show_end = 0;   /* (1 played out, 2 gave way) */
 volatile uint32_t g_show_px = 0;         /* the most pixels a frame covered */
 volatile uint32_t g_scribe_frames = 0;   /* the minute written: frames drawn */
+volatile uint32_t g_events = 0, g_event_frames = 0;   /* the passing events begun (each EV_* bit once seen), frames */
 
 static Window *s_window;
 static Layer *s_layer;
@@ -62,7 +66,7 @@ static uint32_t s_asked;
 static void defaults(Settings *s) {
   memset(s, 0, sizeof *s);
   s->version = SETTINGS_VERSION;
-  s->plate = PLATE_PLANISPHERE, s->names = 1, s->weather = 1, s->animations = ANIM_MINUTE | ANIM_FIREWORKS;
+  s->plate = PLATE_PLANISPHERE, s->names = 1, s->weather = 1, s->animations = ANIM_ALL;
 }
 
 static uint32_t now_ms(void) {
@@ -136,10 +140,10 @@ static int32_t utc_offset(time_t now) {
   return (int32_t)(local - (int64_t)now);
 }
 
-/* an animation the settings keep, and the battery not low (under a fifth and not charging: none) */
-static bool animation(int which) {
+/* the animations the settings keep, if the battery is not low (under a fifth and not charging: none) */
+static int animations(void) {
   BatteryChargeState battery = battery_state_service_peek();
-  return (s_settings.animations & which) && (battery.charge_percent >= 20 || battery.is_charging);
+  return battery.charge_percent >= 20 || battery.is_charging ? s_settings.animations : 0;
 }
 
 static int32_t s_where[2];              /* the face's place as face_of sets it, 1e-4 degrees (latitude, longitude) */
@@ -148,7 +152,8 @@ static void face_of(Face *f) {
   f->plate = s_settings.plate < PLATE_COUNT ? s_settings.plate : 0;
   f->clock24 = s_settings.clock == 0 ? clock_is_24h_style() : s_settings.clock == 2;
   f->names = s_settings.names, f->labours = s_settings.labours, f->calendars = s_settings.calendars;
-  f->scribe = animation(ANIM_MINUTE);
+  f->scribe = animations() & ANIM_MINUTE;
+  f->events = (uint8_t)((animations() & ANIM_EVENTS) >> 2);
   f->fahrenheit = s_settings.units == 2;
   if (s_settings.place == 1) {
     s_where[0] = s_settings.lat_e4, s_where[1] = s_settings.lon_e4;
@@ -230,7 +235,11 @@ static int32_t s_show_played = -1;      /* the hour whose display has begun, */
 static bool s_show_done;                /* and played out */
 static int s_show_last = -1;            /* its frame last drawn */
 
-static bool animating(void) { return s_show || s_scribe_k; }
+static int s_event_k;                   /* the meteor or the birds: its next frame + 1 (0: none playing) */
+static ShowUndo *s_event_undo;
+static int s_figs_k;                    /* the figures drawn in: the frames drawn (0: none playing) */
+
+static bool animating(void) { return s_show || s_scribe_k || s_event_k || s_figs_k; }
 
 static void redraw(void) {
   if (animating()) s_redraw_after = true;
@@ -256,10 +265,12 @@ static void scribe_end(void) {
 
 static void show_end(void) { free(s_undo), s_undo = NULL, s_show = false; }
 
+static void event_end(void) { free(s_event_undo), s_event_undo = NULL, s_event_k = 0, s_figs_k = 0; }
+
 /* when nothing plays: the timer stopped, the blob let go, and a drawing that waited made */
 static void anims_settle(bool redraw_now) {
   if (animating()) {
-    if (!s_anim_timer) s_anim_timer = app_timer_register(1000 / SHOW_FPS, anim_tick, NULL);
+    if (!s_anim_timer) s_anim_timer = app_timer_register(s_figs_k ? 150 : 1000 / SHOW_FPS, anim_tick, NULL);
     return;
   }
   if (s_anim_timer) app_timer_cancel(s_anim_timer), s_anim_timer = NULL;
@@ -279,7 +290,7 @@ static void scribe_begin(const Target *tg) {
 }
 
 static void show_begin(void) {
-  if (s_show || s_plan->show_hour < 0 || !animation(ANIM_FIREWORKS)) return;
+  if (s_show || s_figs_k || s_plan->show_hour < 0 || !(animations() & ANIM_FIREWORKS)) return;
   if (s_plan->show_hour != s_show_played) s_show_played = s_plan->show_hour, s_show_last = -1, s_show_done = false;
   else if (s_show_done) return;                  /* (else it gave way, and goes on from its last frame) */
   s_undo = malloc(sizeof(ShowUndo) + SHOW_UNDO * sizeof(uint32_t));
@@ -291,13 +302,31 @@ static void show_begin(void) {
   g_show_heap = heap_bytes_free();
 }
 
+/* after a whole face: the passing event it chose, begun (the figures drawn in are drawn again, the face and all; the
+ * meteor or the birds played over it once the minute is written) */
+static void event_begin(void) {
+  uint8_t ev = s_plan->event;
+  g_events |= ev;
+  if (ev == EV_FIGURES) {
+    scribe_end(), s_figs_k = 1;                  /* (the minute simply drawn) */
+    return;
+  }
+  if (!(ev & (EV_METEOR | EV_BIRDS)) || s_show) return;
+  s_event_undo = malloc(sizeof(ShowUndo) + EVENT_UNDO * sizeof(uint32_t));
+  if (!s_event_undo || !motion_load()) {
+    event_end();
+    return;
+  }
+  s_event_undo->n = 0, s_event_undo->cap = EVENT_UNDO, s_event_k = 1;
+}
+
 /* a frame of each animation playing */
 static void animate(GContext *ctx) {
   uint32_t t0 = now_ms();
   GBitmap *fb = graphics_capture_frame_buffer(ctx);
   if (!fb) {                                     /* (no screen to draw on: they end, the face is drawn again) */
     if (s_show) s_show_done = true;
-    scribe_end(), show_end(), s_redraw_after = true;
+    scribe_end(), show_end(), event_end(), s_redraw_after = true;
     anims_settle(true);
     return;
   }
@@ -305,6 +334,9 @@ static void animate(GContext *ctx) {
   if (s_scribe_k) {
     g_scribe_frames++;
     if (!s_motion->scribe(s_plan, &tg, s_scribe_k++, NULL)) scribe_end();
+  } else if (s_event_k) {                        /* (after the minute is written) */
+    g_event_frames++;
+    if (!s_motion->event(s_plan, &tg, s_event_k++ - 1, s_event_undo)) event_end();
   }
   if (s_show) {
     bool more = s_motion->frame(s_plan, &tg, ++s_show_last, s_undo);
@@ -318,14 +350,18 @@ static void animate(GContext *ctx) {
 }
 
 static void update(Layer *layer, GContext *ctx) {
-  if (s_anim_due) {
+  int figs = 0;                                  /* the figures' frame drawn in, if they are being (Face.figs_part) */
+  if (s_anim_due && s_figs_k) {
+    s_anim_due = false;
+    figs = ++s_figs_k < EVENT_FIGS_FRAMES ? s_figs_k : 0;
+    if (!figs) s_figs_k = 0;
+  } else if (s_anim_due) {
     s_anim_due = false;
     animate(ctx);
     return;
-  }
-  if (animating()) {                             /* the system asks for the whole face: the animations give way */
+  } else if (animating()) {                      /* the system asks for the whole face: the animations give way */
     if (s_show) g_show_end = 2;
-    scribe_end(), show_end(), s_redraw_after = false;
+    scribe_end(), show_end(), event_end(), s_redraw_after = false;
   }
   time_t now = time(NULL);
   if (s_plan && !s_geom) {                       /* (the geometry not loaded again after a lookup: once more) */
@@ -349,17 +385,20 @@ static void update(Layer *layer, GContext *ctx) {
   if (!fb) return;
   Face f;
   face_of(&f);
+  if (s_figs_k) f.scribe = false, f.figs_part = (uint8_t)figs;
   Target tg = {fb_row, fb};
   if (heap_bytes_free() < g_heap_low || !g_heap_low) g_heap_low = heap_bytes_free();
   g_utc = (uint32_t)now, g_offset = utc_offset(now);
   g_stack_at = (uint32_t)((uintptr_t)__pbl_app_info - (uintptr_t)&tg);
   feast_of_day(&f, now, g_offset);
   bool drawn = s_api->render(s_plan, &f, (int64_t)now, g_offset, &tg, alloc, free);
+  if (drawn && !s_figs_k && s_plan->event == EV_FIGURES) event_begin();   /* (frame 1 of the figures drawn in) */
   if (drawn) scribe_begin(&tg);
   graphics_release_frame_buffer(ctx, fb);
   g_render_ms = now_ms() - t0;
   if (g_render_ms > g_render_max) g_render_max = g_render_ms;
   g_stack = stack_deepest();
+  if (drawn && !s_figs_k && s_plan->event != EV_FIGURES) event_begin();
   if (drawn) show_begin();
   anims_settle(false);
 }
@@ -490,13 +529,13 @@ static void init(void) {
   defaults(&s_settings);
   Settings s;
   int got = persist_read_data(KEY_SETTINGS, &s, sizeof s);
-  if (got == (int)sizeof s && s.version == SETTINGS_VERSION) s_settings = s;
-  else if (got == (int)sizeof s && s.version == 3) {                     /* version 3's: the minute written alone */
+  if (got == (int)sizeof s && s.version >= 3 && s.version <= SETTINGS_VERSION) {
     s_settings = s, s_settings.version = SETTINGS_VERSION;
-    s_settings.animations = (s.animations ? ANIM_MINUTE : 0) | ANIM_FIREWORKS;
+    if (s.version == 3) s.animations = (s.animations ? ANIM_MINUTE : 0) | ANIM_FIREWORKS;   /* the minute alone */
+    if (s.version < 5) s_settings.animations = s.animations | ANIM_EVENTS;   /* (the events new, and on) */
   } else if (got == (int)offsetof(Settings, animations) && s.version == 2) {   /* version 2's: no animations kept */
     memcpy(&s_settings, &s, offsetof(Settings, animations));
-    s_settings.version = SETTINGS_VERSION, s_settings.animations = ANIM_MINUTE | ANIM_FIREWORKS;
+    s_settings.version = SETTINGS_VERSION, s_settings.animations = ANIM_ALL;
   }
   if (persist_read_data(KEY_PLACE, &s_place, sizeof s_place) != (int)sizeof s_place) memset(&s_place, 0, sizeof s_place);
   if (persist_read_data(KEY_WEATHER, &s_weather, sizeof s_weather) != (int)sizeof s_weather) memset(&s_weather, 0, sizeof s_weather);
@@ -515,7 +554,7 @@ static void init(void) {
 }
 
 static void deinit(void) {
-  scribe_end(), show_end(), anims_settle(false);
+  scribe_end(), show_end(), event_end(), anims_settle(false);
   tick_timer_service_unsubscribe();
   window_destroy(s_window);
   free(s_plan), free(s_data), free(s_geom), free(s_code);

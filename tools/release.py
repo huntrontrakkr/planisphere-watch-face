@@ -132,7 +132,8 @@ def description():
 
 
 def gallery():
-    shots = sorted(p for p in GALLERY.glob("*_*") if p.name.split("_", 1)[0] in PLATFORMS)
+    shots = sorted((p for p in GALLERY.glob("*_*") if p.name.split("_", 1)[0] in PLATFORMS),
+                   key=lambda p: (p.name.split("_")[0], int(p.name.split("_")[1]), p.name))   # (10 after 9)
     return [str(p) for p in shots if p.suffix == ".gif"], [str(p) for p in shots if p.suffix == ".png"]
 
 

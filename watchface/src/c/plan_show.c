@@ -110,22 +110,75 @@ static void rocket(Frame *fr, const Rocket *k, int frame) {
   }
 }
 
-bool plan_show(Plan *p, const Target *t, int frame, ShowUndo *undo) {
+/* the screen's rows, and the last frame's pixels put back, last first */
+static void put_back(Plan *p, const Target *t, ShowUndo *undo) {
   for (int y = 0; y < p->h; y++) {
     int x0, x1;
     p->rows[y] = t->row(t->ctx, y, &x0, &x1);
     p->rx0[y] = (int16_t)x0, p->rx1[y] = (int16_t)x1;
     if (!p->rows[y]) p->rx0[y] = 1, p->rx1[y] = 0;
   }
-  while (undo->n) {                                  /* the last frame's pixels put back, last first */
+  while (undo->n) {
     uint32_t v = undo->px[--undo->n];
     int x = v & 511, y = v >> 9 & 511;
     if (x >= p->rx0[y] && x <= p->rx1[y]) p->rows[y][x] = (uint8_t)(v >> 18);
   }
+}
+
+bool plan_show(Plan *p, const Target *t, int frame, ShowUndo *undo) {
+  put_back(p, t, undo);
   if (frame >= p->show_end) return false;
   Frame fr = {p, undo, 0, 0};
   for (fr.pass = 0; fr.pass < 2; fr.pass++)
     for (int i = 0; i < p->show_rockets; i++) rocket(&fr, &p->show[i], frame);
+  return true;
+}
+
+/* ---- the passing events (Plan.event, chosen by plan_render): a meteor, its head flying the path in four frames on a
+ * fading trail that then fades out after it; a skein of seven birds in a V crossing the window, their wings beating.
+ * Drawn as the display is, over the face as last drawn. ------------------------------------------------------- */
+bool plan_event(Plan *p, const Target *t, int frame, ShowUndo *undo) {
+  put_back(p, t, undo);
+  if (frame >= p->event_frames || !(p->event & (EV_METEOR | EV_BIRDS))) return false;
+  Frame fr = {p, undo, 1, 0};
+  float x0 = p->event_x0, y0 = p->event_y0, dx = p->event_x1, dy = p->event_y1;
+  uint8_t ink = p->event_ink;
+  if (p->event == EV_METEOR) {
+    /* its path: 22 to 36 pixels its way, as far as it stays in the window */
+    float d = f_sqrt(dx * dx + dy * dy);
+    if (d == 0) dy = d = 1;
+    Rng g;
+    rng_start(&g, (uint32_t)(p->event_x0 * 512 + p->event_y0));
+    int L = rng_int(&g, 22, 37), ex = 0, ey = 0;
+    for (; L > 12; L -= 3) {
+      ex = p->event_x0 + pyf_round(dx / d * (float)L), ey = p->event_y0 + pyf_round(dy / d * (float)L);
+      if ((unsigned)ey < (unsigned)p->h && ex >= p->wx0[ey] && ex <= p->wx1[ey]) break;
+    }
+    if (L <= 12) return false;
+    dx = (float)(ex - p->event_x0), dy = (float)(ey - p->event_y0);
+    float Lf = (float)L, head = Lf * (float)(frame < 4 ? frame + 1 : 4) / 4;
+    int fade = frame < 4 ? 0 : frame - 3;             /* the head spent: the trail going from its far end */
+    static const uint8_t TRAIL[4] = {WHITE, C8(2, 3, 3), C8(1, 2, 3), C8(1, 1, 2)};
+    for (int b = 0; b < 12 - 4 * fade && head >= (float)b; b++)
+      if (!ink || b % 2 == 0)
+        spark(&fr, x0 + dx * (head - (float)b) / Lf, y0 + dy * (head - (float)b) / Lf,
+              ink ? ink : TRAIL[fade ? 1 + fade : b < 2 ? 0 : b < 5 ? 1 : b < 8 ? 2 : 3]);
+    return true;
+  }
+  /* the birds: from beyond one side of the window to beyond the other, the leader on the path and three to each side
+   * behind it, each pair beating their wings together */
+  int y = p->event_y0;
+  x0 = p->event_x0 ? p->wx0[y] - 4 : p->wx1[y] + 4, dx = (p->event_x0 ? p->wx1[y] + 34 : p->wx0[y] - 34) - x0;
+  dy = (float)(p->event_y1 - y);
+  float u = (float)frame / (float)p->event_frames, L = f_sqrt(dx * dx + dy * dy), ax = dx / L, ay = dy / L;
+  for (int i = 0; i < 7; i++) {
+    int rank = (i + 1) / 2, side = i % 2 ? 1 : -1;
+    float bx = x0 + dx * u - ax * 4 * rank - ay * 3 * rank * side, by = y0 + dy * u - ay * 4 * rank + ax * 3 * rank * side;
+    int up = (frame / 3 + rank) % 2;                  /* the wings up and level, each pair together */
+    spark(&fr, bx, by, ink);
+    spark(&fr, bx - 1, by - up, ink);
+    spark(&fr, bx + 1, by - up, ink);
+  }
   return true;
 }
 

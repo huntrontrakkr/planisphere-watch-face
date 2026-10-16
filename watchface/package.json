@@ -1,7 +1,7 @@
 {
   "name": "planisphere",
   "author": "huntrontrakkr",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "keywords": [
     "pebble-app"

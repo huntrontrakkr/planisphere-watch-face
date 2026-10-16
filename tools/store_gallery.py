@@ -12,6 +12,8 @@ as the store expects (docs/screenshots/store), and the same reels for the README
   7  a fireworks display at the top of an evening hour, as the watch plays it: Independence Day in New York
   8  the ten plates at half past nine in the evening
   9  the sky's news: a total eclipse of the Sun, the Moon eclipsed, Venus meeting Jupiter, a meteor shower's peak
+ 10  the passing events, as the watch plays them: the figures drawn in at dusk, a skein of birds at twilight, meteors
+     out of the Orionids' radiant on the night of their peak
 
     tools/build-host.sh && cd proto && uv run python ../tools/store_gallery.py
 """
@@ -36,7 +38,7 @@ DALLAS = (32.7767, -96.797)
 
 
 def frame(platform, plate, when, place, offset, labours=False, weather=None, calendars=0, show=None, clock24=False,
-          names=True, fahrenheit=False, city=None, scribe=None):
+          names=True, fahrenheit=False, city=None, scribe=None, events=0, event=None):
     """One face, as the watch draws it: when (aware datetime), place (lat, lon), offset (minutes ahead of UTC); the
     calendars kept (bit n for feasts.CALENDARS[n]), the frame of the fireworks display due then, if any; the clock,
     the names in the sky, the temperature's scale, and the place's name on the ring ((city, country); else the
@@ -62,6 +64,8 @@ def frame(platform, plate, when, place, offset, labours=False, weather=None, cal
         args += ["--show", str(show)]
     if scribe is not None:                          # the minute written (the minute before drawn first), to a frame
         args += ["--scribe-frame", str(scribe)]
+    if events:                                      # the passing events allowed (EV_*), and the one chosen to a frame
+        args += ["--events", str(events)] + (["--event-frame", str(event)] if event is not None else [])
     if weather:
         s = meteo.SAMPLES[weather]
         args += ["--weather", ",".join(str(int(round(v))) for v in (
@@ -83,6 +87,19 @@ def display_frames(platform, when, place, offset, calendars):
                           str(offset), str(TMP / "check.ppm"), "--calendars", str(calendars), "--show-check"],
                          capture_output=True, text=True, check=True).stdout
     return int(out.split(" frames")[0].split()[-1])
+
+
+def event_minutes(platform, start, place, offset, kind, count):
+    """The first minutes from `start` (aware) that bring the passing event `kind` (EV_*), and its frames."""
+    found, when = [], start
+    while len(found) < count and when < start + timedelta(hours=3):
+        out = subprocess.run([str(HOST), platform, "0", str(int(when.timestamp())), str(place[0]), str(place[1]),
+                              str(offset), str(TMP / "check.ppm"), "--events", str(kind)],
+                             capture_output=True, text=True, check=True).stdout
+        if out.startswith(f"event {kind}:"):
+            found.append((when, int(out.split(": ")[1].split()[0])))
+        when += timedelta(minutes=1)
+    return found
 
 
 def local(y, mo, d, h, mi, offset):
@@ -178,10 +195,21 @@ def main():
                              frame(p, "planisphere", datetime(2023, 3, 2, 0, 20, tzinfo=timezone.utc), NY, -300),
                              frame(p, "planisphere", datetime(2026, 10, 22, 6, 0, tzinfo=timezone.utc), NY, -240)],
                             2000)
-    order = ["a_day", "minute", "almanac", "variations", "anywhere", "weather", "fireworks", "plates", "news"]
+        events = []
+        for kind, start, place, off, k in ((2, local(2026, 10, 15, 19, 0, 60), LONDON, 60, 1),
+                                           (4, local(2026, 10, 15, 18, 0, 60), LONDON, 60, 1),
+                                           (1, local(2026, 10, 21, 2, 0, 60), LONDON, 60, 4)):
+            for when, n in event_minutes(p, start, place, off, kind, k):
+                still = frame(p, "planisphere", when - timedelta(minutes=kind == 2), place, off)   # (no figures yet)
+                played = [frame(p, "planisphere", when, place, off, events=kind, event=f) for f in range(n + 1)]
+                events += [still] * 10 + [x for x in played for _ in range(2 if kind == 2 else 1)] + [played[-1]] * 6
+        reels["events", p] = (events, 83)
+    order = ["a_day", "minute", "almanac", "variations", "anywhere", "weather", "fireworks", "plates", "news", "events"]
     for n, name in enumerate(order, 1):
         for p in ("emery", "gabbro"):
             save_gif(*reels[name, p][:1], OUT / f"{p}_{n}_{name}.gif", reels[name, p][1])
+        if name == "events":                        # (each watch's events last their own time: the Time 2's alone)
+            save_gif(*reels[name, "emery"][:1], ROOT / "docs" / f"gallery-{name}.gif", reels[name, "emery"][1])
         if name in ("minute", "variations", "anywhere", "weather", "fireworks", "almanac"):
             (a, ms), (b, _) = reels[name, "emery"], reels[name, "gabbro"]
             save_gif([side_by_side(x, y) for x, y in zip(a, b)], ROOT / "docs" / f"gallery-{name}.gif", ms)

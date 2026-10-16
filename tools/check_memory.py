@@ -4,7 +4,9 @@ A frame's memory is the drawing's state and the window's grid (its size set by t
 the numerals' and the labours' scratch before the grid and the minute's new figures kept for the scribe (--scribe:
 the minute before drawn first), as build/host --mem counts it (as PebbleOS's heap does). The
 day's feast lookup loads the calendars' code; a fireworks display loads its own code and its record of the pixels each
-frame covers (SHOW_UNDO of them: some displays are played here to see that none covers more). This draws every
+frame covers (SHOW_UNDO of them: some displays are played here to see that none covers more); a passing event (a
+meteor, the birds) the same code with a far smaller record (EVENT_UNDO), and the figures drawn in at dusk are whole
+frames. This draws every
 latitude at night and by day on both watches and fails if any of these needs more than its watch's budget:
 the heap left after the face has loaded, measured in the emulator (g_heap_free over GDB, labours on), less 3 KB of
 headroom. (Nothing else takes memory once the face has loaded: the messages' buffers, the window and the timers are
@@ -27,9 +29,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 HOST = ROOT / "build" / "host"
 DATA = ROOT / "watchface" / "resources" / "data"
-HEAP = {"emery": 19804, "gabbro": 18808}     # bytes free after loading, measured 2026-10-15 with:
-MEASURED = {"code": 64636, "plan": 24148, "geom": {"emery": 13316, "gabbro": 14312},
-            "app": {"emery": 4820, "gabbro": 4820}, "state": 3816}
+HEAP = {"emery": 16712, "gabbro": 15716}     # bytes free after loading, measured 2026-10-16 with:
+MEASURED = {"code": 66496, "plan": 24148, "geom": {"emery": 13316, "gabbro": 14312},
+            "app": {"emery": 5968, "gabbro": 5968}, "state": 3904}
 HEADROOM = 3072
 SNOW = "-20,73,90,60,20,12,20,1003,80,250"
 MOMENTS = (1792027800, 1792000800)          # 15 October 2026, 01:30 and 18:00 UTC (night and day in the Americas)

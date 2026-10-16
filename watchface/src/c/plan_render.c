@@ -1505,7 +1505,7 @@ static float interp(float x, const int8_t (*t)[2], int n) {
 
 static inline bool span_has(const int16_t *s, int y, int x) { return x >= s[2 * y] && x <= s[2 * y + 1]; }
 
-static void figure_lines(R *r) {
+static void figure_lines(R *r, int part) {
   const uint8_t *st = sec(r->p->data, SEC_STARS);
   const uint16_t *ln = (const uint16_t *)(const void *)sec(r->p->data, SEC_LINES);
   for (int i = 0; i < LINE_COUNT; i++) {
@@ -1523,7 +1523,7 @@ static void figure_lines(R *r) {
     float adx = f_abs(bx - ax), ady = f_abs(by - ay);
     int n = (int)((adx > ady ? adx : ady) * 3) + 1;
     int axq = (int)(ax * 256), ayq = (int)(ay * 256), dxq = (int)(bx * 256) - axq, dyq = (int)(by * 256) - ayq;
-    for (int k = 0; k <= n; k++) {
+    for (int k = 0; k <= (part ? n * part / EVENT_FIGS_FRAMES : n); k++) {   /* (drawn in at dusk: so far along) */
       int pxq = axq + dxq * k / n, pyq = ayq + dyq * k / n, xi = pxq >> 8, yi = pyq >> 8;
       for (int dy = 0; dy <= 1; dy++)
         for (int dx = 0; dx <= 1; dx++) {
@@ -1722,6 +1722,39 @@ static void show_plan(R *r) {
   p->show_hour = at;
 }
 
+/* the passing event for this minute, now and then (Plan.event, played by plan_event): on a clear dark night a meteor
+ * (one minute in five in a shower's peak, out of its radiant when that is up; else one in forty-five); at twilight
+ * in the months birds migrate a skein of them crossing the window low, in the twilight's light, once a twilight (one minute in twelve). Chosen
+ * once a minute, never with a fireworks display or the figures being drawn in. */
+static void passing(R *r, int rad_x, int rad_y) {
+  Plan *p = r->p;
+  const Face *f = r->f;
+  int32_t minute = r->local.ordinal * 1440 + r->local.hour * 60 + r->local.minute;
+  if (f->figs_part || p->event || p->show_hour >= 0 || p->event_minute == minute) return;
+  p->event_minute = minute;
+  if (r->closed_sky || (r->wx && (r->falls || r->fog))) return;
+  Rng g;
+  rng_seed(&g, r, 7 + r->local.hour * 60 + r->local.minute);
+  int top = p->win_top, span = p->win_bottom - p->win_top, month = r->local.month;
+  int32_t twilight = r->local.ordinal * 2 + (r->local.hour >= 12);
+  if ((f->events & EV_METEOR) && r->sun_alt < -12 && !(r->wx && r->live && r->stratus + r->cumulus > 0.45f) &&
+      rng_int(&g, 0, plan_shower(r->sky.sun_lon) >= 0 ? 5 : 45) == 0) {
+    int y = top + 6 + rng_int(&g, 0, span / 2 + 1), w = p->wx1[y] - p->wx0[y] - 12;
+    int x = p->wx0[y] + 6 + rng_int(&g, 0, w > 1 ? w : 1);
+    int dx = rng_int(&g, -16, 17), dy = rng_int(&g, -4, 17);           /* (falling, as a rule) */
+    if (r->shower >= 0 && (x - rad_x) * (x - rad_x) + (y - rad_y) * (y - rad_y) > 64) dx = x - rad_x, dy = y - rad_y;
+    p->event = EV_METEOR, p->event_frames = 6, p->event_ink = (r->paper || r->red) ? r->P->star : 0;
+    p->event_x0 = (int16_t)x, p->event_y0 = (int16_t)y, p->event_x1 = (int16_t)dx, p->event_y1 = (int16_t)dy;
+  } else if ((f->events & EV_BIRDS) && r->sun_alt > -6 && r->sun_alt < 4 && month % 6 >= 3 && p->birds_mark != twilight &&
+             rng_int(&g, 0, 12) == 0) {
+    int y = top + span * 2 / 3 + rng_int(&g, 0, span / 8 + 1), w = p->wx1[y] - p->wx0[y];
+    p->birds_mark = twilight;
+    p->event = EV_BIRDS, p->event_frames = (uint8_t)((w + 38) * 2 / 5 < 90 ? (w + 38) * 2 / 5 : 90);
+    p->event_ink = r->paper ? r->P->line : C8(0, 0, 0);
+    p->event_x0 = (int16_t)rng_int(&g, 0, 2), p->event_y0 = (int16_t)y, p->event_y1 = (int16_t)(y - rng_int(&g, 0, 10));
+  }
+}
+
 /* fires on the hilltops on a fire festival's night (proto/feast_draw.py bonfires): on the three highest tops at least
  * twenty pixels from the church, eighteen apart, each a flame with its glow round it and a spark that moves with the
  * minute; on a printed chart in its red ink */
@@ -1779,6 +1812,16 @@ static void vput(R *r, int dx, int y, uint8_t c) {
   if (inside(r, x, y)) put(r, x, y, c), land(r, x, y);
 }
 
+/* a window of the village lit: in the evening and the early morning most of them (all, on a feast of lights), but
+ * with the village's life (EV_VILLAGE) each comes and goes by the ten minutes, three in four lit then and one in eight
+ * through the night */
+static bool window_lit(R *r, bool lit, int which) {
+  if (!(r->f->events & EV_VILLAGE) || feast_brings(r, FF_LIGHTS) || r->sun_alt >= -4) return lit;
+  Rng g;
+  rng_seed(&g, r, which * 1440 + r->secs / 600);
+  return rng_int(&g, 0, 8) < (lit ? 6 : 1);
+}
+
 /* the village on the window's lower edge: a church at the south point, a house, trees in the season's dress */
 static void village(R *r, int season) {
   const Plate *P = r->P;
@@ -1828,7 +1871,7 @@ static void village(R *r, int season) {
       for (int i = 0; i < di->w; i++) {
         int role = role_at(r, di, i, j);
         if (!role) continue;
-        if (role == 3 && !lit) role = 1;
+        if (role == 3 && !window_lit(r, lit, v * 256 + j * 16 + i)) role = 1;
         vput(r, x0 + i, y0 + j, col[role]);
       }
     if (!vp->tree)
@@ -1837,6 +1880,10 @@ static void village(R *r, int season) {
     if (vp->kind == 1) mast = true, mast_x = x0 + 5, mast_y = y0;
     if (vp->kind == 2) r->chimney = true, r->chimney_x = (int16_t)(x0 + 10), r->chimney_y = (int16_t)y0;
   }
+  /* the village's life: smoke from the hearth on an evening in, when the weather is cool (or unknown, out of summer) */
+  if ((r->f->events & EV_VILLAGE) && lit && r->chimney && window_lit(r, lit, 2 * 256 + 7 * 16 + 3) &&
+      (r->wx ? r->f->weather->temp10 < 160 : season != SEASON_LEAF && season != SEASON_HARVEST))
+    r->smoke = true;
   int vx[16], vy[16], nv = 0;
   if (mast) {                                     /* the vane on the mast, turned into the wind */
     const MaskIndex *mi = mask(r, vane);
@@ -1860,7 +1907,7 @@ static void village(R *r, int season) {
 /* smoke from the chimney on a cold day, the puffs rising and leaning with the wind; fog lying over the hills in three
  * ruled lines, behind the roofs */
 static void village_weather(R *r) {
-  if (!r->wx) return;
+  if (!r->wx && !r->smoke) return;
   const Plate *P = r->P;
   if (r->smoke && r->chimney) {
     float lean = f_sind(r->wind_from) * (r->wind / 12.0f < 1.6f ? r->wind / 12.0f : 1.6f), t = (float)r->secs;
@@ -3066,6 +3113,7 @@ static __attribute__((noinline)) void time_block(R *r, int fy0, int season, void
 bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Target *t, void *(*alloc)(size_t),
                  void (*release)(void *)) {
   if (p->scribe) release(p->scribe), p->scribe = NULL, p->scribe_n = 0;   /* (the last minute's, not played) */
+  if (!f->figs_part) p->event = 0;
   R *r = alloc(sizeof(R));
   if (!r) return false;
   memset(r, 0, sizeof *r);
@@ -3217,7 +3265,14 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
     for (int y = 0; y < r->H; y += 3)
       if (inside(r, r->col, y) && (y - zy > 3 || zy - y > 3) && !hidden(r, r->col, y)) put(r, r->col, y, P->line);
   /* the figures, stopping short of their stars; the stars */
-  if (r->figs && !r->rete) figure_lines(r);
+  if (r->figs && !r->rete) {
+    /* drawn in as dusk brings them out, once an evening (the event's first frame; the caller draws the rest) */
+    int part = f->figs_part;
+    if ((f->events & EV_FIGURES) && !part && !r->paper && r->local.hour >= 12 && r->s_eff > -13 &&
+        p->figs_day != r->local.ordinal)
+      p->figs_day = r->local.ordinal, p->event = EV_FIGURES, part = 1;
+    figure_lines(r, part);
+  }
   stars(r, faint, mx, my, moon_reach);
   /* the clouds over the stars (the Moon and planets shine through them); a halo round the Moon or the Sun */
   cloud_colours(r, r->mphase > 0.4f && moon_up);
@@ -3312,6 +3367,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   village_weather(r);
   feast_fires(r);
   show_plan(r);
+  passing(r, rad_x, rad_y);
   /* names in the sky; the ornaments where no name is */
   feast_sky(r);
   if (f->names) names(r, mx, my);

@@ -41,12 +41,13 @@ EMSCRIPTEN_KEEPALIVE int pv_row_x0(int y) { return row_x0[y]; }
 EMSCRIPTEN_KEEPALIVE int pv_row_x1(int y) { return row_x1[y]; }
 EMSCRIPTEN_KEEPALIVE int pv_plates(void) { return PLATE_COUNT; }
 
-/* What the face shows: the plate, the clock, names in the sky, the temperature's scale, the place, the labours. */
+/* What the face shows: the plate, the clock, names in the sky, the temperature's scale, the place, the labours, the
+ * minute written, and the village's life (of the events, EV_VILLAGE alone: the passing ones are left to the watch). */
 EMSCRIPTEN_KEEPALIVE void pv_face(int plate, int clock24, int names, int fahrenheit, float lat, float lon, int coords,
-                                  int labours, int calendars, int scribe) {
+                                  int labours, int calendars, int scribe, int events) {
   F.plate = (uint8_t)(plate >= 0 && plate < PLATE_COUNT ? plate : 0);
   F.clock24 = clock24 != 0, F.names = names != 0, F.fahrenheit = fahrenheit != 0, F.labours = labours != 0;
-  F.calendars = (uint32_t)calendars, F.scribe = scribe != 0;
+  F.calendars = (uint32_t)calendars, F.scribe = scribe != 0, F.events = (uint8_t)(events & EV_VILLAGE);
   F.lat = lat, F.lon = lon, F.coords = coords != 0;
   F.city = city, F.country = country;
 }

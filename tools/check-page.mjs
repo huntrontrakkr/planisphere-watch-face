@@ -200,8 +200,18 @@ await sleep(100);
 const msg = byName(sent[before] || {});
 console.log('sent:', JSON.stringify(msg));
 const want = { PLATE: 4, CLOCK: 2, UNITS: 1, PLACE: 1, PLACE_LAT: -338700, PLACE_LON: 1512100, PLACE_CITY: 'SYDNEY',
-               PLACE_COUNTRY: 'AUSTRALIA', NAMES: 1, LABOURS: 1, CALENDARS: (1 << 6) | (1 << 8), WEATHER: 1 };
+               PLACE_COUNTRY: 'AUSTRALIA', NAMES: 1, LABOURS: 1, CALENDARS: (1 << 6) | (1 << 8), WEATHER: 1,
+               ANIMATIONS: 63 };
 const bad = Object.entries(want).filter(([k, v]) => msg[k] !== v);
 check(!bad.length, 'page -> watch: ' + (bad.length ? 'MISMATCH ' + JSON.stringify(bad) : 'the settings as set'));
 check(size(sent[before] || {}) <= inbox, `the settings fit the watch's inbox (${size(sent[before] || {})} of ${inbox} bytes)`);
+// settings kept from before the passing events (0.1.4's: no ANIMV) have them turned on; later ones are as kept
+const animSent = async (kept) => {
+  const n = sent.length;
+  fire('webviewclosed', { response: encodeURIComponent(JSON.stringify(Object.assign({}, JSON.parse(answer), kept))) });
+  await sleep(100);
+  return byName(sent[n] || {}).ANIMATIONS;
+};
+const old = await animSent({ ANIMATIONS: 2, ANIMV: undefined }), kept = await animSent({ ANIMATIONS: 1, ANIMV: 2 });
+check(old === 62 && kept === 1, `the passing events turned on in settings from before them (sent ${old}; kept ${kept})`);
 process.exitCode = failed ? 1 : 0;

@@ -47,7 +47,14 @@ typedef struct {
   const Weather *weather;      /* NULL: none */
   uint32_t calendars;          /* the calendars whose days the face keeps: bit n for CAL_* n (plan_data.h) */
   bool scribe;                 /* the minute's new figures kept to be written as a scribe writes (plan_scribe) */
+  uint8_t events;              /* the passing events the face may bring (EV_*: Plan.event), and the village's life */
+  uint8_t figs_part;           /* the figures drawn in at dusk: drawn this many EVENT_FIGS_FRAMES-ths along (0: all) */
 } Face;
+/* The passing events, now and then: a meteor on a clear dark night (often in a shower's peak), the figures drawn in
+ * at dusk once an evening, a skein of birds at twilight in the months they migrate; and the village's windows lit and
+ * dark as its people come and go. */
+enum { EV_METEOR = 1, EV_FIGURES = 2, EV_BIRDS = 4, EV_VILLAGE = 8 };
+#define EVENT_FIGS_FRAMES 6
 
 /* Where things are in the sky at a moment (degrees). The planets in the order they are drawn. */
 enum { VENUS, JUPITER, MARS, SATURN, MERCURY, PLANETS };
@@ -167,6 +174,14 @@ typedef struct {
   uint8_t show_sparks[4];              /* the feast's colours (0 ends them) */
   uint16_t show_end;                   /* the frames it lasts, at SHOW_FPS */
   Rocket show[SHOW_ROCKETS];
+  /* the passing event plan_render chose for this minute (EV_*, 0 none), played over event_frames frames: a meteor from
+   * (event_x0, event_y0) the way of (event_x1, event_y1), or the birds crossing from row event_y0 to event_y1 (eastward
+   * if event_x0), by the motion blob (plan_event), which works out their paths in the window; the figures, drawn
+   * again along by the caller (Face.figs_part) */
+  uint8_t event, event_frames, event_ink;      /* event_ink: the meteor's or the birds' colour (0: the meteor's own) */
+  int16_t event_x0, event_y0, event_x1, event_y1;
+  int32_t event_minute;                /* the minute last chosen for (local minutes since 1970: once a minute) */
+  int32_t figs_day, birds_mark;        /* the day the figures were drawn in; the twilight the birds last flew */
   /* while drawing */
   uint8_t *rows[MAX_H];
   int16_t rx0[MAX_H], rx1[MAX_H];
@@ -191,7 +206,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
  * app's own binary stays small (PebbleOS caps it at 64 KB) and the renderer has the rest of the app's memory. The
  * layout number keeps a blob from one build from running with another's structures. */
 #define PLAN_API_MAGIC 0x4e414c50u           /* "PLAN" */
-#define PLAN_API_VERSION 4u
+#define PLAN_API_VERSION 5u
 #define PLAN_LAYOUT ((PLAN_API_VERSION << 28) ^ ((uint32_t)sizeof(Plan) << 12) ^ ((uint32_t)sizeof(Face) << 4) ^ \
                      (uint32_t)sizeof(Weather))
 typedef struct {
@@ -231,6 +246,11 @@ typedef struct {
   uint32_t magic, layout;
   bool (*frame)(Plan *p, const Target *t, int frame, ShowUndo *undo);
   bool (*scribe)(Plan *p, const Target *t, int frame, uint32_t *room);
+  bool (*event)(Plan *p, const Target *t, int frame, ShowUndo *undo);
 } ShowApi;
 bool plan_show(Plan *p, const Target *t, int frame, ShowUndo *undo);
 bool plan_scribe(Plan *p, const Target *t, int frame, uint32_t *room);
+/* The meteor or the birds (Plan.event), from the same blob, as the display is played: frame event_frames only puts
+ * back. True while the event goes on. */
+#define EVENT_UNDO 96
+bool plan_event(Plan *p, const Target *t, int frame, ShowUndo *undo);

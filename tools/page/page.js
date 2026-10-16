@@ -17,9 +17,11 @@
     return e;
   }
 
-  // ANIMATIONS: a bit an animation (ANIM_*); 0.1.3's ANIMATE (the minute written alone) read into it
-  var ANIM_MINUTE = 1, ANIM_FIREWORKS = 2;
-  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CALENDARS: 0, ANIMATIONS: ANIM_MINUTE | ANIM_FIREWORKS,
+  // ANIMATIONS: a bit an animation (ANIM_*); 0.1.3's ANIMATE (the minute written alone) read into it, and the passing
+  // events (0.1.5, ANIMV 2) turned on in settings from before them
+  var ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32;
+  var ANIM_EVENTS = 60;
+  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
                   WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: ''};
   var settings = {};
   function reset(from) {
@@ -27,6 +29,8 @@
     for (var k in DEFAULTS) settings[k] = from && from[k] !== undefined ? from[k] : DEFAULTS[k];
     if (from && from.ANIMATIONS === undefined && from.ANIMATE !== undefined)
       settings.ANIMATIONS = (from.ANIMATE ? ANIM_MINUTE : 0) | ANIM_FIREWORKS;
+    if (from && from.ANIMV === undefined && (from.ANIMATIONS !== undefined || from.ANIMATE !== undefined))
+      settings.ANIMATIONS |= ANIM_EVENTS;
   }
   reset(STATE.settings);
   var phonePlace = STATE.place || null;      // where the phone last was: {lat, lon, city, country}
@@ -94,8 +98,18 @@
        desc: 'Each new figure written as a scribe writes it: outlined, then filled in. Under a second, a few hundred ' +
              'pixels.'},
       {key: 'ANIMATIONS', bit: ANIM_FIREWORKS, type: 'switch', label: 'Fireworks displays',
-       desc: 'On the calendars’ fireworks days, a few seconds of rockets at the top of each evening hour. All the ' +
-             'animations are left out while the battery runs low.'}
+       desc: 'On the calendars’ fireworks days, a few seconds of rockets at the top of each evening hour.'},
+      {key: 'ANIMATIONS', bit: ANIM_METEORS, type: 'switch', label: 'Shooting stars',
+       desc: 'Now and then on a clear dark night a meteor crosses the window, as the minute turns: one minute in ' +
+             'five at a meteor shower’s peak, flying out of its radiant; rarely on other nights.'},
+      {key: 'ANIMATIONS', bit: ANIM_FIGURES, type: 'switch', label: 'The figures drawn in',
+       desc: 'Once an evening, as dusk brings out the stars, the constellations’ figures are drawn in, star to star.'},
+      {key: 'ANIMATIONS', bit: ANIM_BIRDS, type: 'switch', label: 'Birds at twilight',
+       desc: 'In the months birds migrate (March to May, September to November), a skein of them may cross low ' +
+             'through the window at dawn or dusk, once a twilight.'},
+      {key: 'ANIMATIONS', bit: ANIM_VILLAGE, type: 'switch', label: 'The village’s life',
+       desc: 'The windows lit and dark as the village’s people come and go, ten minutes at a time, and smoke from ' +
+             'the hearth on a cool evening. All the animations are left out while the battery runs low.'}
     ]},
     {title: 'The sky', items: [
       {key: 'NAMES', type: 'switch', label: 'Names in the sky',
@@ -408,7 +422,7 @@
     var p = place();
     M._pv_face(plate, settings.CLOCK === 2 || (settings.CLOCK === 0 && clock24Here()) ? 1 : 0, settings.NAMES ? 1 : 0,
                fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0, settings.LABOURS ? 1 : 0, settings.CALENDARS >>> 0,
-               main && settings.ANIMATIONS & ANIM_MINUTE ? 1 : 0);
+               main && settings.ANIMATIONS & ANIM_MINUTE ? 1 : 0, settings.ANIMATIONS & ANIM_VILLAGE ? 8 : 0);
     M.stringToUTF8(p.city || '', M._pv_city(), 32);
     M.stringToUTF8(p.country || '', M._pv_country(), 32);
     var w = !settings.WEATHER ? null : trySky === 'phone' ? phoneWeather && [phoneWeather.code, phoneWeather.temp10,

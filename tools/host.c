@@ -20,6 +20,11 @@
  *     --scribe          the minute written: draw the minute before first, then this one, keeping its new figures
  *     --scribe-frame K  and play the minute written (plan_scribe, as the watch plays it) to frame K
  *     --scribe-check    play all of it and check the face is written back exactly; print what was written
+ *     --events MASK     the passing events the face may bring and the village's life (EV_* in plan.h): print the
+ *                       event this minute chose, if any
+ *     --event-frame K   and play it to frame K, as the watch plays it (the meteor or the birds over the face, plan_event;
+ *                       the figures drawn in, the face drawn again so far along)
+ *     --event-check     play all of it and check the face is put back exactly (the meteor, the birds)
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,7 +78,8 @@ int main(int argc, char **argv) {
   Weather wx;
   int repeat = 1;
   bool mem = false, show_check = false, scribe_check = false;
-  int show = -1, scribe_frame = -1;
+  int show = -1, scribe_frame = -1, event_frame = -1;
+  bool event_check = false;
   for (int i = 8; i < argc; i++) {
     if (!strcmp(argv[i], "--24")) f.clock24 = true;
     else if (!strcmp(argv[i], "--no-names")) f.names = false;
@@ -89,6 +95,9 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--scribe")) f.scribe = true;
     else if (!strcmp(argv[i], "--scribe-frame") && i + 1 < argc) f.scribe = true, scribe_frame = atoi(argv[++i]);
     else if (!strcmp(argv[i], "--scribe-check")) f.scribe = true, scribe_check = true;
+    else if (!strcmp(argv[i], "--events") && i + 1 < argc) f.events = (uint8_t)strtoul(argv[++i], NULL, 0);
+    else if (!strcmp(argv[i], "--event-frame") && i + 1 < argc) event_frame = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "--event-check")) event_check = true;
     else if (!strcmp(argv[i], "--calendars") && i + 1 < argc) f.calendars = (uint32_t)strtoul(argv[++i], NULL, 0);
     else if (!strcmp(argv[i], "--weather") && i + 1 < argc) {
       int v[10] = {0};
@@ -117,6 +126,29 @@ int main(int argc, char **argv) {
   for (int i = 0; i < repeat; i++)
     if (!plan_render(&p, &f, utc, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
   if (mem) printf("peak %zu bytes in %zu blocks\n", mem_peak, mem_peak_blocks);
+  if (f.events && p.event)
+    printf("event %d: %d frames, %d,%d, %d,%d\n", p.event, p.event == EV_FIGURES ? EVENT_FIGS_FRAMES : p.event_frames,
+           p.event_x0, p.event_y0, p.event_x1, p.event_y1);
+  if ((event_frame >= 0 || event_check) && p.event == EV_FIGURES) {
+    f.figs_part = (uint8_t)(event_frame < EVENT_FIGS_FRAMES ? event_frame + 1 : 0);
+    if (f.figs_part != 1 && !plan_render(&p, &f, utc, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
+  } else if ((event_frame >= 0 || event_check) && p.event) {
+    static uint8_t base[MAX_W * MAX_H];
+    memcpy(base, fb, sizeof fb);
+    static struct { ShowUndo u; uint32_t px[EVENT_UNDO]; } undo = {{0, EVENT_UNDO}, {0}};
+    int last = event_check ? p.event_frames : event_frame, most = 0;
+    for (int k = 0; k <= last; k++) {
+      plan_event(&p, &t, k, &undo.u);
+      if (undo.u.n > most) most = undo.u.n;
+    }
+    if (event_check) {
+      int off = 0;
+      for (int i = 0; i < W * H; i++) off += fb[i] != base[i];
+      printf("event: %d frames, at most %d pixels a frame; %s\n", p.event_frames, most,
+             off ? "NOT put back" : "the face put back exactly");
+      if (off || most >= EVENT_UNDO) return 1;
+    }
+  }
   if (scribe_frame >= 0 || scribe_check) {
     static uint8_t drawn[MAX_W * MAX_H];
     memcpy(drawn, fb, sizeof fb);

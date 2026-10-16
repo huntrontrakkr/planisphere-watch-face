@@ -37,6 +37,11 @@ A fireworks display at the top of an evening hour, as the watch plays it.
 
 ![Independence Day](docs/gallery-fireworks.gif)
 
+The passing events, now and then, as the watch plays them: the figures drawn in at dusk, a skein of birds at
+twilight, and meteors out of the Orionids' radiant on the night of their peak (the Time 2).
+
+![The passing events](docs/gallery-events.gif)
+
 ## Plates
 
 Like Groundtrack's plates, each plate follows a real tradition of sky charts, set in the type of its time. Every plate sets the time in hours and minutes the way almanacs and astronomers write it, **9ʰ 30ᵐ**, large in the card above the window (or **21ʰ 30ᵐ** on the 24-hour clock, below). Its figures are drawn by hand, pixel by pixel, after each plate's type and for each watch. The small type is pixel type, every letter in whole pixels: Not Jam Old Style (CC0), a pixel serif after the old Garalde faces, with star names leaning in an oblique cut from it a pixel at a time. Under it are the date in italic and the Sun's next rising or setting in small capitals, with the temperature after it when the weather is known. The sky carries names the way the old atlases letter them: constellations in spaced capitals, stars in italic, planets in small capitals.
@@ -212,8 +217,27 @@ And the filigree, all drawn by hand:
 
 ## Animations
 
-Designed in the prototype; the watch does not play them yet. Each plays for a moment, then the face is still again: a
-watch has no battery for more.
+Each plays for a moment, then the face is still again: a watch has no battery for more. Each has its own switch on the
+settings page, and all are left out while the battery is under a fifth and not charging. The watch plays these:
+
+- **The minute written.** The minute's new figures outlined and then filled in, as a scribe writes.
+- **Fireworks displays.** On a fireworks feast, a few seconds of rockets at the top of each evening hour.
+- **Shooting stars.** As the minute turns on a clear dark night (the Sun 12 degrees down), now and then a meteor: its
+  white head flies 22 to 36 pixels in four frames on a trail that fades after it. One minute in five within a day of a
+  shower's peak, flying out of its radiant when that is up; one in forty-five on other nights.
+- **The figures drawn in.** Once an evening, as dusk brings the figures out (the Sun 10.5 degrees down), they are drawn
+  in star to star over six frames: the face drawn again each time, a little further along.
+- **Birds at twilight.** From March to May and September to November, a skein of seven crosses low through the window
+  once a twilight (the Sun between 6 degrees down and 4 up), wings beating, in the village's ink.
+- **The village's life.** The windows lit and dark by the ten minutes as people come and go (three in four lit in the
+  evening, one in eight through the night), and smoke from the hearth on a cool evening.
+
+The meteors and the birds are drawn over the face as last drawn, by the motion blob that plays the fireworks
+(`plan_event`), the pixels they cover put back after each frame; the renderer only chooses them, once a minute, from a
+generator seeded by the place and the minute. No event plays during a fireworks display or on a cloudy, rainy or foggy
+sky.
+
+Designed in the prototype, and not yet on the watch:
 
 - **Falling stars.** Now and then at night a meteor streaks across the window, its head a small cross of white, its trail fading through cream and grey into the sky. On a shower's peak night they come often, and all streak out from the shower's radiant.
 - **Birds.** Now and then by day a little flock crosses the sky in a loose V, wings beating, in the village's dark ink.
