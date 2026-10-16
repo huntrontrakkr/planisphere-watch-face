@@ -11,7 +11,7 @@
 /* Nothing here is in a hot loop: built for size. */
 #pragma GCC optimize("Os")
 
-#define SETTINGS_VERSION 6
+#define SETTINGS_VERSION 7
 /* the animations, a bit each (Settings.animations): the passing events (from version 5) are Face.events' bits, two up */
 enum { ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32 };
 #define ANIM_ALL 63
@@ -28,16 +28,25 @@ typedef struct {
   uint8_t version, plate, clock, names, weather, units, place, labours;
   int32_t lat_e4, lon_e4;               /* the place given on the settings page (PLACE 1) */
   uint32_t calendars;                   /* the calendars whose days the face keeps (bit n for CAL_* n) */
-  char city[24], country[20];
+  char city[40], country[28];           /* each a ladder of shorter forms, "|" between (from version 7) */
   uint8_t animations;                   /* a bit an animation, ANIM_* (from version 3; these bits from 4 and 5) */
   uint8_t tools;                        /* the Time 2's corners: the Labours' tools (from version 6) */
 } Settings;
+typedef struct {                        /* versions 2 to 6, the names' room smaller (version 2's ends at animations) */
+  uint8_t version, plate, clock, names, weather, units, place, labours;
+  int32_t lat_e4, lon_e4;
+  uint32_t calendars;
+  char city[24], country[20];
+  uint8_t animations, tools;
+} SettingsOld;
+_Static_assert(offsetof(SettingsOld, city) == offsetof(Settings, city), "the settings' head as before");
 
 typedef struct {                        /* where the phone last was */
   int32_t lat_e4, lon_e4;
-  char city[24], country[20];
+  char city[40], country[28];           /* the ladders, as Settings' */
   uint32_t time;                        /* 0: never */
 } Place;
+typedef struct { int32_t lat_e4, lon_e4; char city[24], country[20]; uint32_t time; } PlaceOld;   /* (to 0.1.6) */
 
 typedef struct { Weather w; uint32_t time; } Stored;
 
@@ -554,16 +563,27 @@ static void init(void) {
   defaults(&s_settings);
   Settings s;
   int got = persist_read_data(KEY_SETTINGS, &s, sizeof s);
-  if (got == (int)sizeof s && s.version >= 3 && s.version <= SETTINGS_VERSION) {
-    s_settings = s, s_settings.version = SETTINGS_VERSION;
-    if (s.version == 3) s.animations = (s.animations ? ANIM_MINUTE : 0) | ANIM_FIREWORKS;   /* the minute alone */
-    if (s.version < 5) s_settings.animations = s.animations | ANIM_EVENTS;   /* (the events new, and on) */
-    if (s.version < 6) s_settings.tools = 0;                                 /* (the corners' tools new, and off) */
-  } else if (got == (int)offsetof(Settings, animations) && s.version == 2) {   /* version 2's: no animations kept */
-    memcpy(&s_settings, &s, offsetof(Settings, animations));
-    s_settings.version = SETTINGS_VERSION, s_settings.animations = ANIM_ALL;
+  if (got == (int)sizeof s && s.version == SETTINGS_VERSION) s_settings = s;
+  else if (got == (int)sizeof(SettingsOld) || got == (int)offsetof(SettingsOld, animations)) {
+    SettingsOld o;                               /* versions 2 to 6: the names into their larger room */
+    memset(&o, 0, sizeof o);
+    persist_read_data(KEY_SETTINGS, &o, sizeof o);
+    int v = o.version;
+    memcpy(&s_settings, &o, offsetof(SettingsOld, city));
+    memcpy(s_settings.city, o.city, sizeof o.city), memcpy(s_settings.country, o.country, sizeof o.country);
+    s_settings.animations = v == 2 ? ANIM_ALL : v == 3 ? (o.animations ? ANIM_MINUTE : 0) | ANIM_FIREWORKS | ANIM_EVENTS
+                          : v == 4 ? o.animations | ANIM_EVENTS : o.animations;   /* (each version's new ones on) */
+    s_settings.tools = v >= 6 ? o.tools : 0;
+    s_settings.version = SETTINGS_VERSION;
   }
-  if (persist_read_data(KEY_PLACE, &s_place, sizeof s_place) != (int)sizeof s_place) memset(&s_place, 0, sizeof s_place);
+  got = persist_read_data(KEY_PLACE, &s_place, sizeof s_place);
+  if (got == (int)sizeof(PlaceOld)) {            /* (to 0.1.6: the names' room smaller) */
+    PlaceOld o;
+    persist_read_data(KEY_PLACE, &o, sizeof o);
+    memset(&s_place, 0, sizeof s_place);
+    s_place.lat_e4 = o.lat_e4, s_place.lon_e4 = o.lon_e4, s_place.time = o.time;
+    memcpy(s_place.city, o.city, sizeof o.city), memcpy(s_place.country, o.country, sizeof o.country);
+  } else if (got != (int)sizeof s_place) memset(&s_place, 0, sizeof s_place);
   if (persist_read_data(KEY_WEATHER, &s_weather, sizeof s_weather) != (int)sizeof s_weather) memset(&s_weather, 0, sizeof s_weather);
   app_message_register_inbox_received(inbox);
   app_message_open(INBOX, 64);                   /* before the face's data takes its memory */

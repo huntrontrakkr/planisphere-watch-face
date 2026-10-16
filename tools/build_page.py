@@ -107,7 +107,10 @@ def main():
     pieces = art()
     html = (PAGE / "page.html").read_text()
     preview = (ROOT / "preview" / "plan-preview.js").read_text()
-    script = (PAGE / "page.js").read_text()
+    # the place-name ladders (the phone's own rules, watchface/src/pkjs/names.js), set in ahead of the page's script
+    names_js = (ROOT / "watchface" / "src" / "pkjs" / "names.js").read_text()
+    script = ("var NAMES = (function () {\nvar module = {exports: {}};\n" + names_js + "\nreturn module.exports;\n})();\n"
+              + (PAGE / "page.js").read_text())
     for name, text in (("preview", preview), ("page", script)):
         assert "</script" not in text.lower(), f"{name} would end its script tag"
     css = (PAGE / "page.css").read_text().replace("/*FONTS*/", fonts())

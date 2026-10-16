@@ -135,6 +135,9 @@ int main(int argc, char **argv) {
   for (int i = 0; i < repeat; i++)
     if (!plan_render(&p, &f, utc, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
   if (mem) printf("peak %zu bytes in %zu blocks\n", mem_peak, mem_peak_blocks);
+  if (getenv("PLAN_ROOMS"))                     /* the room each inscription has along the ring, in pixels */
+    printf("rooms: city %.1f, country %.1f, latitude %.1f, longitude %.1f\n", (p.ins_hi[0] - p.ins_lo[0]) / 16.0,
+           (p.ins_hi[1] - p.ins_lo[1]) / 16.0, (p.ins_hi[2] - p.ins_lo[2]) / 16.0, (p.ins_hi[3] - p.ins_lo[3]) / 16.0);
   if (f.events && p.event)
     printf("event %d: %d frames, %d,%d, %d,%d\n", p.event, p.event == EV_FIGURES ? EVENT_FIGS_FRAMES : p.event_frames,
            p.event_x0, p.event_y0, p.event_x1, p.event_y1);

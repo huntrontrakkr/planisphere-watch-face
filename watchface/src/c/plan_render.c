@@ -2544,37 +2544,9 @@ static int tiny_width(R *r, const char *s) {
   return w;
 }
 
-/* a name, then shorter forms of it (form 1, 2, ...): its leading words cut to their initials one by one (NEW YORK,
- * N. YORK), then its initials alone (N.Y.); "" past the last */
-static void shortened(const char *name, int form, char *out, int n) {
-  const char *w[8];
-  int len[8], nw = 0;
-  for (const char *s = name; *s && nw < 8;) {
-    while (*s == ' ') s++;
-    if (!*s) break;
-    w[nw] = s;
-    while (*s && *s != ' ') s++;
-    len[nw] = (int)(s - w[nw]), nw++;
-  }
-  int k = 0;
-#define ADD(c) do { if (k < n - 1) out[k++] = (c); } while (0)
-  if (form == 0) {
-    for (const char *s = name; *s; s++) ADD(*s);
-  } else if (form < nw) {
-    for (int i = 0; i < nw; i++) {
-      if (i) ADD(' ');
-      if (i < form) { ADD(w[i][0]); ADD('.'); }
-      else for (int c = 0; c < len[i]; c++) ADD(w[i][c]);
-    }
-  } else if (form == nw && nw > 1) {
-    for (int i = 0; i < nw; i++) { ADD(w[i][0]); ADD('.'); }
-  }
-#undef ADD
-  out[k] = 0;
-}
-
-/* the place on the ring: city and country either side of MIDNIGHT, latitude and longitude either side of NOON, in
- * small capitals following the band's curve, each centred in the room there, a city too long shortened */
+/* the place on the ring: city and country (or state) either side of MIDNIGHT, latitude and longitude either side of
+ * NOON, in small capitals following the band's curve, each centred in the room there: of a name's forms (a ladder,
+ * longest first, "|" between: proto/names.py) the longest that fits */
 static void inscriptions(R *r, int style) {
   char dms[2][16];
   for (int k = 0; k < 2; k++) {
@@ -2597,11 +2569,13 @@ static void inscriptions(R *r, int style) {
     char form[40];
     int width = 0;
     bool ok = false;
-    for (int f = 0; f < 8; f++) {
-      shortened(text, f, form, sizeof form);
-      if (!form[0]) break;
+    for (const char *t = text; *t && !ok;) {
+      int k = 0;
+      while (*t && *t != '|') { if (k < (int)sizeof form - 1) form[k++] = *t; t++; }
+      form[k] = 0;
+      if (*t == '|') t++;
       width = tiny_width(r, form);
-      if (width <= hi - lo) { ok = true; break; }
+      ok = k && width <= hi - lo;
     }
     if (!ok) continue;
     const int16_t *cy = curves + (slot < 2 ? 0 : r->W);

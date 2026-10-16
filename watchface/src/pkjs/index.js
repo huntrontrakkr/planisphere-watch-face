@@ -1,9 +1,11 @@
 // Planisphere on the phone: where the phone is, the place's name and the weather there, sent to the watch; and the
 // settings page with its live preview of the face (page.js, built by tools/build_page.py).
 var page = require('./page');
+var names = require('./names');
 var keys = require('message_keys');
 
 var STORE = 'plan-settings', PLACE = 'plan-place', WEATHER = 'plan-weather', WATCH24 = 'plan-watch24';
+var LADDERS = 'plan-ladders';
 
 function saved(k) {
   try { return JSON.parse(localStorage.getItem(k)) || null; } catch (e) { return null; }
@@ -36,12 +38,7 @@ function fahrenheitHere() {
   return /-(US|LR|MM|BS|BZ|KY|PW)\b/.test(lang);
 }
 
-// a name as the ring engraves it: capitals, without accents
-function engrave(s) {
-  s = String(s || '');
-  if (s.normalize) s = s.normalize('NFD').replace(/[̀-ͯ]/g, '');
-  return s.toUpperCase().replace(/[^A-Z0-9 .'-]/g, '').replace(/\s+/g, ' ').replace(/^ | $/g, '').slice(0, 23);
-}
+var engrave = names.engrave;           // a name as the ring engraves it: capitals, without accents
 
 function settingsMessage(s) {
   var m = {};
@@ -60,8 +57,10 @@ function settingsMessage(s) {
   m[keys.PLACE] = s.PLACE | 0;
   m[keys.PLACE_LAT] = s.PLACE_LAT | 0;
   m[keys.PLACE_LON] = s.PLACE_LON | 0;
-  m[keys.PLACE_CITY] = engrave(s.PLACE_CITY);
-  m[keys.PLACE_COUNTRY] = engrave(s.PLACE_COUNTRY);
+  // the names as ladders of shorter forms (names.js): the state in the old newspapers' style where the place is
+  // in one (PLACE_CC its country's code, from the page's search)
+  m[keys.PLACE_CITY] = names.cityLadder(s.PLACE_CITY);
+  m[keys.PLACE_COUNTRY] = names.regionLadder(s.PLACE_CC, s.PLACE_COUNTRY, s.PLACE_COUNTRY);
   return m;
 }
 
@@ -91,7 +90,13 @@ Pebble.addEventListener('webviewclosed', function (e) {
   if (!s.PLACE) refresh();
 });
 
-Pebble.addEventListener('ready', function () { refresh(); });
+Pebble.addEventListener('ready', function () {
+  // settings kept from before the names' ladders (0.1.7): sent again once, so a place chosen by hand gets them
+  var s = saved(STORE);
+  if (s && s.PLACE && !saved(LADDERS)) send(settingsMessage(s));
+  localStorage.setItem(LADDERS, '1');
+  refresh();
+});
 
 // the watch asks again when what it has is old
 Pebble.addEventListener('appmessage', function (e) {
@@ -124,30 +129,27 @@ function refresh() {
     m[keys.LAT] = Math.round(lat * 1e4);
     m[keys.LON] = Math.round(lon * 1e4);
     send(m);
-    if (moved || !place.city) named(lat, lon);
+    if (moved || !place.city || place.cc === undefined) named(lat, lon);
     weather(lat, lon);
   }, function (err) { console.log('No location: ' + (err && err.message)); },
   {timeout: 20000, maximumAge: 30 * 60 * 1000});
 }
 
-// the countries whose names are long, as a map's border would give them
-var SHORT = {US: 'U.S.A.', AE: 'U.A.E.', RU: 'RUSSIA', KR: 'KOREA', KP: 'KOREA', IR: 'IRAN', VN: 'VIETNAM', TW: 'TAIWAN',
-             BO: 'BOLIVIA', VE: 'VENEZUELA', TZ: 'TANZANIA', SY: 'SYRIA', LA: 'LAOS', MD: 'MOLDOVA', CZ: 'CZECHIA',
-             NL: 'NETHERLANDS', PH: 'PHILIPPINES', DO: 'DOMINICAN REP.', CD: 'CONGO', CG: 'CONGO'};
-
 // the place's name, from BigDataCloud's free lookup for a device's own position (to a kilometre or so)
 function named(lat, lon) {
   get('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat.toFixed(2) + '&longitude=' +
       lon.toFixed(2) + '&localityLanguage=en', function (r) {
-    var city = r.city || r.locality || '';
-    var country = SHORT[r.countryCode] ||
-      (r.countryCode === 'GB' ? (r.principalSubdivision || 'U.K.') : String(r.countryName || '').split(/[(,]/)[0]);
     var place = saved(PLACE) || {};
-    place.city = engrave(city), place.country = engrave(country);
+    // its names as the page shows them (the state, where the place is in one), and its country's code
+    var cc = String(r.countryCode || '').toUpperCase();
+    place.city = engrave(r.city || r.locality || ''), place.cc = cc;
+    place.region = engrave(r.principalSubdivision || ''), place.regionCode = String(r.principalSubdivisionCode || '');
+    place.country = (names.REGIONS[cc] || cc === 'GB') && place.region ? place.region :      // (Britain: its nation)
+      engrave(names.SHORT[cc] || String(r.countryName || '').split(/[(,]/)[0]);
     localStorage.setItem(PLACE, JSON.stringify(place));
     var m = {};
-    m[keys.CITY] = place.city;
-    m[keys.COUNTRY] = place.country;
+    m[keys.CITY] = names.cityLadder(place.city);
+    m[keys.COUNTRY] = names.regionLadder(cc, place.regionCode || place.region, place.country);
     send(m);
   });
 }

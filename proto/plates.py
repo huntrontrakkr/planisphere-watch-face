@@ -238,37 +238,27 @@ def eq_to_ecl(ra, dec, eps):
 
 
 PLACES = [                       # the inscription's names for a place: the nearest of these within 60 km (on the
-    ("NEW YORK", "U.S.A.", 40.7128, -74.0060),       # watch the phone would name the place)
-    ("DALLAS", "U.S.A.", 32.7767, -96.7970),
-    ("BURGOS", "SPAIN", 42.3439, -3.6969),
-    ("LONDON", "ENGLAND", 51.5072, -0.1276),
-    ("PARIS", "FRANCE", 48.8566, 2.3522),
-    ("SAN FRANCISCO", "U.S.A.", 37.7749, -122.4194),
-    ("TOKYO", "JAPAN", 35.6762, 139.6503),
-    ("SYDNEY", "AUSTRALIA", -33.8688, 151.2093),
+    ("NEW YORK", "US", "NEW YORK", 40.7128, -74.0060),         # watch the phone names the place): city, country
+    ("DALLAS", "US", "TEXAS", 32.7767, -96.7970),              # code, and the state (in the US, Canada, Australia)
+    ("BURGOS", "ES", "SPAIN", 42.3439, -3.6969),               # or the country as the ring gives it
+    ("LONDON", "GB", "ENGLAND", 51.5072, -0.1276),
+    ("PARIS", "FR", "FRANCE", 48.8566, 2.3522),
+    ("SAN FRANCISCO", "US", "CALIFORNIA", 37.7749, -122.4194),
+    ("TOKYO", "JP", "JAPAN", 35.6762, 139.6503),
+    ("SYDNEY", "AU", "NEW SOUTH WALES", -33.8688, 151.2093),
 ]
 
 
 def place_name(lat, lon):
-    """(city, country) of the nearest known place within 60 km, else (None, None)."""
+    """The nearest known place within 60 km, its city and region as the phone sends them (proto/names.py: ladders of
+    shorter forms, "|" between), else (None, None)."""
+    import names
     best = None
-    for city, country, la, lo in PLACES:
+    for city, cc, region, la, lo in PLACES:
         d = 6371 * astro.separation((lo, la), (lon, lat)) * astro.D2R
         if d < 60 and (best is None or d < best[0]):
-            best = (d, city, country)
-    return (best[1], best[2]) if best else (None, None)
-
-
-def shortened(name):
-    """A name, then shorter forms of it: its leading words cut to their initials one by one (NEW YORK, N. YORK),
-    then its initials alone (N.Y.)."""
-    words_ = name.split()
-    forms = [name]
-    for k in range(1, len(words_)):
-        forms.append(" ".join([w[0] + "." for w in words_[:k]] + words_[k:]))
-    if len(words_) > 1:
-        forms.append("".join(w[0] + "." for w in words_))
-    return forms
+            best = (d, city, cc, region)
+    return (names.city_ladder(best[1]), names.region_ladder(best[2], best[3], best[3])) if best else (None, None)
 
 
 def dms(v, pos, neg):
@@ -1494,7 +1484,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             sprites.paint(img, sprites.LOZENGE, lx - 0.5, ly - 0.5, {2: P["accent"], 1: ring_ink})
     # the place, as a map's border gives it: its city and country either side of MIDNIGHT, its latitude and
     # longitude either side of NOON, in small capitals along the ring, each centred in the room the band has
-    # there; a city too long for its room is shortened, its leading words to their initials, then all of it
+    # there; of each name's forms (a ladder, longest first: proto/names.py) the longest that fits
     city, country = place_name(dial.lat, dial.lon)
     keep_off = grow(numeral_px | studs, 1)
     for top, side, text in ((True, -1, city), (True, 1, country),
@@ -1517,7 +1507,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         xa, xb = curve(side * s0)[0], curve(side * s1)[0]
         lo_x, hi_x = min(xa, xb), max(xa, xb)
         track = 1                                        # letters a pixel apart, or not at all: never touching
-        for form in shortened(text):
+        for form in text.split("|"):
             glyphs = [sprites.tiny(ch, track) if ch != " " else np.zeros((5, 3), bool) for ch in form]
             width = sum(g.shape[1] for g in glyphs) + track * (len(glyphs) - 1)
             if width <= hi_x - lo_x:

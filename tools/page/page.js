@@ -22,7 +22,7 @@
   var ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32;
   var ANIM_EVENTS = 60;
   var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, TOOLS: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
-                  WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: ''};
+                  WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: '', PLACE_CC: ''};
   var settings = {};
   function reset(from) {
     settings = {};
@@ -79,11 +79,11 @@
   }
 
   // a name as the ring engraves it: capitals, without accents
-  function engrave(s) {
-    s = String(s || '');
-    if (s.normalize) s = s.normalize('NFD').replace(/[̀-ͯ]/g, '');
-    return s.toUpperCase().replace(/[^A-Z0-9 .'-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 23);
-  }
+  // a name as the ring engraves it (NAMES: watchface/src/pkjs/names.js, set in by tools/build_page.py)
+  function engrave(s) { return NAMES.engrave(s).slice(0, 39); }
+  // the region the ring gives beside a place's name: the state, where the place is in one (the US, Canada,
+  // Australia), else the country
+  function regionOf(cc, region, country) { return NAMES.REGIONS[cc] && region ? region : country; }
 
   // ---- what can be set ----
   var SECTIONS = [
@@ -275,7 +275,9 @@
           b.onclick = function () {
             settings.PLACE_LAT = Math.round(Math.max(-89.9, Math.min(89.9, pl.latitude)) * 1e4);
             settings.PLACE_LON = Math.round(pl.longitude * 1e4);
-            settings.PLACE_CITY = engrave(pl.name), settings.PLACE_COUNTRY = engrave(pl.country || '');
+            settings.PLACE_CC = String(pl.country_code || '').toUpperCase();
+            settings.PLACE_CITY = engrave(pl.name);
+            settings.PLACE_COUNTRY = engrave(regionOf(settings.PLACE_CC, pl.admin1, pl.country || ''));
             q.value = '';
             found([], pl.name + (pl.country ? ', ' + pl.country : '') + ' chosen.');
             changed();
@@ -313,7 +315,7 @@
       };
       var f = el('div', 'fields');
       [['PLACE_LAT', 'Latitude (°, north +)', 'number'], ['PLACE_LON', 'Longitude (°, east +)', 'number'],
-       ['PLACE_CITY', 'Name on the ring', 'text'], ['PLACE_COUNTRY', 'Country on the ring', 'text']].forEach(function (q) {
+       ['PLACE_CITY', 'Name on the ring', 'text'], ['PLACE_COUNTRY', 'Country (or state) on the ring', 'text']].forEach(function (q) {
         var lab = el('label', null, q[1]);
         var inp = el('input');
         inp.type = q[2];
@@ -343,6 +345,7 @@
         if (!phonePlace) return;
         settings.PLACE_LAT = Math.round(phonePlace.lat * 1e4), settings.PLACE_LON = Math.round(phonePlace.lon * 1e4);
         settings.PLACE_CITY = engrave(phonePlace.city), settings.PLACE_COUNTRY = engrave(phonePlace.country);
+        settings.PLACE_CC = phonePlace.cc || '';
         changed();
       };
       if (phonePlace) box.appendChild(use);
@@ -416,10 +419,11 @@
   }
   function place() {
     if (settings.PLACE === 1)
-      return {lat: settings.PLACE_LAT / 1e4, lon: settings.PLACE_LON / 1e4, city: settings.PLACE_CITY,
-              country: settings.PLACE_COUNTRY, coords: true};
-    if (phonePlace) return {lat: phonePlace.lat, lon: phonePlace.lon, city: engrave(phonePlace.city),
-                            country: engrave(phonePlace.country), coords: true};
+      return {lat: settings.PLACE_LAT / 1e4, lon: settings.PLACE_LON / 1e4, city: NAMES.cityLadder(settings.PLACE_CITY),
+              country: NAMES.regionLadder(settings.PLACE_CC, settings.PLACE_COUNTRY, settings.PLACE_COUNTRY), coords: true};
+    if (phonePlace) return {lat: phonePlace.lat, lon: phonePlace.lon, city: NAMES.cityLadder(phonePlace.city),
+                            country: NAMES.regionLadder(phonePlace.cc, phonePlace.regionCode || phonePlace.region,
+                                                        phonePlace.country), coords: true};
     return {lat: 40, lon: -new Date().getTimezoneOffset() / 4, city: '', country: '', coords: false};
   }
   function setup(plate, main) {
@@ -428,8 +432,8 @@
                fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0, settings.LABOURS ? 1 : 0, settings.CALENDARS >>> 0,
                main && settings.ANIMATIONS & ANIM_MINUTE ? 1 : 0, settings.ANIMATIONS & ANIM_VILLAGE ? 8 : 0,
                settings.TOOLS ? 1 : 0);
-    M.stringToUTF8(p.city || '', M._pv_city(), 32);
-    M.stringToUTF8(p.country || '', M._pv_country(), 32);
+    M.stringToUTF8(p.city || '', M._pv_city(), 48);
+    M.stringToUTF8(p.country || '', M._pv_country(), 48);
     var w = !settings.WEATHER ? null : trySky === 'phone' ? phoneWeather && [phoneWeather.code, phoneWeather.temp10,
       phoneWeather.low, phoneWeather.mid, phoneWeather.high, phoneWeather.wind, phoneWeather.from, phoneWeather.pressure,
       phoneWeather.snow_mm, phoneWeather.vis_dam] : SAMPLES[trySky];

@@ -15,7 +15,7 @@ static bool round_screen;
 static int W = 200, H = 228;
 static uint8_t fb[MAX_W * MAX_H];
 static int16_t row_x0[MAX_H], row_x1[MAX_H];
-static char city[32], country[32];
+static char city[48], country[48];
 
 static uint8_t *pv_row(void *ctx, int y, int *x0, int *x1) {
   (void)ctx;
@@ -55,7 +55,8 @@ EMSCRIPTEN_KEEPALIVE void pv_face(int plate, int clock24, int names, int fahrenh
   F.lat = lat, F.lon = lon, F.coords = coords != 0;
   F.city = city, F.country = country;
 }
-/* the place's names for the ring: buffers the page writes into (UTF-8, at most 31 bytes) */
+/* the place's names for the ring: buffers the page writes into (UTF-8, at most 47 bytes; each a ladder of shorter
+ * forms, "|" between) */
 EMSCRIPTEN_KEEPALIVE char *pv_city(void) { return city; }
 EMSCRIPTEN_KEEPALIVE char *pv_country(void) { return country; }
 

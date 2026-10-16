@@ -48,6 +48,9 @@ def frame(platform, plate, when, place, offset, labours=False, weather=None, cal
     path = TMP / f"{platform}.ppm"
     args = [str(HOST), platform, str(PLATE[plate]), str(int(when.timestamp())), str(lat), str(lon), str(offset),
             str(path)]
+    if city:                                        # (a name given: as the phone would send it)
+        import names
+        city = (names.city_ladder(city[0]), names.region_ladder("", "", city[1]))
     city, country = city or plates.place_name(lat, lon)
     if city:
         args += ["--city", city, "--country", country]

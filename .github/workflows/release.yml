@@ -73,6 +73,7 @@ jobs:
           npm install --no-save --no-package-lock playwright@1.55.1
           npx playwright install --with-deps chromium
           node tools/check-page.mjs
+          python tools/check_names.py
       - name: Decide whether this push is a release
         id: release
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'release'

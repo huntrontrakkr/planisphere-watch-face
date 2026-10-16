@@ -71,7 +71,7 @@ fire('ready');
 await sleep(300);
 const got = Object.assign({}, ...sent.map(byName));
 check(got.LAT === 473769 && got.LON === 85417, `the place sent: ${got.LAT}, ${got.LON}`);
-check(got.CITY === 'ZURICH' && got.COUNTRY === 'SWITZERLAND', `its name engraved: ${got.CITY}, ${got.COUNTRY}`);
+check(got.CITY === 'ZURICH' && got.COUNTRY === 'SWITZERL.|SWITZ.|CH', `its name engraved: ${got.CITY}, ${got.COUNTRY}`);
 check(got.WX_TEMP === -34 && got.WX_CODE === 73 && got.WX_SNOW === 80 && got.WX_VIS === 250 && got.WX_FROM === 20,
       `the weather sent: ${JSON.stringify(Object.fromEntries(Object.entries(got).filter(([k]) => k.startsWith('WX_'))))}`);
 // the watch must take each message in: a dictionary is a count byte, then 7 bytes a tuple and its value
@@ -217,7 +217,7 @@ await sleep(100);
 const msg = byName(sent[before] || {});
 console.log('sent:', JSON.stringify(msg));
 const want = { PLATE: 4, CLOCK: 2, UNITS: 1, PLACE: 1, PLACE_LAT: -338700, PLACE_LON: 1512100, PLACE_CITY: 'SYDNEY',
-               PLACE_COUNTRY: 'AUSTRALIA', NAMES: 1, LABOURS: 1, CALENDARS: (1 << 6) | (1 << 8), WEATHER: 1,
+               PLACE_COUNTRY: 'AUSTRALIA|AUST.', NAMES: 1, LABOURS: 1, CALENDARS: (1 << 6) | (1 << 8), WEATHER: 1,
                ANIMATIONS: 63 };
 const bad = Object.entries(want).filter(([k, v]) => msg[k] !== v);
 check(!bad.length, 'page -> watch: ' + (bad.length ? 'MISMATCH ' + JSON.stringify(bad) : 'the settings as set'));
@@ -231,4 +231,14 @@ const animSent = async (kept) => {
 };
 const old = await animSent({ ANIMATIONS: 2, ANIMV: undefined }), kept = await animSent({ ANIMATIONS: 1, ANIMV: 2 });
 check(old === 62 && kept === 1, `the passing events turned on in settings from before them (sent ${old}; kept ${kept})`);
+// a place in the United States, chosen by hand: the state in the old newspapers' style, then its postal code; the
+// city cut back a syllable
+const us = byName((() => {
+  const n = sent.length;
+  fire('webviewclosed', { response: encodeURIComponent(JSON.stringify(Object.assign({}, JSON.parse(answer),
+    { PLACE: 1, PLACE_CITY: 'NORFOLK', PLACE_COUNTRY: 'VIRGINIA', PLACE_CC: 'US' }))) });
+  return n;
+})() >= 0 ? (await sleep(100), sent[sent.length - 1]) : {});
+check(us.PLACE_CITY === 'NORFOLK|NORF.' && us.PLACE_COUNTRY === 'VA.|VA',
+      `a place in Virginia: ${us.PLACE_CITY}, ${us.PLACE_COUNTRY}`);
 process.exitCode = failed ? 1 : 0;
