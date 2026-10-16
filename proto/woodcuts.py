@@ -44,15 +44,15 @@ ASTRONOMER = [
     ("brahe1602-armillary-equatorial.jpg", PLATE, [], 210, 0, 0),
     ("brahe1602-armillary-zodiacal.jpg", PLATE, [], 210, 0, 0),
     ("brahe1602-great-globe.jpg", PLATE, [], 210, 0, 0),
-    ("brahe1602-quadrant-azimuthal-brass.jpg", PLATE, [], 210, 0, 0),
-    ("brahe1602-sextant-trigonic.jpg", PLATE, [], 210, 0, 0),
+    ("brahe1602-armillary-great-equatorial.jpg", PLATE, [], 210, 0, -60),
+    ("brahe1602-sextant-trigonic.jpg", PLATE, [], 210, 0, -40),
     ("brahe1602-quadrant-revolving.jpg", PLATE, [], 210, 0, 0),
-    ("brahe1602-sextant-steel.jpg", PLATE, [], 210, 0, 0),
-    ("brahe1602-semicircle-azimuthal.jpg", PLATE, [], 210, 0, 0),
-    ("brahe1602-arc-bipartite.jpg", PLATE, [], 210, 0, 0),
-    ("brahe1602-sextant-v-frame.jpg", PLATE, [], 210, 0, 0),
-    ("brahe1602-quadrant-great-steel-square.jpg", PLATE, [], 210, 0, 0),
-    ("brahe1602-quadrant-small-gilt.jpg", PLATE, [], 210, 0, 0),
+    ("brahe1602-mural-quadrant.jpg", PLATE, [], 210, 0, -40),
+    ("brahe1602-semicircle-azimuthal.jpg", PLATE, [], 210, 0, -60),
+    ("brahe1602-quadrant-augsburg.jpg", PLATE, [], 210, 0, -20),
+    ("brahe1602-uraniborg-elevation.jpg", PLATE, [], 210, 0, -60),
+    ("brahe1602-quadrant-great-steel-square.jpg", PLATE, [], 210, 0, -20),
+    ("brahe1602-quadrant-small-gilt.jpg", PLATE, [], 210, 0, -20),
 ]
 ASTRONOMER_BASE = len(ZODIAC)                            # (its first in scenes.bin)
 
