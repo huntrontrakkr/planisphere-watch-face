@@ -21,7 +21,7 @@
   // events (0.1.5, ANIMV 2) turned on in settings from before them
   var ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32;
   var ANIM_EVENTS = 60;
-  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, TOOLS: 0, TIDE_TIMES: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
+  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CORNERS: 0, TIDE_TIMES: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
                   WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: '', PLACE_CC: ''};
   var settings = {};
   function reset(from) {
@@ -31,6 +31,9 @@
       settings.ANIMATIONS = (from.ANIMATE ? ANIM_MINUTE : 0) | ANIM_FIREWORKS;
     if (from && from.ANIMV === undefined && (from.ANIMATIONS !== undefined || from.ANIMATE !== undefined))
       settings.ANIMATIONS |= ANIM_EVENTS;
+    // whose pieces in the Time 2's corners: settings from before the choice (0.3's switch, TOOLS) keep the theme's,
+    // with no theme the labours' tools (as index.js reads them)
+    if (from && from.CORNERS === undefined && from.TOOLS) settings.CORNERS = (from.LABOURS | 0) || 1;
   }
   reset(STATE.settings);
   var phonePlace = STATE.place || null;      // where the phone last was: {lat, lon, city, country}
@@ -121,20 +124,31 @@
              'marine model; nothing inland.'}
     ]},
     {title: 'The card', items: [
-      {key: 'LABOURS', type: 'seg', label: 'Behind the face', options: [[0, 'Plain'], [1, 'The labours'],
-       [2, 'The zodiac'], [3, 'The astronomer']],
-       desc: 'Faint in the card round the window. The labours of the months: the month’s work as the old ' +
-             'calendars’ woodcuts show it, January’s feast, the March pruning, October’s sowing (in the south, by ' +
-             'the seasons there). The zodiac: the sign the Sun is in, its woodcut from Ratdolt’s Hyginus (Venice, ' +
-             '1482) filling the card behind the face, seen only where the window and the type leave it open. The ' +
-             'astronomer: each month one of Tycho Brahe’s instruments at Uraniborg, from his Mechanica (1602), ' +
-             'the same way.'},
-      {key: 'TOOLS', type: 'switch', label: 'The theme in the corners',
-       desc: 'On the Time 2, instead of the season’s sprigs. With the labours, the month’s tools as the Shepherds’ ' +
-             'Calendar draws them: the scythe and the hay rake in June, the flail in August. With the zodiac, the Sun ' +
-             'and the Moon and the signs they are in, as the Venetian printers cut their glyphs, each in a roundel. ' +
-             'With the astronomer, the brightest planets above the horizon in roundels, brightest first, and ' +
-             'Tycho’s new star of 1572 where there is none.'}
+      // each choice's options: [value, label, what it shows (shown while it is chosen)]
+      {key: 'LABOURS', type: 'seg', label: 'Behind the face', options: [
+        [0, 'Plain', 'The card plain round the window.'],
+        [1, 'The labours', 'The month’s work as the old calendars’ woodcuts show it, faint round the window: ' +
+         'January’s feast, the March pruning, October’s sowing. In the south, by the seasons there.'],
+        [2, 'The zodiac', 'The woodcut of the sign the Sun is in, from Ratdolt’s Hyginus (Venice, 1482), filling ' +
+         'the card behind the face, seen only where the window and the type leave it open: the ram looking out, ' +
+         'the crab with its claws raised, the scorpion holding the balance.'],
+        [3, 'The astronomer', 'Each month one of Tycho Brahe’s instruments at Uraniborg, engraved for his ' +
+         'Mechanica (1602), behind the face: the armillary spheres, the great globe, the mural quadrant, ' +
+         'Uraniborg itself.'],
+        [4, 'The sea', 'Each month a ship as Hollar or Nooms etched them in the 1640s and 50s, riding the tide ' +
+         'where you are: down behind the window at low water, up at high, the sea drawn round it. Inland, or ' +
+         'until the tide is known, at its mean.']]},
+      {key: 'CORNERS', type: 'seg', label: 'In the corners (Time 2)', options: [
+        [0, 'Sprigs', 'A sprig turning into each corner, in the season’s dress: blossom, leaf, gold leaf, bare ' +
+         'twig.'],
+        [1, 'Tools', 'The month’s tools as the Shepherds’ Calendar draws them: the scythe and the hay rake in ' +
+         'June, the flail in August.'],
+        [2, 'Sun & Moon', 'The Sun and the Moon and the signs they are in, their glyphs as the Venetian printers ' +
+         'cut them, each in a roundel.'],
+        [3, 'Planets', 'The brightest planets above the horizon, brightest first, each in a roundel; where there ' +
+         'is none, Tycho’s new star of 1572.'],
+        [4, 'Moon & tide', 'The Moon’s phase and the tide, rising or falling (an hourglass until it is known); ' +
+         'below, the compass rose and the anchor.']]}
     ]},
     {title: 'The calendar', items: [
       {type: 'calendars', desc: 'Keep the days of the calendars you choose: the almanac’s line names the day in red, ' +
@@ -174,6 +188,7 @@
   function item(it) {
     var box = el('div', 'item');
     if (it.label && it.type !== 'switch') box.appendChild(el('div', 'label', it.label));
+    if (it.key) box.setAttribute('data-key', it.key);
     if (it.type === 'seg') {
       var seg = el('div', 'seg');
       it.options.forEach(function (o) {
@@ -184,6 +199,14 @@
         dirty.push(function () { b.classList.toggle('on', settings[it.key] === o[0]); });
       });
       box.appendChild(seg);
+      if (it.options.some(function (o) { return o[2]; })) {   // what the chosen option shows
+        var said = el('div', 'desc');
+        box.appendChild(said);
+        dirty.push(function () {
+          var o = it.options.filter(function (o) { return settings[it.key] === o[0]; })[0];
+          said.textContent = o && o[2] || '';
+        });
+      }
     } else if (it.type === 'switch') {
       var row = el('label', 'switch');
       row.appendChild(el('span', null, it.label));
@@ -443,7 +466,7 @@
     M._pv_face(plate, settings.CLOCK === 2 || (settings.CLOCK === 0 && clock24Here()) ? 1 : 0, settings.NAMES ? 1 : 0,
                fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0, settings.LABOURS | 0, settings.CALENDARS >>> 0,
                main && settings.ANIMATIONS & ANIM_MINUTE ? 1 : 0, settings.ANIMATIONS & ANIM_VILLAGE ? 8 : 0,
-               settings.TOOLS ? 1 : 0);
+               settings.CORNERS | 0);
     M.stringToUTF8(p.city || '', M._pv_city(), 48);
     M.stringToUTF8(p.country || '', M._pv_country(), 48);
     var w = !settings.WEATHER ? null : trySky === 'phone' ? phoneWeather && [phoneWeather.code, phoneWeather.temp10,

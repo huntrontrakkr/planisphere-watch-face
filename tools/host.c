@@ -25,7 +25,8 @@
  *     --event-frame K   and play it to frame K, as the watch plays it (the meteor or the birds over the face, plan_event;
  *                       the figures drawn in, the face drawn again so far along)
  *     --event-check     play all of it and check the face is put back exactly (the meteor, the birds)
- *     --tools           the theme's pieces in the Time 2's corners (the labours': tools.bin's record for the month)
+ *     --tools           the theme's pieces in the Time 2's corners (no theme: the labours' tools), as --corners
+ *     --corners N       whose pieces in the Time 2's corners, THEME_* (Face.corners)
  *     --theme N         the card's scene, THEME_* (1 the labours, as --labours)
  *     --tides LIST      the tide's turns: MINUTES-SINCE-1970:H|L:CM, comma-separated
  *     --tide-times      the next high and low waters set low on the face (as Face.tide_times)
@@ -62,23 +63,24 @@ static void uncounted(void *p) {
   free(b);
 }
 
-/* the scene blob, linked in: the labours and the corner tools (tools.bin from memory) */
+/* the scene blobs, linked in: the labours and the corner tools (tools.bin from memory), the woodcuts (scenes.bin) */
 /* a table in memory, read as the watch reads its resources (zeros past its end) */
 typedef struct { const uint8_t *at; uint32_t size; } Mem;
 static void mem_read(void *ctx, uint32_t at, void *buf, uint32_t n) {
   const Mem *m = ctx;
   for (uint32_t i = 0; i < n; i++) ((uint8_t *)buf)[i] = at + i < m->size ? m->at[at + i] : 0;
 }
-static bool host_decor(void *ctx, const DecorCtx *dc) {
+static bool host_call(void *ctx, bool labours, const DecorCtx *dc) {
   (void)ctx;
   static Mem tools_mem = {BLOB_TOOLS, sizeof BLOB_TOOLS}, scenes_mem = {BLOB_SCENES, sizeof BLOB_SCENES};
   FeastReader rd = {mem_read, &tools_mem}, scenes = {mem_read, &scenes_mem};
   in_decor = true;
   if (mem_now > decor_peak) decor_peak = mem_now;
-  bool ok = (decor_labours(dc->theme) ? plan_labours : plan_decor)(dc, &rd, &scenes);
+  bool ok = (labours ? plan_labours : plan_decor)(dc, &rd, &scenes);
   in_decor = false;
   return ok;
 }
+static bool host_decor(void *ctx, const DecorCtx *dc) { return decor_run(ctx, dc, host_call); }
 
 static uint8_t *row(void *ctx, int y, int *x0, int *x1) {
   (void)ctx;
@@ -105,6 +107,7 @@ int main(int argc, char **argv) {
   bool mem = false, show_check = false, scribe_check = false;
   int show = -1, scribe_frame = -1, event_frame = -1;
   bool event_check = false, tools = false;
+  int corners = -1;
   for (int i = 8; i < argc; i++) {
     if (!strcmp(argv[i], "--24")) f.clock24 = true;
     else if (!strcmp(argv[i], "--no-names")) f.names = false;
@@ -125,6 +128,7 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--event-frame") && i + 1 < argc) event_frame = atoi(argv[++i]);
     else if (!strcmp(argv[i], "--event-check")) event_check = true;
     else if (!strcmp(argv[i], "--tools")) tools = true;
+    else if (!strcmp(argv[i], "--corners") && i + 1 < argc) corners = atoi(argv[++i]);
     else if (!strcmp(argv[i], "--tide-times")) f.tide_times = true;
     else if (!strcmp(argv[i], "--tides") && i + 1 < argc) {       /* turns: "MINUTES:H|L:CM,..." */
       static Tides td;
@@ -154,7 +158,7 @@ int main(int argc, char **argv) {
     int a = ROUND2_TOPLEFT[y < 130 ? y : 259 - y];
     rx0[y] = (int16_t)a, rx1[y] = (int16_t)(259 - a);
   }
-  f.tools = tools;
+  f.corners = (uint8_t)(corners >= 0 ? corners : tools ? (f.theme ? f.theme : THEME_LABOURS) : 0);
   f.decor = host_decor;
   static Plan p;
   plan_init(&p, W, H, BLOB_PLAN, round ? BLOB_GABBRO : BLOB_EMERY);

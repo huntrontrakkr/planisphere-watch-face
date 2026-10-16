@@ -84,7 +84,7 @@ static void labours(const DecorCtx *r) {
   uint8_t (*card)[4] = r->alloc((size_t)r->p->h * sizeof *card);
   if (!card) return;
   for (int y = 0; y < r->p->h; y++) card_row(r, inner, y, card[y]);
-  int month = r->month;                                            /* (half a year round in the south) */
+  int month = (r->month + (r->south ? 6 : 0)) % 12;                /* (half a year round in the south) */
   const Labour *L = &LABOURS[month];
   int top = 0;
   for (int y = 0; y < r->p->h; y++)
@@ -182,9 +182,10 @@ static void corner_tools(const DecorCtx *r, const uint8_t *rec) {
 
 bool plan_labours(const DecorCtx *d, const FeastReader *tools, const FeastReader *scenes) {
   if (d->theme == THEME_LABOURS) labours(d);
-  if (d->tools && tools) {   /* the month's record of tools.bin: its clearance, its two pieces */
+  if (d->corners == THEME_LABOURS && tools) {   /* the month's record of tools.bin: its clearance, its two pieces (the
+                                                   labours' month, half a year round in the south) */
     uint8_t o[4];
-    tools->read(tools->ctx, TOOLS_CLIP + 2 * (uint32_t)d->month, o, 4);
+    tools->read(tools->ctx, TOOLS_CLIP + 2 * (uint32_t)((d->month + (d->south ? 6 : 0)) % 12), o, 4);
     int a = o[0] | o[1] << 8, n = (o[2] | o[3] << 8) - a;
     uint8_t *rec = n > 0 ? d->alloc(TOOLS_CLIP + (size_t)n) : NULL;
     if (rec) {

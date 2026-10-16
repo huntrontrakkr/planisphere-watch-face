@@ -2656,7 +2656,7 @@ static void ring(R *r, int season) {
   for (int i = 0; i < 4; i++) paint(r, D_LOZENGE, loz[2 * i] / 16.0f - 0.5f, loz[2 * i + 1] / 16.0f - 0.5f, scol, false);
   inscriptions(r, style);
   /* the Time 2's corners: a sprig in each, in the season's dress (unless the month's tools are there) */
-  if (r->rect && !r->f->tools) {                 /* (the tools drawn with the scene: plan_decor.c) */
+  if (r->rect && !r->f->corners) {               /* (a theme's corner pieces drawn with the scene: Face.decor) */
     const int16_t *cs = sec16(p->geom, GEO_CORNERS);
     static const uint8_t CORNER_OF_SEASON[6] = {D_CORNER_BARE, D_CORNER_BLOSSOM, D_CORNER_LEAF, D_CORNER_LEAF,
                                                 D_CORNER_AUTUMN, D_CORNER_AUTUMN};
@@ -3134,14 +3134,13 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
     for (int x = p->rx0[y]; x <= p->rx1[y]; x++) p->rows[y][x] = card_at(r, x, y);
   /* the scene in the card (the labours) and the Time 2's corner tools, by the scene blob (plan_decor.c, Face.decor):
    * now, while the frame's memory is low, before the grid */
-  if (f->decor && (f->theme || (f->tools && r->rect))) {
+  if (f->decor && (f->theme || (f->corners && r->rect))) {
     float mlon, mlat;
     eq_to_ecl(r->sky.moon_ra, r->sky.moon_dec, r->sky.eps, &mlon, &mlat);
-    int month = (r->local.month - 1 + (r->south && f->theme <= THEME_LABOURS ? 6 : 0)) % 12;   /* (the labours: half
-                                                                                         a year round in the south) */
-    DecorCtx dc = {p, month, r->col, r->cx, r->tint, P->ink, P->accent,
+    DecorCtx dc = {p, r->local.month - 1, r->south, r->col, r->cx, r->tint, P->ink, P->accent,
                    (uint8_t)((int)(r->sky.sun_lon / 30) % 12), (uint8_t)((int)(mlon / 30) % 12), f->theme,
-                   f->tools && r->rect, r->paper || r->red, alloc, release, NULL, {255, 255, 255, 255},
+                   (uint8_t)(r->rect && f->corners < THEME_COUNT ? f->corners : 0), r->paper || r->red, alloc, release,
+                   NULL, {255, 255, 255, 255},
                    f->tides, (uint32_t)utc / 60u, moon_phase8(r)};   /* (32 bits: no 64-bit division) */
     brightest_up(r, (float)f->lat, dc.planets);
     f->decor(f->decor_ctx, &dc);

@@ -11,7 +11,7 @@
 /* Nothing here is in a hot loop: built for size. */
 #pragma GCC optimize("Os")
 
-#define SETTINGS_VERSION 7
+#define SETTINGS_VERSION 8
 /* the animations, a bit each (Settings.animations): the passing events (from version 5) are Face.events' bits, two up */
 enum { ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32 };
 #define ANIM_ALL 63
@@ -32,7 +32,8 @@ typedef struct {
   uint32_t calendars;                   /* the calendars whose days the face keeps (bit n for CAL_* n) */
   char city[40], country[28];           /* each a ladder of shorter forms, "|" between (from version 7) */
   uint8_t animations;                   /* a bit an animation, ANIM_* (from version 3; these bits from 4 and 5) */
-  uint8_t tools;                        /* the Time 2's corners: the theme's pieces (from version 6: the labours' tools) */
+  uint8_t corners;                      /* the Time 2's corners: whose pieces, THEME_* (Face.corners; 0 the sprigs). To
+                                         * version 7 a switch, the theme's (no theme: the labours' tools; to 6, theirs) */
   uint8_t tide_times;                   /* the next high and low waters low on the face (in version 7's spare byte: 0 before) */
 } Settings;
 typedef struct {                        /* versions 2 to 6, the names' room smaller (version 2's ends at animations) */
@@ -160,16 +161,16 @@ static int animations(void) {
   return battery.charge_percent >= 20 || battery.is_charging ? s_settings.animations : 0;
 }
 
-/* the scene blob (plan_decor.c, the woodcuts' themes) or the labours' (plan_labours.c, the labours and the corner tools):
- * loaded when the renderer asks for the card's scene or the corners (Face.decor), for the moment it draws, and let go;
- * on the Time 2 the labours' reads the month's tools from their table as it goes */
+/* the scene blob (plan_decor.c, the woodcuts' themes) and the labours' (plan_labours.c, the labours and the corner
+ * tools): loaded when the renderer asks for the card's backdrop or the corners (Face.decor), one, or one after the
+ * other where the backdrop and the corners are each's (decor_run), for the moment each draws, and let go; on the Time 2
+ * the labours' reads the month's tools from their table as it goes */
 static const void *load_blob(uint32_t resource, uint8_t **mem);
 static void resource_read(void *ctx, uint32_t at, void *buf, uint32_t n);
 volatile uint32_t g_decor_heap = 0;      /* the heap free while the scene blob is loaded */
-static bool decor_draw(void *ctx, const DecorCtx *dc) {
+static bool decor_call(void *ctx, bool labours, const DecorCtx *dc) {
   uint8_t *mem;
-  const DecorApi *api = load_blob(decor_labours(dc->theme) ? RESOURCE_ID_PLAN_LABOURS_CODE : RESOURCE_ID_PLAN_DECOR_CODE,
-                                  &mem);
+  const DecorApi *api = load_blob(labours ? RESOURCE_ID_PLAN_LABOURS_CODE : RESOURCE_ID_PLAN_DECOR_CODE, &mem);
   bool ok = false;
   if (api && api->magic == DECOR_API_MAGIC && api->layout == PLAN_LAYOUT) {
     g_decor_heap = heap_bytes_free();
@@ -186,6 +187,7 @@ static bool decor_draw(void *ctx, const DecorCtx *dc) {
   free(mem);
   return ok;
 }
+static bool decor_draw(void *ctx, const DecorCtx *dc) { return decor_run(ctx, dc, decor_call); }
 
 static int32_t s_where[2];              /* the face's place as face_of sets it, 1e-4 degrees (latitude, longitude) */
 static void face_of(Face *f) {
@@ -207,7 +209,7 @@ static void face_of(Face *f) {
     s_where[0] = 400000, s_where[1] = utc_offset(time(NULL)) / 240 * 10000;
   }
   s_api->place(f, s_where[0], s_where[1]);
-  f->tools = PBL_IF_RECT_ELSE(s_settings.tools, false);
+  f->corners = PBL_IF_RECT_ELSE(s_settings.corners < THEME_COUNT ? s_settings.corners : 0, 0);
   f->decor = decor_draw;
   uint32_t now = (uint32_t)time(NULL);
   if (s_settings.weather && s_weather.time && now - s_weather.time < WEATHER_FRESH) f->weather = &s_weather.w;
@@ -462,7 +464,7 @@ static const struct { const uint32_t *key; uint8_t rec, type, off, size; } KEYS[
   IN(PLATE, IN_SETTINGS, IN_U8, Settings, plate), IN(CLOCK, IN_SETTINGS, IN_U8, Settings, clock),
   IN(NAMES, IN_SETTINGS, IN_U8, Settings, names), IN(WEATHER, IN_SETTINGS, IN_U8, Settings, weather),
   IN(UNITS, IN_SETTINGS, IN_U8, Settings, units), IN(PLACE, IN_SETTINGS, IN_U8, Settings, place),
-  IN(LABOURS, IN_SETTINGS, IN_U8, Settings, theme), IN(TOOLS, IN_SETTINGS, IN_U8, Settings, tools), IN(TIDE_TIMES, IN_SETTINGS, IN_U8, Settings, tide_times), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
+  IN(LABOURS, IN_SETTINGS, IN_U8, Settings, theme), IN(CORNERS, IN_SETTINGS, IN_U8, Settings, corners), IN(TIDE_TIMES, IN_SETTINGS, IN_U8, Settings, tide_times), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
   IN(PLACE_LON, IN_SETTINGS, IN_I32, Settings, lon_e4), IN(PLACE_CITY, IN_SETTINGS, IN_TEXT, Settings, city),
   IN(PLACE_COUNTRY, IN_SETTINGS, IN_TEXT, Settings, country), IN(CALENDARS, IN_SETTINGS, IN_I32, Settings, calendars),
   IN(ANIMATIONS, IN_SETTINGS, IN_U8, Settings, animations),
@@ -584,6 +586,11 @@ static void init(void) {
   Settings s;
   int got = persist_read_data(KEY_SETTINGS, &s, sizeof s);
   if (got == (int)sizeof s && s.version == SETTINGS_VERSION) s_settings = s;
+  else if (got == (int)sizeof s && s.version == 7) {   /* (the corners a switch: the theme's pieces, as they were) */
+    s_settings = s;
+    s_settings.corners = s.corners ? (s.theme && s.theme < THEME_COUNT ? s.theme : THEME_LABOURS) : 0;
+    s_settings.version = SETTINGS_VERSION;
+  }
   else if (got == (int)sizeof(SettingsOld) || got == (int)offsetof(SettingsOld, animations)) {
     SettingsOld o;                               /* versions 2 to 6: the names into their larger room */
     memset(&o, 0, sizeof o);
@@ -593,7 +600,7 @@ static void init(void) {
     memcpy(s_settings.city, o.city, sizeof o.city), memcpy(s_settings.country, o.country, sizeof o.country);
     s_settings.animations = v == 2 ? ANIM_ALL : v == 3 ? (o.animations ? ANIM_MINUTE : 0) | ANIM_FIREWORKS | ANIM_EVENTS
                           : v == 4 ? o.animations | ANIM_EVENTS : o.animations;   /* (each version's new ones on) */
-    s_settings.tools = v >= 6 ? o.tools : 0;
+    s_settings.corners = v >= 6 && o.tools ? THEME_LABOURS : 0;
     s_settings.version = SETTINGS_VERSION;
   }
   got = persist_read_data(KEY_PLACE, &s_place, sizeof s_place);

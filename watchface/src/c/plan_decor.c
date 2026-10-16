@@ -187,15 +187,15 @@ bool plan_decor(const DecorCtx *dc, const FeastReader *tools, const FeastReader 
                                                    : 24 + d->month % ((n[0] | n[1] << 8) - 24);
     scene(d, sec16(d->p->geom, GEO_INNER), d->scenes, k);
   }
-  if (d->tools && d->theme == THEME_ZODIAC) {
+  if (d->corners == THEME_ZODIAC) {
     zodiac_corners(d);
     return true;
   }
-  if (d->tools && d->theme == THEME_ASTRONOMER) {
+  if (d->corners == THEME_ASTRONOMER) {
     astronomer_corners(d);
     return true;
   }
-  if (d->tools && d->theme == THEME_SEA) {
+  if (d->corners == THEME_SEA) {
     sea_corners(d);
     return true;
   }

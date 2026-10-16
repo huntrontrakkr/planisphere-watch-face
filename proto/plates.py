@@ -856,7 +856,7 @@ def widest_time(style, screen, clock24):
 
 def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=False, sky_offset=None, extras=None,
            names=True, weather=None, fahrenheit=False, weather_clock=None, labours=False, feast=None, calendars=0,
-           tools=False, theme=None, tides=()):
+           tools=False, theme=None, tides=(), corners=None):
     """The face at `when`. Its sky may be drawn at another time (`sky_offset`, for the hourly turn) while the clock
     keeps `when`; `extras(img, ctx)` draws passing things (meteors, birds) into the sky, under the names. With
     `weather` (weather.Weather) the window shows the place's clouds, rain or snow, the village its weather, and
@@ -968,6 +968,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             img[(np.asarray(line_, np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3)) > 110) & zband] = P["accent"]
     ground = img.copy()
     theme = theme if theme is not None else (THEME_LABOURS if labours else 0)
+    if corners is None:                                  # (whose pieces in the Time 2's corners: `tools`, the theme's)
+        corners = (theme or THEME_LABOURS) if tools else 0
     sun_sign = int(pos["sun_lon"] // 30) % 12
     moon_sign = int(eq_to_ecl(*pos["moon"], pos["eps"])[0] // 30) % 12
     if theme == THEME_LABOURS:                           # the month's labour, faint behind the window (an option,
@@ -1766,15 +1768,15 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             gx += g.shape[1] + track
     # the Time 2's corners, outside the ring: the month's tools (an option, proto/labour_tools.py), else a sprig turning
     # into each, where the corner has most room, in the season's dress (blossom, leaf, gold leaf, bare twig)
-    if rect and tools and theme == THEME_ZODIAC:        # the Sun and the Moon and their signs, in roundels
+    if rect and corners == THEME_ZODIAC:                # the Sun and the Moon and their signs, in roundels
         zodiac_corners(img, P, sun_sign, moon_sign)
-    elif rect and tools and theme == THEME_ASTRONOMER:  # the brightest planets up, in roundels
+    elif rect and corners == THEME_ASTRONOMER:          # the brightest planets up, in roundels
         astronomer_corners(img, P, brightest_up(pos, lst, dial.lat))
-    elif rect and tools and theme == THEME_SEA:         # the Moon, the tide, the compass rose, the anchor
+    elif rect and corners == THEME_SEA:                 # the Moon, the tide, the compass rose, the anchor
         sea_corners(img, P, moon_phase8(pos, dial.lat < 0), tides, int(when.timestamp()) // 60)
-    elif rect and tools and theme > THEME_LABOURS:      # (the theme's own corners: none yet for the rest)
+    elif rect and corners and corners != THEME_LABOURS:  # (a theme's own corners: none yet for the rest)
         pass
-    elif rect and tools:
+    elif rect and corners:
         import labour_tools
         labour_tools.paint(img, dial, (local.month - 1 + (6 if dial.lat < 0 else 0)) % 12 + 1,
                            P["ink"] if P["window"] in ("paper", "red") else None)

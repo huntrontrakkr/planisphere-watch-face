@@ -59,11 +59,13 @@ typedef struct {
   bool scribe;                 /* the minute's new figures kept to be written as a scribe writes (plan_scribe) */
   uint8_t events;              /* the passing events the face may bring (EV_*: Plan.event), and the village's life */
   uint8_t figs_part;           /* the figures drawn in at dusk: drawn this many EVENT_FIGS_FRAMES-ths along (0: all) */
-  bool tools;                  /* the Time 2's corners: the month's tools instead of the sprigs (tools.bin) */
+  uint8_t corners;             /* the Time 2's corners: whose pieces (THEME_*: the labours' tools, the zodiac's Sun and
+                                * Moon, the astronomer's planets, the sea's Moon and tide), 0 the season's sprigs */
   const Tides *tides;          /* the tide here (NULL: none known, or inland) */
   bool tide_times;             /* the next high and low waters set low on the face (on the Round 2 for the coordinates) */
-  /* the scene blob (plan_decor.c), called where the card is laid when the labours or the tools are asked for: the
-   * watch loads it for the moment and lets it go; elsewhere it is plan_decor itself. NULL: neither drawn. */
+  /* the scene blobs (plan_labours.c, plan_decor.c), called where the card is laid when a backdrop or corner pieces
+   * are asked for: the watch loads them for the moment and lets them go (decor_run); elsewhere they are linked in.
+   * NULL: neither drawn. */
   bool (*decor)(void *ctx, const struct DecorCtx *dc);
   void *decor_ctx;
 } Face;
@@ -282,13 +284,15 @@ bool plan_event(Plan *p, const Target *t, int frame, ShowUndo *undo);
  * round the window) and the Time 2's corner tools, drawn into the Plan's rows. */
 typedef struct DecorCtx {
   Plan *p;
-  int month;                   /* the labours' month, 0..11 (half a year round in the south) */
+  int month;                   /* the month, 0..11 */
+  bool south;                  /* (the labours' year half a year round there) */
   int col;                     /* the meridian's column */
   float cx;                    /* the pole's x */
   uint8_t tone, ink, accent;   /* the scene's tone (the ring hatching's); the plate's ink and its red */
   uint8_t sun_sign, moon_sign; /* the signs the Sun and the Moon are in, 0 Aries .. 11 Pisces */
   uint8_t theme;               /* the scene to draw (THEME_*) */
-  bool tools, line_only;       /* the theme's corner pieces; those as their outlines alone, in the ink */
+  uint8_t corners;             /* whose pieces in the Time 2's corners (Face.corners; 0 none, and on the Round 2) */
+  bool line_only;              /* the corner tools as their outlines alone, in the ink */
   void *(*alloc)(size_t);
   void (*release)(void *);
   const FeastReader *scenes;   /* (set by plan_decor: the woodcuts' table) */
@@ -308,3 +312,15 @@ typedef struct {
 bool plan_decor(const DecorCtx *d, const FeastReader *tools, const FeastReader *scenes);
 bool plan_labours(const DecorCtx *d, const FeastReader *tools, const FeastReader *scenes);
 static inline bool decor_labours(int theme) { return theme <= THEME_LABOURS; }
+/* A frame's backdrop and corners by their blobs: `call(ctx, labours, d)` draws with the labours' blob or the scene
+ * blob; one call when one blob has both (or there is but one), else one each, the other's part left out of each. */
+typedef bool (*DecorCall)(void *ctx, bool labours, const DecorCtx *d);
+static inline bool decor_run(void *ctx, const DecorCtx *dc, DecorCall call) {
+  int a = dc->theme ? decor_labours(dc->theme) : -1, b = dc->corners ? decor_labours(dc->corners) : -1;
+  if (a < 0 || b < 0 || a == b) return call(ctx, (a >= 0 ? a : b) == 1, dc);
+  DecorCtx d = *dc;
+  d.corners = 0;
+  bool ok = call(ctx, a == 1, &d);
+  d = *dc, d.theme = THEME_NONE;
+  return call(ctx, b == 1, &d) && ok;
+}

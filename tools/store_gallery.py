@@ -16,7 +16,7 @@ as the store expects (docs/screenshots/store), and the same reels for the README
      out of the Orionids' radiant on the night of their peak
 and for the README alone: the Time 2's Labours' tools in its corners, month by month (docs/gallery-tools.gif), and the
 zodiac behind the face, sign by sign (docs/gallery-zodiac.gif); the astronomer, month by month
-(docs/gallery-astronomer.gif).
+(docs/gallery-astronomer.gif); the sea, month by month and through a tide (docs/gallery-sea.gif, gallery-sea-tide.gif).
 
     tools/build-host.sh && cd proto && uv run python ../tools/store_gallery.py
 """
@@ -41,7 +41,8 @@ DALLAS = (32.7767, -96.797)
 
 
 def frame(platform, plate, when, place, offset, labours=False, weather=None, calendars=0, show=None, clock24=False,
-          names=True, fahrenheit=False, city=None, scribe=None, events=0, event=None, tools=False, theme=0):
+          names=True, fahrenheit=False, city=None, scribe=None, events=0, event=None, tools=False, theme=0,
+          tides=()):
     """One face, as the watch draws it: when (aware datetime), place (lat, lon), offset (minutes ahead of UTC); the
     calendars kept (bit n for feasts.CALENDARS[n]), the frame of the fireworks display due then, if any; the clock,
     the names in the sky, the temperature's scale, and the place's name on the ring ((city, country); else the
@@ -74,6 +75,9 @@ def frame(platform, plate, when, place, offset, labours=False, weather=None, cal
         args.append("--tools")
     if theme:
         args += ["--theme", str(theme)]
+    if tides:                                       # the tide's turns, (minutes from `when`, high, cm)
+        now = int(when.timestamp()) // 60
+        args += ["--tides", ",".join(f"{now + m}:{'H' if hi else 'L'}:{cm}" for m, hi, cm in tides)]
     if events:                                      # the passing events allowed (EV_*), and the one chosen to a frame
         args += ["--events", str(events)] + (["--event-frame", str(event)] if event is not None else [])
     if weather:
@@ -230,6 +234,7 @@ def main():
                                    -240 if 3 < m < 11 else -300, theme=2, tools=True) for p in ("emery", "gabbro")))
               for y, m, d in signs], ROOT / "docs" / "gallery-zodiac.gif", 1200)
     astronomer_gallery()
+    sea_gallery()
     save_gif([frame("emery", "planisphere", local(2026, m, 15, 21, 30, -240 if 3 < m < 11 else -300), NY,
                     -240 if 3 < m < 11 else -300, tools=True) for m in range(1, 13)], ROOT / "docs" / "gallery-tools.gif", 1200)
     for f in sorted(OUT.iterdir()):
@@ -244,6 +249,21 @@ def astronomer_gallery():
     save_gif([side_by_side(*(frame(p, "planisphere", local(2026, m, 15, 21, 30, -240 if 3 < m < 11 else -300), NY,
                                    -240 if 3 < m < 11 else -300, theme=3, tools=True) for p in ("emery", "gabbro")))
               for m in range(1, 13)], ROOT / "docs" / "gallery-astronomer.gif", 1200)
+
+
+def sea_gallery():
+    """The sea behind the face, month by month, each at another hour of the tide (the Time 2 with the sea's corners),
+    and one month's ship through a tide, hour by hour, both watches side by side (docs/gallery-sea.gif,
+    docs/gallery-sea-tide.gif)."""
+    def tide(at):                                   # turns about a moment `at` minutes after a low water
+        return [(-at, False, 25), (372 - at, True, 180), (745 - at, False, 20)]
+
+    def faces(m, at):
+        when = local(2026, m, 15, 21, 30, -240 if 3 < m < 11 else -300)
+        return side_by_side(*(frame(p, "planisphere", when, NY, -240 if 3 < m < 11 else -300, theme=4, tools=True,
+                                    tides=tide(at)) for p in ("emery", "gabbro")))
+    save_gif([faces(m, m * 61 % 745) for m in range(1, 13)], ROOT / "docs" / "gallery-sea.gif", 1200)
+    save_gif([faces(1, h * 31) for h in range(24)], ROOT / "docs" / "gallery-sea-tide.gif", 300)
 
 
 if __name__ == "__main__":

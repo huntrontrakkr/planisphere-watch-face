@@ -121,7 +121,7 @@ check(lit > 10000, `the preview drew the face (${lit} lit pixels)`);
 const tap = async (sel, text) => { await page.locator(sel, { hasText: text }).first().click(); await page.waitForTimeout(200); };
 await tap('.plate', 'Astrolabe');
 await tap('.seg button', '24-hour');
-await tap('.seg button', 'The labours');
+await tap('[data-key=LABOURS] .seg button', 'The labours');
 await tap('.calendar label.switch', 'The United States');
 // the fireworks display: from the first of July the United States' next day is Independence Day, which its button
 // shows at nine at night
@@ -166,7 +166,7 @@ check(wrote[0] > 0 && settled === 0,               // (the new figures not there
       `the minute written in the preview (pixels still to write: ${wrote.join(', ')}; after: ${settled})`);
 // the Labours' tools in the corners: the Time 2's corners change, and only its corners; the Round 2 has none
 const plain = await grab();
-await page.locator('label.switch', { hasText: 'theme in the corners' }).first().click();
+await tap('[data-key=CORNERS] .seg button', 'Tools');
 await page.waitForTimeout(400);
 const tooled = await grab();
 const cw = await page.evaluate(() => document.getElementById('screen').width);
@@ -179,23 +179,32 @@ for (let i = 0; i < plain.length; i += 4) {
 }
 check(platform === 'gabbro' ? corner + elsewhere === 0 : corner > 0 && elsewhere === 0,
       `the tools in the corners (pixels changed in the corners: ${corner}; elsewhere: ${elsewhere})`);
-await page.locator('label.switch', { hasText: 'theme in the corners' }).first().click();
+await tap('[data-key=CORNERS] .seg button', 'Sprigs');
 await page.waitForTimeout(300);
 // the zodiac behind the face: the card changes from the labours' (its woodcut), and back
 const withLabours = await grab();
-await tap('.seg button', 'The zodiac');
+await tap('[data-key=LABOURS] .seg button', 'The zodiac');
 await page.waitForTimeout(400);
 const zodiacal = differ(withLabours, await grab());
-await tap('.seg button', 'The labours');
+await tap('[data-key=LABOURS] .seg button', 'The labours');
 await page.waitForTimeout(400);
 check(zodiacal > 50 && differ(withLabours, await grab()) === 0,
       `the zodiac behind the face (pixels changed from the labours: ${zodiacal}; back again: the same)`);
 // the astronomer behind the face: the card changes from the labours' (Tycho's instrument)
-await tap('.seg button', 'The astronomer');
+await tap('[data-key=LABOURS] .seg button', 'The astronomer');
 await page.waitForTimeout(400);
 const astronomical = differ(withLabours, await grab());
 check(astronomical > 50, `the astronomer behind the face (pixels changed from the labours: ${astronomical})`);
-await tap('.seg button', 'The zodiac');          // (saved so: the theme reaches the watch as itself, not as a switch)
+const said = await page.locator('[data-key=LABOURS] .desc').first().textContent();
+check(/Tycho/.test(said), `the chosen backdrop explained beneath it ("${said.slice(0, 40)}...")`);
+// the sea behind the face: the card changes from the labours'
+await tap('[data-key=LABOURS] .seg button', 'The sea');
+await page.waitForTimeout(400);
+const nautical = differ(withLabours, await grab());
+check(nautical > 50, `the sea behind the face (pixels changed from the labours: ${nautical})`);
+// the corners apart from the backdrop: the sea's Moon and tide with the zodiac behind (saved so, below)
+await tap('[data-key=CORNERS] .seg button', 'Moon & tide');
+await tap('[data-key=LABOURS] .seg button', 'The zodiac');          // (saved so: the theme reaches the watch as itself, not as a switch)
 await tap('.calendar label.switch', 'The Hebrew calendar');
 await tap('.seg button', 'Snow');
 await tap('.seg button', '°C');
@@ -232,7 +241,7 @@ await sleep(100);
 const msg = byName(sent[before] || {});
 console.log('sent:', JSON.stringify(msg));
 const want = { PLATE: 4, CLOCK: 2, UNITS: 1, PLACE: 1, PLACE_LAT: -338700, PLACE_LON: 1512100, PLACE_CITY: 'SYDNEY',
-               PLACE_COUNTRY: 'AUSTRALIA|AUST.', NAMES: 1, LABOURS: 2, CALENDARS: (1 << 6) | (1 << 8), WEATHER: 1,
+               PLACE_COUNTRY: 'AUSTRALIA|AUST.', NAMES: 1, LABOURS: 2, CORNERS: 4, CALENDARS: (1 << 6) | (1 << 8), WEATHER: 1,
                ANIMATIONS: 63 };
 const bad = Object.entries(want).filter(([k, v]) => msg[k] !== v);
 check(!bad.length, 'page -> watch: ' + (bad.length ? 'MISMATCH ' + JSON.stringify(bad) : 'the settings as set'));
@@ -246,6 +255,14 @@ const animSent = async (kept) => {
 };
 const old = await animSent({ ANIMATIONS: 2, ANIMV: undefined }), kept = await animSent({ ANIMATIONS: 1, ANIMV: 2 });
 check(old === 62 && kept === 1, `the passing events turned on in settings from before them (sent ${old}; kept ${kept})`);
+// settings from before the corners' choice (0.3: a switch, the theme's pieces) keep them: the astronomer's planets
+const n0 = sent.length;
+const keptAnswer = Object.assign({}, JSON.parse(answer), { LABOURS: 3, TOOLS: 1 });
+delete keptAnswer.CORNERS;
+fire('webviewclosed', { response: encodeURIComponent(JSON.stringify(keptAnswer)) });
+await sleep(100);
+const oldCorners = byName(sent[n0] || {}).CORNERS;
+check(oldCorners === 3, `the corners from before the choice kept as the theme's (sent ${oldCorners})`);
 // a place in the United States, chosen by hand: the state in the old newspapers' style, then its postal code; the
 // city cut back a syllable
 const us = byName((() => {

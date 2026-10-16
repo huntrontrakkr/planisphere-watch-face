@@ -100,6 +100,18 @@ CASES = {
                           {"theme": 4, "tools": True}),
     "sea-sydney-t2": ("emery", "hours", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc), (-33.87, 151.21, 660),
                       {"theme": 4, "tools": True, "tides": [(-300, True, 150), (70, False, 40), (440, True, 155)]}),
+    # the corners apart from the backdrop: each blob's backdrop with the other's corners, a backdrop with the sprigs,
+    # the plain card with a theme's corners
+    "mix-labours-sea-t2": ("emery", "planisphere", datetime(2026, 7, 16, 1, 30, tzinfo=timezone.utc), NY,
+                           {"theme": 1, "corners": 4, "tides": [(-100, False, 20), (272, True, 170)]}),
+    "mix-zodiac-tools-t2": ("emery", "hours", datetime(2026, 3, 16, 1, 30, tzinfo=timezone.utc), NY,
+                            {"theme": 2, "corners": 1}),
+    "mix-astronomer-sprigs-t2": ("emery", "burritt", datetime(2026, 5, 16, 1, 30, tzinfo=timezone.utc), NY,
+                                 {"theme": 3, "corners": 0}),
+    "mix-plain-planets-t2": ("emery", "flamsteed", datetime(2026, 11, 16, 2, 30, tzinfo=timezone.utc), NY,
+                             {"corners": 3}),
+    "mix-sea-tools-sydney-t2": ("emery", "planisphere", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc),
+                                (-33.87, 151.21, 660), {"theme": 4, "corners": 1}),
     # near the equator: the Time 2's window cut by its ring, the place's names beside the fleur-de-lis
     "quito-t2": ("emery", "planisphere", datetime(2026, 10, 15, 3, 0, tzinfo=timezone.utc), (-0.1807, -78.4678, -300), {}),
     "quito-hours-t2": ("emery", "hours", datetime(2026, 10, 14, 22, 0, tzinfo=timezone.utc), (-0.1807, -78.4678, -300),
@@ -163,6 +175,8 @@ def c_render(screen, plate, when, place, opts, path):
         args.append("--labours")
     if opts.get("tools"):
         args.append("--tools")
+    if opts.get("corners") is not None:
+        args += ["--corners", str(opts["corners"])]
     if opts.get("theme"):
         args += ["--theme", str(opts["theme"])]
     if opts.get("tides"):                        # (the turns' minutes from the case's moment)
@@ -195,7 +209,7 @@ def py_render(screen, plate, when, place, opts, sky):
         return plates.render(when, dial, sky, tz, plate, round_screen=screen == "gabbro",
                              clock24=opts.get("clock24", False), weather=w, labours=opts.get("labours", False),
                              calendars=opts.get("calendars", 0), tools=opts.get("tools", False),
-                             theme=opts.get("theme"),
+                             theme=opts.get("theme"), corners=opts.get("corners"),
                              tides=[(int(when.timestamp()) // 60 + m, hi, cm) for m, hi, cm in opts.get("tides", [])],
                              extras=extras).astype(np.uint8)
     if opts.get("show") is None:

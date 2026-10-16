@@ -42,13 +42,19 @@ function fahrenheitHere() {
 
 var engrave = names.engrave;           // a name as the ring engraves it: capitals, without accents
 
+// whose pieces in the Time 2's corners (THEME_*, 0 the season's sprigs); settings from before the choice (0.3's
+// switch, TOOLS) keep the theme's, with no theme the labours' tools
+function corners(s) {
+  return s.CORNERS !== undefined ? s.CORNERS | 0 : s.TOOLS ? (s.LABOURS | 0) || 1 : 0;
+}
+
 function settingsMessage(s) {
   var m = {};
   m[keys.PLATE] = s.PLATE | 0;
   m[keys.CLOCK] = s.CLOCK | 0;
   m[keys.NAMES] = s.NAMES ? 1 : 0;
   m[keys.LABOURS] = s.LABOURS | 0;              // the theme behind the face (THEME_*: 2 the zodiac), not a switch
-  m[keys.TOOLS] = s.TOOLS ? 1 : 0;
+  m[keys.CORNERS] = corners(s);
   m[keys.TIDE_TIMES] = s.TIDE_TIMES ? 1 : 0;
   m[keys.CALENDARS] = s.CALENDARS | 0;
   // a bit an animation: 1 the minute written, 2 fireworks, 4 .. 32 the passing events and the village's life (0.1.3's
@@ -165,7 +171,8 @@ function named(lat, lon) {
 // the tide here (tides.js), when the face shows it, asked again every six hours or when the phone has moved
 function tide(lat, lon, cc) {
   var s = saved(STORE) || {};
-  if (!s.TIDE_TIMES && s.LABOURS !== 4) return;              // (neither the tide's times nor the sea's theme)
+  if (!s.TIDE_TIMES && s.LABOURS !== 4 && corners(s) !== 4) return;   // (the tide's times, nor the sea's backdrop or
+                                                                      // corners)
   var t = saved(TIDES);
   if (t && Math.abs(t.lat - lat) < 0.05 && Math.abs(t.lon - lon) < 0.05 && Date.now() - t.time < 6 * 3600 * 1000) return;
   tides.fetch(get, lat, lon, cc === undefined || cc === 'US', function (bytes) {

@@ -41,28 +41,29 @@ EMSCRIPTEN_KEEPALIVE int pv_row_x0(int y) { return row_x0[y]; }
 EMSCRIPTEN_KEEPALIVE int pv_row_x1(int y) { return row_x1[y]; }
 EMSCRIPTEN_KEEPALIVE int pv_plates(void) { return PLATE_COUNT; }
 
-/* the scene blob, linked in: the labours and the corner tools (tools.bin from memory) */
+/* the scene blobs, linked in: the labours and the corner tools (tools.bin from memory), the woodcuts (scenes.bin) */
 /* a table in memory, read as the watch reads its resources (zeros past its end) */
 typedef struct { const uint8_t *at; uint32_t size; } Mem;
 static void mem_read(void *ctx, uint32_t at, void *buf, uint32_t n) {
   const Mem *m = ctx;
   for (uint32_t i = 0; i < n; i++) ((uint8_t *)buf)[i] = at + i < m->size ? m->at[at + i] : 0;
 }
-static bool pv_decor(void *ctx, const DecorCtx *dc) {
+static bool pv_call(void *ctx, bool labours, const DecorCtx *dc) {
   (void)ctx;
   static Mem tools_mem = {BLOB_TOOLS, sizeof BLOB_TOOLS}, scenes_mem = {BLOB_SCENES, sizeof BLOB_SCENES};
   FeastReader rd = {mem_read, &tools_mem}, scenes = {mem_read, &scenes_mem};
-  return (decor_labours(dc->theme) ? plan_labours : plan_decor)(dc, &rd, &scenes);
+  return (labours ? plan_labours : plan_decor)(dc, &rd, &scenes);
 }
+static bool pv_decor(void *ctx, const DecorCtx *dc) { return decor_run(ctx, dc, pv_call); }
 /* What the face shows: the plate, the clock, names in the sky, the temperature's scale, the place, the labours, the
  * minute written, the village's life (of the events, EV_VILLAGE alone: the passing ones are left to the watch) and
- * the Labours' tools in the Time 2's corners. */
+ * whose pieces are in the Time 2's corners (THEME_*, 0 the sprigs). */
 EMSCRIPTEN_KEEPALIVE void pv_face(int plate, int clock24, int names, int fahrenheit, float lat, float lon, int coords,
-                                  int labours, int calendars, int scribe, int events, int tools) {
+                                  int labours, int calendars, int scribe, int events, int corners) {
   F.plate = (uint8_t)(plate >= 0 && plate < PLATE_COUNT ? plate : 0);
   F.clock24 = clock24 != 0, F.names = names != 0, F.fahrenheit = fahrenheit != 0, F.theme = (uint8_t)(labours >= 0 && labours < THEME_COUNT ? labours : 0);
   F.calendars = (uint32_t)calendars, F.scribe = scribe != 0, F.events = (uint8_t)(events & EV_VILLAGE);
-  F.tools = tools != 0, F.decor = pv_decor;
+  F.corners = (uint8_t)(corners > 0 && corners < THEME_COUNT ? corners : 0), F.decor = pv_decor;
   F.lat = lat, F.lon = lon, F.coords = coords != 0;
   F.city = city, F.country = country;
 }
