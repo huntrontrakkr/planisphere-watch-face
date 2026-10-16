@@ -676,6 +676,34 @@ def zodiac_corners(img, P, sun_sign, moon_sign):
                         img[oy + j, ox + i] = c
 
 
+# each planet's light at full phase, a constant times its distances from the Sun and from us: 10^(H/5), H its magnitude
+# at a unit's distance (plan_render.c brightest_up)
+LIGHT = {"venus": 0.1318, "jupiter": 0.01318, "mars": 0.4966, "saturn": 0.01675, "mercury": 0.8241}
+
+
+def brightest_up(pos, lst, lat):
+    """The planets above the horizon, the brightest first, as many as four (plan_render.c brightest_up)."""
+    import zodiac_art as z
+    up = [p for p in z.PLANETS if astro.altitude(*pos[p], lst, lat) > 0]
+    return sorted(up, key=lambda p: (LIGHT[p] * pos[p + "_far"], z.PLANETS.index(p)))[:4]
+
+
+def astronomer_corners(img, P, planets):
+    """The Time 2's corners on the astronomer's theme (plan_decor.c astronomer_corners): the brightest planets above
+    the horizon in roundels, brightest first (top left, top right, bottom left, bottom right), Tycho's new star of 1572
+    in a corner none takes."""
+    import zodiac_art as z
+    H, W = img.shape[:2]
+    for k in range(4):
+        name = planets[k] if k < len(planets) else "nova"
+        x0, y0 = (W - 17 if k & 1 else 2), (H - 17 if k & 2 else 2)
+        for rows, ox, oy, c in ((z.ROUNDEL, x0, y0, P["ink"]), (z.GLYPHS[name], x0 + 3, y0 + 3, P["accent"])):
+            for j, r in enumerate(rows):
+                for i, ch in enumerate(r):
+                    if ch == "#":
+                        img[oy + j, ox + i] = c
+
+
 def labour_scene(img, dial, inside, inner, P, month):
     """The month's labour, faint in the card between the window and the ring: its field runs on behind the window
     (from a point hidden behind the oval's top: furrows, rows of vines, stubble, grass or snow, and a far line of
@@ -1691,7 +1719,9 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     # into each, where the corner has most room, in the season's dress (blossom, leaf, gold leaf, bare twig)
     if rect and tools and theme == THEME_ZODIAC:        # the Sun and the Moon and their signs, in roundels
         zodiac_corners(img, P, sun_sign, moon_sign)
-    elif rect and tools and theme > THEME_LABOURS:      # (the theme's own corners: none yet but the zodiac's)
+    elif rect and tools and theme == THEME_ASTRONOMER:  # the brightest planets up, in roundels
+        astronomer_corners(img, P, brightest_up(pos, lst, dial.lat))
+    elif rect and tools and theme > THEME_LABOURS:      # (the theme's own corners: none yet for the rest)
         pass
     elif rect and tools:
         import labour_tools

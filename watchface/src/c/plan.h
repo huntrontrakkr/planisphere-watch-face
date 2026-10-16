@@ -88,6 +88,7 @@ typedef struct {
   float moon_ra, moon_dec, moon_dist, moon_phase;    /* moon_dist in Earth radii, moon_phase the lit fraction */
   bool moon_waxing;
   float pl_ra[PLANETS], pl_dec[PLANETS];
+  float pl_far[PLANETS];       /* each its distance from the Sun times its distance from us (AU squared): its light */
 } Sky;
 
 void plan_sky(Sky *s, int64_t utc, float lon);
@@ -291,6 +292,7 @@ typedef struct DecorCtx {
   void *(*alloc)(size_t);
   void (*release)(void *);
   const FeastReader *scenes;   /* (set by plan_decor: the woodcuts' table) */
+  uint8_t planets[4];          /* the brightest planets above the horizon, brightest first (VENUS ..; 255 none) */
 } DecorCtx;
 #define DECOR_API_MAGIC 0x524F4344u          /* "DCOR" */
 typedef struct {

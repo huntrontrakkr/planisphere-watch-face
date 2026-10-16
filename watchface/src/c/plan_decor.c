@@ -277,14 +277,26 @@ static void glyph(const DecorCtx *r, const uint8_t *bits, int w, int h, int x0, 
       if (bits[b >> 3] >> (b & 7) & 1) put(r, x0 + i, y0 + j, c);
     }
 }
-static void zodiac_corners(const DecorCtx *r) {
+/* four glyphs (decor_data.h ZODIAC_GLYPHS), each in its roundel, in the Time 2's corners: the top two, then the
+ * bottom two, left first */
+static void roundels(const DecorCtx *r, const uint8_t which[4]) {
   int W = r->p->w, H = r->p->h;
-  const uint8_t which[4] = {12, r->sun_sign, 13, r->moon_sign};   /* the Sun, its sign; the Moon, its sign */
   for (int k = 0; k < 4; k++) {
     int x0 = k & 1 ? W - 17 : 2, y0 = k & 2 ? H - 17 : 2;
     glyph(r, ZODIAC_ROUNDEL, 15, 15, x0, y0, r->ink);
     glyph(r, ZODIAC_GLYPHS[which[k]], 9, 9, x0 + 3, y0 + 3, r->accent);
   }
+}
+static void zodiac_corners(const DecorCtx *r) {
+  const uint8_t which[4] = {12, r->sun_sign, 13, r->moon_sign};   /* the Sun, its sign; the Moon, its sign */
+  roundels(r, which);
+}
+/* the astronomer's: the brightest planets above the horizon, brightest first, and in a corner none takes Tycho's new
+ * star of 1572 */
+static void astronomer_corners(const DecorCtx *r) {
+  uint8_t which[4];
+  for (int k = 0; k < 4; k++) which[k] = r->planets[k] < 5 ? (uint8_t)(14 + r->planets[k]) : 19;
+  roundels(r, which);
 }
 
 bool plan_decor(const DecorCtx *dc, const FeastReader *tools, const FeastReader *scenes) {
@@ -294,6 +306,10 @@ bool plan_decor(const DecorCtx *dc, const FeastReader *tools, const FeastReader 
   if (d->theme == THEME_LABOURS || d->theme == THEME_ZODIAC || d->theme == THEME_ASTRONOMER) labours(d);
   if (d->tools && d->theme == THEME_ZODIAC) {
     zodiac_corners(d);
+    return true;
+  }
+  if (d->tools && d->theme == THEME_ASTRONOMER) {
+    astronomer_corners(d);
     return true;
   }
   if (d->tools && tools && d->theme <= THEME_LABOURS) {   /* the month's record of tools.bin: its clearance, its two pieces */

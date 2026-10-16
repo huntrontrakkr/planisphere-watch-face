@@ -85,6 +85,11 @@ CASES = {
                              {"theme": 3}),
     "astronomer-may-paper-t2": ("emery", "flamsteed", datetime(2026, 5, 12, 23, 20, tzinfo=timezone.utc), NY,
                                 {"theme": 3, "tools": True}),
+    # the astronomer's corners: the brightest planets up in roundels, the new star where none is
+    "astronomer-planets-t2": ("emery", "hours", datetime(2026, 11, 16, 2, 30, tzinfo=timezone.utc), NY,
+                              {"theme": 3, "tools": True}),
+    "astronomer-dawn-t2": ("emery", "planisphere", datetime(2026, 3, 20, 9, 0, tzinfo=timezone.utc), NY,
+                           {"theme": 3, "tools": True}),
     # near the equator: the Time 2's window cut by its ring, the place's names beside the fleur-de-lis
     "quito-t2": ("emery", "planisphere", datetime(2026, 10, 15, 3, 0, tzinfo=timezone.utc), (-0.1807, -78.4678, -300), {}),
     "quito-hours-t2": ("emery", "hours", datetime(2026, 10, 14, 22, 0, tzinfo=timezone.utc), (-0.1807, -78.4678, -300),

@@ -123,6 +123,7 @@ def positions(t: datetime):
         x, y, z = r * cosd(lon) * cosd(lat), r * sind(lon) * cosd(lat), r * sind(lat)
         xg, yg, zg = x + xs, y + ys, z
         out[p] = ecl_to_eq(rev(atan2d(yg, xg)), atan2d(zg, math.hypot(xg, yg)), eps)
+        out[p + "_far"] = r * math.sqrt(xg * xg + yg * yg + zg * zg)     # (its light: plan.h Sky pl_far)
     out["eps"] = eps
     return out
 

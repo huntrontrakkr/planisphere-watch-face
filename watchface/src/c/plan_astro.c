@@ -266,6 +266,7 @@ void plan_sky(Sky *s, int64_t utc, float lon) {
     }
     x = r * f_cosd(lo) * f_cosd(la), y = r * f_sind(lo) * f_cosd(la), z = r * f_sind(la);
     float xg = x + xs, yg = y + ys, zg = z;
+    s->pl_far[k] = r * f_sqrt(xg * xg + yg * yg + zg * zg);
     plan_ecl_to_eq(rev(f_atan2d(yg, xg)), f_atan2d(zg, f_sqrt(xg * xg + yg * yg)), eps, &s->pl_ra[k], &s->pl_dec[k]);
   }
 }

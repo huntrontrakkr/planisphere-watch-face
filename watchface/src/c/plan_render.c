@@ -3038,6 +3038,25 @@ static __attribute__((noinline)) void time_block(R *r, int fy0, int season, void
   if (fits) stamp(r, fits, r->cx, ring_in + span * 0.915f, P->accent, false, false, 0);
 }
 
+/* the planets above the horizon, the brightest first, as many as four (255 past them), for the astronomer's corners:
+ * each one's light its full-phase magnitude's, a constant times its distances from the Sun and from us (the constant
+ * 10^(H/5) from its magnitude at a unit's distance, Venus -4.40, Jupiter -9.40, Mars -1.52, Saturn -8.88 with its
+ * rings, Mercury -0.42), the least the brightest: so no logarithms */
+static void brightest_up(const R *r, float lat, uint8_t out[4]) {
+  static const float K[PLANETS] = {0.1318f, 0.01318f, 0.4966f, 0.01675f, 0.8241f};
+  int n = 0;
+  for (int i = 0; i < 4; i++) out[i] = 255;
+  for (int k = 0; k < PLANETS; k++) {
+    if (plan_altitude(r->sky.pl_ra[k], r->sky.pl_dec[k], r->sky.lst, lat) <= 0) continue;
+    float key = K[k] * r->sky.pl_far[k];
+    int at = n < 4 ? n : 4;
+    while (at > 0 && K[out[at - 1]] * r->sky.pl_far[out[at - 1]] > key) at--;
+    if (at >= 4) continue;
+    for (int j = (n < 4 ? n : 3); j > at; j--) out[j] = out[j - 1];
+    out[at] = (uint8_t)k, n++;
+  }
+}
+
 bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Target *t, void *(*alloc)(size_t),
                  void (*release)(void *)) {
   if (p->scribe) release(p->scribe), p->scribe = NULL, p->scribe_n = 0;   /* (the last minute's, not played) */
@@ -3113,7 +3132,8 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
                                                                                          a year round in the south) */
     DecorCtx dc = {p, month, r->col, r->cx, r->tint, P->ink, P->accent,
                    (uint8_t)((int)(r->sky.sun_lon / 30) % 12), (uint8_t)((int)(mlon / 30) % 12), f->theme,
-                   f->tools && r->rect, r->paper || r->red, alloc, release, NULL};
+                   f->tools && r->rect, r->paper || r->red, alloc, release, NULL, {255, 255, 255, 255}};
+    brightest_up(r, (float)f->lat, dc.planets);
     f->decor(f->decor_ctx, &dc);
   }
   r->ik = 1 / r->k;
