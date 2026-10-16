@@ -7,8 +7,8 @@
 // atlases and library catalogues abbreviate (NORFOLK NORF., PHILADELPHIA PHILAD. PHIL.: after the consonants that
 // close a syllable, a cluster of three or more leaving its last to the next, never under four letters, never to save
 // less than two letters with its full stop); then its initials alone (N.Y.).
-// The region beside it: in the United States, Canada and Australia the state or province, in the old newspaper style
-// (VA., N.Y., CALIF., ONT., N.S.W.) and then its postal code (VA, NY, CA); elsewhere the country, cut back the same
+// The region beside it: in the United States, Canada and Australia the state or province, its full name where there
+// is room, then in the old newspaper style (VA., N.Y., CALIF., ONT., N.S.W.) and then its postal code (VA, NY, CA); elsewhere the country, cut back the same
 // way (SWITZERLAND SWITZ.) and then its two-letter code. A hyphened name tries its first part alone first.
 
 var CITY_CAP = 39, REGION_CAP = 27;                 // the watch keeps a ladder in 40 and 28 bytes
@@ -115,7 +115,7 @@ function regionLadder(code, region, country) {
   if (states) {
     var sub = r.replace(/^[A-Z]{2}-/, '');
     for (var name in states)
-      if (name === r || states[name][1] === sub) return join(states[name], REGION_CAP);
+      if (name === r || states[name][1] === sub) return join([name].concat(states[name]), REGION_CAP);
   }
   var c = engrave(String(country || '').split(/[(,]/)[0]) || engrave(SHORT[code] || '');
   if (!c) return '';

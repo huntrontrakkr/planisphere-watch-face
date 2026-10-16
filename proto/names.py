@@ -103,7 +103,7 @@ def region_ladder(code, region, country):
         sub = re.sub(r"^[A-Z]{2}-", "", r)
         for name, forms in states.items():
             if name == r or forms[1] == sub:
-                return join(forms, REGION_CAP)
+                return join([name] + forms, REGION_CAP)
     c = engrave(re.split(r"[(,]", str(country or ""))[0]) or engrave(SHORT.get(code, ""))
     if not c:
         return ""

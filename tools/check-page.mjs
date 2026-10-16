@@ -239,6 +239,6 @@ const us = byName((() => {
     { PLACE: 1, PLACE_CITY: 'NORFOLK', PLACE_COUNTRY: 'VIRGINIA', PLACE_CC: 'US' }))) });
   return n;
 })() >= 0 ? (await sleep(100), sent[sent.length - 1]) : {});
-check(us.PLACE_CITY === 'NORFOLK|NORF.' && us.PLACE_COUNTRY === 'VA.|VA',
+check(us.PLACE_CITY === 'NORFOLK|NORF.' && us.PLACE_COUNTRY === 'VIRGINIA|VA.|VA',
       `a place in Virginia: ${us.PLACE_CITY}, ${us.PLACE_COUNTRY}`);
 process.exitCode = failed ? 1 : 0;
