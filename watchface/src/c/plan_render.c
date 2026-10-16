@@ -85,6 +85,7 @@ typedef struct {
   int16_t marks[24][2];                      /* a feast's marks in the sky (the glint, the magpies), names keep off */
   int nmarks;
   int8_t first;                              /* Christmas Eve's first star, as Plan.feast_first, once it is out */
+  int16_t fl_x0, fl_y0, fl_w, fl_h;          /* the fleur-de-lis at the window's top, as rims drew it */
   bool weaver;                               /* Qixi's Weaver and Cowherd, named */
   /* memory the layers take in turn (the watch's is short): the Milky Way's first; then Jupiter's moons' and the
    * village's; then the lines of type for the names, the ring and the time. (Only what nothing reads once the names
@@ -430,6 +431,26 @@ void plan_init(Plan *p, int w, int h, const uint8_t *data, const uint8_t *geom) 
 
 #define WINDOW_FIT 40.0f                  /* the Round 2's star disc fits this latitude's whole window to the ring */
 #define WINDOW_ROOM (56.0f / 124.0f)       /* and its window rises at most this part of the disc above the pole */
+/* the Time 2's window kept clear of the ring's band by WINDOW_CLEAR pixels, room for its two rims (as the Round 2's
+ * disc is): in a row, the first pixel from the left whose middle stands that far in from the band's inner edge (the
+ * inner track, traced round the screen's middle, where it crosses the row's middle; proto/plates.py window_clip).
+ * Nearer the equator the window widens past the ring and is cut here, as the Round 2's star disc is cut by its ring. */
+#define WINDOW_CLEAR 3.0f
+static int window_clip(const Plan *p, int y) {
+  const int16_t *t = sec16(p->geom, GEO_TRACKS) + TRACK_INNER * 720;
+  float yc = (float)y + 0.5f, best = -1;
+  for (int i = 0; i < 360; i++) {
+    int j = (i + 1) % 360;
+    float ya = t[2 * i + 1] / 16.0f, yb = t[2 * j + 1] / 16.0f, xa = t[2 * i] / 16.0f, xb = t[2 * j] / 16.0f;
+    if ((ya < yc) == (yb < yc) || ya == yb) continue;
+    float x = xa + (xb - xa) * (yc - ya) / (yb - ya);
+    if (x < p->w / 2.0f && x > best) best = x;
+  }
+  if (best < 0) return p->w;                     /* (a row outside the band: no window) */
+  int c = -pyf_floor(0.5f - best - WINDOW_CLEAR);         /* (the ceiling of best + clear - 0.5) */
+  return c < 0 ? 0 : c;
+}
+
 void plan_window(Plan *p, float lat) {
   if (p->lat_key == lat) return;
   p->lat_key = lat;
@@ -469,6 +490,11 @@ void plan_window(Plan *p, float lat) {
         if (window_cover(p, mid, y, sl, cl) >= 9) hi = mid;
         else lo = mid;
       }
+    if (p->rect) {                               /* the Time 2's window kept inside the ring (below) */
+      int clip = window_clip(p, y);
+      if (clip >= half) continue;
+      if (hi < clip) hi = clip;
+    }
     p->wx0[y] = (int16_t)hi, p->wx1[y] = (int16_t)(W - 1 - hi);
     if (p->win_top < 0) p->win_top = (int16_t)y;
     p->win_bottom = (int16_t)y;
@@ -2362,6 +2388,7 @@ static int rims(R *r) {
   int fl = P->throne ? D_THRONE : D_FLEUR;
   const DrawIndex *di = drawing(r, fl);
   int fx0 = pyf_round(r->cx - di->w / 2.0f), fy0 = first - 4 - (di->h - 1);
+  r->fl_x0 = (int16_t)fx0, r->fl_y0 = (int16_t)fy0, r->fl_w = di->w, r->fl_h = di->h;
   uint8_t c2[8] = {0, P->ink, P->accent};
   paint_at(r, fl, fx0, fy0, c2, false, 0);
   float ew = 90 * r->k;
@@ -2547,6 +2574,34 @@ static int tiny_width(R *r, const char *s) {
 /* the place on the ring: city and country (or state) either side of MIDNIGHT, latitude and longitude either side of
  * NOON, in small capitals following the band's curve, each centred in the room there: of a name's forms (a ladder,
  * longest first, "|" between: proto/names.py) the longest that fits */
+/* the city (slot 0) and its region (1), when either is too long for the band, set level beside the fleur-de-lis
+ * instead, the city on its left and the region on its right (each in the band still if it has no room here), their feet level with the fleur's and three pixels from it: the longest form whose
+ * every pixel falls on the card (inside the ring's inner edge by two, clear of the window's rims), in the card's ink */
+static bool fleur_names(R *r, const char *text, int slot) {
+  const int16_t *inner = sec16(r->p->geom, GEO_INNER);
+  char form[40];
+  int y0 = r->fl_y0 + r->fl_h - 5;
+  for (const char *t = text; *t;) {
+    int k = 0;
+    while (*t && *t != '|') { if (k < (int)sizeof form - 1) form[k++] = *t; t++; }
+    form[k] = 0;
+    if (*t == '|') t++;
+    int width = tiny_width(r, form), x0 = slot ? r->fl_x0 + r->fl_w + 3 : r->fl_x0 - 3 - width;
+    bool clear = k > 0;
+    for (int y = y0; y < y0 + 5 && clear; y++)
+      for (int x = x0; x < x0 + width && clear; x++)
+        clear = on_screen(r, x, y) && x >= inner[2 * y] + 2 && x <= inner[2 * y + 1] - 2 && !near_window(r, x, y);
+    if (!clear) continue;
+    for (const char *c = form; *c; c++) {
+      int m = tiny_mask(*c);
+      if (*c == ' ') x0 += 3 + 1;
+      else if (m >= 0) mask_put(r, m, x0, y0, r->P->ink, false, false), x0 += mask(r, m)->w + 1;
+    }
+    return true;
+  }
+  return false;
+}
+
 static void inscriptions(R *r, int style) {
   char dms[2][16];
   for (int k = 0; k < 2; k++) {
@@ -2562,9 +2617,26 @@ static void inscriptions(R *r, int style) {
   const char *texts[4] = {r->f->city, r->f->country, r->f->coords ? dms[0] : NULL, r->f->coords ? dms[1] : NULL};
   (void)style;
   const int16_t *curves = sec16(r->p->geom, GEO_CURVES);
+  bool by_fleur = false;                         /* (the city or the region too long for the band: both by the fleur) */
+  for (int slot = 0; slot < 2; slot++) {
+    if (!texts[slot] || !*texts[slot]) continue;
+    float room = (r->p->ins_hi[slot] - r->p->ins_lo[slot]) / 16.0f;
+    const char *t = texts[slot];
+    bool fits = false;
+    while (*t && !fits) {
+      char form[40];
+      int k = 0;
+      while (*t && *t != '|') { if (k < (int)sizeof form - 1) form[k++] = *t; t++; }
+      form[k] = 0;
+      if (*t == '|') t++;
+      fits = k && tiny_width(r, form) <= room;
+    }
+    by_fleur |= !fits;
+  }
   for (int slot = 0; slot < 4; slot++) {
     const char *text = texts[slot];
     if (!text || !*text) continue;
+    if (slot < 2 && by_fleur && fleur_names(r, text, slot)) continue;
     float lo = r->p->ins_lo[slot] / 16.0f, hi = r->p->ins_hi[slot] / 16.0f;
     char form[40];
     int width = 0;

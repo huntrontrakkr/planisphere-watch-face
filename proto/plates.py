@@ -246,6 +246,7 @@ PLACES = [                       # the inscription's names for a place: the near
     ("SAN FRANCISCO", "US", "CALIFORNIA", 37.7749, -122.4194),
     ("TOKYO", "JP", "JAPAN", 35.6762, 139.6503),
     ("SYDNEY", "AU", "NEW SOUTH WALES", -33.8688, 151.2093),
+    ("QUITO", "EC", "ECUADOR", -0.1807, -78.4678),
 ]
 
 
@@ -419,8 +420,83 @@ def line_pixels(x0, y0, x1, y1):
     return out
 
 
+def track_from(dial, centre, a_deg, inset, shape=None):
+    """track_point, its ray cast from `centre` rather than the pole (the watch's tracks: tools/gen_tables.py)."""
+    a = math.radians(a_deg)
+    dx, dy = math.sin(a), math.cos(a)
+    cx, cy = centre
+    if not getattr(dial, "rect", False):
+        r = dial.R - inset
+        return dial.cx + r * dx, dial.cy + r * dy
+    shape = shape or dial.outline
+    lo, hi = 0.0, 400.0
+    for _ in range(40):
+        mid = (lo + hi) / 2
+        if shape.dist(cx + mid * dx, cy + mid * dy)[0] > inset:
+            lo = mid
+        else:
+            hi = mid
+    return cx + lo * dx, cy + lo * dy
+
+
+WINDOW_CLEAR = 3.0                      # the Time 2's window kept this far in from the band: its rims meet the band's rule
+
+
+def window_clip(dial):
+    """The Time 2's window kept inside the ring (plan_render.c window_clip): for each row, the first pixel from the left
+    whose middle stands WINDOW_CLEAR in from the band's inner edge, where the inner track (traced round the screen's
+    middle every degree, in sixteenths of a pixel, as the watch keeps it) crosses the row's middle; the screen's
+    width for a row the band does not reach. Nearer the equator the window widens past the ring and is cut here, as
+    the Round 2's star disc is cut by its ring."""
+    H, W = dial.h, dial.w
+    pts = [track_from(dial, (W / 2, H / 2), a, 0.0, dial.inner) for a in range(360)]
+    q = [(int(round(x * 16)) / 16.0, int(round(y * 16)) / 16.0) for x, y in pts]
+    clip = []
+    for y in range(H):
+        yc, best = y + 0.5, -1.0
+        for i in range(360):
+            (xa, ya), (xb, yb) = q[i], q[(i + 1) % 360]
+            if (ya < yc) == (yb < yc) or ya == yb:
+                continue
+            x = xa + (xb - xa) * (yc - ya) / (yb - ya)
+            if x < W / 2 and x > best:
+                best = x
+        clip.append(W if best < 0 else max(0, math.ceil(best + WINDOW_CLEAR - 0.5)))
+    return clip
+
+
+def fleur_names(img, dial, window, text, side, fx0, fy0, fl, P):
+    """The city (side -1) or its region (+1), when either is too long for the band, set level beside the fleur-de-lis
+    instead (as plan_render.c fleur_names): the city on its left, the region on its right, their feet level with the
+    fleur's and three pixels from it; the longest form whose every pixel falls on the card (inside the ring's inner edge by two,
+    clear of the window's rims), in the card's ink."""
+    H, W = dial.h, dial.w
+    inner = inner_region(dial)
+    near = grow(window, 2)
+    y0 = fy0 + fl.shape[0] - 5
+    for form in text.split("|"):
+        glyphs = [sprites.tiny(ch, 1) if ch != " " else np.zeros((5, 3), bool) for ch in form]
+        width = sum(g.shape[1] for g in glyphs) + (len(glyphs) - 1)
+        x0 = fx0 + fl.shape[1] + 3 if side > 0 else fx0 - 3 - width
+        ok = bool(form)
+        for y in range(y0, y0 + 5):
+            xs = np.nonzero(inner[y])[0] if 0 <= y < H else []
+            if not len(xs) or x0 < xs.min() + 2 or x0 + width - 1 > xs.max() - 2 or near[y, max(0, x0): x0 + width].any():
+                ok = False
+                break
+        if not ok or x0 < 0 or x0 + width > W:
+            continue
+        for g in glyphs:
+            for j, i in zip(*np.nonzero(g)):
+                img[y0 + j, x0 + i] = P["ink"]
+            x0 += g.shape[1] + 1
+        return True
+    return False
+
+
 def window_mask(dial, SS=4):
-    """The window: the pixels showing the sky above the horizon (the same at every hour, so kept)."""
+    """The window: the pixels showing the sky above the horizon (the same at every hour, so kept); on the Time 2 kept
+    inside the ring (window_clip)."""
     if "_window" not in dial.__dict__:
         H, W = dial.h, dial.w
         lat = abs(dial.lat) * astro.D2R
@@ -432,6 +508,13 @@ def window_mask(dial, SS=4):
         win = ((sin_alt > 0) & (rho <= dial.r_disc) & (dy >= -getattr(dial, "ceiling", np.inf)))
         win = win.astype(np.float64).reshape(H, SS, W, SS).mean(axis=(1, 3))
         dial._window = win > 0.5
+        if getattr(dial, "rect", False) and getattr(dial, "inner", None) is not None:
+            for y, c in enumerate(window_clip(dial)):
+                if c >= W // 2:
+                    dial._window[y] = False
+                else:
+                    dial._window[y, :c] = False
+                    dial._window[y, W - c:] = False
     return dial._window
 
 
@@ -1484,12 +1567,37 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
             sprites.paint(img, sprites.LOZENGE, lx - 0.5, ly - 0.5, {2: P["accent"], 1: ring_ink})
     # the place, as a map's border gives it: its city and country either side of MIDNIGHT, its latitude and
     # longitude either side of NOON, in small capitals along the ring, each centred in the room the band has
-    # there; of each name's forms (a ladder, longest first: proto/names.py) the longest that fits
+    # there; of each name's forms (a ladder, longest first: proto/names.py) the longest that fits; the city and its
+    # region beside the fleur-de-lis instead when either has no room in the band
     city, country = place_name(dial.lat, dial.lon)
     keep_off = grow(numeral_px | studs, 1)
+
+    def room(top, side):
+        """The band's room for a name beside MIDNIGHT (top) or NOON: its curve, its ends along it, its x span."""
+        word = words[0 if top else 12]
+        curve = band_curve(dial, rp["word"], top)
+        half_w = (sum(len(sprites.CAPS9[ch][0]) for ch in word) + 2 * (len(word) - 1)) / 2
+        s0 = half_w + 6 + 4.5                            # past the word's lozenge
+        s1 = s0
+        while s1 < 140:                                  # out along the band until a numeral or stud is near
+            x_, y_, _ = curve(side * s1)
+            xi_, yi_ = int(math.floor(x_)), int(math.floor(y_))
+            if not (0 <= xi_ < W and 3 <= yi_ < H - 3) or keep_off[yi_ - 3: yi_ + 4, xi_].any():
+                break
+            s1 += 0.5
+        xa, xb = curve(side * s0)[0], curve(side * s1)[0]
+        return curve, s0, s1, min(xa, xb), max(xa, xb)
+
+    def width_of(form):
+        return sum(sprites.tiny(ch, 1).shape[1] if ch != " " else 3 for ch in form) + len(form) - 1
+    # the city or its region too long for the band: both set beside the fleur-de-lis (fleur_names)
+    by_fleur = any(text and not any(width_of(f) <= room(True, side)[4] - room(True, side)[3] for f in text.split("|"))
+                   for side, text in ((-1, city), (1, country)))
     for top, side, text in ((True, -1, city), (True, 1, country),
                             (False, -1, dms(dial.lat, "N", "S")), (False, 1, dms(dial.lon, "E", "W"))):
         if not text:
+            continue
+        if top and by_fleur and fleur_names(img, dial, inside, text, side, fx0, fy0, fl, P):
             continue
         word = words[0 if top else 12]
         curve = band_curve(dial, rp["word"], top)

@@ -73,6 +73,10 @@ CASES = {
     "labours-nov-r2": ("gabbro", "apian", datetime(2026, 11, 16, 2, 30, tzinfo=timezone.utc), NY, {"labours": True}),
     "labours-sydney-t2": ("emery", "flamsteed", datetime(2026, 10, 15, 10, 30, tzinfo=timezone.utc), (-33.87, 151.21, 660),
                           {"labours": True}),
+    # near the equator: the Time 2's window cut by its ring, the place's names beside the fleur-de-lis
+    "quito-t2": ("emery", "planisphere", datetime(2026, 10, 15, 3, 0, tzinfo=timezone.utc), (-0.1807, -78.4678, -300), {}),
+    "quito-hours-t2": ("emery", "hours", datetime(2026, 10, 14, 22, 0, tzinfo=timezone.utc), (-0.1807, -78.4678, -300),
+                       {"labours": True}),
     # the Labours' tools in the Time 2's corners: in colour, on a printed plate (their outlines in its ink), the south
     "tools-jun-t2": ("emery", "planisphere", datetime(2026, 6, 16, 3, 30, tzinfo=timezone.utc), NY, {"tools": True}),
     "tools-feb-paper-t2": ("emery", "burritt", datetime(2026, 2, 16, 2, 30, tzinfo=timezone.utc), NY, {"tools": True}),

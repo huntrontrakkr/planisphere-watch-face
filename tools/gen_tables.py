@@ -490,23 +490,7 @@ def spans(mask):
     return out
 
 
-def track_from(dial, centre, a_deg, inset, shape=None):
-    """plates.track_point, its ray cast from `centre` rather than the pole."""
-    a = math.radians(a_deg)
-    dx, dy = math.sin(a), math.cos(a)
-    cx, cy = centre
-    if not getattr(dial, "rect", False):
-        r = dial.R - inset
-        return dial.cx + r * dx, dial.cy + r * dy
-    shape = shape or dial.outline
-    lo, hi = 0.0, 400.0
-    for _ in range(40):
-        mid = (lo + hi) / 2
-        if shape.dist(cx + mid * dx, cy + mid * dy)[0] > inset:
-            lo = mid
-        else:
-            hi = mid
-    return cx + lo * dx, cy + lo * dy
+track_from = plates.track_from
 
 
 def geometry(dial, rect):
