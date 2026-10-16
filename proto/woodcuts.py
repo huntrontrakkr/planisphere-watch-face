@@ -58,32 +58,33 @@ ASTRONOMER_BASE = len(ZODIAC)                            # (its first in scenes.
 
 # the sea (THEME_SEA), the month's, January first: ships afloat as the Dutch etchers drew them, Wenceslaus Hollar's
 # from his Navium variae figurae et formae (Antwerp, 1647) and his calm sea of the 1630s, between them Reinier Nooms's
-# ("Zeeman", the 1650s), each (file, crop, words to wipe as fractions of the crop, its waterline: where the hulls meet the
-# sea, a fraction of the crop's height). The plate is cut below its waterline and hung by it a little above the
+# ("Zeeman", the 1650s), each (file, crop, words to wipe as fractions of the crop, its horizon and its waterline: where the
+# farthest ships and the nearest hulls meet the sea, fractions of the crop's height). The plate is cut below its waterline and hung by it a little above the
 # window's top (SEA_ABOVE), rising and falling with the tide (TIDE_SHIFT); the watch draws the sea itself, across the
 # card (plan_decor.c sea_strokes), so the water is clean and runs ring to ring.
 HOLLAR = (0.02, 0.06, 0.98, 0.97)
 TITLE = (0.0, 0.0, 1.0, 0.06)                            # (the plate's engraved title, across its top)
 NOOMS = (0.02, 0.04, 0.98, 0.95)
 SEA = [
-    ("hollar1647-354-fluyt-under-sail.jpg", HOLLAR, [TITLE], 0.865),
-    ("nooms1652-salamander-eastindiaman.jpg", (0.01, 0.03, 0.99, 0.86), [], 0.928),
-    ("hollar1647-350-schelde-antwerp-heu.jpg", HOLLAR, [TITLE, (0.08, 0.55, 0.32, 0.63), (0.70, 0.58, 0.86, 0.67)], 0.89),
-    ("nooms1650-fluyt-calm-water.jpg", (0.05, 0.06, 0.95, 0.95), [], 0.753),
-    ("hollar1647-345-eastindiaman-and-warships.jpg", HOLLAR, [TITLE, (0.0, 0.08, 0.26, 0.17)], 0.895),
-    ("nooms1650-ship-at-anchor-rowing-boat.jpg", NOOMS, [], 0.813),
-    ("hollar1647-353-boeiers.jpg", HOLLAR, [TITLE], 0.905),
+    ("hollar1647-354-fluyt-under-sail.jpg", HOLLAR, [TITLE], 0.82, 0.865),
+    ("nooms1652-salamander-eastindiaman.jpg", (0.01, 0.03, 0.99, 0.86), [], 0.86, 0.928),
+    ("hollar1647-350-schelde-antwerp-heu.jpg", HOLLAR, [TITLE, (0.08, 0.55, 0.32, 0.63), (0.70, 0.58, 0.86, 0.67)], 0.845,
+     0.89),
+    ("nooms1650-fluyt-calm-water.jpg", (0.05, 0.06, 0.95, 0.95), [], 0.72, 0.753),
+    ("hollar1647-345-eastindiaman-and-warships.jpg", HOLLAR, [TITLE, (0.0, 0.08, 0.26, 0.17)], 0.84, 0.895),
+    ("nooms1650-ship-at-anchor-rowing-boat.jpg", NOOMS, [], 0.76, 0.813),
+    ("hollar1647-353-boeiers.jpg", HOLLAR, [TITLE], 0.82, 0.905),
     ("nooms1650-warships-and-yacht.jpg", (0.03, 0.04, 0.96, 0.95), [(0.45, 0.0, 1.0, 0.13), (0.28, 0.28, 0.62, 0.47)],
-     0.747),
-    ("hollar1647-348-warship.jpg", HOLLAR, [TITLE], 0.885),
-    ("nooms1650-two-warships-under-sail.jpg", NOOMS, [], 0.868),
-    ("hollar1647-351-warships-sea-fight.jpg", HOLLAR, [TITLE], 0.925),
-    ("hollar1636-ships-at-anchor-calm-sea.jpg", (0.04, 0.09, 0.945, 0.77), [], 0.853),
+     0.71, 0.747),
+    ("hollar1647-348-warship.jpg", HOLLAR, [TITLE], 0.84, 0.885),
+    ("nooms1650-two-warships-under-sail.jpg", NOOMS, [], 0.76, 0.868),
+    ("hollar1647-351-warships-sea-fight.jpg", HOLLAR, [TITLE], 0.86, 0.925),
+    ("hollar1636-ships-at-anchor-calm-sea.jpg", (0.04, 0.09, 0.945, 0.77), [], 0.82, 0.853),
 ]
 SEA_WIDTH = 150
 SEA_BASE = ASTRONOMER_BASE + len(ASTRONOMER)
 SEA_ABOVE = 4                                            # the waterline's rows above the window's top at mean water
-TIDE_SHIFT = 6                                           # pixels the plate rises at high water and falls at low
+TIDE_SHIFT = 12                                          # pixels the plate rises at high water and falls at low
 
 
 def tide_shift(tides, minute):
@@ -102,6 +103,40 @@ def tide_shift(tides, minute):
 # the sea's strokes below the waterline, as Hollar etches open water: each (rows below the waterline, the stretch a
 # stroke falls in, its length), close and long by the waterline, shorter and further apart as they come nearer
 SEA_STROKES = [(1, 14, 12), (3, 13, 10), (5, 12, 8), (8, 11, 6), (11, 10, 5), (15, 10, 4), (20, 9, 3), (26, 9, 2)]
+
+
+SEA_UNDER, SEA_BESIDE = 2, 6                             # (the wash under a hull and the lapping beside it, pixels)
+
+
+def hull_water(ink):
+    """Where the water meets the hulls, as the watch draws it (plan_decor.c hull_water), by the image's columns: the
+    hulls are what is inked in the plate's last two rows (its waterline and the row above). Under a hull (and SEA_UNDER
+    either side) the row below the waterline is washed solid; beside it, within SEA_BESIDE, the waterline's own row is
+    lapped, three pixels in four. (under, beside): bool arrays over the image's columns."""
+    hull = ink[-1] | ink[-2]
+    w = len(hull)
+
+    def near(k):
+        return np.array([hull[max(0, i - k):i + k + 1].any() for i in range(w)])
+    beside = near(SEA_BESIDE) & ~hull & (np.arange(w) % 4 != 3)
+    return near(SEA_UNDER), beside
+
+
+def far_stroke(x, d, ink, j, ox):
+    """Whether the far sea's strokes ink screen column `x` on the image's row `j`, `d` rows above the waterline (a row
+    of them every third row, from two above it up to the horizon): shorter and closer as they near the horizon, each
+    stretch holding one, set by a hash, and none where the plate is inked on its row or the one above, a pixel round
+    (plan_decor.c far_strokes)."""
+    n = d // 3
+    length = max(2, 7 - n)
+    span = length + 3 + n
+    cell, at = divmod(x + 64 * span, span)
+    start = ((cell * 40503 + (16 + n) * 9973) & 0xFFFF) % (span - length + 1)
+    if not start <= at < start + length:
+        return False
+    i = x - ox
+    w = ink.shape[1]
+    return not any(0 <= i + e < w and (ink[j, i + e] or ink[j - 1, i + e]) for e in (-1, 0, 1))
 
 
 def sea_stroke(x, n):
@@ -161,7 +196,8 @@ SEA_INK = 0.13                                           # the share of the plat
 
 def sea_plate(file, crop, wipe, line):
     """A sea plate digitized (engraving), cut below its waterline and its frame away, its threshold sought so that its
-    ink above the waterline covers SEA_INK of it whatever the etcher's tone: (ink, the waterline's row)."""
+    ink above the waterline covers SEA_INK of it whatever the etcher's tone: (ink, the waterline's row, the plate's
+    height before the cut)."""
     lo, hi = 0.35, 0.85
     for _ in range(9):
         th = (lo + hi) / 2
@@ -171,7 +207,7 @@ def sea_plate(file, crop, wipe, line):
             hi = th
         else:
             lo = th
-    return clean(ink[:water + 1]), water
+    return clean(ink[:water + 1]), water, ink.shape[0]
 
 
 def engraving(path, crop=None, wipe=(), width=WIDTH, thresh=0.78, grow=0.3):
@@ -389,7 +425,7 @@ _SCENES = None
 def scenes():
     """Every woodcut, in order: the zodiac's twelve (Aries first), the astronomer's (January first), the sea's (January
     first): (key, ink, dx, dy, the waterline's row or -1: then the plate hangs by it from the window's top, its dx, dy
-    unused). (key, ink, dx, dy: its middle right of and below the
+    unused, the horizon's row). (key, ink, dx, dy: its middle right of and below the
     window's middle)"""
     global _SCENES
     if _SCENES is None:
@@ -397,32 +433,33 @@ def scenes():
                     dx, dy) for k, (file, crop, wipe, rot, width, dx, dy) in enumerate(ZODIAC)]
         _SCENES += [(f"astronomer{k}", engraving(THEMES / "astronomer" / "images" / file, crop, wipe, width=width),
                      dx, dy) for k, (file, crop, wipe, width, dx, dy) in enumerate(ASTRONOMER)]
-        _SCENES = [s + (-1,) for s in _SCENES]
+        _SCENES = [s + (-1, -1) for s in _SCENES]
         masks = reach()
-        _SCENES = [(key, within_reach(ink, dx, dy, masks["mid"]), dx, dy, water) for key, ink, dx, dy, water in _SCENES]
-        for k, (file, crop, wipe, line) in enumerate(SEA):
-            ink, water = sea_plate(file, crop, wipe, line)   # (cut below the waterline: the watch draws the sea)
+        _SCENES = [(key, within_reach(ink, dx, dy, masks["mid"]), dx, dy, water, far)
+                   for key, ink, dx, dy, water, far in _SCENES]
+        for k, (file, crop, wipe, far, line) in enumerate(SEA):
+            ink, water, full = sea_plate(file, crop, wipe, line)   # (cut below the waterline: the watch draws the sea)
             keep = np.zeros_like(ink)                    # (where it can show, as the tide carries it)
             for shift in range(-TIDE_SHIFT, TIDE_SHIFT + 1):
                 keep |= within_reach(np.ones_like(ink), 0, ink.shape[0] // 2 - (SEA_ABOVE + water + shift), masks["top"])
-            _SCENES.append((f"sea{k}", ink & keep, 0, 0, water))
+            _SCENES.append((f"sea{k}", ink & keep, 0, 0, water, round(far * full)))
     return _SCENES
 
 
 def blob():
     """scenes.bin: the count (uint16), then for each its offset (uint32, from the file's start), width and height
-    (uint16), where its middle stands right of and below the window's middle (int16 each, pixels) and its waterline's
-    row (int16, -1 none), then the images,
+    (uint16), where its middle stands right of and below the window's middle (int16 each, pixels), its waterline's
+    and its horizon's rows (int16 each, -1 none), then the images,
     each coded by encode (at most 264 pixels wide: the decoder's rows), then 64 zeros (the watch reads 64 bytes at a time,
     and a read past a resource's end may bring nothing)."""
     items = scenes()
-    head = 2 + 14 * len(items)
+    head = 2 + 16 * len(items)
     table, data = bytearray(len(items).to_bytes(2, "little")), bytearray()
-    for key, ink, dx, dy, water in items:
+    for key, ink, dx, dy, water, far in items:
         h, w = ink.shape
         table += ((head + len(data)).to_bytes(4, "little") + w.to_bytes(2, "little") + h.to_bytes(2, "little") +
                   dx.to_bytes(2, "little", signed=True) + dy.to_bytes(2, "little", signed=True) +
-                  water.to_bytes(2, "little", signed=True))
+                  water.to_bytes(2, "little", signed=True) + far.to_bytes(2, "little", signed=True))
         assert w <= 264, key
         data += encode(ink)
     return bytes(table + data + bytes(64))

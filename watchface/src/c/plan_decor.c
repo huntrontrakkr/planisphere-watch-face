@@ -32,7 +32,7 @@ static int next_bit(Stream *s, uint16_t *prob) {
  * from the tide's turns: between two as the smooth step 3s^2 - 2s^3 goes, in integers (woodcuts.py tide_shift); 0
  * with none about now */
 #define SEA_ABOVE 4
-#define TIDE_SHIFT 6
+#define TIDE_SHIFT 12
 static int tide_shift(const Tides *t, uint32_t minute) {
   for (int i = 0; t && i + 1 < t->n; i++) {
     uint32_t t0 = t->at[i] & ~TIDE_HIGH, t1 = t->at[i + 1] & ~TIDE_HIGH;
@@ -64,12 +64,48 @@ static void sea_strokes(const DecorCtx *r, const int16_t *inner, int line) {
   }
 }
 static int bit_at(const uint8_t *row, int x, int w) { return x >= 0 && x < w && row[x >> 3] >> (7 - (x & 7)) & 1; }
+/* where the water meets the hulls (woodcuts.py hull_water): the hulls what is inked in the plate's last two rows, `a`
+ * and `b`; under one (and SEA_UNDER either side) the row below the waterline washed solid, beside one (within
+ * SEA_BESIDE) the waterline's own row lapped, three pixels in four */
+#define SEA_UNDER 2
+#define SEA_BESIDE 6
+/* the far sea, a row of strokes every third row from two above the waterline up to the horizon (woodcuts.py
+ * far_stroke): shorter and closer as they near the horizon, none where the plate is inked on its row (`a`) or the one
+ * above (`b`), a pixel round, so the farthest ships sit in it too */
+static void far_strokes(const DecorCtx *r, const uint8_t card[4], const uint8_t *a, const uint8_t *b, int w, int ox,
+                        int y, int d) {
+  int n = d / 3, len = 7 - n < 2 ? 2 : 7 - n, span = len + 3 + n;
+  for (int x = 0; x < r->p->w; x++) {
+    int cell = (x + 64 * span) / span, at = (x + 64 * span) % span;
+    int start = (int)(((uint32_t)cell * 40503u + (uint32_t)(16 + n) * 9973u) & 0xFFFFu) % (span - len + 1);
+    if (at < start || at >= start + len || !on_screen(r, x, y) || !in_card(card, x)) continue;
+    int i = x - ox, inked = 0;
+    for (int e = -1; e <= 1; e++) inked |= bit_at(a, i + e, w) | bit_at(b, i + e, w);
+    if (!inked) put(r, x, y, r->tone);
+  }
+}
+static void hull_water(const DecorCtx *r, const int16_t *inner, const uint8_t *a, const uint8_t *b, int w, int ox,
+                       int line) {
+  uint8_t card[2][4] = {{1, 0, 0, 0}, {1, 0, 0, 0}};
+  for (int i = 0; i < 2; i++)
+    if ((unsigned)(line + i) < (unsigned)r->p->h) card_row(r, inner, line + i, card[i]);
+  for (int x = 0; x < w; x++) {
+    int near = SEA_BESIDE + 1;                   /* (the nearest hull column, up to SEA_BESIDE away) */
+    for (int d = -SEA_BESIDE; d <= SEA_BESIDE; d++)
+      if ((bit_at(a, x + d, w) || bit_at(b, x + d, w)) && (d < 0 ? -d : d) < near) near = d < 0 ? -d : d;
+    if (near <= SEA_UNDER && on_screen(r, ox + x, line + 1) && in_card(card[1], ox + x))
+      put(r, ox + x, line + 1, r->tone);
+    if (near > 0 && near <= SEA_BESIDE && x % 4 != 3 && on_screen(r, ox + x, line) && in_card(card[0], ox + x))
+      put(r, ox + x, line, r->tone);
+  }
+}
 static void scene(const DecorCtx *r, const int16_t *inner, const FeastReader *rd, int k) {
   Plan *p = r->p;
-  uint8_t e[14];
-  rd->read(rd->ctx, 2 + 14 * (uint32_t)k, e, 14);
+  uint8_t e[16];
+  rd->read(rd->ctx, 2 + 16 * (uint32_t)k, e, 16);
   int w = e[4] | e[5] << 8, h = e[6] | e[7] << 8, dx = (int16_t)(e[8] | e[9] << 8), dy = (int16_t)(e[10] | e[11] << 8);
-  int water = (int16_t)(e[12] | e[13] << 8), rowb = (w + 7) / 8, ox = (p->w - w) / 2 + dx;
+  int water = (int16_t)(e[12] | e[13] << 8), far = (int16_t)(e[14] | e[15] << 8), rowb = (w + 7) / 8;
+  int ox = (p->w - w) / 2 + dx;
   int oy = water < 0 ? (p->win_top + p->win_bottom) / 2 - h / 2 + dy
                      : p->win_top - SEA_ABOVE - water - tide_shift(r->tides, r->minute);
   uint16_t *prob = r->alloc(128 * sizeof *prob + 3 * (size_t)rowb);
@@ -89,10 +125,13 @@ static void scene(const DecorCtx *r, const int16_t *inner, const FeastReader *rd
       row[x >> 3] |= (uint8_t)(0x80 >> (x & 7));
       if (on_screen(r, ox + x, y) && in_card(card, ox + x)) put(r, ox + x, y, r->tone);
     }
+    if (water >= 0 && j >= far && j >= 1 && j < water && (water - j) % 3 == 2)
+      far_strokes(r, card, row, up, w, ox, y, water - j);
     uint8_t *t = up2;
     up2 = up, up = row, row = t;
     for (int i = 0; i < rowb; i++) row[i] = 0;
   }
+  if (water >= 0) hull_water(r, inner, up, up2, w, ox, oy + water);   /* (the last two rows, as the loop leaves them) */
   r->release(prob);
   if (water >= 0) sea_strokes(r, inner, oy + water);
 }

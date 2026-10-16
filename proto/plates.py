@@ -648,7 +648,7 @@ def woodcut_scene(img, inside, inner, P, k, tides=(), minute=0):
     where it was placed from the window's middle, only on the card (inside the ring's inner edge by 3, not within 3 of the
     window), so the window and all drawn after it cover the rest."""
     import woodcuts
-    key, ink, dx, dy, water = woodcuts.scenes()[k]
+    key, ink, dx, dy, water, far = woodcuts.scenes()[k]
     H, W = inside.shape
     card = inner & ~grow(inside, 3) & ~grow(~inner, 3)
     rows = np.nonzero(inside.any(axis=1))[0]
@@ -662,6 +662,18 @@ def woodcut_scene(img, inside, inner, P, k, tides=(), minute=0):
         if 0 <= y < H and 0 <= x < W and card[y, x]:
             img[y, x] = tone
     if water >= 0:                                       # the sea below the waterline, across the card
+        for j in range(max(far, 1), water):              # the far sea, every third row up to the horizon
+            d = water - j
+            if d % 3 != 2 or not 0 <= oy + j < H:
+                continue
+            for x in range(W):
+                if card[oy + j, x] and woodcuts.far_stroke(x, d, ink, j, ox):
+                    img[oy + j, x] = tone
+        under, beside = woodcuts.hull_water(ink)         # (the hulls seated in it)
+        for i in range(w):
+            for y, on in ((oy + water + 1, under[i]), (oy + water, beside[i])):
+                if on and 0 <= y < H and 0 <= ox + i < W and card[y, ox + i]:
+                    img[y, ox + i] = tone
         for n, (down, _, _) in enumerate(woodcuts.SEA_STROKES):
             for x in range(W):
                 dip = woodcuts.sea_stroke(x, n)
