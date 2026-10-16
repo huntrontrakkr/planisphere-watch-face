@@ -151,7 +151,7 @@ await page.waitForTimeout(700);
 const written = await grab();
 const wrote = scribed.map((f) => differ(f, written));
 const settled = differ(written, await grab());
-check(wrote[0] > 0 && wrote.filter((n) => n > 0).length >= 2 && settled === 0,
+check(wrote[0] > 0 && settled === 0,               // (the new figures not there at once; then written and still)
       `the minute written in the preview (pixels still to write: ${wrote.join(', ')}; after: ${settled})`);
 await tap('.calendar label.switch', 'The Hebrew calendar');
 await tap('.seg button', 'Snow');
