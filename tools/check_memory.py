@@ -1,7 +1,8 @@
 """The most memory a frame of the face can need, against what the watch has for it.
 
 A frame's memory is the drawing's state and the window's grid (its size set by the window, so by the latitude), with
-the numerals' and the labours' scratch before the grid, as build/host --mem counts it (as PebbleOS's heap does). The
+the numerals' and the labours' scratch before the grid and the minute's new figures kept for the scribe (--scribe:
+the minute before drawn first), as build/host --mem counts it (as PebbleOS's heap does). The
 day's feast lookup loads the calendars' code; a fireworks display loads its own code and its record of the pixels each
 frame covers (SHOW_UNDO of them: some displays are played here to see that none covers more). This draws every
 latitude at night and by day on both watches and fails if any of these needs more than its watch's budget:
@@ -67,11 +68,12 @@ def heap(screen):
     return HEAP[screen] - grown
 
 
-def lookup_need():
+def lookup_need(screen):
     """The day's feast lookup: the calendars' code blob loaded (main.c feast_of_day; it reads the table straight from
-    the resources), with the heap's header and the code's alignment."""
+    the resources), with the heap's header and the code's alignment, less the screen's geometry it borrows (let go for
+    the lookup, against the free memory, and loaded again)."""
     code = struct.unpack("<5I", (DATA / "feast_code.bin").read_bytes()[:20])[1]
-    return code + 4 + 4
+    return code + 4 + 4 - ((DATA / f"geom~{screen}.bin").stat().st_size + 4)
 
 
 def show_need():
@@ -110,11 +112,11 @@ def main():
         worst, at = 0, None
         for lat in range(-89, 90):
             for t in MOMENTS:
-                n = peak([screen, "0", str(t), str(lat), "-74", "-240"], ["--labours", "--weather", SNOW])
+                n = peak([screen, "0", str(t), str(lat), "-74", "-240"], ["--labours", "--weather", SNOW, "--scribe"])
                 if n > worst:
                     worst, at = n, (lat, t)
         budget = heap(screen) - HEADROOM
-        need, show = lookup_need(), show_need()
+        need, show = lookup_need(screen), show_need()
         print(f"{screen}: a frame needs {worst:,} bytes at most (latitude {at[0]}), the day's feast lookup {need:,}, "
               f"a fireworks display {show:,}; budget {budget:,}")
         bad |= worst > budget or need > budget or show > budget

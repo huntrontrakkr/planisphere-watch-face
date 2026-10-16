@@ -24,7 +24,6 @@ static const int16_t *sec16(const uint8_t *blob, int i) { return (const int16_t 
 typedef struct { uint16_t off; uint8_t w, h; } DrawIndex;
 typedef struct { uint32_t bit; uint8_t w, h; uint16_t pad; } MaskIndex;
 typedef struct { uint16_t bit; uint8_t w, adv; } GlyphIndex;
-typedef struct { uint32_t bit; uint8_t w, h, base, pad; } FigureIndex;
 
 /* ---- a line of type: 14 rows, up to 256 pixels ---------------------------------------------------------------- */
 typedef struct { int w; uint32_t bits[FONT_ROWS][8]; } Text;
@@ -2833,7 +2832,10 @@ static bool news_wording(R *r, int w, char *out) {
 }
 
 /* the large time in the plate's own figures, its top-left at (x0, y0) (only measured unless `draw`): its width */
-static int compose(R *r, int style, int screen, int hour, int minute, int *asc_out, int *small_out, bool draw, int x0, int y0) {
+/* the time's figures as drawn: each (0..9, 10 h, 11 m) and its top-left corner */
+typedef struct { int n; int8_t c[8]; int16_t x[8], y[8]; } Glyphs;
+static inline __attribute__((always_inline)) int compose(R *r, int style, int screen, int hour, int minute, int *asc_out,
+                                                          int *small_out, bool draw, int x0, int y0, Glyphs *pos) {
   const FigureIndex *fi = (const FigureIndex *)(const void *)sec(r->p->data, SEC_FIGURE_INDEX) + (style * 2 + screen) * 12;
   const uint8_t *bits = sec(r->p->data, SEC_FIGURE_DATA);
   int parts[8], n = 0;                            /* 0..9 figures, 10 h, 11 m, -1 the gap */
@@ -2850,21 +2852,61 @@ static int compose(R *r, int style, int screen, int hour, int minute, int *asc_o
   W += 2 * (n - 1);
   if (asc_out) *asc_out = asc;
   if (small_out) *small_out = small;
-  if (!draw) return W;
+  if (!draw && !pos) return W;
   int x = 0;
+  if (pos) pos->n = 0;
   for (int i = 0; i < n; i++) {
     int c = parts[i];
     if (c < 0) { x += 5 + 2; continue; }
     const FigureIndex *g = fi + c;
     int top = c <= 9 ? asc - g->base : asc - small;
-    for (int j = 0; j < g->h; j++)
-      for (int i2 = 0; i2 < g->w; i2++) {
-        uint32_t b = g->bit + (uint32_t)(j * g->w + i2);
-        if ((bits[b >> 3] >> (b & 7)) & 1) put(r, x0 + x + i2, y0 + top + j, r->P->ink);
-      }
+    if (pos) pos->c[pos->n] = (int8_t)c, pos->x[pos->n] = (int16_t)(x0 + x), pos->y[pos->n] = (int16_t)(y0 + top), pos->n++;
+    if (draw)
+      for (int j = 0; j < g->h; j++)
+        for (int i2 = 0; i2 < g->w; i2++) {
+          uint32_t b = g->bit + (uint32_t)(j * g->w + i2);
+          if ((bits[b >> 3] >> (b & 7)) & 1) put(r, x0 + x + i2, y0 + top + j, r->P->ink);
+        }
     x += g->w + (c == 10 ? 1 : 2);
   }
   return W;
+}
+
+/* ---- the minute written: the figures that changed since the last drawing, their pixels and the colour under each
+ * kept before they are drawn, for the motion blob to put in a scribe's order and unveil (plan_show.c plan_scribe) -- */
+static void scribe_record(R *r, const Glyphs *gl, int style, int screen, int hour, int minute, void *(*alloc)(size_t)) {
+  Plan *p = r->p;
+  int st = style * 2 + screen, total = 0;
+  uint8_t changed = 0;                               /* (a bit a figure) */
+  if (!r->f->scribe) return;
+  /* a figure is written again when its value changed: each against the one in its place last time, counted from the
+   * end (the minutes' units, their tens, the hour's figures); one only moved over (the time is centred) is not */
+  if (p->time_n > 0 && p->time_style == st && (p->time_hour != hour || p->time_minute != minute))
+    for (int g = 0; g < gl->n; g++) {
+      int k = p->time_n - (gl->n - g);
+      if (k < 0 || p->time_c[k] != gl->c[g]) changed |= (uint8_t)(1 << g);
+    }
+  p->time_n = (int8_t)gl->n, p->time_style = (int8_t)st, p->time_hour = (int16_t)hour, p->time_minute = (int16_t)minute;
+  for (int g = 0; g < gl->n; g++) p->time_c[g] = gl->c[g], p->time_x[g] = gl->x[g], p->time_y[g] = gl->y[g];
+  const FigureIndex *fi = (const FigureIndex *)(const void *)sec(p->data, SEC_FIGURE_INDEX) + st * 12;
+  const uint8_t *bits = sec(p->data, SEC_FIGURE_DATA);
+  uint32_t *out = NULL;
+  for (int pass = 0; pass < 2 && changed; pass++) {  /* (counted, then kept) */
+    int n = 0;
+    for (int g = 0; g < gl->n; g++) {
+      const FigureIndex *f = &fi[gl->c[g]];
+      for (int k = 0; (changed >> g & 1) && k < f->w * f->h; k++) {
+        int x = gl->x[g] + k % f->w, y = gl->y[g] + k / f->w;
+        uint32_t b = f->bit + (uint32_t)k;
+        if (!((bits[b >> 3] >> (b & 7)) & 1) || !on_screen(r, x, y)) continue;
+        if (out) out[n] = (uint32_t)x | (uint32_t)y << 9 | (uint32_t)(get(r, x, y) & 63) << 18 | (uint32_t)g << 24;
+        n++;
+      }
+    }
+    if (!pass && !(total = n, out = n ? alloc((size_t)n * 4) : NULL)) return;
+  }
+  if (!out) return;
+  p->scribe = out, p->scribe_n = (uint16_t)total, p->scribe_ink = r->P->ink, p->scribe_lines = 0xFFFF;
 }
 
 static int hour_of(int h, bool clock24) { return clock24 ? h : (h % 12 ? h % 12 : 12); }
@@ -2883,7 +2925,8 @@ static __attribute__((noinline)) void almanac(R *r) {
 }
 
 /* (each of the long layers in a frame of its own, not in plan_render's: the stack is 2 KB) */
-static __attribute__((noinline)) void time_block(R *r, int fy0, int season) {
+static __attribute__((noinline)) void time_block(R *r, int fy0, int season, void *(*alloc)(size_t),
+                                                 void (*release)(void *)) {
   const Plate *P = r->P;
   Plan *p = r->p;
   float ring_in = r->rect ? 17.0f : r->cy - (r->p->R - 18.0f);
@@ -2891,10 +2934,13 @@ static __attribute__((noinline)) void time_block(R *r, int fy0, int season) {
   int screen = r->rect ? 0 : 1;
   int hour = hour_of(r->local.hour, r->clock24);
   int asc, small;
-  int Wt = compose(r, P->figures, screen, hour, r->local.minute, &asc, &small, false, 0, 0);
+  Glyphs gl;                                         /* (the figures that changed kept for the scribe, then drawn) */
+  int Wt = compose(r, P->figures, screen, hour, r->local.minute, &asc, &small, false, 0, 0, &gl);
   float cy_ = ring_in + span * 0.345f;
-  compose(r, P->figures, screen, hour, r->local.minute, NULL, NULL, true, pyf_round(r->cx - Wt / 2.0f),
-          pyf_round(cy_ - (asc - small / 2.0f)));
+  int tx = pyf_round(r->cx - Wt / 2.0f), ty = pyf_round(cy_ - (asc - small / 2.0f));
+  for (int g = 0; g < gl.n; g++) gl.x[g] = (int16_t)(gl.x[g] + tx), gl.y[g] = (int16_t)(gl.y[g] + ty);
+  scribe_record(r, &gl, P->figures, screen, hour, r->local.minute, alloc);
+  compose(r, P->figures, screen, hour, r->local.minute, NULL, NULL, true, tx, ty, NULL);
   /* the needlework either side, changing on the hour: the season's (or the weather's), or one for any time */
   int widest = WIDEST_TIME[P->figures * 2 + screen][r->clock24 ? 1 : 0];
   int yc = pyf_round(cy_);
@@ -3019,6 +3065,7 @@ static __attribute__((noinline)) void time_block(R *r, int fy0, int season) {
 
 bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Target *t, void *(*alloc)(size_t),
                  void (*release)(void *)) {
+  if (p->scribe) release(p->scribe), p->scribe = NULL, p->scribe_n = 0;   /* (the last minute's, not played) */
   R *r = alloc(sizeof(R));
   if (!r) return false;
   memset(r, 0, sizeof *r);
@@ -3276,7 +3323,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   /* the window's edge, the ring, the time */
   int fy0 = rims(r);
   ring(r, season);
-  time_block(r, fy0, season);
+  time_block(r, fy0, season, alloc, release);
   release(r->ga);
   release(r);
   return true;

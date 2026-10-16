@@ -11,7 +11,7 @@
 /* Nothing here is in a hot loop: built for size. */
 #pragma GCC optimize("Os")
 
-#define SETTINGS_VERSION 2
+#define SETTINGS_VERSION 3
 #define KEY_SETTINGS 1
 #define KEY_PLACE 2
 #define KEY_WEATHER 3
@@ -25,6 +25,7 @@ typedef struct {
   int32_t lat_e4, lon_e4;               /* the place given on the settings page (PLACE 1) */
   uint32_t calendars;                   /* the calendars whose days the face keeps (bit n for CAL_* n) */
   char city[24], country[20];
+  uint8_t animate;                      /* the minutes written as a scribe writes (from version 3) */
 } Settings;
 
 typedef struct {                        /* where the phone last was */
@@ -45,6 +46,7 @@ volatile uint32_t g_feast_heap = 0;      /* the heap free while the calendars' c
 /* the fireworks displays: frames drawn, the slowest frame (ms), the heap free while one plays */
 volatile uint32_t g_show_frames = 0, g_show_ms = 0, g_show_heap = 0, g_show_end = 0;   /* (1 played out, 2 gave way) */
 volatile uint32_t g_show_px = 0;         /* the most pixels a frame covered */
+volatile uint32_t g_scribe_frames = 0;   /* the minute written: frames drawn */
 
 static Window *s_window;
 static Layer *s_layer;
@@ -59,7 +61,7 @@ static uint32_t s_asked;
 static void defaults(Settings *s) {
   memset(s, 0, sizeof *s);
   s->version = SETTINGS_VERSION;
-  s->plate = PLATE_PLANISPHERE, s->names = 1, s->weather = 1;
+  s->plate = PLATE_PLANISPHERE, s->names = 1, s->weather = 1, s->animate = 1;
 }
 
 static uint32_t now_ms(void) {
@@ -130,6 +132,8 @@ static void face_of(Face *f) {
   f->plate = s_settings.plate < PLATE_COUNT ? s_settings.plate : 0;
   f->clock24 = s_settings.clock == 0 ? clock_is_24h_style() : s_settings.clock == 2;
   f->names = s_settings.names, f->labours = s_settings.labours, f->calendars = s_settings.calendars;
+  BatteryChargeState battery = battery_state_service_peek();     /* (the minute written: not on a low battery) */
+  f->scribe = s_settings.animate && (battery.charge_percent >= 20 || battery.is_charging);
   f->fahrenheit = s_settings.units == 2;
   if (s_settings.place == 1) {
     s_where[0] = s_settings.lat_e4, s_where[1] = s_settings.lon_e4;
@@ -167,6 +171,11 @@ static void feast_of_day(const Face *f, time_t now, int32_t offset) {
   if (s_plan->feast_day == day && s_plan->feast_cal == f->calendars && s_looked[0] == s_where[0] &&
       s_looked[1] == s_where[1])
     return;
+  /* the lookup borrows the screen's geometry's memory, which only the drawing reads and which lies against the free
+   * memory (load_data): let go for the lookup's few milliseconds and loaded again, so the calendars' code has room
+   * beside the renderer's */
+  ResHandle g = resource_get_handle(RESOURCE_ID_PLAN_GEOM);
+  free(s_geom), s_geom = NULL, s_plan->geom = NULL;
   uint8_t *mem;
   const FeastApi *api = load_blob(RESOURCE_ID_PLAN_FEAST_CODE, &mem);
   if (api && api->magic == FEAST_API_MAGIC && api->layout == PLAN_LAYOUT) {
@@ -176,6 +185,8 @@ static void feast_of_day(const Face *f, time_t now, int32_t offset) {
     if (api->feast(s_plan, f, (int64_t)now, offset, &rd)) s_looked[0] = s_where[0], s_looked[1] = s_where[1];
   }
   free(mem);
+  if ((s_geom = malloc(resource_size(g)))) resource_load(g, s_geom, resource_size(g));
+  s_plan->geom = s_geom;
 }
 
 /* the renderer's memory, and how little was left */
@@ -185,86 +196,129 @@ static void *alloc(size_t n) {
   return p;
 }
 
-/* ---- the fireworks display: at the top of an hour that brings one (Plan.show_hour, worked out by the renderer as it
- * drew the hour's first face), its code is loaded and plays SHOW_FPS frames a second over the face as drawn, each
- * putting back what the last covered. A drawing asked for meanwhile (the weather, the settings) waits for its end.
- * One the system asks for (as the app opens, say) is made at once, as the face and the display have no room for
- * both: the display gives way to it and then takes up its time again. ---- */
-static const ShowApi *s_show;
-static uint8_t *s_show_mem;
+/* ---- the animations: the minute written as a scribe writes (Plan.scribe, the figures that changed, kept by the
+ * renderer when the settings ask and the battery allows) and the fireworks display at the top of an hour that brings
+ * one (Plan.show_hour). Their code is the motion blob, loaded while either plays; each plays SHOW_FPS frames a second
+ * over the face as drawn (a frame a tick of the timer: the clock may jump). A drawing asked for meanwhile (the weather,
+ * the settings, the next minute) waits for their end. One the system asks for (as the app opens, say) is made at once,
+ * as the face and the animations have no room for both: the minute is then simply drawn, and the display gives way
+ * and takes up its time again. ---- */
+static const ShowApi *s_motion;
+static uint8_t *s_motion_mem;
+static AppTimer *s_anim_timer;
+static bool s_anim_due;                 /* the timer's frame is due at the next drawing */
+static bool s_redraw_after;
+static int s_scribe_k;                  /* the minute written: its next frame (0: none playing) */
+static bool s_show;                     /* a display playing */
 static ShowUndo *s_undo;
-static AppTimer *s_show_timer;
 static int32_t s_show_played = -1;      /* the hour whose display has begun, */
 static bool s_show_done;                /* and played out */
-static int s_show_frame = -1;           /* the frame the next drawing is for (-1: a whole face) */
-static int s_show_last = -1;            /* the frame last drawn (a frame a tick of the timer: the clock may jump) */
-static bool s_redraw_after;
+static int s_show_last = -1;            /* its frame last drawn */
+
+static bool animating(void) { return s_show || s_scribe_k; }
 
 static void redraw(void) {
-  if (s_show) s_redraw_after = true;
+  if (animating()) s_redraw_after = true;
   else if (s_layer) layer_mark_dirty(s_layer);
 }
 
-static void show_end(bool redraw_now) {
-  if (s_show_timer) app_timer_cancel(s_show_timer);
-  free(s_undo), free(s_show_mem);
-  s_show_timer = NULL, s_undo = NULL, s_show_mem = NULL, s_show = NULL, s_show_frame = -1;
+static bool motion_load(void) {
+  if (s_motion) return true;
+  s_motion = load_blob(RESOURCE_ID_PLAN_SHOW_CODE, &s_motion_mem);
+  if (s_motion && s_motion->magic == SHOW_API_MAGIC && s_motion->layout == PLAN_LAYOUT) return true;
+  free(s_motion_mem), s_motion_mem = NULL, s_motion = NULL;
+  return false;
+}
+
+static void anim_tick(void *data) {
+  s_anim_timer = NULL, s_anim_due = true;
+  if (s_layer) layer_mark_dirty(s_layer);
+}
+
+static void scribe_end(void) {
+  free(s_plan->scribe), s_plan->scribe = NULL, s_plan->scribe_n = 0, s_scribe_k = 0;
+}
+
+static void show_end(void) { free(s_undo), s_undo = NULL, s_show = false; }
+
+/* when nothing plays: the timer stopped, the blob let go, and a drawing that waited made */
+static void anims_settle(bool redraw_now) {
+  if (animating()) {
+    if (!s_anim_timer) s_anim_timer = app_timer_register(1000 / SHOW_FPS, anim_tick, NULL);
+    return;
+  }
+  if (s_anim_timer) app_timer_cancel(s_anim_timer), s_anim_timer = NULL;
+  s_anim_due = false;
+  free(s_motion_mem), s_motion_mem = NULL, s_motion = NULL;
   if (s_redraw_after && redraw_now && s_layer) layer_mark_dirty(s_layer);
   s_redraw_after = false;
 }
 
-static void show_tick(void *data) {
-  s_show_timer = NULL;
-  s_show_frame = s_show_last + 1;
-  if (s_layer) layer_mark_dirty(s_layer);
+/* after a whole face: the minute's new figures taken away (on the same screen, before it is shown), to be written */
+static void scribe_begin(const Target *tg) {
+  if (!s_plan->scribe) return;
+  uint32_t *room = malloc(s_plan->scribe_n * sizeof *room);
+  if (room && motion_load() && s_motion->scribe(s_plan, tg, 0, room)) s_scribe_k = 1;
+  else scribe_end();
+  free(room);
 }
 
 static void show_begin(void) {
   if (s_show || s_plan->show_hour < 0) return;
   if (s_plan->show_hour != s_show_played) s_show_played = s_plan->show_hour, s_show_last = -1, s_show_done = false;
   else if (s_show_done) return;                  /* (else it gave way, and goes on from its last frame) */
-  s_show = load_blob(RESOURCE_ID_PLAN_SHOW_CODE, &s_show_mem);
   s_undo = malloc(sizeof(ShowUndo) + SHOW_UNDO * sizeof(uint32_t));
-  if (!s_show || s_show->magic != SHOW_API_MAGIC || s_show->layout != PLAN_LAYOUT || !s_undo) {
-    show_end(false);
+  if (!s_undo || !motion_load()) {
+    show_end();
     return;
   }
-  s_undo->n = 0, s_undo->cap = SHOW_UNDO;
+  s_undo->n = 0, s_undo->cap = SHOW_UNDO, s_show = true;
   g_show_heap = heap_bytes_free();
-  s_show_timer = app_timer_register(1, show_tick, NULL);
 }
 
-static void show_frame(GContext *ctx) {
+/* a frame of each animation playing */
+static void animate(GContext *ctx) {
   uint32_t t0 = now_ms();
   GBitmap *fb = graphics_capture_frame_buffer(ctx);
-  if (!fb) {                                     /* (no screen to draw on: the display ends, the face is drawn again) */
-    s_show_done = true, s_redraw_after = true;
-    show_end(true);
+  if (!fb) {                                     /* (no screen to draw on: they end, the face is drawn again) */
+    if (s_show) s_show_done = true;
+    scribe_end(), show_end(), s_redraw_after = true;
+    anims_settle(true);
     return;
   }
   Target tg = {fb_row, fb};
-  bool more = s_show->frame(s_plan, &tg, s_show_frame, s_undo);
-  graphics_release_frame_buffer(ctx, fb);
-  g_show_frames++, s_show_last = s_show_frame;
-  if (s_undo->n > g_show_px) g_show_px = s_undo->n;
-  if (now_ms() - t0 > g_show_ms) g_show_ms = now_ms() - t0;
-  if (!more) {
-    g_show_end = 1, s_show_done = true;
-    show_end(true);
-    return;
+  if (s_scribe_k) {
+    g_scribe_frames++;
+    if (!s_motion->scribe(s_plan, &tg, s_scribe_k++, NULL)) scribe_end();
   }
-  s_show_frame = -1;
-  s_show_timer = app_timer_register(1000 / SHOW_FPS, show_tick, NULL);
+  if (s_show) {
+    bool more = s_motion->frame(s_plan, &tg, ++s_show_last, s_undo);
+    g_show_frames++;
+    if (s_undo->n > g_show_px) g_show_px = s_undo->n;
+    if (!more) g_show_end = 1, s_show_done = true, show_end();
+  }
+  graphics_release_frame_buffer(ctx, fb);
+  if (now_ms() - t0 > g_show_ms) g_show_ms = now_ms() - t0;
+  anims_settle(true);
 }
 
 static void update(Layer *layer, GContext *ctx) {
-  if (s_show && s_show_frame >= 0) {
-    show_frame(ctx);
+  if (s_anim_due) {
+    s_anim_due = false;
+    animate(ctx);
     return;
   }
-  if (s_show) g_show_end = 2, show_end(false);   /* the system asks for the whole face: the display gives way */
+  if (animating()) {                             /* the system asks for the whole face: the animations give way */
+    if (s_show) g_show_end = 2;
+    scribe_end(), show_end(), s_redraw_after = false;
+  }
   time_t now = time(NULL);
-  if (!s_plan) {                                 /* no memory for the face's data: the time alone */
+  if (s_plan && !s_geom) {                       /* (the geometry not loaded again after a lookup: once more) */
+    ResHandle g = resource_get_handle(RESOURCE_ID_PLAN_GEOM);
+    if ((s_geom = malloc(resource_size(g)))) resource_load(g, s_geom, resource_size(g));
+    s_plan->geom = s_geom;
+  }
+  if (!s_plan || !s_geom) {                      /* no memory for the face's data: the time alone */
     graphics_context_set_fill_color(ctx, GColorBlack);
     graphics_fill_rect(ctx, layer_get_bounds(layer), 0, GCornerNone);
     char text[8];
@@ -286,11 +340,13 @@ static void update(Layer *layer, GContext *ctx) {
   g_stack_at = (uint32_t)((uintptr_t)__pbl_app_info - (uintptr_t)&tg);
   feast_of_day(&f, now, g_offset);
   bool drawn = s_api->render(s_plan, &f, (int64_t)now, g_offset, &tg, alloc, free);
+  if (drawn) scribe_begin(&tg);
   graphics_release_frame_buffer(ctx, fb);
   g_render_ms = now_ms() - t0;
   if (g_render_ms > g_render_max) g_render_max = g_render_ms;
   g_stack = stack_deepest();
   if (drawn) show_begin();
+  anims_settle(false);
 }
 
 static void tick(struct tm *t, TimeUnits changed) {
@@ -311,6 +367,7 @@ static const struct { const uint32_t *key; uint8_t rec, type, off, size; } KEYS[
   IN(LABOURS, IN_SETTINGS, IN_U8, Settings, labours), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
   IN(PLACE_LON, IN_SETTINGS, IN_I32, Settings, lon_e4), IN(PLACE_CITY, IN_SETTINGS, IN_TEXT, Settings, city),
   IN(PLACE_COUNTRY, IN_SETTINGS, IN_TEXT, Settings, country), IN(CALENDARS, IN_SETTINGS, IN_I32, Settings, calendars),
+  IN(ANIMATE, IN_SETTINGS, IN_U8, Settings, animate),
   IN(LAT, IN_PLACE, IN_I32, Place, lat_e4), IN(LON, IN_PLACE, IN_I32, Place, lon_e4),
   IN(CITY, IN_PLACE, IN_TEXT, Place, city), IN(COUNTRY, IN_PLACE, IN_TEXT, Place, country),
   IN(WX_TEMP, IN_WEATHER, IN_I16, Stored, w.temp10), IN(WX_CODE, IN_WEATHER, IN_U8, Stored, w.code),
@@ -391,7 +448,8 @@ static bool load_data(void) {
   if (!load_code()) return false;
   ResHandle d = resource_get_handle(RESOURCE_ID_PLAN_DATA), g = resource_get_handle(RESOURCE_ID_PLAN_GEOM);
   size_t nd = resource_size(d), ng = resource_size(g);
-  s_data = malloc(nd), s_geom = malloc(ng), s_plan = malloc(sizeof(Plan));
+  /* (the screen's geometry last, against the free memory: the day's feast lookup borrows it, feast_of_day) */
+  s_data = malloc(nd), s_plan = malloc(sizeof(Plan)), s_geom = malloc(ng);
   if (!s_data || !s_geom || !s_plan) {
     free(s_data), free(s_geom), free(s_plan), free(s_code);
     s_data = s_geom = s_code = NULL, s_plan = NULL, s_api = NULL;
@@ -416,7 +474,12 @@ static void init(void) {
   stack_mark();
   defaults(&s_settings);
   Settings s;
-  if (persist_read_data(KEY_SETTINGS, &s, sizeof s) == (int)sizeof s && s.version == SETTINGS_VERSION) s_settings = s;
+  int got = persist_read_data(KEY_SETTINGS, &s, sizeof s);
+  if (got == (int)sizeof s && s.version == SETTINGS_VERSION) s_settings = s;
+  else if (got == (int)offsetof(Settings, animate) && s.version == 2) {   /* version 2's, the minute written added */
+    memcpy(&s_settings, &s, offsetof(Settings, animate));
+    s_settings.version = SETTINGS_VERSION, s_settings.animate = 1;
+  }
   if (persist_read_data(KEY_PLACE, &s_place, sizeof s_place) != (int)sizeof s_place) memset(&s_place, 0, sizeof s_place);
   if (persist_read_data(KEY_WEATHER, &s_weather, sizeof s_weather) != (int)sizeof s_weather) memset(&s_weather, 0, sizeof s_weather);
   app_message_register_inbox_received(inbox);
@@ -434,7 +497,7 @@ static void init(void) {
 }
 
 static void deinit(void) {
-  show_end(false);
+  scribe_end(), show_end(), anims_settle(false);
   tick_timer_service_unsubscribe();
   window_destroy(s_window);
   free(s_plan), free(s_data), free(s_geom), free(s_code);

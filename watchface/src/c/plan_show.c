@@ -1,4 +1,6 @@
-/* The fireworks display, frame by frame (proto/feast_draw.py fireworks_show): each rocket climbing on its bright head
+/* The motion blob: the fireworks display, and the minute written.
+ *
+ * The fireworks display, frame by frame (proto/feast_draw.py fireworks_show): each rocket climbing on its bright head
  * and fading trail, then bursting with a white flash, its sparks flying out as bright heads with fading streaks behind
  * them, then drooping and dimming out. The willows droop longest, gold; the crackling ones twinkle as they go; the
  * peonies have a white pistil. On a printed chart the whole of it is engraved, in its ink.
@@ -126,3 +128,69 @@ bool plan_show(Plan *p, const Target *t, int frame, ShowUndo *undo) {
     for (int i = 0; i < p->show_rockets; i++) rocket(&fr, &p->show[i], frame);
   return true;
 }
+
+/* ---- the minute written (Plan.scribe, kept by plan_render as it drew the figures that changed): each figure's
+ * outline from its top round clockwise, figure after figure, then the fill from the outlines in, a ring of pixels at a
+ * time, as a scribe outlines a letter and fills it. Frame 0 takes the new figures away; the rest write them. ------ */
+static int figure_ink(const uint8_t *bits, const FigureIndex *f, int i, int j) {
+  if (i < 0 || j < 0 || i >= f->w || j >= f->h) return 0;
+  uint32_t b = f->bit + (uint32_t)(j * f->w + i);
+  return (bits[b >> 3] >> (b & 7)) & 1;
+}
+/* a point's place round a middle, clockwise from the top, 0 to 4 (u to the right, v up) */
+static float round_from_top(float u, float v) {
+  float d = f_abs(u) + f_abs(v);
+  if (d == 0) return 0;
+  if (v > 0 && u >= 0) return u / d;
+  if (u > 0) return 1 - v / d;
+  if (v < 0) return 2 - u / d;
+  return 3 + v / d;
+}
+static void scribe_order(Plan *p, uint32_t *key) {
+  uint32_t *px = p->scribe;
+  const FigureIndex *fi = (const FigureIndex *)(const void *)sec(p->data, SEC_FIGURE_INDEX) + p->time_style * 12;
+  const uint8_t *bits = sec(p->data, SEC_FIGURE_DATA);
+  int n = p->scribe_n, lines = 0;
+  for (int e = 0; e < n; e++) {
+    int g = (int)(px[e] >> 24 & 7);
+    const FigureIndex *f = &fi[p->time_c[g]];
+    int i = (int)(px[e] & 511) - p->time_x[g], j = (int)(px[e] >> 9 & 511) - p->time_y[g], ring = 0;
+    for (int d = 1; !ring && d < 64; d++)              /* its ring: the nearest pixel without ink, so far in */
+      for (int t = 0; t < d && !ring; t++)
+        if (!figure_ink(bits, f, i + t, j + d - t) || !figure_ink(bits, f, i + d - t, j - t) ||
+            !figure_ink(bits, f, i - t, j - d + t) || !figure_ink(bits, f, i - d + t, j + t))
+          ring = d;
+    uint32_t at = (uint32_t)(j * f->w + i) & 0xFFFF;
+    key[e] = ring == 1 ? (uint32_t)g << 28 | (uint32_t)(round_from_top(i - (f->w - 1) / 2.0f, (f->h - 1) / 2.0f - j) * 1023) << 16 | at
+                       : 1u << 31 | (uint32_t)ring << 20 | (uint32_t)g << 16 | at;
+    lines += ring == 1;
+  }
+  for (int a = 1; a < n; a++) {                      /* in the pen's order (an insertion sort: a few hundred pixels) */
+    uint32_t k = key[a], v = px[a];
+    int b = a - 1;
+    for (; b >= 0 && key[b] > k; b--) key[b + 1] = key[b], px[b + 1] = px[b];
+    key[b + 1] = k, px[b + 1] = v;
+  }
+  p->scribe_lines = (uint16_t)lines;
+}
+/* frame k (1 ..) writes the pixels up to scribe_cut(k): four frames of outline, then the rest of fill */
+static int scribe_cut(const Plan *p, int k) {
+  int lines = p->scribe_lines, fill = p->scribe_n - lines;
+  return k <= 4 ? lines * k / 4 : lines + fill * (k - 4) / (SCRIBE_FRAMES - 1 - 4);
+}
+bool plan_scribe(Plan *p, const Target *t, int frame, uint32_t *room) {
+  if (!p->scribe || frame < 0 || frame >= SCRIBE_FRAMES) return false;
+  if (p->scribe_lines == 0xFFFF) {
+    if (!room) return false;
+    scribe_order(p, room);
+  }
+  int a = frame ? scribe_cut(p, frame - 1) : 0, b = frame ? scribe_cut(p, frame) : p->scribe_n;
+  for (int i = a; i < b; i++) {
+    uint32_t v = p->scribe[i];
+    int x = (int)(v & 511), y = (int)(v >> 9 & 511), x0, x1;
+    uint8_t *row = t->row(t->ctx, y, &x0, &x1);
+    if (row && x >= x0 && x <= x1) row[x] = frame ? p->scribe_ink : (uint8_t)(0xC0 | (v >> 18 & 63));
+  }
+  return frame + 1 < SCRIBE_FRAMES;
+}
+

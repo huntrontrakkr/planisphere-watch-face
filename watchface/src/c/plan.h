@@ -17,6 +17,8 @@
 static inline const uint8_t *sec(const uint8_t *blob, int i) { return blob + ((const uint32_t *)(const void *)blob)[i]; }
 static inline float star_ra(const uint8_t *s) { return (s[0] | s[1] << 8) * 360.0f / 65536; }
 static inline float star_dec(const uint8_t *s) { return (s[2] | s[3] << 8) * 180.0f / 65535 - 90; }
+/* a figure of the time in plan.bin (SEC_FIGURE_INDEX, its bits in SEC_FIGURE_DATA): a bit a pixel, row by row */
+typedef struct { uint32_t bit; uint8_t w, h, base, pad; } FigureIndex;
 
 /* The screen: a row's GColor8 pixels (index x), and the columns it has from x0 to x1 (the Round 2's rows are
  * cut to the circle). */
@@ -44,6 +46,7 @@ typedef struct {
   bool coords;                 /* its latitude and longitude on the ring (false while the place is not yet known) */
   const Weather *weather;      /* NULL: none */
   uint32_t calendars;          /* the calendars whose days the face keeps: bit n for CAL_* n (plan_data.h) */
+  bool scribe;                 /* the minute's new figures kept to be written as a scribe writes (plan_scribe) */
 } Face;
 
 /* Where things are in the sky at a moment (degrees). The planets in the order they are drawn. */
@@ -146,6 +149,17 @@ typedef struct {
   uint8_t feast_art_w, feast_art_h;    /* its emblem (0 wide: none): a bit a pixel, row by row, the low bit first */
   uint8_t feast_art[32];
   char feast_words[2][20];             /* its long and short words for the almanac's line */
+  /* the minute written: the figures that changed since the last drawing, their pixels in a scribe's order (each
+   * figure's outline from its top round clockwise, then its fill from the outline in), for plan_scribe to unveil a
+   * few frames at a time; each x | y << 9 | the colour under it << 18 (GColor8's six bits) | its figure << 24. Made by
+   * plan_render when Face.scribe asks, with its alloc; the next drawing releases it (or the caller, once played) */
+  uint32_t *scribe;
+  uint16_t scribe_n;                   /* its pixels */
+  uint16_t scribe_lines;               /* how many of them (the first) are outlines, once ordered (0xFFFF: not yet) */
+  uint8_t scribe_ink;                  /* their colour */
+  /* the figures last drawn while a scribe was asked for (0..9, 10 h, 11 m), where, and for what time */
+  int8_t time_c[8], time_n, time_style;
+  int16_t time_x[8], time_y[8], time_hour, time_minute;
   /* the fireworks display at the top of this hour, if there is one: plan_render works it out then (from the window's
    * edge and ground), the display's own code (plan_show) plays it */
   int32_t show_hour;                   /* the local hour it is for (the date's ordinal * 24 + the hour), -1 none */
@@ -177,7 +191,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
  * app's own binary stays small (PebbleOS caps it at 64 KB) and the renderer has the rest of the app's memory. The
  * layout number keeps a blob from one build from running with another's structures. */
 #define PLAN_API_MAGIC 0x4e414c50u           /* "PLAN" */
-#define PLAN_API_VERSION 3u
+#define PLAN_API_VERSION 4u
 #define PLAN_LAYOUT ((PLAN_API_VERSION << 28) ^ ((uint32_t)sizeof(Plan) << 12) ^ ((uint32_t)sizeof(Face) << 4) ^ \
                      (uint32_t)sizeof(Weather))
 typedef struct {
@@ -209,8 +223,14 @@ bool plan_feast(Plan *p, const Face *f, int64_t utc, int32_t offset, const Feast
 #define SHOW_API_MAGIC 0x574f4853u           /* "SHOW" */
 typedef struct { uint16_t n, cap; uint32_t px[]; } ShowUndo;   /* each x | y << 9 | the colour << 18 */
 #define SHOW_UNDO 1024                       /* the pixels a frame may cover (the most seen is under 450: check_memory) */
+/* The minute written, from the same blob: a frame over the face as last drawn (Plan.scribe, which frame 0 first puts
+ * in a scribe's order, with `room` for a word a pixel to sort them in): frame 0 takes away the figures that changed,
+ * the next SCRIBE_FRAMES - 1 write them again, their outlines and then their fill. True while frames remain. */
+#define SCRIBE_FRAMES 8
 typedef struct {
   uint32_t magic, layout;
   bool (*frame)(Plan *p, const Target *t, int frame, ShowUndo *undo);
+  bool (*scribe)(Plan *p, const Target *t, int frame, uint32_t *room);
 } ShowApi;
 bool plan_show(Plan *p, const Target *t, int frame, ShowUndo *undo);
+bool plan_scribe(Plan *p, const Target *t, int frame, uint32_t *room);

@@ -11,6 +11,11 @@ settings page shows the face live, the same C built to WebAssembly. See [On the 
 Drawn by the watch's own C (`tools/store_gallery.py`, which also makes the store's gallery), the Time 2 beside the
 Round 2.
 
+The minute written: when the minute changes, its new figures are written as a scribe writes, outlined and then
+filled in, in under a second and a few hundred pixels (an option, left out on a low battery).
+
+![The minute written](docs/gallery-minute.gif)
+
 The variations: each frame another plate, clock, place, sky and the labours or none.
 
 ![The variations](docs/gallery-variations.gif)

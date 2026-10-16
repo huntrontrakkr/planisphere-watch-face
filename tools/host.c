@@ -17,6 +17,9 @@
  *                       watch plays it) to that frame
  *     --show-check      play the whole display and check the face is put back exactly; print its frames and the
  *                       most pixels a frame covered
+ *     --scribe          the minute written: draw the minute before first, then this one, keeping its new figures
+ *     --scribe-frame K  and play the minute written (plan_scribe, as the watch plays it) to frame K
+ *     --scribe-check    play all of it and check the face is written back exactly; print what was written
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,8 +72,8 @@ int main(int argc, char **argv) {
   f.names = true, f.coords = true;
   Weather wx;
   int repeat = 1;
-  bool mem = false, show_check = false;
-  int show = -1;
+  bool mem = false, show_check = false, scribe_check = false;
+  int show = -1, scribe_frame = -1;
   for (int i = 8; i < argc; i++) {
     if (!strcmp(argv[i], "--24")) f.clock24 = true;
     else if (!strcmp(argv[i], "--no-names")) f.names = false;
@@ -83,6 +86,9 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--mem")) mem = true;
     else if (!strcmp(argv[i], "--show") && i + 1 < argc) show = atoi(argv[++i]);
     else if (!strcmp(argv[i], "--show-check")) show_check = true;
+    else if (!strcmp(argv[i], "--scribe")) f.scribe = true;
+    else if (!strcmp(argv[i], "--scribe-frame") && i + 1 < argc) f.scribe = true, scribe_frame = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "--scribe-check")) f.scribe = true, scribe_check = true;
     else if (!strcmp(argv[i], "--calendars") && i + 1 < argc) f.calendars = (uint32_t)strtoul(argv[++i], NULL, 0);
     else if (!strcmp(argv[i], "--weather") && i + 1 < argc) {
       int v[10] = {0};
@@ -107,9 +113,25 @@ int main(int argc, char **argv) {
   FeastReader rd;
   plan_feast_memory(&rd, BLOB_FEASTS);
   plan_feast(&p, &f, utc, offset, &rd);
+  if (f.scribe && !plan_render(&p, &f, utc - 60, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
   for (int i = 0; i < repeat; i++)
     if (!plan_render(&p, &f, utc, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
   if (mem) printf("peak %zu bytes in %zu blocks\n", mem_peak, mem_peak_blocks);
+  if (scribe_frame >= 0 || scribe_check) {
+    static uint8_t drawn[MAX_W * MAX_H];
+    memcpy(drawn, fb, sizeof fb);
+    uint32_t *room = p.scribe_n ? malloc(p.scribe_n * sizeof *room) : NULL;
+    int n = p.scribe_n, last = scribe_check ? SCRIBE_FRAMES - 1 : scribe_frame;
+    for (int k = 0; k <= last && p.scribe; k++) plan_scribe(&p, &t, k, room);
+    if (scribe_check) {
+      int off = 0;
+      for (int i = 0; i < W * H; i++) off += fb[i] != drawn[i];
+      printf("scribe: %d pixels written (%d of them outlines) in %d frames; %s\n", n, n ? p.scribe_lines : 0,
+             SCRIBE_FRAMES, off ? "NOT written back" : "the face written back exactly");
+      if (off) return 1;
+    }
+    free(room);
+  }
   if (show >= 0 || show_check) {
     int32_t hour = (int32_t)((utc + offset) / 86400 + 719163) * 24 + (int32_t)((utc + offset) % 86400 / 3600);
     if (p.show_hour != hour) { fprintf(stderr, "no display due at this moment\n"); return 1; }

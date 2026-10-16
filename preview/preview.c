@@ -43,10 +43,10 @@ EMSCRIPTEN_KEEPALIVE int pv_plates(void) { return PLATE_COUNT; }
 
 /* What the face shows: the plate, the clock, names in the sky, the temperature's scale, the place, the labours. */
 EMSCRIPTEN_KEEPALIVE void pv_face(int plate, int clock24, int names, int fahrenheit, float lat, float lon, int coords,
-                                  int labours, int calendars) {
+                                  int labours, int calendars, int scribe) {
   F.plate = (uint8_t)(plate >= 0 && plate < PLATE_COUNT ? plate : 0);
   F.clock24 = clock24 != 0, F.names = names != 0, F.fahrenheit = fahrenheit != 0, F.labours = labours != 0;
-  F.calendars = (uint32_t)calendars;
+  F.calendars = (uint32_t)calendars, F.scribe = scribe != 0;
   F.lat = lat, F.lon = lon, F.coords = coords != 0;
   F.city = city, F.country = country;
 }
@@ -102,3 +102,14 @@ EMSCRIPTEN_KEEPALIVE uint8_t *pv_show_frame(int frame) {
   plan_show(&P, &(Target){pv_row, NULL}, frame, &undo.u);
   return fb;
 }
+
+/* The minute written, when the face last drawn has new figures kept (pv_face's scribe): its frames (0: none); then each
+ * over the face as drawn (pv_scribe_frame), frame 0 taking the new figures away. */
+EMSCRIPTEN_KEEPALIVE int pv_scribe_frames(void) { return P.scribe ? SCRIBE_FRAMES : 0; }
+EMSCRIPTEN_KEEPALIVE uint8_t *pv_scribe_frame(int frame) {
+  uint32_t *room = frame == 0 && P.scribe ? malloc(P.scribe_n * sizeof *room) : NULL;
+  plan_scribe(&P, &(Target){pv_row, NULL}, frame, room);
+  free(room);
+  return fb;
+}
+

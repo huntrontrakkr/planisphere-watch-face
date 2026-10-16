@@ -139,10 +139,35 @@ await page.waitForTimeout(500);
 const still = differ(end1, await grab());
 check(moved.filter((n) => n > 0).length >= 3 && still === 0,
       `the fireworks display played in the preview (pixels changed between frames: ${moved.join(', ')}; after: ${still})`);
+// the minute written: from 21:09 a minute on by the slider, and the preview writes the new figures (1 and 0), then
+// holds still
+await page.evaluate(() => { const t = document.getElementById('time'); t.value = 21 * 60 + 9; t.dispatchEvent(new Event('input')); });
+await page.waitForTimeout(400);
+await page.locator('#time').focus();
+await page.keyboard.press('ArrowRight');
+const scribed = [];
+for (let i = 0; i < 5; i++) { scribed.push(await grab()); await page.waitForTimeout(90); }
+await page.waitForTimeout(700);
+const written = await grab();
+const wrote = scribed.map((f) => differ(f, written));
+const settled = differ(written, await grab());
+check(wrote[0] > 0 && wrote.filter((n) => n > 0).length >= 2 && settled === 0,
+      `the minute written in the preview (pixels still to write: ${wrote.join(', ')}; after: ${settled})`);
 await tap('.calendar label.switch', 'The Hebrew calendar');
 await tap('.seg button', 'Snow');
 await tap('.seg button', '°C');
 await tap('.seg button', 'A place I choose');
+// a place by name: the search answered here as Open-Meteo's place names would answer
+await page.route('https://geocoding-api.open-meteo.com/**', (route) => route.fulfill({ status: 200,
+  contentType: 'application/json', headers: { 'access-control-allow-origin': '*' },
+  body: JSON.stringify({ results: [{ name: 'Edinburgh', latitude: 55.95206, longitude: -3.19648, country: 'United Kingdom',
+                                     admin1: 'Scotland' }] }) }));
+await page.locator('.find input').fill('Edinb');
+await page.locator('.places button', { hasText: 'Edinburgh' }).first().click({ timeout: 5000 });
+await page.waitForTimeout(300);
+const chosen = await page.evaluate(() => Array.from(document.querySelectorAll('.fields input')).map((i) => i.value));
+check(chosen[0] === '55.9521' && chosen[2] === 'EDINBURGH' && chosen[3] === 'UNITED KINGDOM',
+      `a place found by name: ${chosen.join(', ')}`);
 await page.locator('.fields input').nth(0).fill('-33.87');
 await page.locator('.fields input').nth(1).fill('151.21');
 await page.locator('.fields input').nth(2).fill('Sydney');

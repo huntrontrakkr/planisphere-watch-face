@@ -17,7 +17,7 @@
     return e;
   }
 
-  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CALENDARS: 0, WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0,
+  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CALENDARS: 0, ANIMATE: 1, WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0,
                   PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: ''};
   var settings = {};
   function reset(from) {
@@ -83,7 +83,10 @@
     {title: 'The clock', items: [
       {key: 'CLOCK', type: 'seg', options: [[0, 'As the watch'], [1, '12-hour'], [2, '24-hour']],
        descHtml: 'The hours on the ring, and the time as an astronomer writes it: 9<sup>h</sup> 30<sup>m</sup>, or ' +
-                 '21<sup>h</sup> 30<sup>m</sup>.'}
+                 '21<sup>h</sup> 30<sup>m</sup>.'},
+      {key: 'ANIMATE', type: 'switch', label: 'The minute written',
+       desc: 'Each new figure written as a scribe writes it: outlined, then filled in. Under a second, a few hundred ' +
+             'pixels; left out when the battery runs low.'}
     ]},
     {title: 'The sky', items: [
       {key: 'NAMES', type: 'switch', label: 'Names in the sky',
@@ -221,6 +224,63 @@
       });
       box.appendChild(d);
     } else if (it.type === 'place') {
+      // a town or city by name (Open-Meteo's place names, as Groundtrack's and Dymaxion's pages): a moment after the
+      // typing stops, the latest answer only
+      var find = el('label', 'find', 'Search for a town or city');
+      var q = el('input');
+      q.type = 'search', q.autocomplete = 'off', q.spellcheck = false, q.placeholder = 'Kyoto, or Reykjavik';
+      find.appendChild(q);
+      box.appendChild(find);
+      var list = el('ul', 'places'), note = el('div', 'desc', "The search goes to Open-Meteo's place names.");
+      box.appendChild(list);
+      box.appendChild(note);
+      var findTimer = null, asked = 0;
+      var found = function (places, message) {
+        list.textContent = '';
+        places.forEach(function (pl) {
+          var li = el('li'), b = el('button', null, pl.name);
+          b.type = 'button';
+          var where = [pl.admin1, pl.country].filter(function (v) { return typeof v === 'string' && v && v !== pl.name; });
+          if (where.length) b.appendChild(el('small', null, where.join(', ')));
+          b.onclick = function () {
+            settings.PLACE_LAT = Math.round(Math.max(-89.9, Math.min(89.9, pl.latitude)) * 1e4);
+            settings.PLACE_LON = Math.round(pl.longitude * 1e4);
+            settings.PLACE_CITY = engrave(pl.name), settings.PLACE_COUNTRY = engrave(pl.country || '');
+            q.value = '';
+            found([], pl.name + (pl.country ? ', ' + pl.country : '') + ' chosen.');
+            changed();
+          };
+          li.appendChild(b);
+          list.appendChild(li);
+        });
+        note.textContent = message;
+      };
+      q.oninput = function () {
+        clearTimeout(findTimer);
+        var text = q.value.trim(), mine = ++asked;
+        if (text.length < 3) { found([], text ? 'Three letters or more to search.' : "The search goes to Open-Meteo's place names."); return; }
+        note.textContent = 'Searching…';
+        findTimer = setTimeout(function () {
+          if (!window.fetch) { found([], 'The search is not available here: enter the latitude and longitude.'); return; }
+          var stop = typeof AbortController === 'function' ? new AbortController() : null;
+          var late = setTimeout(function () { if (stop) stop.abort(); }, 8000);
+          fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(text.slice(0, 100)) +
+                '&count=8&language=en&format=json', stop ? {signal: stop.signal} : {})
+            .then(function (r) { if (!r.ok) throw new Error('search'); return r.json(); })
+            .then(function (data) {
+              if (mine !== asked) return;
+              var places = (data && Array.isArray(data.results) ? data.results : []).filter(function (pl) {
+                return pl && typeof pl.name === 'string' && isFinite(pl.latitude) && Math.abs(pl.latitude) <= 90 &&
+                  isFinite(pl.longitude) && Math.abs(pl.longitude) <= 180;
+              }).slice(0, 8);
+              found(places, places.length ? 'Choose the one you mean.' : 'Nothing found. Try a nearby town, or add the country.');
+            })
+            .catch(function () {
+              if (mine === asked) found([], 'The search is out of reach: enter the latitude and longitude.');
+            })
+            .then(function () { clearTimeout(late); });
+        }, 350);
+      };
       var f = el('div', 'fields');
       [['PLACE_LAT', 'Latitude (°, north +)', 'number'], ['PLACE_LON', 'Longitude (°, east +)', 'number'],
        ['PLACE_CITY', 'Name on the ring', 'text'], ['PLACE_COUNTRY', 'Country on the ring', 'text']].forEach(function (q) {
@@ -332,10 +392,11 @@
                             country: engrave(phonePlace.country), coords: true};
     return {lat: 40, lon: -new Date().getTimezoneOffset() / 4, city: '', country: '', coords: false};
   }
-  function setup(plate) {
+  function setup(plate, main) {
     var p = place();
     M._pv_face(plate, settings.CLOCK === 2 || (settings.CLOCK === 0 && clock24Here()) ? 1 : 0, settings.NAMES ? 1 : 0,
-               fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0, settings.LABOURS ? 1 : 0, settings.CALENDARS >>> 0);
+               fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0, settings.LABOURS ? 1 : 0, settings.CALENDARS >>> 0,
+               main && settings.ANIMATE ? 1 : 0);
     M.stringToUTF8(p.city || '', M._pv_city(), 32);
     M.stringToUTF8(p.country || '', M._pv_country(), 32);
     var w = !settings.WEATHER ? null : trySky === 'phone' ? phoneWeather && [phoneWeather.code, phoneWeather.temp10,
@@ -363,9 +424,9 @@
   function clock24Here() {
     try { return !/[ap]m/i.test(new Date(2026, 0, 1, 15).toLocaleTimeString()); } catch (e) { return false; }
   }
-  function paint(canvas, plate) {
+  function paint(canvas, plate, main) {
     stopShow();                                  // (the preview draws one face at a time)
-    setup(plate);
+    setup(plate, main);
     var t = moment();
     var ptr = M._pv_render(t.utc, t.offset);
     if (ptr) blit(canvas, ptr);
@@ -384,25 +445,32 @@
     }
     ctx.putImageData(img, 0, 0);
   }
-  // the fireworks display, in the preview as on the watch: at the top of an hour that brings one, its frames over the
-  // face as drawn then (the plates below wait for it)
-  var show = null, thumbsWaiting = false;
+  // the animations, in the preview as on the watch: the minute written when the preview moves on a minute (as when
+  // it follows the clock), and the fireworks display at the top of an hour that brings one; their frames over the
+  // face as drawn then (the plates below wait for them)
+  var show = null, thumbsWaiting = false, lastUtc = null;
   function stopShow() { if (show) clearInterval(show.timer), show = null; }
-  function startShow() {
+  function startShow(scribe) {
     var frames = M._pv_show_frames();
-    if (!frames || lapse) return;
-    var s = show = {frame: 0};
+    if (lapse || (!scribe && !frames)) return;
+    var s = show = {frame: 0, k: 1};
     s.timer = setInterval(function () {
-      blit($('screen'), M._pv_show_frame(s.frame));
-      if (s.frame++ < frames) return;
+      var ptr = 0;
+      if (s.k < scribe) ptr = M._pv_scribe_frame(s.k++);
+      if (frames && s.frame <= frames) ptr = M._pv_show_frame(s.frame++);
+      if (ptr) blit($('screen'), ptr);
+      if (s.k < scribe || (frames && s.frame <= frames)) return;
       stopShow();
       if (thumbsWaiting) refreshThumbs();
     }, 1000 / 12);
   }
   function draw() {
     if (!M) return;
-    paint($('screen'), settings.PLATE);
-    startShow();
+    paint($('screen'), settings.PLATE, true);
+    var t = moment().utc, scribe = lastUtc !== null && t - lastUtc === 60 ? M._pv_scribe_frames() : 0;
+    lastUtc = t;
+    if (scribe && !lapse) blit($('screen'), M._pv_scribe_frame(0));   // (the new figures away before they show)
+    startShow(scribe && !lapse ? scribe : 0);
     var p = place();
     $('caption').innerHTML = PLATES[settings.PLATE] ? '<b>Plate ' + roman(settings.PLATE + 1) + '</b>' +
       escapeHtml(PLATES[settings.PLATE].name) + ' · ' + Math.abs(p.lat).toFixed(1) + '° ' + (p.lat >= 0 ? 'N' : 'S') +

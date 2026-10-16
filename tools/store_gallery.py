@@ -3,14 +3,15 @@ as the store expects (docs/screenshots/store), and the same reels for the README
 (docs/gallery-*.gif). For each watch:
 
   1  a day: the planisphere over New York from noon to noon, twenty minutes a frame
-  2  the almanac's days: feasts of the twelve calendars, each on its own plate, with the labours of the months
-  3  the variations: the options together, each frame another plate, clock, names, labours, place and sky
-  4  anywhere: the place moving from the equator to the north pole and back, then to the south pole, the window
+  2  the minute written: the new figures outlined and filled as a scribe writes them, as the watch plays it
+  3  the almanac's days: feasts of the twelve calendars, each on its own plate, with the labours of the months
+  4  the variations: the options together, each frame another plate, clock, names, labours, place and sky
+  5  anywhere: the place moving from the equator to the north pole and back, then to the south pole, the window
      cut again for each latitude
-  5  the weather: fair, cirrus, cloudy, overcast, rain, snow, fog, frost, a gale, thunder
-  6  a fireworks display at the top of an evening hour, as the watch plays it: Independence Day in New York
-  7  the ten plates at half past nine in the evening
-  8  the sky's news: a total eclipse of the Sun, the Moon eclipsed, Venus meeting Jupiter, a meteor shower's peak
+  6  the weather: fair, cirrus, cloudy, overcast, rain, snow, fog, frost, a gale, thunder
+  7  a fireworks display at the top of an evening hour, as the watch plays it: Independence Day in New York
+  8  the ten plates at half past nine in the evening
+  9  the sky's news: a total eclipse of the Sun, the Moon eclipsed, Venus meeting Jupiter, a meteor shower's peak
 
     tools/build-host.sh && cd proto && uv run python ../tools/store_gallery.py
 """
@@ -35,7 +36,7 @@ DALLAS = (32.7767, -96.797)
 
 
 def frame(platform, plate, when, place, offset, labours=False, weather=None, calendars=0, show=None, clock24=False,
-          names=True, fahrenheit=False, city=None):
+          names=True, fahrenheit=False, city=None, scribe=None):
     """One face, as the watch draws it: when (aware datetime), place (lat, lon), offset (minutes ahead of UTC); the
     calendars kept (bit n for feasts.CALENDARS[n]), the frame of the fireworks display due then, if any; the clock,
     the names in the sky, the temperature's scale, and the place's name on the ring ((city, country); else the
@@ -59,6 +60,8 @@ def frame(platform, plate, when, place, offset, labours=False, weather=None, cal
         args += ["--calendars", str(calendars)]
     if show is not None:
         args += ["--show", str(show)]
+    if scribe is not None:                          # the minute written (the minute before drawn first), to a frame
+        args += ["--scribe-frame", str(scribe)]
     if weather:
         s = meteo.SAMPLES[weather]
         args += ["--weather", ",".join(str(int(round(v))) for v in (
@@ -141,6 +144,13 @@ def main():
         noon = datetime(2026, 10, 15, 16, 0, tzinfo=timezone.utc)        # noon in New York (four hours behind)
         reels["a_day", p] = ([frame(p, "planisphere", noon + timedelta(minutes=20 * k), NY, -240) for k in range(72)],
                              140)
+        # the minute written: half past nine and ten o'clock coming, the face a moment before each, at 12 frames a second
+        written = []
+        for when in (local(2026, 10, 15, 21, 30, -240), local(2026, 10, 15, 22, 0, -240)):
+            before = frame(p, "planisphere", when - timedelta(minutes=1), NY, -240)
+            written += [before] * 14 + [frame(p, "planisphere", when, NY, -240, scribe=k) for k in range(8)]
+            written += [written[-1]] * 14
+        reels["minute", p] = (written, 83)
         reels["almanac", p] = ([frame(p, plate, when, place, off, labours=True, calendars=ALL)
                                 for plate, when, place, off in FEASTS], 2000)
         reels["variations", p] = ([frame(p, plate, when, place, off, city=city, **opts)
@@ -168,11 +178,11 @@ def main():
                              frame(p, "planisphere", datetime(2023, 3, 2, 0, 20, tzinfo=timezone.utc), NY, -300),
                              frame(p, "planisphere", datetime(2026, 10, 22, 6, 0, tzinfo=timezone.utc), NY, -240)],
                             2000)
-    order = ["a_day", "almanac", "variations", "anywhere", "weather", "fireworks", "plates", "news"]
+    order = ["a_day", "minute", "almanac", "variations", "anywhere", "weather", "fireworks", "plates", "news"]
     for n, name in enumerate(order, 1):
         for p in ("emery", "gabbro"):
             save_gif(*reels[name, p][:1], OUT / f"{p}_{n}_{name}.gif", reels[name, p][1])
-        if name in ("variations", "anywhere", "weather", "fireworks", "almanac"):
+        if name in ("minute", "variations", "anywhere", "weather", "fireworks", "almanac"):
             (a, ms), (b, _) = reels[name, "emery"], reels[name, "gabbro"]
             save_gif([side_by_side(x, y) for x, y in zip(a, b)], ROOT / "docs" / f"gallery-{name}.gif", ms)
     for f in sorted(OUT.iterdir()):
