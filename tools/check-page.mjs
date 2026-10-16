@@ -79,8 +79,11 @@ const inbox = Number(readFileSync(path.join(root, 'watchface/src/c/main.c'), 'ut
 const size = (m) => 1 + Object.values(m).reduce((n, v) => n + 7 + (typeof v === 'string' ? v.length + 1 : 4), 0);
 check(sent.every((m) => size(m) <= inbox), `every message fits the watch's inbox (${inbox} bytes)`);
 
+// the watch tells its own clock (24-hour here, while the test's phone guesses 12): the page follows the watch
+fire('appmessage', { payload: { CLOCK24: 1 } });
 fire('showConfiguration');
 check(openedUrl && openedUrl.startsWith('data:text/html'), `the page opened (${(openedUrl.length / 1024).toFixed(0)} KB)`);
+check(decodeURIComponent(openedUrl).includes('"watch24":1'), "the watch's own clock handed to the page");
 
 // ---- the page, in Chromium ----
 // Playwright from this repository's node_modules (CI: npm install --no-save playwright), else Groundtrack's
@@ -139,6 +142,14 @@ await page.waitForTimeout(500);
 const still = differ(end1, await grab());
 check(moved.filter((n) => n > 0).length >= 3 && still === 0,
       `the fireworks display played in the preview (pixels changed between frames: ${moved.join(', ')}; after: ${still})`);
+// the fireworks switched off alone: the evening hour plays no display (and the minute written stays on)
+await page.locator('label.switch', { hasText: 'Fireworks displays' }).first().click();
+await page.evaluate(() => { const t = document.getElementById('time'); t.value = 21 * 60; t.dispatchEvent(new Event('input')); });
+const quiet = [];
+for (let i = 0; i < 4; i++) { await page.waitForTimeout(250); quiet.push(await grab()); }
+const calm = quiet.slice(1).map((f, i) => differ(f, quiet[i]));
+check(calm.every((n) => n === 0), `no display with the fireworks switched off (pixels changed: ${calm.join(', ')})`);
+await page.locator('label.switch', { hasText: 'Fireworks displays' }).first().click();
 // the minute written: from 21:09 a minute on by the slider, and the preview writes the new figures (1 and 0), then
 // holds still
 await page.evaluate(() => { const t = document.getElementById('time'); t.value = 21 * 60 + 9; t.dispatchEvent(new Event('input')); });

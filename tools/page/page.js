@@ -17,12 +17,16 @@
     return e;
   }
 
-  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CALENDARS: 0, ANIMATE: 1, WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0,
-                  PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: ''};
+  // ANIMATIONS: a bit an animation (ANIM_*); 0.1.3's ANIMATE (the minute written alone) read into it
+  var ANIM_MINUTE = 1, ANIM_FIREWORKS = 2;
+  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CALENDARS: 0, ANIMATIONS: ANIM_MINUTE | ANIM_FIREWORKS,
+                  WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: ''};
   var settings = {};
   function reset(from) {
     settings = {};
     for (var k in DEFAULTS) settings[k] = from && from[k] !== undefined ? from[k] : DEFAULTS[k];
+    if (from && from.ANIMATIONS === undefined && from.ANIMATE !== undefined)
+      settings.ANIMATIONS = (from.ANIMATE ? ANIM_MINUTE : 0) | ANIM_FIREWORKS;
   }
   reset(STATE.settings);
   var phonePlace = STATE.place || null;      // where the phone last was: {lat, lon, city, country}
@@ -84,9 +88,14 @@
       {key: 'CLOCK', type: 'seg', options: [[0, 'As the watch'], [1, '12-hour'], [2, '24-hour']],
        descHtml: 'The hours on the ring, and the time as an astronomer writes it: 9<sup>h</sup> 30<sup>m</sup>, or ' +
                  '21<sup>h</sup> 30<sup>m</sup>.'},
-      {key: 'ANIMATE', type: 'switch', label: 'The minute written',
+    ]},
+    {title: 'Animations', items: [
+      {key: 'ANIMATIONS', bit: ANIM_MINUTE, type: 'switch', label: 'The minute written',
        desc: 'Each new figure written as a scribe writes it: outlined, then filled in. Under a second, a few hundred ' +
-             'pixels; left out when the battery runs low.'}
+             'pixels.'},
+      {key: 'ANIMATIONS', bit: ANIM_FIREWORKS, type: 'switch', label: 'Fireworks displays',
+       desc: 'On the calendars’ fireworks days, a few seconds of rockets at the top of each evening hour. All the ' +
+             'animations are left out while the battery runs low.'}
     ]},
     {title: 'The sky', items: [
       {key: 'NAMES', type: 'switch', label: 'Names in the sky',
@@ -150,10 +159,13 @@
       row.appendChild(el('span', null, it.label));
       var cb = el('input');
       cb.type = 'checkbox';
-      cb.onchange = function () { settings[it.key] = cb.checked ? 1 : 0; changed(); };
+      cb.onchange = function () {
+        settings[it.key] = it.bit ? (settings[it.key] & ~it.bit) | (cb.checked ? it.bit : 0) : cb.checked ? 1 : 0;
+        changed();
+      };
       row.appendChild(cb);
       box.appendChild(row);
-      dirty.push(function () { cb.checked = !!settings[it.key]; });
+      dirty.push(function () { cb.checked = it.bit ? !!(settings[it.key] & it.bit) : !!settings[it.key]; });
     } else if (it.type === 'plates') {
       var grid = el('div', 'plates');
       PLATES.forEach(function (p, i) {
@@ -396,7 +408,7 @@
     var p = place();
     M._pv_face(plate, settings.CLOCK === 2 || (settings.CLOCK === 0 && clock24Here()) ? 1 : 0, settings.NAMES ? 1 : 0,
                fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0, settings.LABOURS ? 1 : 0, settings.CALENDARS >>> 0,
-               main && settings.ANIMATE ? 1 : 0);
+               main && settings.ANIMATIONS & ANIM_MINUTE ? 1 : 0);
     M.stringToUTF8(p.city || '', M._pv_city(), 32);
     M.stringToUTF8(p.country || '', M._pv_country(), 32);
     var w = !settings.WEATHER ? null : trySky === 'phone' ? phoneWeather && [phoneWeather.code, phoneWeather.temp10,
@@ -421,7 +433,9 @@
                   date.getFullYear() : '')};
   }
   // the clock as the phone keeps it, for "as the watch" (the watch follows the phone)
+  // the watch's own clock, as it last told the phone; else a guess from the phone's
   function clock24Here() {
+    if (STATE.watch24 === 0 || STATE.watch24 === 1) return STATE.watch24 === 1;
     try { return !/[ap]m/i.test(new Date(2026, 0, 1, 15).toLocaleTimeString()); } catch (e) { return false; }
   }
   function paint(canvas, plate, main) {
@@ -451,7 +465,7 @@
   var show = null, thumbsWaiting = false, lastUtc = null;
   function stopShow() { if (show) clearInterval(show.timer), show = null; }
   function startShow(scribe) {
-    var frames = M._pv_show_frames();
+    var frames = settings.ANIMATIONS & ANIM_FIREWORKS ? M._pv_show_frames() : 0;
     if (lapse || (!scribe && !frames)) return;
     var s = show = {frame: 0, k: 1};
     s.timer = setInterval(function () {

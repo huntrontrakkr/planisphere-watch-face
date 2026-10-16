@@ -3,7 +3,7 @@
 var page = require('./page');
 var keys = require('message_keys');
 
-var STORE = 'plan-settings', PLACE = 'plan-place', WEATHER = 'plan-weather';
+var STORE = 'plan-settings', PLACE = 'plan-place', WEATHER = 'plan-weather', WATCH24 = 'plan-watch24';
 
 function saved(k) {
   try { return JSON.parse(localStorage.getItem(k)) || null; } catch (e) { return null; }
@@ -50,7 +50,8 @@ function settingsMessage(s) {
   m[keys.NAMES] = s.NAMES ? 1 : 0;
   m[keys.LABOURS] = s.LABOURS ? 1 : 0;
   m[keys.CALENDARS] = s.CALENDARS | 0;
-  m[keys.ANIMATE] = s.ANIMATE === undefined ? 1 : s.ANIMATE ? 1 : 0;
+  // a bit an animation: 1 the minute written, 2 fireworks (0.1.3's ANIMATE was the minute alone)
+  m[keys.ANIMATIONS] = s.ANIMATIONS !== undefined ? s.ANIMATIONS | 0 : (s.ANIMATE === 0 ? 0 : 1) | 2;
   m[keys.WEATHER] = s.WEATHER ? 1 : 0;
   m[keys.UNITS] = (s.UNITS | 0) === 0 ? (fahrenheitHere() ? 2 : 1) : s.UNITS | 0;
   m[keys.PLACE] = s.PLACE | 0;
@@ -68,6 +69,7 @@ Pebble.addEventListener('showConfiguration', function () {
     platform: info && info.platform ? info.platform : 'emery',
     place: saved(PLACE),
     weather: saved(WEATHER),
+    watch24: saved(WATCH24),            // the watch's own 12/24-hour clock, as it last said
     // the emulator's phone fills in its own return address
     returnTo: Pebble.platform === 'pypkjs' ? '$$$RETURN_TO$$$' : 'pebblejs://close#'
   };
@@ -91,6 +93,8 @@ Pebble.addEventListener('ready', function () { refresh(); });
 // the watch asks again when what it has is old
 Pebble.addEventListener('appmessage', function (e) {
   var p = (e && e.payload) || {};
+  var c24 = p.CLOCK24 !== undefined ? p.CLOCK24 : p[keys.CLOCK24];
+  if (c24 !== undefined) localStorage.setItem(WATCH24, JSON.stringify(c24 ? 1 : 0));
   if (p.REQUEST || p[keys.REQUEST]) refresh();
 });
 

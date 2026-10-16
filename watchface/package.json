@@ -1,7 +1,7 @@
 {
   "name": "planisphere",
   "author": "huntrontrakkr",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "keywords": [
     "pebble-app"
@@ -33,6 +33,8 @@
       "LABOURS",
       "CALENDARS",
       "ANIMATE",
+      "CLOCK24",
+      "ANIMATIONS",
       "LAT",
       "LON",
       "CITY",

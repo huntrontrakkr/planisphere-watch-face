@@ -14,7 +14,7 @@ profile  counts the Thumb instructions executed by one call of each named
          app function (QEMU block traces; instructions, not cycles), by
          function: fw: the firmware, app: main.c, plan: the renderer's code.
 
-Needs the SDL/pulse libraries staged in /tmp/dymaxion-runtime (Radiant notes).
+Needs the SDL/pulse libraries: staged in /tmp/dymaxion-runtime (Radiant notes), else ~/.local/lib/pebble-emulator.
 """
 import argparse, bz2, json, os, re, socket, subprocess, time, uuid
 from pathlib import Path
@@ -24,6 +24,8 @@ APP = ROOT / "watchface"
 SDK = Path.home() / ".local/share/pebble-sdk/SDKs/current"
 TOOLS = SDK / "toolchain/arm-none-eabi/bin"
 RUNTIME = "/tmp/dymaxion-runtime/usr/lib/x86_64-linux-gnu"
+if not Path(RUNTIME).is_dir():                     # (the staged copy is gone after a restart: the kept one)
+    RUNTIME = str(Path.home() / ".local/lib/pebble-emulator")
 
 
 def free_port():

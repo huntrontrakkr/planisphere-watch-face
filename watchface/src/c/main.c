@@ -11,7 +11,8 @@
 /* Nothing here is in a hot loop: built for size. */
 #pragma GCC optimize("Os")
 
-#define SETTINGS_VERSION 3
+#define SETTINGS_VERSION 4
+enum { ANIM_MINUTE = 1, ANIM_FIREWORKS = 2 };   /* the animations, a bit each (Settings.animations) */
 #define KEY_SETTINGS 1
 #define KEY_PLACE 2
 #define KEY_WEATHER 3
@@ -25,7 +26,7 @@ typedef struct {
   int32_t lat_e4, lon_e4;               /* the place given on the settings page (PLACE 1) */
   uint32_t calendars;                   /* the calendars whose days the face keeps (bit n for CAL_* n) */
   char city[24], country[20];
-  uint8_t animate;                      /* the minutes written as a scribe writes (from version 3) */
+  uint8_t animations;                   /* a bit an animation, ANIM_* (from version 3; these bits from 4) */
 } Settings;
 
 typedef struct {                        /* where the phone last was */
@@ -61,7 +62,7 @@ static uint32_t s_asked;
 static void defaults(Settings *s) {
   memset(s, 0, sizeof *s);
   s->version = SETTINGS_VERSION;
-  s->plate = PLATE_PLANISPHERE, s->names = 1, s->weather = 1, s->animate = 1;
+  s->plate = PLATE_PLANISPHERE, s->names = 1, s->weather = 1, s->animations = ANIM_MINUTE | ANIM_FIREWORKS;
 }
 
 static uint32_t now_ms(void) {
@@ -93,15 +94,24 @@ static uint32_t stack_deepest(void) {
 /* ---- the place and the weather ---- */
 
 /* the phone looks up where it is and the weather there; asked when what we have is old */
+/* the phone asked for the weather and the place when they are old; and told the watch's own 12/24-hour clock when it
+ * has not heard it (the settings page's preview follows it) */
+static int8_t s_told24 = -1;
 static void ask_phone(bool force) {
   uint32_t now = (uint32_t)time(NULL);
   if (!connection_service_peek_pebble_app_connection()) return;
-  if (!force && s_weather.time && now - s_weather.time < ASK_EVERY && s_place.time) return;
-  if (!force && s_asked && now - s_asked < ASK_RETRY) return;
+  bool c24 = clock_is_24h_style(), tell = s_told24 != (int8_t)c24;
+  bool ask = !(!force && s_weather.time && now - s_weather.time < ASK_EVERY && s_place.time) &&
+             !(!force && s_asked && now - s_asked < ASK_RETRY);
+  if (!ask && !tell) return;
   DictionaryIterator *out;
   if (app_message_outbox_begin(&out) != APP_MSG_OK) return;
-  dict_write_uint8(out, MESSAGE_KEY_REQUEST, 1);
-  if (app_message_outbox_send() == APP_MSG_OK) s_asked = now;
+  if (ask) dict_write_uint8(out, MESSAGE_KEY_REQUEST, 1);
+  dict_write_uint8(out, MESSAGE_KEY_CLOCK24, c24);
+  if (app_message_outbox_send() == APP_MSG_OK) {
+    if (ask) s_asked = now;
+    s_told24 = (int8_t)c24;
+  }
 }
 static void ask_later(void *data) { ask_phone(false); }
 
@@ -126,14 +136,19 @@ static int32_t utc_offset(time_t now) {
   return (int32_t)(local - (int64_t)now);
 }
 
+/* an animation the settings keep, and the battery not low (under a fifth and not charging: none) */
+static bool animation(int which) {
+  BatteryChargeState battery = battery_state_service_peek();
+  return (s_settings.animations & which) && (battery.charge_percent >= 20 || battery.is_charging);
+}
+
 static int32_t s_where[2];              /* the face's place as face_of sets it, 1e-4 degrees (latitude, longitude) */
 static void face_of(Face *f) {
   memset(f, 0, sizeof *f);
   f->plate = s_settings.plate < PLATE_COUNT ? s_settings.plate : 0;
   f->clock24 = s_settings.clock == 0 ? clock_is_24h_style() : s_settings.clock == 2;
   f->names = s_settings.names, f->labours = s_settings.labours, f->calendars = s_settings.calendars;
-  BatteryChargeState battery = battery_state_service_peek();     /* (the minute written: not on a low battery) */
-  f->scribe = s_settings.animate && (battery.charge_percent >= 20 || battery.is_charging);
+  f->scribe = animation(ANIM_MINUTE);
   f->fahrenheit = s_settings.units == 2;
   if (s_settings.place == 1) {
     s_where[0] = s_settings.lat_e4, s_where[1] = s_settings.lon_e4;
@@ -264,7 +279,7 @@ static void scribe_begin(const Target *tg) {
 }
 
 static void show_begin(void) {
-  if (s_show || s_plan->show_hour < 0) return;
+  if (s_show || s_plan->show_hour < 0 || !animation(ANIM_FIREWORKS)) return;
   if (s_plan->show_hour != s_show_played) s_show_played = s_plan->show_hour, s_show_last = -1, s_show_done = false;
   else if (s_show_done) return;                  /* (else it gave way, and goes on from its last frame) */
   s_undo = malloc(sizeof(ShowUndo) + SHOW_UNDO * sizeof(uint32_t));
@@ -367,7 +382,7 @@ static const struct { const uint32_t *key; uint8_t rec, type, off, size; } KEYS[
   IN(LABOURS, IN_SETTINGS, IN_U8, Settings, labours), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
   IN(PLACE_LON, IN_SETTINGS, IN_I32, Settings, lon_e4), IN(PLACE_CITY, IN_SETTINGS, IN_TEXT, Settings, city),
   IN(PLACE_COUNTRY, IN_SETTINGS, IN_TEXT, Settings, country), IN(CALENDARS, IN_SETTINGS, IN_I32, Settings, calendars),
-  IN(ANIMATE, IN_SETTINGS, IN_U8, Settings, animate),
+  IN(ANIMATIONS, IN_SETTINGS, IN_U8, Settings, animations),
   IN(LAT, IN_PLACE, IN_I32, Place, lat_e4), IN(LON, IN_PLACE, IN_I32, Place, lon_e4),
   IN(CITY, IN_PLACE, IN_TEXT, Place, city), IN(COUNTRY, IN_PLACE, IN_TEXT, Place, country),
   IN(WX_TEMP, IN_WEATHER, IN_I16, Stored, w.temp10), IN(WX_CODE, IN_WEATHER, IN_U8, Stored, w.code),
@@ -476,9 +491,12 @@ static void init(void) {
   Settings s;
   int got = persist_read_data(KEY_SETTINGS, &s, sizeof s);
   if (got == (int)sizeof s && s.version == SETTINGS_VERSION) s_settings = s;
-  else if (got == (int)offsetof(Settings, animate) && s.version == 2) {   /* version 2's, the minute written added */
-    memcpy(&s_settings, &s, offsetof(Settings, animate));
-    s_settings.version = SETTINGS_VERSION, s_settings.animate = 1;
+  else if (got == (int)sizeof s && s.version == 3) {                     /* version 3's: the minute written alone */
+    s_settings = s, s_settings.version = SETTINGS_VERSION;
+    s_settings.animations = (s.animations ? ANIM_MINUTE : 0) | ANIM_FIREWORKS;
+  } else if (got == (int)offsetof(Settings, animations) && s.version == 2) {   /* version 2's: no animations kept */
+    memcpy(&s_settings, &s, offsetof(Settings, animations));
+    s_settings.version = SETTINGS_VERSION, s_settings.animations = ANIM_MINUTE | ANIM_FIREWORKS;
   }
   if (persist_read_data(KEY_PLACE, &s_place, sizeof s_place) != (int)sizeof s_place) memset(&s_place, 0, sizeof s_place);
   if (persist_read_data(KEY_WEATHER, &s_weather, sizeof s_weather) != (int)sizeof s_weather) memset(&s_weather, 0, sizeof s_weather);
