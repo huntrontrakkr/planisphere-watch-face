@@ -1071,168 +1071,6 @@ static void rng_seed(Rng *g, R *r, int salt) {
                (uint32_t)pyf_round((float)r->f->lon * 10) * 1299709u + (uint32_t)salt * 15485863u);
 }
 
-/* ---- the labours of the months (proto/plates.py labour_scene), an option: faint in the card between the window and
- * the ring, the month's field running on behind the window from a point hidden behind its top, the labourer in the
- * left of it and the month's thing in the right ---------------------------------------------------------------- */
-typedef struct { const MaskIndex *mi; bool mirror; int x0, y0; } LabFig;
-typedef struct {
-  R *r;
-  const int16_t (*card)[4];
-  LabFig fig[6];
-  int nfig;
-  uint8_t tone;
-} Lab;
-
-/* the card in row y, as the prototype grows things (a pixel at a time, four ways): inside the ring's inner edge by
- * 3 px, [c0, c1], and not within 3 px of the window, [c2, c3] */
-static void card_row(R *r, const int16_t *inner, int y, int16_t c[4]) {
-  Plan *p = r->p;
-  int lo = -NONE16, hi = NONE16, glo = NONE16, ghi = -NONE16;
-  for (int dy = -3; dy <= 3; dy++) {
-    int v = y + dy, g = 3 - (dy < 0 ? -dy : dy);
-    if (v < 0 || v >= r->H) continue;
-    if (inner[2 * v] > inner[2 * v + 1]) lo = 1, hi = 0;
-    if (inner[2 * v] + g > lo) lo = inner[2 * v] + g;
-    if (inner[2 * v + 1] - g < hi) hi = inner[2 * v + 1] - g;
-    if (p->wx0[v] > p->wx1[v]) continue;
-    if (p->wx0[v] - g < glo) glo = p->wx0[v] - g;
-    if (p->wx1[v] + g > ghi) ghi = p->wx1[v] + g;
-  }
-  c[0] = (int16_t)lo, c[1] = (int16_t)hi, c[2] = (int16_t)glo, c[3] = (int16_t)ghi;
-}
-static inline bool in_card(const int16_t c[4], int x) { return x >= c[0] && x <= c[1] && (x < c[2] || x > c[3]); }
-
-/* in row v, how far x stands from the nearest pixel off the field's ground (the card below the hills): 0 on one */
-static int lab_room(R *r, const int16_t c[4], bool ok, int x) {
-  if (!ok || !in_card(c, x)) return 0;
-  int a = c[0], b = c[1];
-  if (c[2] <= c[3]) {
-    if (x < c[2]) b = b < c[2] - 1 ? b : c[2] - 1;
-    else a = a > c[3] + 1 ? a : c[3] + 1;
-  }
-  int left = a > 0 ? x - a + 1 : NONE16, right = b < r->W - 1 ? b - x + 1 : NONE16;
-  return left < right ? left : right;
-}
-
-/* where the labourer and the month's thing stand: on each side of the middle, the pixel of the field's ground standing
- * clearest of its edges (Chebyshev, up to 14 px), the first such in reading order */
-static void labour_places(R *r, const int16_t (*card)[4], int vy) {
-  Plan *p = r->p;
-  int best[2] = {0, 0};
-  for (int s = 0; s < 2; s++) p->lab_at[s][0] = 0, p->lab_at[s][1] = 0;
-  for (int y = vy + 3; y < r->H; y++)
-    for (int x = card[y][0]; x <= card[y][1]; x++) {
-      if (!in_card(card[y], x)) continue;
-      int d = 14;
-      for (int v = y - 13; v <= y + 13 && d > 0; v++) {
-        if (v < 0 || v >= r->H) continue;
-        int dv = v < y ? y - v : v - y;
-        if (dv >= d) continue;
-        int h = lab_room(r, card[v], v > vy + 2, x), e = h > dv ? h : dv;
-        if (e < d) d = e;
-      }
-      int s = x >= r->col;
-      if (d > best[s]) best[s] = d, p->lab_at[s][0] = (int16_t)x, p->lab_at[s][1] = (int16_t)y;
-    }
-}
-
-static bool lab_px(R *r, const LabFig *f, int i, int j) {
-  if (i < 0 || j < 0 || i >= f->mi->w || j >= f->mi->h) return false;
-  return mask_at(r, f->mi, f->mirror ? f->mi->w - 1 - i : i, j);
-}
-/* 2: the figure's pixel; 1: one touching it (kept clear); 0: neither */
-static int lab_fig_at(R *r, const LabFig *f, int x, int y) {
-  int i = x - f->x0, j = y - f->y0;
-  if (i < -1 || j < -1 || i > f->mi->w || j > f->mi->h) return 0;
-  if (lab_px(r, f, i, j)) return 2;
-  return lab_px(r, f, i - 1, j) || lab_px(r, f, i + 1, j) || lab_px(r, f, i, j - 1) || lab_px(r, f, i, j + 1);
-}
-/* a mark of the field, unless a figure stands there or beside it */
-static void lab_mark(Lab *l, int x, int y) {
-  if (!on_screen(l->r, x, y) || !in_card(l->card[y], x)) return;
-  for (int k = 0; k < l->nfig; k++)
-    if (lab_fig_at(l->r, &l->fig[k], x, y)) return;
-  put(l->r, x, y, l->tone);
-}
-
-static void labours(R *r, void *(*alloc)(size_t), void (*release)(void *)) {
-  Plan *p = r->p;
-  int16_t (*card)[4] = alloc((size_t)r->H * sizeof *card);
-  if (!card) return;
-  const int16_t *inner = sec16(p->geom, GEO_INNER);
-  for (int y = 0; y < r->H; y++) card_row(r, inner, y, card[y]);
-  int month = (r->local.month - 1 + (r->south ? 6 : 0)) % 12;     /* half a year round in the south */
-  const Labour *L = &LABOURS[month];
-  int top = 0;
-  for (int y = 0; y < r->H; y++)
-    if (inside(r, r->col, y)) { top = y; break; }
-  float vx = r->cx;
-  int vy = top + 6;
-  if (!p->lab_ok) labour_places(r, (const int16_t (*)[4])card, vy), p->lab_ok = true;
-  Lab l = {r, (const int16_t (*)[4])card, {{0}}, 0, r->tint};
-  for (int s = 0; s < 2; s++) {
-    const LabourFigure *lf = &L->side[s];
-    const MaskIndex *mi = mask(r, lf->mask);
-    for (int c = 0; c < lf->n; c++)
-      l.fig[l.nfig++] = (LabFig){mi, s == 1, p->lab_at[s][0] - mi->w / 2 + lf->at[c][0],
-                                 p->lab_at[s][1] - mi->h / 2 + lf->at[c][1]};
-  }
-  /* the far hills, a gentle line across behind the window's top */
-  for (int x = 0; x < r->W; x++) {
-    int y = pyf_round(vy - 3 + 1.5f * f_sind(x * (57.29577951f / 7)) + f_sind(x * (57.29577951f / 3.1f)));
-    lab_mark(&l, x, y);
-  }
-  /* the field */
-  if (L->field == FIELD_FURROWS) {                 /* the sown field: dotted furrows */
-    for (int a = -84; a <= 84; a += 7) {
-      float ex = vx + 260 * f_sind((float)a), ey = vy + 260 * f_cosd((float)a);
-      float adx = f_abs(ex - vx), ady = f_abs(ey - vy);
-      int n = (int)((adx > ady ? adx : ady) * 2) + 1, lx = -NONE16, ly = -NONE16, at = 0;
-      for (int k = 0; k <= n; k++) {
-        float t = (float)k / (float)n;
-        int px = pyf_floor(vx + (ex - vx) * t), py = pyf_floor(vy + (ey - vy) * t);
-        if (px == lx && py == ly) continue;
-        lx = px, ly = py;
-        if (at++ % 2 == 0) lab_mark(&l, px, py);
-      }
-    }
-  } else if (L->field == FIELD_VINES || L->field == FIELD_STUBBLE) {   /* rows of vine stakes, or of stubble */
-    bool vines = L->field == FIELD_VINES;
-    int step = vines ? 12 : 6;
-    float every = vines ? 6.0f : 3.0f;
-    for (int a = -84; a <= 84; a += step) {
-      float sa = f_sind((float)a), ca = f_cosd((float)a);
-      for (float d = 6; d < 260; d += every * (1 + d / 60)) {
-        int x = pyf_round(vx + d * sa), y = pyf_round(vy + d * ca);
-        int h = vines ? 1 + (int)(d / 30) : d < 60 ? 1 : 2;
-        for (int k = 0; k < h; k++) lab_mark(&l, x, y - k);
-      }
-    }
-  } else {                                         /* tufts of grass, or the pecked dots of snow */
-    bool grass = L->field == FIELD_GRASS;
-    Rng g;
-    rng_start(&g, (uint32_t)(month + 1));
-    for (int gy = vy + 4; gy < r->H; gy += 5)
-      for (int gx = rng_int(&g, 0, 6); gx < r->W; gx += 7) {
-        int x = gx + rng_int(&g, -2, 3), y = gy + rng_int(&g, -1, 2);
-        if (x < 1 || x >= r->W - 1 || y < 1 || y >= r->H) continue;
-        if (grass) lab_mark(&l, x - 1, y - 1), lab_mark(&l, x + 1, y - 1);
-        lab_mark(&l, x, y);
-      }
-  }
-  /* the figures, each over those before it with a pixel kept clear round it */
-  for (int k = 0; k < l.nfig; k++) {
-    const LabFig *f = &l.fig[k];
-    for (int j = 0; j < f->mi->h; j++)
-      for (int i = 0; i < f->mi->w; i++) {
-        int x = f->x0 + i, y = f->y0 + j, q = k + 1;
-        if (!lab_px(r, f, i, j) || !on_screen(r, x, y) || !in_card(card[y], x)) continue;
-        while (q < l.nfig && !lab_fig_at(r, &l.fig[q], x, y)) q++;
-        if (q == l.nfig) put(r, x, y, l.tone);
-      }
-  }
-  release(card);
-}
 
 #define CLOUD_SPEED 0.0015f                  /* pixels a second per km/h of wind */
 #define MARGIN 28
@@ -2683,28 +2521,6 @@ static void hand_index(R *r, int x, int y, void *ctx) {
   if (!on && h->n < 48) h->pts[h->n][0] = (int16_t)x, h->pts[h->n][1] = (int16_t)y, h->n++;
 }
 
-/* the Labours' tools in the Time 2's corners (Face.tools, proto/labour_tools.py): the top piece in the top corners and
- * the bottom piece in the bottom ones, mirrored on the right, where the corner is clear of the ring; on a printed or
- * a red plate their outlines alone, in its ink */
-static void corner_tools(R *r, const uint8_t *rec) {
-  const uint8_t *pc = rec + TOOLS_CLIP;
-  bool ink = r->paper || r->red;
-  for (int k = 0; k < 2; k++) {
-    int w = pc[0], h = pc[1], x0 = pc[2], y0 = pc[3], n = pc[4];
-    const uint8_t *cols = pc + 5, *px = cols + n;
-    for (int j = 0; j < h; j++)
-      for (int i = 0; i < w; i++) {
-        int b = j * w + i, v = (px[b >> 1] >> ((b & 1) * 4)) & 15, x = x0 + i, row = y0 + j;
-        if (!v || x >= rec[k ? TOOLS_CLIP - 1 - row : row]) continue;
-        uint8_t c = cols[v - 1];
-        if (ink && (c & 0x40)) continue;
-        c = ink ? r->P->ink : (uint8_t)(c | 0xC0);
-        int y = k ? r->H - TOOLS_CLIP + row : row;
-        put(r, x, y, c), put(r, r->W - 1 - x, y, c);
-      }
-    pc = px + (w * h + 1) / 2;
-  }
-}
 
 static void ring(R *r, int season) {
   const Plate *P = r->P;
@@ -2796,9 +2612,8 @@ static void ring(R *r, int season) {
   const int16_t *loz = sec16(p->geom, GEO_WORD_LOZENGES);
   for (int i = 0; i < 4; i++) paint(r, D_LOZENGE, loz[2 * i] / 16.0f - 0.5f, loz[2 * i + 1] / 16.0f - 0.5f, scol, false);
   inscriptions(r, style);
-  /* the Time 2's corners: the month's tools (an option), else a sprig in each, in the season's dress */
-  if (r->rect && r->f->tools) corner_tools(r, r->f->tools);
-  else if (r->rect) {
+  /* the Time 2's corners: a sprig in each, in the season's dress (unless the month's tools are there) */
+  if (r->rect && !r->f->tools) {                 /* (the tools drawn with the scene: plan_decor.c) */
     const int16_t *cs = sec16(p->geom, GEO_CORNERS);
     static const uint8_t CORNER_OF_SEASON[6] = {D_CORNER_BARE, D_CORNER_BLOSSOM, D_CORNER_LEAF, D_CORNER_LEAF,
                                                 D_CORNER_AUTUMN, D_CORNER_AUTUMN};
@@ -3246,7 +3061,13 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
    * window's ground */
   for (int y = 0; y < r->H; y++)
     for (int x = p->rx0[y]; x <= p->rx1[y]; x++) p->rows[y][x] = card_at(r, x, y);
-  if (f->labours) labours(r, alloc, release);
+  /* the scene in the card (the labours) and the Time 2's corner tools, by the scene blob (plan_decor.c, Face.decor):
+   * now, while the frame's memory is low, before the grid */
+  if (f->decor && (f->labours || (f->tools && r->rect))) {
+    DecorCtx dc = {p, (r->local.month - 1 + (r->south ? 6 : 0)) % 12, r->col, r->cx, r->tint, P->ink, f->labours,
+                   f->tools && r->rect, r->paper || r->red, alloc, release};
+    f->decor(f->decor_ctx, &dc);
+  }
   r->ik = 1 / r->k;
   sky_constants(&r->sk, P->window == WIN_RED ? r->s_eff : r->sun_alt);
   sky_constants(&r->sk6, -6);

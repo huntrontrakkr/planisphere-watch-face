@@ -37,6 +37,7 @@ typedef struct {
   uint16_t vis_dam;            /* visibility, tens of metres */
 } Weather;
 
+struct DecorCtx;
 /* What the face shows, settled from the owner's settings and the watch. */
 typedef struct {
   uint8_t plate;               /* PLATE_* */
@@ -49,23 +50,17 @@ typedef struct {
   bool scribe;                 /* the minute's new figures kept to be written as a scribe writes (plan_scribe) */
   uint8_t events;              /* the passing events the face may bring (EV_*: Plan.event), and the village's life */
   uint8_t figs_part;           /* the figures drawn in at dusk: drawn this many EVENT_FIGS_FRAMES-ths along (0: all) */
-  const uint8_t *tools;        /* the Time 2's corners: the month's tools instead of the sprigs (plan_tools_record), or
-                                * NULL */
+  bool tools;                  /* the Time 2's corners: the month's tools instead of the sprigs (tools.bin) */
+  /* the scene blob (plan_decor.c), called where the card is laid when the labours or the tools are asked for: the
+   * watch loads it for the moment and lets it go; elsewhere it is plan_decor itself. NULL: neither drawn. */
+  bool (*decor)(void *ctx, const struct DecorCtx *dc);
+  void *decor_ctx;
 } Face;
 /* The Labours' tools for the Time 2's corners (an option): tools.bin (proto/labour_tools.py) holds the corner's
  * clearance (TOOLS_CLIP bytes: how far in from the side each row from the edge is clear of the ring), twelve month
- * offsets and an end (uint16), then each month's top piece and bottom piece. A month's record, as Face.tools takes it,
- * is the clearance followed by the month's two pieces: the watch reads just that from its resources. The month is the
- * labours' own: half a year round in the south. */
+ * offsets and an end (uint16), then each month's top piece and bottom piece; the scene blob reads the month's as it
+ * draws. The month is the labours' own: half a year round in the south. */
 #define TOOLS_CLIP 22
-static inline int plan_tools_month(int month, bool south) { return (month - 1 + (south ? 6 : 0)) % 12; }   /* 0..11 */
-static inline uint16_t plan_tools_off(const uint8_t *file, int i) { return (uint16_t)(file[TOOLS_CLIP + 2 * i] | file[TOOLS_CLIP + 2 * i + 1] << 8); }
-static inline size_t plan_tools_record(const uint8_t *file, int m, uint8_t *out) {      /* m 0..11; out: the record */
-  size_t n = plan_tools_off(file, m + 1) - plan_tools_off(file, m);
-  for (size_t i = 0; i < TOOLS_CLIP; i++) out[i] = file[i];
-  for (size_t i = 0; i < n; i++) out[TOOLS_CLIP + i] = file[plan_tools_off(file, m) + i];
-  return TOOLS_CLIP + n;
-}
 /* The passing events, now and then: a meteor on a clear dark night (often in a shower's peak), the figures drawn in
  * at dusk once an evening, a skein of birds at twilight in the months they migrate; and the village's windows lit and
  * dark as its people come and go. */
@@ -270,3 +265,22 @@ bool plan_scribe(Plan *p, const Target *t, int frame, uint32_t *room);
  * back. True while the event goes on. */
 #define EVENT_UNDO 96
 bool plan_event(Plan *p, const Target *t, int frame, ShowUndo *undo);
+
+/* The scene blob (plan_decor.c): what plan_render asks of it, where the card is laid: the labours (faint in the card
+ * round the window) and the Time 2's corner tools, drawn into the Plan's rows. */
+typedef struct DecorCtx {
+  Plan *p;
+  int month;                   /* the labours' month, 0..11 (half a year round in the south) */
+  int col;                     /* the meridian's column */
+  float cx;                    /* the pole's x */
+  uint8_t tone, ink;           /* the labours' tone (the ring hatching's); the plate's ink */
+  bool labours, tools, line_only;   /* the labours; the corner tools; those as their outlines alone, in the ink */
+  void *(*alloc)(size_t);
+  void (*release)(void *);
+} DecorCtx;
+#define DECOR_API_MAGIC 0x524F4344u          /* "DCOR" */
+typedef struct {
+  uint32_t magic, layout;
+  bool (*draw)(const DecorCtx *d, const FeastReader *tools);
+} DecorApi;
+bool plan_decor(const DecorCtx *d, const FeastReader *tools);   /* tools: tools.bin, read as it goes (NULL: none) */

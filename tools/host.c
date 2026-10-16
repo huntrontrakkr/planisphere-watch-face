@@ -40,12 +40,15 @@ static int W, H;
 
 /* the drawing's memory, counted as PebbleOS's heap counts it (lib/util/heap.c: 4-byte units, a 4-byte header) */
 static size_t mem_now, mem_peak, mem_blocks, mem_peak_blocks;
+static size_t decor_peak;                 /* the most held while the scene blob draws (it loaded besides, on the watch) */
+static bool in_decor;
 static void *counted(size_t n) {
   size_t *b = malloc(n + sizeof(size_t));
   if (!b) return NULL;
   *b = ((n + 3) & ~(size_t)3) + 4;
   if (getenv("PLAN_MEM_LOG")) fprintf(stderr, "alloc %zu\n", n);
   mem_now += *b, mem_blocks++;
+  if (in_decor && mem_now > decor_peak) decor_peak = mem_now;
   if (mem_now > mem_peak) mem_peak = mem_now, mem_peak_blocks = mem_blocks;
   return b + 1;
 }
@@ -54,6 +57,18 @@ static void uncounted(void *p) {
   size_t *b = (size_t *)p - 1;
   mem_now -= *b, mem_blocks--;
   free(b);
+}
+
+/* the scene blob, linked in: the labours and the corner tools (tools.bin from memory) */
+static bool host_decor(void *ctx, const DecorCtx *dc) {
+  (void)ctx;
+  FeastReader rd;
+  plan_feast_memory(&rd, BLOB_TOOLS);
+  in_decor = true;
+  if (mem_now > decor_peak) decor_peak = mem_now;
+  bool ok = plan_decor(dc, &rd);
+  in_decor = false;
+  return ok;
 }
 
 static uint8_t *row(void *ctx, int y, int *x0, int *x1) {
@@ -116,13 +131,8 @@ int main(int argc, char **argv) {
     int a = ROUND2_TOPLEFT[y < 130 ? y : 259 - y];
     rx0[y] = (int16_t)a, rx1[y] = (int16_t)(259 - a);
   }
-  static uint8_t record[1024];
-  if (tools) {
-    Civil c;
-    plan_civil(utc + offset, &c);
-    plan_tools_record(BLOB_TOOLS, plan_tools_month(c.month, f.lat < 0), record);
-    f.tools = record;
-  }
+  f.tools = tools;
+  f.decor = host_decor;
   static Plan p;
   plan_init(&p, W, H, BLOB_PLAN, round ? BLOB_GABBRO : BLOB_EMERY);
   Target t = {row, NULL};
@@ -134,7 +144,7 @@ int main(int argc, char **argv) {
   if (f.scribe && !plan_render(&p, &f, utc - 60, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
   for (int i = 0; i < repeat; i++)
     if (!plan_render(&p, &f, utc, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
-  if (mem) printf("peak %zu bytes in %zu blocks\n", mem_peak, mem_peak_blocks);
+  if (mem) printf("peak %zu bytes in %zu blocks; the scene blob drawing %zu\n", mem_peak, mem_peak_blocks, decor_peak);
   if (getenv("PLAN_ROOMS"))                     /* the room each inscription has along the ring, in pixels */
     printf("rooms: city %.1f, country %.1f, latitude %.1f, longitude %.1f\n", (p.ins_hi[0] - p.ins_lo[0]) / 16.0,
            (p.ins_hi[1] - p.ins_lo[1]) / 16.0, (p.ins_hi[2] - p.ins_lo[2]) / 16.0, (p.ins_hi[3] - p.ins_lo[3]) / 16.0);

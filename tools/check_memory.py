@@ -38,10 +38,17 @@ MOMENTS = (1792027800, 1792000800)          # 15 October 2026, 01:30 and 18:00 U
 
 
 def peak(args, flags):
+    """The most a frame holds at once, and the most it holds while the scene blob draws (the blob itself not counted)."""
     out = subprocess.run([str(HOST), *args, "/dev/null", *flags, "--mem"], capture_output=True, text=True)
     if out.returncode:
         sys.exit(f"check_memory: the drawing failed: {' '.join(args)}: {out.stderr.strip()}")
-    return int(re.search(r"peak (\d+)", out.stdout).group(1))
+    m = re.search(r"peak (\d+) .*drawing (\d+)", out.stdout)
+    return int(m.group(1)), int(m.group(2))
+
+
+def decor_code():
+    """The scene blob as it loads (main.c decor_draw): its code, with the heap's header and the code's alignment."""
+    return struct.unpack("<5I", (DATA / "decor_code.bin").read_bytes()[:20])[1] + 4 + 4
 
 
 def app_size(screen):
@@ -108,33 +115,24 @@ def show_most():
     return most
 
 
-def tools_need(screen):
-    """The Labours' tools for the Time 2's corners (an option): the month's record of tools.bin, kept with the face
-    (main.c tools_of), the largest month's with the heap's header."""
-    if screen != "emery":
-        return 0
-    b = (DATA / "tools.bin").read_bytes()
-    clip = 22
-    offs = struct.unpack("<13H", b[clip: clip + 26])
-    return ((clip + max(offs[i + 1] - offs[i] for i in range(12)) + 3) & ~3) + 4
-
-
 def main():
     bad = False
     for screen in ("emery", "gabbro"):
-        worst, at = 0, None
+        worst, at, scene = 0, None, 0
         for lat in range(-89, 90):
             for t in MOMENTS:
-                n = peak([screen, "0", str(t), str(lat), "-74", "-240"], ["--labours", "--weather", SNOW, "--scribe"])
+                n, d = peak([screen, "0", str(t), str(lat), "-74", "-240"],
+                            ["--labours", "--tools", "--weather", SNOW, "--scribe"])
                 if n > worst:
                     worst, at = n, (lat, t)
-        worst += tools_need(screen)            # (kept from frame to frame while the option is on)
+                scene = max(scene, d)
+        scene += decor_code()                  # (the scene blob loaded while it draws, the tools' record within it)
         budget = heap(screen) - HEADROOM
         need, show = lookup_need(screen), show_need()
-        print(f"{screen}: a frame needs {worst:,} bytes at most (latitude {at[0]}; the corners' tools "
-              f"{tools_need(screen)} of them), the day's feast lookup {need:,}, "
+        print(f"{screen}: a frame needs {worst:,} bytes at most (latitude {at[0]}), {scene:,} while the scene blob "
+              f"draws, the day's feast lookup {need:,}, "
               f"a fireworks display {show:,}; budget {budget:,}")
-        bad |= worst > budget or need > budget or show > budget
+        bad |= worst > budget or need > budget or show > budget or scene > budget
     most = show_most()
     print(f"the displays: a frame covers {most} pixels at most, of the {SHOW_UNDO} kept")
     if bad or most > SHOW_UNDO:

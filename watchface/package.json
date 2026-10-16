@@ -87,6 +87,11 @@
         },
         {
           "type": "raw",
+          "name": "PLAN_DECOR_CODE",
+          "file": "data/decor_code.bin"
+        },
+        {
+          "type": "raw",
           "name": "PLAN_SHOW_CODE",
           "file": "data/show_code.bin"
         }

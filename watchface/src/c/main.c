@@ -156,25 +156,28 @@ static int animations(void) {
   return battery.charge_percent >= 20 || battery.is_charging ? s_settings.animations : 0;
 }
 
+/* the scene blob (plan_decor.c): loaded when the renderer asks for the card's scene or the corner tools (Face.decor),
+ * for the moment it draws, and let go; on the Time 2 it reads the month's tools from their table as it goes */
+static const void *load_blob(uint32_t resource, uint8_t **mem);
+static void resource_read(void *ctx, uint32_t at, void *buf, uint32_t n);
+volatile uint32_t g_decor_heap = 0;      /* the heap free while the scene blob is loaded */
+static bool decor_draw(void *ctx, const DecorCtx *dc) {
+  uint8_t *mem;
+  const DecorApi *api = load_blob(RESOURCE_ID_PLAN_DECOR_CODE, &mem);
+  bool ok = false;
+  if (api && api->magic == DECOR_API_MAGIC && api->layout == PLAN_LAYOUT) {
+    g_decor_heap = heap_bytes_free();
 #if PBL_RECT
-/* the month's tools for the Time 2's corners (Face.tools): its record read from tools.bin, kept for the month */
-static uint8_t *s_tools;
-static int8_t s_tools_m = -1;
-static const uint8_t *tools_of(int m) {
-  if (s_tools_m == m) return s_tools;
-  free(s_tools), s_tools = NULL, s_tools_m = -1;          /* (let go when the option is off: m < 0) */
-  if (m < 0) return NULL;
-  ResHandle h = resource_get_handle(RESOURCE_ID_PLAN_TOOLS);
-  uint8_t o[4];
-  resource_load_byte_range(h, TOOLS_CLIP + 2 * m, o, 4);
-  int a = o[0] | o[1] << 8, n = (o[2] | o[3] << 8) - a;
-  if (n <= 0 || !(s_tools = malloc(TOOLS_CLIP + n))) return NULL;
-  resource_load_byte_range(h, 0, s_tools, TOOLS_CLIP);
-  resource_load_byte_range(h, a, s_tools + TOOLS_CLIP, n);
-  s_tools_m = (int8_t)m;
-  return s_tools;
-}
+    ResHandle h = resource_get_handle(RESOURCE_ID_PLAN_TOOLS);
+    FeastReader rd = {resource_read, &h};
+    ok = api->draw(dc, &rd);
+#else
+    ok = api->draw(dc, NULL);
 #endif
+  }
+  free(mem);
+  return ok;
+}
 
 static int32_t s_where[2];              /* the face's place as face_of sets it, 1e-4 degrees (latitude, longitude) */
 static void face_of(Face *f) {
@@ -196,10 +199,8 @@ static void face_of(Face *f) {
     s_where[0] = 400000, s_where[1] = utc_offset(time(NULL)) / 240 * 10000;
   }
   s_api->place(f, s_where[0], s_where[1]);
-#if PBL_RECT
-  time_t t = time(NULL);
-  f->tools = tools_of(s_settings.tools ? plan_tools_month(localtime(&t)->tm_mon + 1, s_where[0] < 0) : -1);
-#endif
+  f->tools = PBL_IF_RECT_ELSE(s_settings.tools, false);
+  f->decor = decor_draw;
   uint32_t now = (uint32_t)time(NULL);
   if (s_settings.weather && s_weather.time && now - s_weather.time < WEATHER_FRESH) f->weather = &s_weather.w;
 }

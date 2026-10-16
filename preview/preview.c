@@ -41,8 +41,13 @@ EMSCRIPTEN_KEEPALIVE int pv_row_x0(int y) { return row_x0[y]; }
 EMSCRIPTEN_KEEPALIVE int pv_row_x1(int y) { return row_x1[y]; }
 EMSCRIPTEN_KEEPALIVE int pv_plates(void) { return PLATE_COUNT; }
 
-static bool want_tools;                 /* the Labours' tools in the Time 2's corners, the month's record */
-static uint8_t tools_record[512];
+/* the scene blob, linked in: the labours and the corner tools (tools.bin from memory) */
+static bool pv_decor(void *ctx, const DecorCtx *dc) {
+  (void)ctx;
+  FeastReader rd;
+  plan_feast_memory(&rd, BLOB_TOOLS);
+  return plan_decor(dc, &rd);
+}
 /* What the face shows: the plate, the clock, names in the sky, the temperature's scale, the place, the labours, the
  * minute written, the village's life (of the events, EV_VILLAGE alone: the passing ones are left to the watch) and
  * the Labours' tools in the Time 2's corners. */
@@ -51,7 +56,7 @@ EMSCRIPTEN_KEEPALIVE void pv_face(int plate, int clock24, int names, int fahrenh
   F.plate = (uint8_t)(plate >= 0 && plate < PLATE_COUNT ? plate : 0);
   F.clock24 = clock24 != 0, F.names = names != 0, F.fahrenheit = fahrenheit != 0, F.labours = labours != 0;
   F.calendars = (uint32_t)calendars, F.scribe = scribe != 0, F.events = (uint8_t)(events & EV_VILLAGE);
-  want_tools = tools != 0;
+  F.tools = tools != 0, F.decor = pv_decor;
   F.lat = lat, F.lon = lon, F.coords = coords != 0;
   F.city = city, F.country = country;
 }
@@ -71,13 +76,6 @@ EMSCRIPTEN_KEEPALIVE void pv_weather(int code, int temp10, int low, int mid, int
 
 /* The face at `utc` (seconds since 1970), the local clock `offset` minutes ahead: the screen, W x H bytes. */
 EMSCRIPTEN_KEEPALIVE uint8_t *pv_render(double utc, int offset) {
-  F.tools = NULL;
-  if (want_tools) {
-    Civil c;
-    plan_civil((int64_t)utc + offset * 60, &c);
-    plan_tools_record(BLOB_TOOLS, plan_tools_month(c.month, F.lat < 0), tools_record);
-    F.tools = tools_record;
-  }
   FeastReader rd;
   plan_feast_memory(&rd, BLOB_FEASTS);
   plan_feast(&P, &F, (int64_t)utc, offset * 60, &rd);

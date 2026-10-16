@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 import build_blob                 # noqa: E402
 
+APP_FRAME = 96                    # bytes: main.c's decor_draw and its blob loader, between the renderer and the scene blob
 LIBGCC = 32                       # bytes: libgcc's float helpers push a few registers at most (checked: up to 24)
 
 
@@ -34,10 +35,16 @@ def main():
     cc = build_blob.TC / "arm-none-eabi-gcc"
     gcc = str(cc if cc.exists() else sdks[-1])
     flags = [f for f in build_blob.CFLAGS if f not in ("-Werror",)]
-    worst_all, dynamic_all = 0, set()
+    worst_all, dynamic_all, depths = 0, set(), {}
     for name, (sources, api) in build_blob.BLOBS.items():
-        worst, dynamic = analyse(gcc, flags, sources, api, a.top)
-        worst_all, dynamic_all = max(worst_all, worst), dynamic_all | dynamic
+        worst, dynamic, outs = analyse(gcc, flags, sources, api, a.top)
+        worst_all, dynamic_all, depths[name] = max(worst_all, worst), dynamic_all | dynamic, (worst, outs)
+    # the scene blob runs inside the renderer's frame: called through Face.decor from plan_render itself, by main.c's
+    # decor_draw (APP_FRAME for it and its loader)
+    at = max((d for d, path in depths["plan_code"][1] if path == "plan_render"), default=0)
+    nested = at + APP_FRAME + depths["decor_code"][0]
+    print(f"the scene blob within the renderer: {at} + {APP_FRAME} (main.c) + {depths['decor_code'][0]} = {nested} bytes")
+    worst_all = max(worst_all, nested)
     if dynamic_all or (a.budget and worst_all > a.budget):
         sys.exit(f"A blob goes {worst_all} bytes deep (budget {a.budget}), or has frames sized at run time.")
 
@@ -124,7 +131,7 @@ def analyse(gcc, flags, sources, api, top):
     print("called through pointers:", ", ".join(sorted(taken)) or "none")
     if dynamic:
         print("frames sized at run time:", ", ".join(sorted(dynamic)))
-    return max(deepest(e)[0] for e in entries), dynamic
+    return max(deepest(e)[0] for e in entries), dynamic, found
 
 
 if __name__ == "__main__":
