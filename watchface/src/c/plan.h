@@ -15,7 +15,9 @@
 /* plan.bin: its sections (SEC_*, from a table of their offsets), and a star's place at the head of a record of one
  * (the stars', their names', the constellations'), in 1/65536 of a turn and of the half turn from the south pole */
 static inline const uint8_t *sec(const uint8_t *blob, int i) { return blob + ((const uint32_t *)(const void *)blob)[i]; }
-static inline float star_ra(const uint8_t *s) { return (s[0] | s[1] << 8) * 360.0f / 65536; }
+/* (v * 360 is exact, v * 45 having 22 bits at most, and so is a multiply by 360 / 65536 = 45 / 8192: the same bits
+ * as v * 360 / 65536, without the division) */
+static inline float star_ra(const uint8_t *s) { return (s[0] | s[1] << 8) * (360.0f / 65536); }
 static inline float star_dec(const uint8_t *s) { return (s[2] | s[3] << 8) * 180.0f / 65535 - 90; }
 /* a figure of the time in plan.bin (SEC_FIGURE_INDEX, its bits in SEC_FIGURE_DATA): a bit a pixel, row by row */
 typedef struct { uint32_t bit; uint8_t w, h, base, pad; } FigureIndex;

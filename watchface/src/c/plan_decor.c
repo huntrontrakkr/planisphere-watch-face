@@ -118,10 +118,13 @@ static void scene(const DecorCtx *r, const int16_t *inner, const FeastReader *rd
   for (int j = 0, y = oy; j < h; j++, y++) {
     uint8_t card[4] = {1, 0, 0, 0};                /* (the card's span on this row: none off the screen) */
     if ((unsigned)y < (unsigned)p->h) card_row(r, inner, y, card);
+    /* the context carried along the row: the four of the row above from x - 1 to x + 2 (uw, the first its high bit),
+     * the two of this row before x (rw), and the one two rows up over x */
+    int uw = bit_at(up, 0, w) << 2 | bit_at(up, 1, w) << 1 | bit_at(up, 2, w), rw = 0;
     for (int x = 0; x < w; x++) {
-      int c = bit_at(up2, x, w) << 6 | bit_at(up, x - 1, w) << 5 | bit_at(up, x, w) << 4 | bit_at(up, x + 1, w) << 3 |
-              bit_at(up, x + 2, w) << 2 | bit_at(row, x - 2, w) << 1 | bit_at(row, x - 1, w);
-      if (!next_bit(&st, &prob[c])) continue;
+      int c = bit_at(up2, x, w) << 6 | uw << 2 | rw, b = next_bit(&st, &prob[c]);
+      uw = (uw << 1 | bit_at(up, x + 3, w)) & 15, rw = (rw << 1 | b) & 3;
+      if (!b) continue;
       row[x >> 3] |= (uint8_t)(0x80 >> (x & 7));
       if (on_screen(r, ox + x, y) && in_card(card, ox + x)) put(r, ox + x, y, r->tone);
     }

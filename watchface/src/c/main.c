@@ -170,6 +170,18 @@ static int animations(void) {
  * the labours' reads the month's tools from their table as it goes */
 static const void *load_blob(uint32_t resource, uint8_t **mem);
 static void resource_read(void *ctx, uint32_t at, void *buf, uint32_t n);
+/* a resource's handle, kept once got: the firmware checks a resource through on each getting, and the scene blob
+ * and its tables are got every minute */
+static ResHandle handle_of(uint32_t id) {
+  static struct { uint32_t id; ResHandle h; } kept[5];   /* (the scene blobs, their two tables, the motion blob) */
+  static int n;
+  for (int i = 0; i < n; i++)
+    if (kept[i].id == id) return kept[i].h;
+  ResHandle h = resource_get_handle(id);
+  if (n < 5 && id != RESOURCE_ID_PLAN_CODE && id != RESOURCE_ID_PLAN_FEAST_CODE && id != RESOURCE_ID_PLAN_FEASTS)
+    kept[n].id = id, kept[n].h = h, n++;
+  return h;
+}
 volatile uint32_t g_decor_heap = 0;      /* the heap free while the scene blob is loaded */
 static bool decor_call(void *ctx, bool labours, const DecorCtx *dc) {
   uint8_t *mem;
@@ -177,10 +189,10 @@ static bool decor_call(void *ctx, bool labours, const DecorCtx *dc) {
   bool ok = false;
   if (api && api->magic == DECOR_API_MAGIC && api->layout == PLAN_LAYOUT) {
     g_decor_heap = heap_bytes_free();
-    ResHandle sh = resource_get_handle(RESOURCE_ID_PLAN_SCENES);
+    ResHandle sh = handle_of(RESOURCE_ID_PLAN_SCENES);
     FeastReader scenes = {resource_read, &sh};
 #if PBL_RECT
-    ResHandle h = resource_get_handle(RESOURCE_ID_PLAN_TOOLS);
+    ResHandle h = handle_of(RESOURCE_ID_PLAN_TOOLS);
     FeastReader rd = {resource_read, &h};
     ok = api->draw(dc, &rd, &scenes);
 #else
@@ -249,7 +261,7 @@ static void feast_of_day(const Face *f, time_t now, int32_t offset) {
   uint8_t *mem;
   const FeastApi *api = load_blob(RESOURCE_ID_PLAN_FEAST_CODE, &mem);
   if (api && api->magic == FEAST_API_MAGIC && api->layout == PLAN_LAYOUT) {
-    ResHandle h = resource_get_handle(RESOURCE_ID_PLAN_FEASTS);
+    ResHandle h = handle_of(RESOURCE_ID_PLAN_FEASTS);
     FeastReader rd = {resource_read, &h};
     g_feast_heap = heap_bytes_free();
     if (api->feast(s_plan, f, (int64_t)now, offset, &rd)) s_looked[0] = s_where[0], s_looked[1] = s_where[1];
@@ -294,6 +306,14 @@ static bool animating(void) { return s_show || s_scribe_k || s_event_k || s_figs
 static void redraw(void) {
   if (animating()) s_redraw_after = true;
   else if (s_layer) layer_mark_dirty(s_layer);
+}
+/* a drawing soon: the phone's messages come a few at a time (the place and its name, the weather, the tide), and
+ * one drawing serves them all */
+static AppTimer *s_redraw_timer;
+static void redraw_now(void *data) { s_redraw_timer = NULL, redraw(); }
+static void redraw_soon(void) {
+  if (s_redraw_timer) app_timer_reschedule(s_redraw_timer, 400);
+  else s_redraw_timer = app_timer_register(400, redraw_now, NULL);
 }
 
 static bool motion_load(void) {
@@ -510,7 +530,7 @@ static void inbox(DictionaryIterator *it, void *context) {
   if (got[IN_SETTINGS]) persist_write_data(KEY_SETTINGS, &s_settings, sizeof s_settings);
   if (got[IN_PLACE]) s_place.time = now, persist_write_data(KEY_PLACE, &s_place, sizeof s_place);
   if (got[IN_WEATHER]) s_weather.time = now, persist_write_data(KEY_WEATHER, &s_weather, sizeof s_weather);
-  redraw();
+  redraw_soon();
 }
 
 /* ---- life cycle ---- */
@@ -524,7 +544,7 @@ typedef struct { uint32_t magic, image, bss, nrel, api; } CodeHeader;
 #define CODE_MAGIC 0x434E4C50u           /* "PLNC" */
 
 static const void *load_blob(uint32_t resource, uint8_t **mem) {
-  ResHandle h = resource_get_handle(resource);
+  ResHandle h = handle_of(resource);
   CodeHeader hd;
   *mem = NULL;
   if (resource_load_byte_range(h, 0, (uint8_t *)&hd, sizeof hd) != sizeof hd || hd.magic != CODE_MAGIC) return NULL;
