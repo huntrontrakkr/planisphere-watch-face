@@ -2,7 +2,15 @@
 // settings that redraw it as you go. The page returns {MESSAGE_KEY: value} to the phone, which sends it on.
 (function () {
   'use strict';
-  var STATE = window.PLAN_STATE || {};
+  // the phone's state: filled in where the phone opens the page itself (a data: URL); where an emulator's phone opens
+  // it from the web (CloudPebble, the SDK's emulator: a browser will not open a data: URL for them), in the address's
+  // hash, and the return address the emulator's page asks for in its query (return_to)
+  var STATE = window.PLAN_STATE || (function () {
+    var st = {}, h = /[#&]state=([^&]*)/.exec(location.hash), q = /[?&]return_to=([^&#]*)/.exec(location.search);
+    try { if (h) st = JSON.parse(decodeURIComponent(h[1])) || {}; } catch (e) { st = {}; }
+    if (q) st.returnTo = decodeURIComponent(q[1]);
+    return st;
+  })();
   var PLATES = window.PLAN_PLATES || [];
   var ART = window.PLAN_ART || {};
   var CALENDARS = window.PLAN_CALENDARS || [];

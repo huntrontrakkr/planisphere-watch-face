@@ -46,7 +46,7 @@ class XMLHttpRequest {
   }
 }
 const Pebble = {
-  platform: 'pypkjs',
+  platform: 'android',                  // (a phone: the page as a data: URL; the emulators': tools/check-cloudpebble.mjs)
   addEventListener: (ev, fn) => (handlers[ev] = handlers[ev] || []).push(fn),
   openURL: (u) => { openedUrl = u; },
   sendAppMessage: (d, ok) => { sent.push(d); setTimeout(() => ok && ok({}), 1); },
@@ -109,7 +109,10 @@ const playwright = (() => {
 })();
 const { chromium } = playwright;
 const RETURN = 'http://page.return/?';
-const html = decodeURIComponent(openedUrl.replace(/^data:text\/html;charset=utf-8,/, '')).split('$$$RETURN_TO$$$').join(RETURN);
+const RETURN_AT = '"returnTo":"pebblejs://close#"';   // (the phone's return address, here one the test can catch)
+const decoded = decodeURIComponent(openedUrl.replace(/^data:text\/html;charset=utf-8,/, ''));
+check(decoded.split(RETURN_AT).length === 2, "the page told the phone's return address");
+const html = decoded.split(RETURN_AT).join(`"returnTo":"${RETURN}"`);
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
 let answer = null;

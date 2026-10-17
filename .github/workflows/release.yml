@@ -73,6 +73,7 @@ jobs:
           npm install --no-save --no-package-lock playwright@1.55.1
           npx playwright install --with-deps chromium
           node tools/check-page.mjs
+          node tools/check-cloudpebble.mjs
           python tools/check_names.py
       - name: Decide whether this push is a release
         id: release
@@ -202,3 +203,34 @@ jobs:
             gh release create "$RELEASE_TAG" --verify-tag --title "Planisphere $RELEASE_TAG" --notes-file release-artifacts/release-notes.md
           fi
           gh release upload "$RELEASE_TAG" release-artifacts/planisphere.pbw release-artifacts/SHA256SUMS --clobber
+
+  # The settings page on the web, for the emulators (CloudPebble's and the SDK's open it in a browser, which will not
+  # open the data: URL a phone does): the release's own page (its phone side's page.js, no state filled in) at
+  # huntrontrakkr.github.io/planisphere-watch-face/settings/, published once the release is
+  settings-page:
+    needs: [verify, publish]
+    if: needs.verify.outputs.tag != '' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}settings/
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name != 'push' && needs.verify.outputs.tag || github.sha }}
+      - name: The page, as the release's phone side makes it
+        run: |
+          mkdir -p site/settings
+          node -e "process.stdout.write(require('./watchface/src/pkjs/page.js')(null))" > site/settings/index.html
+          grep -q 'var PLAN_STATE = null;' site/settings/index.html
+          printf '<!DOCTYPE html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=https://github.com/huntrontrakkr/planisphere-watch-face">\n' > site/index.html
+          touch site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

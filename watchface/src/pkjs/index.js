@@ -4,6 +4,8 @@ var page = require('./page');
 var names = require('./names');
 var tides = require('./tides');
 var keys = require('message_keys');
+// the settings page on the web, for the emulators (published with each release: .github/workflows/release.yml)
+var SETTINGS_URL = 'https://huntrontrakkr.github.io/planisphere-watch-face/settings/';
 
 var STORE = 'plan-settings', PLACE = 'plan-place', WEATHER = 'plan-weather', WATCH24 = 'plan-watch24';
 var LADDERS = 'plan-ladders';
@@ -86,11 +88,13 @@ Pebble.addEventListener('showConfiguration', function () {
     place: saved(PLACE),
     weather: saved(WEATHER),
     tides: (saved(TIDES) || {}).bytes || null,   // the tide's turns as last sent (the preview's high and low water)
-    watch24: saved(WATCH24),            // the watch's own 12/24-hour clock, as it last said
-    // the emulator's phone fills in its own return address
-    returnTo: Pebble.platform === 'pypkjs' ? '$$$RETURN_TO$$$' : 'pebblejs://close#'
+    watch24: saved(WATCH24)             // the watch's own 12/24-hour clock, as it last said
   };
-  Pebble.openURL('data:text/html;charset=utf-8,' + encodeURIComponent(page(state)));
+  // on a phone, the page itself (it needs no network); in an emulator (CloudPebble, the SDK's), whose phone opens it in
+  // a browser that will not open a data: URL, the same page from the web, the state in its hash and the return address
+  // the emulator adds (return_to)
+  if (Pebble.platform === 'pypkjs') Pebble.openURL(SETTINGS_URL + '#state=' + encodeURIComponent(JSON.stringify(state)));
+  else state.returnTo = 'pebblejs://close#', Pebble.openURL('data:text/html;charset=utf-8,' + encodeURIComponent(page(state)));
 });
 
 Pebble.addEventListener('webviewclosed', function (e) {
