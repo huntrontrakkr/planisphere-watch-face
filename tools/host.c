@@ -48,15 +48,16 @@ static int W, H;
 
 /* the drawing's memory, counted as PebbleOS's heap counts it (lib/util/heap.c: 4-byte units, a 4-byte header) */
 static size_t mem_now, mem_peak, mem_blocks, mem_peak_blocks;
-static size_t decor_peak;                 /* the most held while the scene blob draws (it loaded besides, on the watch) */
-static bool in_decor;
+static size_t decor_peak[2];              /* the most held while each scene blob draws (it loaded besides, on the watch):
+                                           * the woodcuts' and the candle's (decor_code), the labours' (labours_code) */
+static int in_decor;                      /* (0 none, 1 decor_code's, 2 labours_code's) */
 static void *counted(size_t n) {
   size_t *b = malloc(n + sizeof(size_t));
   if (!b) return NULL;
   *b = ((n + 3) & ~(size_t)3) + 4;
   if (getenv("PLAN_MEM_LOG")) fprintf(stderr, "alloc %zu\n", n);
   mem_now += *b, mem_blocks++;
-  if (in_decor && mem_now > decor_peak) decor_peak = mem_now;
+  if (in_decor && mem_now > decor_peak[in_decor - 1]) decor_peak[in_decor - 1] = mem_now;
   if (mem_now > mem_peak) mem_peak = mem_now, mem_peak_blocks = mem_blocks;
   return b + 1;
 }
@@ -78,10 +79,10 @@ static bool host_call(void *ctx, bool labours, const DecorCtx *dc) {
   (void)ctx;
   static Mem tools_mem = {BLOB_TOOLS, sizeof BLOB_TOOLS}, scenes_mem = {BLOB_SCENES, sizeof BLOB_SCENES};
   FeastReader rd = {mem_read, &tools_mem}, scenes = {mem_read, &scenes_mem};
-  in_decor = true;
-  if (mem_now > decor_peak) decor_peak = mem_now;
+  in_decor = labours ? 2 : 1;
+  if (mem_now > decor_peak[in_decor - 1]) decor_peak[in_decor - 1] = mem_now;
   bool ok = (labours ? plan_labours : plan_decor)(dc, &rd, &scenes);
-  in_decor = false;
+  in_decor = 0;
   return ok;
 }
 static bool host_decor(void *ctx, const DecorCtx *dc) { return decor_run(ctx, dc, host_call); }
@@ -137,8 +138,13 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--figures") && i + 1 < argc) f.figures_every = (uint8_t)atoi(argv[++i]);
     else if (!strcmp(argv[i], "--battery") && i + 1 < argc) {
       f.battery = (uint8_t)atoi(argv[++i]), f.charging = strchr(argv[i], 'c') != NULL, f.candle = true;
-    } else if (!strcmp(argv[i], "--turn") && i + 1 < argc) f.turn = (float)atof(argv[++i]);
+    } else if (!strcmp(argv[i], "--turn") && i + 1 < argc) f.turn = (int16_t)atoi(argv[++i]);
     else if (!strcmp(argv[i], "--chart") && i + 1 < argc) f.chart = true, f.figs_part = (uint8_t)atoi(argv[++i]);
+    else if (!strcmp(argv[i], "--window-only")) f.window_only = true;   /* (an animation's frame: over the face) */
+    else if (!strcmp(argv[i], "--reveal") && i + 1 < argc) {
+      int n = atoi(argv[++i]);                    /* (n of 16) */
+      f.reveal = REVEAL_OF(n);
+    }
     else if (!strcmp(argv[i], "--tide-times")) f.tide_times = true;
     else if (!strcmp(argv[i], "--tides") && i + 1 < argc) {       /* turns: "MINUTES:H|L:CM,..." */
       static Tides td;
@@ -180,9 +186,16 @@ int main(int argc, char **argv) {
   plan_feast_memory(&rd, BLOB_FEASTS);
   plan_feast(&p, &f, utc, offset, &rd);
   if (f.scribe && !plan_render(&p, &f, utc - 60, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
+  if (f.reveal || f.window_only) {              /* an animation's frame: over the face (without the chart) as drawn */
+    Face face = f;
+    face.reveal = 0, face.chart = false, face.figs_part = 0, face.window_only = false, face.turn = 0;
+    if (!plan_render(&p, &face, utc, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
+    f.window_only = true;
+  }
   for (int i = 0; i < repeat; i++)
     if (!plan_render(&p, &f, utc, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
-  if (mem) printf("peak %zu bytes in %zu blocks; the scene blob drawing %zu\n", mem_peak, mem_peak_blocks, decor_peak);
+  if (mem) printf("peak %zu bytes in %zu blocks; the scene blob drawing %zu, the labours' %zu\n", mem_peak, mem_peak_blocks,
+                  decor_peak[0], decor_peak[1]);
   if (getenv("PLAN_ROOMS"))                     /* the room each inscription has along the ring, in pixels */
     printf("rooms: city %.1f, country %.1f, latitude %.1f, longitude %.1f\n", (p.ins_hi[0] - p.ins_lo[0]) / 16.0,
            (p.ins_hi[1] - p.ins_lo[1]) / 16.0, (p.ins_hi[2] - p.ins_lo[2]) / 16.0, (p.ins_hi[3] - p.ins_lo[3]) / 16.0);

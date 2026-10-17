@@ -618,7 +618,11 @@
     else if (kind === 'birds') u = first(12 * 60, 24 * 60, function (a) { return a > -6 && a < 4; });
     else if (kind === 'fireworks') u = midnight + 21 * 3600;
     var frames = [], at = function (f, k) { frames.push(function () { return f(k); }); };
-    if (kind === 'figures') for (k = 1; k <= 7; k++) at(function (k) { return M._pv_render_figs(u, t.offset, k % 7); }, k);
+    var steps = M._pv_chart_steps();              // (as the watch dissolves the chart in, and the face back)
+    if (kind === 'figures') {
+      M._pv_render(u, t.offset);
+      for (k = 0; k < 2 * steps; k++) at(function (k) { return M._pv_render_fade(u, t.offset, k < steps ? 1 : 0, k); }, k);
+    }
     else if (kind === 'spin') for (k = 1; k <= M._pv_spin_frames() + 1; k++) at(function (k) {
       return M._pv_render_spin(u, t.offset, k); }, k);
     else {
@@ -630,7 +634,7 @@
       for (k = 0; k <= n; k++) at(step, k);
     }
     var s = show = {i: 0}, seen = window.planPlayed = {kind: kind, frames: 0, moved: 0, done: false}, last = null;
-    var gap = function () { return kind === 'figures' ? (s.i === 6 ? 2000 : 150) : kind === 'spin' ? 120 : 1000 / 12; };
+    var gap = function () { return kind === 'figures' ? (s.i === M._pv_chart_steps() ? 2500 : 80) : kind === 'spin' ? 90 : 1000 / 12; };
     (function next() {                            // a frame at a time (the finished chart held a moment)
       s.timer = setTimeout(function () {
         if (show !== s) return;

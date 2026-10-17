@@ -417,6 +417,8 @@ def main():
         base = e.gdb_setup()
         code = next((int(l.split("=")[1]) for l in e.gdb(["g_code"]) if "=" in l), 0)
         syms = symbols(plat, base, code)
+        if a.poke:     # the app's state set first, e.g. an animation's frame to profile (the next drawing plays it)
+            e.gdb_raw([f"set var {p}" for p in a.poke])
         for fn in a.fn:
             tr = out / f"{plat}-{fn}.trace"
             after = out / f"{plat}-after-{fn}.trace"

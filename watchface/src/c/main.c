@@ -209,13 +209,18 @@ static bool decor_call(void *ctx, bool labours, const DecorCtx *dc) {
 }
 static bool decor_draw(void *ctx, const DecorCtx *dc) { return decor_run(ctx, dc, decor_call); }
 
-/* a flick of the wrist (the accelerometer's tap): the figures drawn in over the sky as a chart shows it (Face.chart),
- * held a moment; or the sky spun a day round (SPIN_TURNS), then the face at rest */
+/* a flick of the wrist (the accelerometer's tap): the sky as a chart shows it (Face.chart) dissolving in over the
+ * face, held a moment, and the face dissolving back (Face.reveal: these steps of 16, 0 the whole); or the sky spun a
+ * day round (SPIN_TURNS), then the face at rest. Their frames the window's alone (Face.window_only) but the last, each
+ * CHART_MS or SPIN_MS after the one before began, or as soon after as its drawing allows */
 static int s_flick;                     /* a flick's wish, till the next frame takes it: Settings.flick */
 static int s_spin_k;                    /* the spin's frames drawn (0: none playing) */
-static const float SPIN[SPIN_FRAMES] = SPIN_TURNS;
-static bool s_chart;                    /* the figures being drawn in are a flick's: over the chart, and held */
-#define CHART_HOLD_MS 2000
+static const int16_t SPIN[SPIN_FRAMES] = SPIN_TURNS;
+static int s_chart_k;                   /* the chart's frames drawn: 1..CHART_STEPS in, then as many out (0: none) */
+static const uint16_t CHART_REVEAL[CHART_STEPS] = CHART_REVEALS;
+#define CHART_MS 80
+#define CHART_HOLD_MS 2500
+static uint32_t s_frame_t0;             /* when the frame being drawn began (now_ms) */
 #define FLICK_PAIR_MS 4000           /* (two flicks: the second within four seconds, time to see the screen lit) */
 static int32_t s_where[2];              /* the face's place as face_of sets it, 1e-4 degrees (latitude, longitude) */
 static void face_of(Face *f) {
@@ -317,7 +322,7 @@ static int s_event_k;                   /* the meteor or the birds: its next fra
 static ShowUndo *s_event_undo;
 static int s_figs_k;                    /* the figures drawn in: the frames drawn (0: none playing) */
 
-static bool animating(void) { return s_show || s_scribe_k || s_event_k || s_figs_k || s_spin_k; }
+static bool animating(void) { return s_show || s_scribe_k || s_event_k || s_figs_k || s_spin_k || s_chart_k; }
 
 static void redraw(void) {
   if (animating()) s_redraw_after = true;
@@ -352,14 +357,16 @@ static void scribe_end(void) {
 static void show_end(void) { free(s_undo), s_undo = NULL, s_show = false; }
 
 static void event_end(void) {
-  free(s_event_undo), s_event_undo = NULL, s_event_k = 0, s_figs_k = 0, s_spin_k = 0, s_chart = false;
+  free(s_event_undo), s_event_undo = NULL, s_event_k = 0, s_figs_k = 0, s_spin_k = 0, s_chart_k = 0;
 }
 
 /* when nothing plays: the timer stopped, the blob let go, and a drawing that waited made */
 static void anims_settle(bool redraw_now) {
   if (animating()) {
-    int ms = s_figs_k ? (s_chart && s_figs_k == EVENT_FIGS_FRAMES ? CHART_HOLD_MS : 150) : s_spin_k ? SPIN_MS : 1000 / SHOW_FPS;
-    if (!s_anim_timer) s_anim_timer = app_timer_register(ms, anim_tick, NULL);
+    int ms = s_figs_k ? 150 : s_spin_k ? SPIN_MS : s_chart_k ? (s_chart_k == CHART_STEPS ? CHART_HOLD_MS : CHART_MS)
+           : 1000 / SHOW_FPS;
+    ms -= (int)(now_ms() - s_frame_t0);          /* (the drawing's own time counted in) */
+    if (!s_anim_timer) s_anim_timer = app_timer_register(ms > 10 ? ms : 10, anim_tick, NULL);
     return;
   }
   if (s_anim_timer) app_timer_cancel(s_anim_timer), s_anim_timer = NULL;
@@ -379,7 +386,7 @@ static void scribe_begin(const Target *tg) {
 }
 
 static void show_begin(void) {
-  if (s_show || s_figs_k || s_spin_k || s_plan->show_hour < 0 || !(animations() & ANIM_FIREWORKS)) return;
+  if (s_show || s_figs_k || s_spin_k || s_chart_k || s_plan->show_hour < 0 || !(animations() & ANIM_FIREWORKS)) return;
   if (s_plan->show_hour != s_show_played) s_show_played = s_plan->show_hour, s_show_last = -1, s_show_done = false;
   else if (s_show_done) return;                  /* (else it gave way, and goes on from its last frame) */
   s_undo = malloc(sizeof(ShowUndo) + SHOW_UNDO * sizeof(uint32_t));
@@ -439,11 +446,15 @@ static void animate(GContext *ctx) {
 }
 
 static void update(Layer *layer, GContext *ctx) {
+  s_frame_t0 = now_ms();
   int figs = 0;                                  /* the figures' frame drawn in, if they are being (Face.figs_part) */
   if (s_anim_due && s_figs_k) {
     s_anim_due = false;
-    figs = ++s_figs_k < EVENT_FIGS_FRAMES + s_chart ? s_figs_k : 0;   /* (a flick's to the whole, then held) */
-    if (!figs) s_figs_k = 0, s_chart = false;
+    figs = ++s_figs_k < EVENT_FIGS_FRAMES ? s_figs_k : 0;
+    if (!figs) s_figs_k = 0;
+  } else if (s_anim_due && s_chart_k) {          /* the chart's next step; past the last, the face at rest */
+    s_anim_due = false;
+    if (++s_chart_k > 2 * CHART_STEPS) s_chart_k = 0;
   } else if (s_anim_due && s_spin_k) {           /* the spin's next turn; past the last, the face at rest */
     s_anim_due = false;
     if (++s_spin_k > SPIN_FRAMES) s_spin_k = 0;
@@ -456,7 +467,7 @@ static void update(Layer *layer, GContext *ctx) {
     scribe_end(), show_end(), event_end(), s_redraw_after = false;
   }
   if (s_flick && !animating()) {                 /* a flick of the wrist: the figures drawn in, or the sky spun */
-    if (s_flick == 1) scribe_end(), s_figs_k = 1, figs = 1, s_chart = true;
+    if (s_flick == 1) scribe_end(), s_chart_k = 1;
     else s_spin_k = 1;
   }
   s_flick = 0;
@@ -482,15 +493,18 @@ static void update(Layer *layer, GContext *ctx) {
   if (!fb) return;
   Face f;
   face_of(&f);
-  if (s_figs_k) f.scribe = false, f.figs_part = (uint8_t)figs, f.chart = s_chart;
-  if (s_spin_k) f.scribe = false;
+  if (s_figs_k) f.scribe = false, f.figs_part = (uint8_t)figs;
+  if (s_spin_k) f.scribe = false, f.window_only = true;
+  if (s_chart_k)                                 /* (in, then out; the last the whole face) */
+    f.scribe = false, f.chart = s_chart_k <= CHART_STEPS, f.reveal = CHART_REVEAL[(s_chart_k - 1) % CHART_STEPS],
+    f.window_only = s_chart_k < 2 * CHART_STEPS;
   Target tg = {fb_row, fb};
   if (heap_bytes_free() < g_heap_low || !g_heap_low) g_heap_low = heap_bytes_free();
   g_utc = (uint32_t)now, g_offset = utc_offset(now);
   g_stack_at = (uint32_t)((uintptr_t)__pbl_app_info - (uintptr_t)&tg);
   feast_of_day(&f, now, g_offset);
   bool drawn = s_api->render(s_plan, &f, (int64_t)now, g_offset, &tg, alloc, free);
-  if (drawn && !s_figs_k && !s_spin_k && s_plan->event == EV_FIGURES) event_begin();   /* (frame 1 of the figures drawn in) */
+  if (drawn && !s_figs_k && !s_spin_k && !s_chart_k && s_plan->event == EV_FIGURES) event_begin();   /* (frame 1 of the figures drawn in) */
   /* a fireworks display due takes its memory first; the minute's figures then simply appear (written, they would
    * hold the motion blob's and their record's room while the display asks for its own, and the display went
    * without: the heap is short, and in pieces by then) */
@@ -501,7 +515,7 @@ static void update(Layer *layer, GContext *ctx) {
   g_render_ms = now_ms() - t0;
   if (g_render_ms > g_render_max) g_render_max = g_render_ms;
   g_stack = stack_deepest();
-  if (drawn && !s_figs_k && !s_spin_k && s_plan->event != EV_FIGURES) event_begin();
+  if (drawn && !s_figs_k && !s_spin_k && !s_chart_k && s_plan->event != EV_FIGURES) event_begin();
   anims_settle(false);
 }
 

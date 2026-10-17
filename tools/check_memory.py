@@ -38,12 +38,14 @@ MOMENTS = (1792027800, 1792000800)          # 15 October 2026, 01:30 and 18:00 U
 
 
 def peak(args, flags):
-    """The most a frame holds at once, and the most it holds while the scene blob draws (the blob itself not counted)."""
+    """The most a frame holds at once, and the most it holds while each scene blob draws (the blob itself not counted):
+    decor_code's (the woodcuts, the candle) and labours_code's, each with its own blob loaded besides."""
     out = subprocess.run([str(HOST), *args, "/dev/null", *flags, "--mem"], capture_output=True, text=True)
     if out.returncode:
         sys.exit(f"check_memory: the drawing failed: {' '.join(args)}: {out.stderr.strip()}")
-    m = re.search(r"peak (\d+) .*drawing (\d+)", out.stdout)
-    return int(m.group(1)), int(m.group(2))
+    m = re.search(r"peak (\d+) .*drawing (\d+), the labours' (\d+)", out.stdout)
+    return int(m.group(1)), max(int(m.group(2)) + decor_code() if int(m.group(2)) else 0,
+                                int(m.group(3)) + decor_code("labours_code") if int(m.group(3)) else 0)
 
 
 def decor_code(name="decor_code"):
@@ -129,14 +131,13 @@ def main():
                             ["--labours", "--tools", "--weather", SNOW, "--scribe", "--battery", "15c"])
                 if n > worst:
                     worst, at = n, (lat, t)
-                scene = max(scene, d)
-        scene += decor_code("labours_code")    # (the labours' blob loaded while it draws, the tools' record within it)
+                scene = max(scene, d)                 # (the labours' blob loaded while it draws, the tools' record within)
         for theme in range(2, THEMES):         # (the woodcuts' themes, by the scene blob: each measured too)
             for lat in range(-89, 90, 8):
                 for t in MOMENTS:
                     _, d = peak([screen, "0", str(t), str(lat), "-74", "-240"],
                                 ["--theme", str(theme), "--tools", "--weather", SNOW, "--scribe", "--battery", "15c"])
-                    scene = max(scene, d + decor_code())
+                    scene = max(scene, d)
         budget = heap(screen) - HEADROOM
         need, show = lookup_need(screen), show_need()
         print(f"{screen}: a frame needs {worst:,} bytes at most (latitude {at[0]}), {scene:,} while the scene blob "

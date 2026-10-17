@@ -68,9 +68,13 @@ typedef struct {
   uint8_t battery;             /* the battery's charge, 0..100 (over 100: not known), and whether it is charging, for
                                 * the candle in the card (an option) */
   bool charging, candle;
-  bool chart;                  /* the sky as a printed chart shows it, whatever the hour: every star, the figures (as far
-                                * as figs_part has drawn them), no names; for the figures drawn in when asked */
-  float turn;                  /* the sky turned on by so many degrees (a flick of the wrist spins it, and it settles) */
+  bool chart;                  /* the sky as a printed chart shows it, whatever the hour: the brighter stars, the figures
+                                * (as far as figs_part has drawn them), the constellations' names; when asked */
+  bool window_only;            /* an animation's frame: the window alone drawn again, the card, the ring and the time
+                                * left as the frame before drew them */
+  uint16_t reveal;             /* a dissolve's frame: only the pixels whose bit (by y & 3, x & 3, row by row) is set
+                                * written, the rest left as they were (0: all; REVEAL_OF: an ordered dither's) */
+  int16_t turn;                /* the sky turned on by so many degrees (a flick of the wrist spins it, and it settles) */
   const Tides *tides;          /* the tide here (NULL: none known, or inland) */
   bool tide_times;             /* the next high and low waters set low on the face (on the Round 2 for the coordinates) */
   /* the scene blobs (plan_labours.c, plan_decor.c), called where the card is laid when a backdrop or corner pieces
@@ -93,7 +97,17 @@ enum { EV_METEOR = 1, EV_FIGURES = 2, EV_BIRDS = 4, EV_VILLAGE = 8 };
  * the face at rest after the last */
 #define SPIN_FRAMES 15
 #define SPIN_TURNS {-356, -345, -327, -304, -277, -246, -214, -180, -146, -114, -83, -56, -33, -15, -4}
-#define SPIN_MS 120
+#define SPIN_MS 90
+/* the pixels a 4 x 4 ordered dither (Bayer's: 0 8 2 10 / 12 4 14 6 / 3 11 1 9 / 15 7 13 5) has lit at n of 16, as
+ * Face.reveal takes them */
+#define REVEAL_BIT(n, i, b) ((b) < (n) ? 1u << (i) : 0u)
+#define REVEAL_OF(n) (uint16_t)(REVEAL_BIT(n, 0, 0) | REVEAL_BIT(n, 1, 8) | REVEAL_BIT(n, 2, 2) | REVEAL_BIT(n, 3, 10) | \
+  REVEAL_BIT(n, 4, 12) | REVEAL_BIT(n, 5, 4) | REVEAL_BIT(n, 6, 14) | REVEAL_BIT(n, 7, 6) | REVEAL_BIT(n, 8, 3) | \
+  REVEAL_BIT(n, 9, 11) | REVEAL_BIT(n, 10, 1) | REVEAL_BIT(n, 11, 9) | REVEAL_BIT(n, 12, 15) | REVEAL_BIT(n, 13, 7) | \
+  REVEAL_BIT(n, 14, 13) | REVEAL_BIT(n, 15, 5))
+/* the chart's dissolve when asked, a step a frame (the last the whole) */
+#define CHART_STEPS 6
+#define CHART_REVEALS {REVEAL_OF(2), REVEAL_OF(5), REVEAL_OF(8), REVEAL_OF(11), REVEAL_OF(14), 0}
 
 /* Where things are in the sky at a moment (degrees). The planets in the order they are drawn. */
 enum { VENUS, JUPITER, MARS, SATURN, MERCURY, PLANETS };
@@ -172,6 +186,9 @@ typedef struct {
   int nticks;
   int16_t studs[6][2];                 /* at 3, 6, 9, 15, 18 and 21 o'clock */
   int8_t num_style;                    /* the numerals placed for this style (-1: not yet) */
+  int16_t *grid;                       /* the sky's grid kept from an animation's frame (Face.window_only) for the next,
+                                        * if it draws the same sky (grid_key); let go by any other frame */
+  uint32_t grid_key;
   int16_t numerals[6][2];              /* their top-left corners */
   int16_t ins_lo[4], ins_hi[4];        /* the inscriptions' room along the band (1/16 px) */
   bool lab_ok;                         /* the labours' places worked out for this window: */

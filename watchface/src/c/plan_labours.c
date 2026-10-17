@@ -19,7 +19,7 @@ static bool mask_at(const DecorCtx *r, const MaskIndex *mi, int i, int j) {
 typedef struct { const MaskIndex *mi; bool mirror; int x0, y0; } LabFig;
 typedef struct {
   const DecorCtx *r;
-  const uint8_t (*card)[4];
+  const int16_t *inner;                          /* (the card's rows worked out as they are asked for: card_row) */
   LabFig fig[6];
   int nfig;
   uint8_t tone;
@@ -39,24 +39,36 @@ static int lab_room(const DecorCtx *r, const uint8_t c[4], bool ok, int x) {
 
 /* where the labourer and the month's thing stand: on each side of the middle, the pixel of the field's ground standing
  * clearest of its edges (Chebyshev, up to 14 px), the first such in reading order */
-static void labour_places(const DecorCtx *r, const uint8_t (*card)[4], int vy) {
+static void labour_places(const DecorCtx *r, const int16_t *inner, int vy) {
   Plan *p = r->p;
   int best[2] = {0, 0};
   for (int s = 0; s < 2; s++) p->lab_at[s][0] = 0, p->lab_at[s][1] = 0;
-  for (int y = vy + 3; y < r->p->h; y++)
-    for (int x = card[y][0]; x <= card[y][1]; x++) {
-      if (!in_card(card[y], x)) continue;
+  uint8_t card[27][4];                           /* (the rows 13 either side of the one looked along, row v at v % 27) */
+  for (int v = vy + 3 - 13; v < vy + 3 + 13; v++)
+    if (v >= 0 && v < r->p->h) card_row(r, inner, v, card[(v + 27) % 27]);
+  for (int y = vy + 3; y < r->p->h; y++) {
+    if (y + 13 < r->p->h) card_row(r, inner, y + 13, card[(y + 13) % 27]);
+    const uint8_t *c = card[y % 27];
+    for (int x = c[0]; x <= c[1]; x++) {
+      if (!in_card(c, x)) continue;
       int d = 14;
       for (int v = y - 13; v <= y + 13 && d > 0; v++) {
         if (v < 0 || v >= r->p->h) continue;
         int dv = v < y ? y - v : v - y;
         if (dv >= d) continue;
-        int h = lab_room(r, card[v], v > vy + 2, x), e = h > dv ? h : dv;
+        int h = lab_room(r, card[(v + 27) % 27], v > vy + 2, x), e = h > dv ? h : dv;
         if (e < d) d = e;
       }
       int s = x >= r->col;
       if (d > best[s]) best[s] = d, p->lab_at[s][0] = (int16_t)x, p->lab_at[s][1] = (int16_t)y;
     }
+  }
+}
+/* in the card, in row y */
+static bool lab_in_card(const int16_t *inner, const DecorCtx *r, int x, int y) {
+  uint8_t c[4];
+  card_row(r, inner, y, c);
+  return in_card(c, x);
 }
 
 static bool lab_px(const DecorCtx *r, const LabFig *f, int i, int j) {
@@ -72,7 +84,7 @@ static int lab_fig_at(const DecorCtx *r, const LabFig *f, int x, int y) {
 }
 /* a mark of the field, unless a figure stands there or beside it */
 static void lab_mark(Lab *l, int x, int y) {
-  if (!on_screen(l->r, x, y) || !in_card(l->card[y], x)) return;
+  if (!on_screen(l->r, x, y) || !lab_in_card(l->inner, l->r, x, y)) return;
   for (int k = 0; k < l->nfig; k++)
     if (lab_fig_at(l->r, &l->fig[k], x, y)) return;
   put(l->r, x, y, l->tone);
@@ -81,9 +93,6 @@ static void lab_mark(Lab *l, int x, int y) {
 static void labours(const DecorCtx *r) {
   Plan *p = r->p;
   const int16_t *inner = sec16(p->geom, GEO_INNER);
-  uint8_t (*card)[4] = r->alloc((size_t)r->p->h * sizeof *card);
-  if (!card) return;
-  for (int y = 0; y < r->p->h; y++) card_row(r, inner, y, card[y]);
   int month = (r->month + (r->south ? 6 : 0)) % 12;                /* (half a year round in the south) */
   const Labour *L = &LABOURS[month];
   int top = 0;
@@ -91,8 +100,8 @@ static void labours(const DecorCtx *r) {
     if (inside(r, r->col, y)) { top = y; break; }
   float vx = r->cx;
   int vy = top + 6;
-  if (!p->lab_ok) labour_places(r, (const uint8_t (*)[4])card, vy), p->lab_ok = true;
-  Lab l = {r, (const uint8_t (*)[4])card, {{0}}, 0, r->tone};
+  if (!p->lab_ok) labour_places(r, inner, vy), p->lab_ok = true;
+  Lab l = {r, inner, {{0}}, 0, r->tone};
   for (int s = 0; s < 2; s++) {
     const LabourFigure *lf = &L->side[s];
     const MaskIndex *mi = mask(r, lf->mask);
@@ -149,12 +158,11 @@ static void labours(const DecorCtx *r) {
     for (int j = 0; j < f->mi->h; j++)
       for (int i = 0; i < f->mi->w; i++) {
         int x = f->x0 + i, y = f->y0 + j, q = k + 1;
-        if (!lab_px(r, f, i, j) || !on_screen(r, x, y) || !in_card(card[y], x)) continue;
+        if (!lab_px(r, f, i, j) || !on_screen(r, x, y) || !lab_in_card(inner, r, x, y)) continue;
         while (q < l.nfig && !lab_fig_at(r, &l.fig[q], x, y)) q++;
         if (q == l.nfig) put(r, x, y, l.tone);
       }
   }
-  r->release(card);
 }
 
 /* the Labours' tools in the Time 2's corners (tools.bin, proto/labour_tools.py): the top piece in the top corners and

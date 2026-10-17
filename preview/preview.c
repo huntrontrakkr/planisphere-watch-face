@@ -139,22 +139,32 @@ EMSCRIPTEN_KEEPALIVE uint8_t *pv_show_frame(int frame) {
 extern int pv_force_show, pv_force_event;
 /* the battery's candle (Face.candle), at the charge given (percent) */
 EMSCRIPTEN_KEEPALIVE void pv_candle(int on, int pct) { F.candle = on != 0, F.battery = (uint8_t)pct, F.charging = false; }
+/* the chart's dissolve as a flick plays it, over the face as last drawn: the chart (or the face again) at step k of
+ * CHART_STEPS (the last the whole) */
+static const uint16_t CHART_REVEAL[CHART_STEPS] = CHART_REVEALS;
+EMSCRIPTEN_KEEPALIVE int pv_chart_steps(void) { return CHART_STEPS; }
+EMSCRIPTEN_KEEPALIVE uint8_t *pv_render_fade(double utc, int offset, int chart, int k) {
+  F.chart = chart != 0, F.reveal = CHART_REVEAL[k % CHART_STEPS], F.window_only = true;
+  uint8_t *out = pv_render(utc, offset);
+  F.chart = false, F.reveal = 0, F.window_only = false;
+  return out;
+}
 EMSCRIPTEN_KEEPALIVE uint8_t *pv_render_figs(double utc, int offset, int k) {
   F.figs_part = (uint8_t)k, F.chart = k != 0;     /* (as a flick draws them: over the chart, whatever the hour) */
   uint8_t *out = pv_render(utc, offset);
   F.figs_part = 0, F.chart = false;
   return out;
 }
-static const float SPIN[SPIN_FRAMES] = SPIN_TURNS;
+static const int16_t SPIN[SPIN_FRAMES] = SPIN_TURNS;
 uint8_t *pv_render_turn(double utc, int offset, float degrees);
 EMSCRIPTEN_KEEPALIVE int pv_spin_frames(void) { return SPIN_FRAMES; }
 EMSCRIPTEN_KEEPALIVE uint8_t *pv_render_spin(double utc, int offset, int k) {   /* (k of SPIN_FRAMES; past them, at rest) */
   return pv_render_turn(utc, offset, k >= 1 && k <= SPIN_FRAMES ? SPIN[k - 1] : 0);
 }
 EMSCRIPTEN_KEEPALIVE uint8_t *pv_render_turn(double utc, int offset, float degrees) {
-  F.turn = degrees;
+  F.turn = (int16_t)degrees, F.window_only = degrees != 0;
   uint8_t *out = pv_render(utc, offset);
-  F.turn = 0;
+  F.turn = 0, F.window_only = false;
   return out;
 }
 EMSCRIPTEN_KEEPALIVE uint8_t *pv_render_show(double utc, int offset) {

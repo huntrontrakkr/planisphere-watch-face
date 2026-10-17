@@ -12,7 +12,7 @@
 
 #define C8(r, g, b) ((uint8_t)(0xC0 | (r) << 4 | (g) << 2 | (b)))
 #define LV(c, s) (((c) >> (s)) & 3)
-#define MAX_BOXES 80
+#define MAX_BOXES 72                            /* (63 the most any frame has been seen to keep) */
 #define LAND_NONE 255
 #define VILLAGE_DX 72                    /* the village and hills reach this far either side of the south point */
 #define NONE16 0x7fff
@@ -41,6 +41,7 @@ typedef struct {
   int64_t utc;
   int32_t offset;
   int W, H;
+  uint16_t reveal;                           /* the pixels written, by (y & 3, x & 3) bit: all but in a dissolve */
   bool rect, south, paper, live, red, light_paper, dark, figs, lit_moon, closed_sky, rete, woodcut, clock24;
   float cx, cy, k, lst, alat, sl, cl;
   uint32_t lst20;                            /* the sidereal time in 2^-20 of a turn, and the projection's integer */
@@ -54,7 +55,7 @@ typedef struct {
   /* the window's ground: two values on a grid every 4 pixels over the window */
   int gx0, gy0, gnx, gny;
   int16_t *ga, *gb;                          /* each node row only as far as the window's cells need it: */
-  int16_t glo[MAX_H / 4 + 2], ghi[MAX_H / 4 + 2];   /* its first and last node, */
+  int8_t glo[MAX_H / 4 + 2], ghi[MAX_H / 4 + 2];    /* its first and last node (-1 .. MAX_W / 4 + 2), */
   uint16_t goff[MAX_H / 4 + 2];              /* and where it starts in ga and gb */
   float ik, ssd, csd, csh, ssh, sl0, cl0;
   SkyK sk, sk6;                              /* the sky's Sun-dependent parts, now and (under an eclipse) at -6 */
@@ -117,9 +118,10 @@ typedef struct {
 } R;
 
 /* ---- pixels --------------------------------------------------------------------------------------------------- */
-static inline void put(R *r, int x, int y, uint8_t c) {
+static __attribute__((noinline)) void put(R *r, int x, int y, uint8_t c) {
   Plan *p = r->p;
-  if ((unsigned)y < (unsigned)r->H && x >= p->rx0[y] && x <= p->rx1[y]) ROW(p, y)[x] = c;
+  if ((unsigned)y < (unsigned)r->H && x >= p->rx0[y] && x <= p->rx1[y] && (r->reveal >> ((y & 3) * 4 + (x & 3)) & 1))
+    ROW(p, y)[x] = c;
 }
 static inline uint8_t get(R *r, int x, int y) {
   Plan *p = r->p;
@@ -748,7 +750,7 @@ static void node_radec(R *r, int x2, int y2, int16_t *vra, int16_t *vdec) {
   *vra = (int16_t)ra, *vdec = (int16_t)dec;
 }
 
-static bool make_grid(R *r, void *(*alloc)(size_t)) {
+static bool make_grid(R *r, void *(*alloc)(size_t), void (*release)(void *)) {
   Plan *p = r->p;
   int minx = r->W, maxx = -1;
   for (int y = p->win_top; y <= p->win_bottom && y >= 0; y++) {
@@ -760,7 +762,7 @@ static bool make_grid(R *r, void *(*alloc)(size_t)) {
   r->gx0 = minx, r->gy0 = p->win_top;
   r->gnx = (maxx - minx) / 4 + 2, r->gny = (p->win_bottom - p->win_top) / 4 + 2;
   /* each node row as far as the cells either side of it hold window pixels (a cell's pixels need its four nodes) */
-  for (int j = 0; j < r->gny; j++) r->glo[j] = (int16_t)r->gnx, r->ghi[j] = -1;
+  for (int j = 0; j < r->gny; j++) r->glo[j] = (int8_t)r->gnx, r->ghi[j] = -1;
   for (int c = 0; c < r->gny - 1; c++) {
     int lo = 1 << 20, hi = -1;
     for (int y = r->gy0 + 4 * c; y < r->gy0 + 4 * c + 4 && y <= p->win_bottom; y++)
@@ -772,8 +774,8 @@ static bool make_grid(R *r, void *(*alloc)(size_t)) {
     int i0 = (lo - r->gx0) >> 2, i1 = ((hi - r->gx0) >> 2) + 1;
     if (i1 > r->gnx - 1) i1 = r->gnx - 1;
     for (int j = c; j <= c + 1; j++) {
-      if (i0 < r->glo[j]) r->glo[j] = (int16_t)i0;
-      if (i1 > r->ghi[j]) r->ghi[j] = (int16_t)i1;
+      if (i0 < r->glo[j]) r->glo[j] = (int8_t)i0;
+      if (i1 > r->ghi[j]) r->ghi[j] = (int8_t)i1;
     }
   }
   size_t n = 0;
@@ -781,14 +783,33 @@ static bool make_grid(R *r, void *(*alloc)(size_t)) {
     r->goff[j] = (uint16_t)n;
     if (r->ghi[j] >= r->glo[j]) n += (size_t)(r->ghi[j] - r->glo[j] + 1);
   }
-  r->ga = alloc(2 * (n ? n : 1) * sizeof(int16_t));
+  /* the same sky as the frame before (a dissolve's frames): its grid as that kept it */
+  const Face *f = r->f;
+  uint32_t key = (((uint32_t)r->utc / 60u * 31u + (uint32_t)f->turn) * 31u + f->plate) * 4099u + (uint32_t)n;
+  key = key * 2u + f->chart;
+  bool same = p->grid && p->grid_key == key;
+  if (p->grid && !same) release(p->grid);
+  r->ga = same ? p->grid : alloc(2 * (n ? n : 1) * sizeof(int16_t));
+  p->grid = NULL, p->grid_key = key;
   if (!r->ga) return false;
   r->gb = r->ga + n;
-  for (int j = 0; j < r->gny; j++)
-    for (int i = r->glo[j]; i <= r->ghi[j]; i++) {
-      size_t k = r->goff[j] + (size_t)(i - r->glo[j]);
-      node_values(r, r->gx0 + 4 * i + 0.5f, r->gy0 + 4 * j + 0.5f, r->ga + k, r->gb + k);
-    }
+  /* every node, or in a spin's frames (the sky turning past, never still) every other one each way and the rest
+   * halfway between their neighbours: a row's ends and the last row worked out too, the even rows' gaps filled,
+   * then the odd rows from the rows either side */
+  bool coarse = f->window_only && f->turn;
+  for (int pass = same ? 3 : 0; pass < 3; pass++)
+    for (int j = 0; j < r->gny; j++)
+      for (int i = r->glo[j]; i <= r->ghi[j]; i++) {
+        size_t k = r->goff[j] + (size_t)(i - r->glo[j]);
+        bool odd_row = coarse && (j & 1) && j + 1 < r->gny;
+        bool between = odd_row || (coarse && (i & 1) && i != r->glo[j] && i != r->ghi[j]);
+        if (pass == 0 && !between) node_values(r, r->gx0 + 4 * i + 0.5f, r->gy0 + 4 * j + 0.5f, r->ga + k, r->gb + k);
+        else if (pass == 1 && between && !odd_row)
+          r->ga[k] = (int16_t)((r->ga[k - 1] + r->ga[k + 1]) / 2), r->gb[k] = (int16_t)((r->gb[k - 1] + r->gb[k + 1]) / 2);
+        else if (pass == 2 && odd_row)
+          r->ga[k] = (int16_t)((grid_node(r, 0, i, j - 1) + grid_node(r, 0, i, j + 1)) / 2),
+          r->gb[k] = (int16_t)((grid_node(r, 1, i, j - 1) + grid_node(r, 1, i, j + 1)) / 2);
+      }
   return true;
 }
 
@@ -3154,10 +3175,12 @@ static void brightest_up(const R *r, float lat, uint8_t out[4]) {
 bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Target *t, void *(*alloc)(size_t),
                  void (*release)(void *)) {
   if (p->scribe) release(p->scribe), p->scribe = NULL, p->scribe_n = 0;   /* (the last minute's, not played) */
+  if (p->grid && !f->window_only) release(p->grid), p->grid = NULL;      /* (an animation's, over) */
   if (!f->figs_part) p->event = 0;
   R *r = alloc(sizeof(R));
   if (!r) return false;
   memset(r, 0, sizeof *r);
+  r->reveal = f->reveal ? f->reveal : 0xFFFF;
   r->p = p, r->f = f, r->P = &PLATES[f->plate < PLATE_COUNT ? f->plate : 0];
   const Plate *P = r->P;
   r->W = p->w, r->H = p->h, r->rect = p->rect;
@@ -3217,14 +3240,14 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   if (!numeral_layout(r, style, alloc, release)) { release(r); return false; }
   /* the card, the labours in it (before the grid too: they keep to the card, the grid to the window), and the
    * window's ground */
-  for (int y = 0; y < r->H; y++) {
+  for (int y = 0; y < r->H && !f->window_only; y++) {
     if (p->rx0[y] > p->rx1[y]) continue;
     if (!P->fox) memset(ROW(p, y) + p->rx0[y], P->jacket, (size_t)(p->rx1[y] - p->rx0[y] + 1));
     else for (int x = p->rx0[y]; x <= p->rx1[y]; x++) ROW(p, y)[x] = card_at(r, x, y);
   }
   /* the scene in the card (the labours) and the Time 2's corner tools, by the scene blob (plan_decor.c, Face.decor):
    * now, while the frame's memory is low, before the grid */
-  if (f->decor && (f->theme || (f->corners && r->rect))) {
+  if (f->decor && !f->window_only && (f->theme || (f->corners && r->rect))) {
     float mlon, mlat;
     eq_to_ecl(r->sky.moon_ra, r->sky.moon_dec, r->sky.eps, &mlon, &mlat);
     DecorCtx dc = {p, r->local.month - 1, r->south, r->col, r->cx, r->tint, P->ink, P->accent,
@@ -3243,7 +3266,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   r->ssd = f_sind(r->sdec), r->csd = f_cosd(r->sdec), r->csh = f_cosd(r->sha), r->ssh = f_sind(r->sha);
   bool milky = !r->rete && (r->paper || (r->sun_alt < -15 &&
                !(r->wx && r->live && (r->haze > 1.0f || r->stratus + r->cumulus > 0.45f))));
-  if (!make_grid(r, alloc)) { release(r); return false; }
+  if (!make_grid(r, alloc, release)) { release(r); return false; }
   window_ground(r);
   r->dark = r->paper ? true : r->s_eff < -12;
   r->figs = r->paper || r->s_eff < -10.5f || f->chart;
@@ -3447,13 +3470,15 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   ornaments(r);
   /* the window's edge, the ring, the time */
   int fy0 = rims(r);
-  ring(r, season);
+  if (!f->window_only) ring(r, season);
   /* the sky's grid let go before the time (which reads none of it), so the minute's new figures kept for the scribe
    * never stand in memory beside it: the frame's most, some 1.3 KB less */
-  release(r->ga), r->ga = r->gb = NULL;
-  time_block(r, fy0, season, alloc, release);
+  if (f->window_only) p->grid = r->ga;            /* (kept for the animation's next frame) */
+  else release(r->ga);
+  r->ga = r->gb = NULL;
+  if (!f->window_only) time_block(r, fy0, season, alloc, release);
   /* the battery's candle, last: by the scene blob (plan_decor.c candle), now the sky's grid is let go */
-  if (f->decor && f->candle && f->battery <= 100) {
+  if (f->decor && f->candle && f->battery <= 100 && !f->window_only) {
     DecorCtx dc;
     memset(&dc, 0, sizeof dc);
     dc.p = p, dc.tone = r->tint, dc.ink = P->ink, dc.accent = P->accent, dc.line = P->line, dc.planet = P->planet;
