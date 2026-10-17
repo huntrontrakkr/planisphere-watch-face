@@ -41,7 +41,7 @@ typedef struct {
   int64_t utc;
   int32_t offset;
   int W, H;
-  uint16_t reveal;                           /* the pixels written, by (y & 3, x & 3) bit: all but in a dissolve */
+  int reach;                                 /* a dissolve's: how far out from the pole the pixels are written (0: all) */
   bool rect, south, paper, live, red, light_paper, dark, figs, lit_moon, closed_sky, rete, woodcut, clock24;
   float cx, cy, k, lst, alat, sl, cl;
   uint32_t lst20;                            /* the sidereal time in 2^-20 of a turn, and the projection's integer */
@@ -118,10 +118,17 @@ typedef struct {
 } R;
 
 /* ---- pixels --------------------------------------------------------------------------------------------------- */
+/* a pixel written: on the screen and the card, and in a dissolve within its reach of the pole, the reach's edge
+ * softened over 16 pixels by a 4 x 4 ordered dither (Bayer's) */
 static __attribute__((noinline)) void put(R *r, int x, int y, uint8_t c) {
   Plan *p = r->p;
-  if ((unsigned)y < (unsigned)r->H && x >= p->rx0[y] && x <= p->rx1[y] && (r->reveal >> ((y & 3) * 4 + (x & 3)) & 1))
-    ROW(p, y)[x] = c;
+  if ((unsigned)y >= (unsigned)r->H || x < p->rx0[y] || x > p->rx1[y]) return;
+  if (r->reach) {
+    static const uint8_t BAYER[16] = {0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5};
+    int dx = x - r->cx2 / 2, dy = y - r->cy2 / 2, e = r->reach - BAYER[(y & 3) * 4 + (x & 3)];
+    if (e <= 0 || dx * dx + dy * dy >= e * e) return;
+  }
+  ROW(p, y)[x] = c;
 }
 static inline uint8_t get(R *r, int x, int y) {
   Plan *p = r->p;
@@ -1101,7 +1108,7 @@ static void piece_colours(R *r) {
 /* ---- the weather, as the sky shows it (proto/weather.py sky_of) ------------------------------------------------ */
 static void weather_sky(R *r) {
   const Weather *w = r->f->weather;
-  if (!w) return;
+  if (!w || r->f->chart) return;                  /* (a chart's sky: the stars, whatever the weather) */
   r->wx = true;
   int code = w->code;
   /* the WMO codes that fall: (code, kind << 2 | how heavy), as proto/weather.py FALLS */
@@ -3180,7 +3187,6 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   R *r = alloc(sizeof(R));
   if (!r) return false;
   memset(r, 0, sizeof *r);
-  r->reveal = f->reveal ? f->reveal : 0xFFFF;
   r->p = p, r->f = f, r->P = &PLATES[f->plate < PLATE_COUNT ? f->plate : 0];
   const Plate *P = r->P;
   r->W = p->w, r->H = p->h, r->rect = p->rect;
@@ -3204,6 +3210,15 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   r->kq = pyf_floor(r->k * (180.0f * 256 * 65536 / 65535) + 0.5f);
   r->cxq = pyf_floor(r->cx * 256 + 0.5f), r->cyq = pyf_floor(r->cy * 256 + 0.5f);
   r->cx2 = pyf_floor(r->cx * 2 + 0.5f), r->cy2 = pyf_floor(r->cy * 2 + 0.5f);
+  if (f->reveal) {                                /* a dissolve's reach: its share of the way to the window's farthest */
+    int far = 0, px = r->cx2 / 2, py = r->cy2 / 2;   /* pixel from the pole, and its soft edge's 16 */
+    for (int y = p->win_top; y >= 0 && y <= p->win_bottom; y++)
+      if (p->wx0[y] <= p->wx1[y]) {
+        int dy = y - py, a = p->wx0[y] - px, b = p->wx1[y] - px, d = (a * a > b * b ? a * a : b * b) + dy * dy;
+        if (d > far) far = d;
+      }
+    r->reach = ((int)isqrt32((uint32_t)far) + 17) * f->reveal / 256 + 1;
+  }
   r->paper = P->window == WIN_PAPER;
   r->red = P->window == WIN_RED;
   r->live = P->window == WIN_SKY || P->window == WIN_RED;

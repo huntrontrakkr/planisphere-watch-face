@@ -142,8 +142,7 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--chart") && i + 1 < argc) f.chart = true, f.figs_part = (uint8_t)atoi(argv[++i]);
     else if (!strcmp(argv[i], "--window-only")) f.window_only = true;   /* (an animation's frame: over the face) */
     else if (!strcmp(argv[i], "--reveal") && i + 1 < argc) {
-      int n = atoi(argv[++i]);                    /* (n of 16) */
-      f.reveal = REVEAL_OF(n);
+      f.reveal = (uint8_t)atoi(argv[++i]);       /* (a share of 256 of the way out) */
     }
     else if (!strcmp(argv[i], "--tide-times")) f.tide_times = true;
     else if (!strcmp(argv[i], "--tides") && i + 1 < argc) {       /* turns: "MINUTES:H|L:CM,..." */

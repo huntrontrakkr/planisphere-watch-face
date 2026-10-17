@@ -210,14 +210,14 @@ static bool decor_call(void *ctx, bool labours, const DecorCtx *dc) {
 static bool decor_draw(void *ctx, const DecorCtx *dc) { return decor_run(ctx, dc, decor_call); }
 
 /* a flick of the wrist (the accelerometer's tap): the sky as a chart shows it (Face.chart) dissolving in over the
- * face, held a moment, and the face dissolving back (Face.reveal: these steps of 16, 0 the whole); or the sky spun a
+ * face out from the pole, held a moment, and the face back the same way (Face.reveal; 0 the whole); or the sky spun a
  * day round (SPIN_TURNS), then the face at rest. Their frames the window's alone (Face.window_only) but the last, each
  * CHART_MS or SPIN_MS after the one before began, or as soon after as its drawing allows */
 static int s_flick;                     /* a flick's wish, till the next frame takes it: Settings.flick */
 static int s_spin_k;                    /* the spin's frames drawn (0: none playing) */
 static const int16_t SPIN[SPIN_FRAMES] = SPIN_TURNS;
 static int s_chart_k;                   /* the chart's frames drawn: 1..CHART_STEPS in, then as many out (0: none) */
-static const uint16_t CHART_REVEAL[CHART_STEPS] = CHART_REVEALS;
+static const uint8_t CHART_REVEAL[CHART_STEPS] = CHART_REVEALS;
 #define CHART_MS 80
 #define CHART_HOLD_MS 2500
 static uint32_t s_frame_t0;             /* when the frame being drawn began (now_ms) */

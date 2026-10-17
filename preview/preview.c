@@ -141,7 +141,7 @@ extern int pv_force_show, pv_force_event;
 EMSCRIPTEN_KEEPALIVE void pv_candle(int on, int pct) { F.candle = on != 0, F.battery = (uint8_t)pct, F.charging = false; }
 /* the chart's dissolve as a flick plays it, over the face as last drawn: the chart (or the face again) at step k of
  * CHART_STEPS (the last the whole) */
-static const uint16_t CHART_REVEAL[CHART_STEPS] = CHART_REVEALS;
+static const uint8_t CHART_REVEAL[CHART_STEPS] = CHART_REVEALS;
 EMSCRIPTEN_KEEPALIVE int pv_chart_steps(void) { return CHART_STEPS; }
 EMSCRIPTEN_KEEPALIVE uint8_t *pv_render_fade(double utc, int offset, int chart, int k) {
   F.chart = chart != 0, F.reveal = CHART_REVEAL[k % CHART_STEPS], F.window_only = true;
