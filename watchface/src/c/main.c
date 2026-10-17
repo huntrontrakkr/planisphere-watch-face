@@ -463,13 +463,17 @@ static void update(Layer *layer, GContext *ctx) {
   feast_of_day(&f, now, g_offset);
   bool drawn = s_api->render(s_plan, &f, (int64_t)now, g_offset, &tg, alloc, free);
   if (drawn && !s_figs_k && s_plan->event == EV_FIGURES) event_begin();   /* (frame 1 of the figures drawn in) */
-  if (drawn) scribe_begin(&tg);
+  /* a fireworks display due takes its memory first; the minute's figures then simply appear (written, they would
+   * hold the motion blob's and their record's room while the display asks for its own, and the display went
+   * without: the heap is short, and in pieces by then) */
+  if (drawn) show_begin();
+  if (drawn && !s_show) scribe_begin(&tg);
+  else scribe_end();
   graphics_release_frame_buffer(ctx, fb);
   g_render_ms = now_ms() - t0;
   if (g_render_ms > g_render_max) g_render_max = g_render_ms;
   g_stack = stack_deepest();
   if (drawn && !s_figs_k && s_plan->event != EV_FIGURES) event_begin();
-  if (drawn) show_begin();
   anims_settle(false);
 }
 

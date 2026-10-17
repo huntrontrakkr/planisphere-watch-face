@@ -282,7 +282,7 @@ bool plan_feast(Plan *p, const Face *f, int64_t utc, int32_t offset, const Feast
  * goes on. */
 #define SHOW_API_MAGIC 0x574f4853u           /* "SHOW" */
 typedef struct { uint16_t n, cap; uint32_t px[]; } ShowUndo;   /* each x | y << 9 | the colour << 18 */
-#define SHOW_UNDO 1024                       /* the pixels a frame may cover (the most seen is under 450: check_memory) */
+#define SHOW_UNDO 640                        /* the pixels a frame may cover (the most seen is 332: check_memory) */
 /* The minute written, from the same blob: a frame over the face as last drawn (Plan.scribe, which frame 0 first puts
  * in a scribe's order, with `room` for a word a pixel to sort them in): frame 0 takes away the figures that changed,
  * the next SCRIBE_FRAMES - 1 write them again, their outlines and then their fill. True while frames remain. */

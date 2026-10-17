@@ -54,7 +54,8 @@ class Monitor:
 
 
 class Emu:
-    def __init__(self, plat, when, out, trace=None, icount=None, events=(), exec_filter=None):
+    def __init__(self, plat, when, out, trace=None, icount=None, events=(), exec_filter=None, utc_offset=0):
+        self.utc_offset = utc_offset           # minutes the watch's local time runs ahead of UTC
         self.exec_filter = exec_filter
         self.plat, self.out, self.when = plat, out, when
         self.ports = {k: free_port() for k in ["app", "serial", "gdb", "monitor"]}
@@ -128,7 +129,8 @@ class Emu:
         from datetime import datetime, timezone
         from libpebble2.protocol.system import SetUTC, TimeMessage
         t = int(datetime.fromisoformat(self.when).replace(tzinfo=timezone.utc).timestamp())
-        c.send_packet(TimeMessage(message=SetUTC(unix_time=t, utc_offset=0, tz_name="UTC")))
+        c.send_packet(TimeMessage(message=SetUTC(unix_time=t, utc_offset=self.utc_offset,
+                                                 tz_name="UTC" if not self.utc_offset else f"UTC{self.utc_offset / 60:+g}")))
         AppInstaller(c, str(pbw or APP / "build/watchface.pbw")).install()
         u = uuid.UUID(json.loads((APP / "package.json").read_text())["pebble"]["uuid"])
         c.send_packet(AppRunState(data=AppRunStateStart(uuid=u)))
@@ -283,6 +285,7 @@ def main():
     ap.add_argument("platform", choices=["emery", "gabbro"])
     ap.add_argument("mode", choices=["shots", "profile"])
     ap.add_argument("--time", default="2026-10-15T01:30:00")
+    ap.add_argument("--utc-offset", type=int, default=0, help="minutes the watch's local time runs ahead of UTC")
     ap.add_argument("--shots", default="0,3,6")
     ap.add_argument("--out", default=str(ROOT / "out/emu"))
     ap.add_argument("--gdb", nargs="*", default=[])
@@ -316,7 +319,7 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     plat = a.platform
     if a.mode == "shots":
-        e = Emu(plat, a.time, out, icount=a.icount, events=a.qemu_trace)
+        e = Emu(plat, a.time, out, icount=a.icount, events=a.qemu_trace, utc_offset=a.utc_offset)
         e.elf = a.elf
         try:
             e.install(a.boot, a.pbw)
@@ -403,7 +406,7 @@ def main():
             e.quit()
         return
     boot_trace = out / f"{plat}-boot.trace"
-    e = Emu(plat, a.time, out, trace=boot_trace)
+    e = Emu(plat, a.time, out, trace=boot_trace, utc_offset=a.utc_offset)
     try:
         e.install(a.boot)
         time.sleep(a.wait)
