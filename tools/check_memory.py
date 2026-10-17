@@ -126,7 +126,7 @@ def main():
         for lat in range(-89, 90):
             for t in MOMENTS:
                 n, d = peak([screen, "0", str(t), str(lat), "-74", "-240"],
-                            ["--labours", "--tools", "--weather", SNOW, "--scribe"])
+                            ["--labours", "--tools", "--weather", SNOW, "--scribe", "--battery", "15c"])
                 if n > worst:
                     worst, at = n, (lat, t)
                 scene = max(scene, d)
@@ -135,7 +135,7 @@ def main():
             for lat in range(-89, 90, 8):
                 for t in MOMENTS:
                     _, d = peak([screen, "0", str(t), str(lat), "-74", "-240"],
-                                ["--theme", str(theme), "--tools", "--weather", SNOW, "--scribe"])
+                                ["--theme", str(theme), "--tools", "--weather", SNOW, "--scribe", "--battery", "15c"])
                     scene = max(scene, d + decor_code())
         budget = heap(screen) - HEADROOM
         need, show = lookup_need(screen), show_need()

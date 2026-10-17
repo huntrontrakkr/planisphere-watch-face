@@ -644,49 +644,75 @@ def real_range(dial, edge_, sky, most=2.0, room=12.0, least=3.0):
 LABOUR_TONE = "hatch"                                    # "hatch" (the ring hatching's khaki) or "pale" (barely there)
 
 
-def candle(img, inside, inner, P, pct, charging):
-    """The battery's candle in the card's lower right (plan_render.c candle): on the lowest row where its five columns
-    lie three clear of the ring's inner rule and of the window for its twelve rows; a saucer, the wax at its full seven
-    rows in the card's faint tone, inked from the base as far as the charge, the wick and the flame above, gold, red
-    when a fifth or less is left; charging, the flame a pixel taller."""
+CANDLE_W, CANDLE_UP = 15, 14
+CANDLE_H = CANDLE_UP + 7
+
+
+def candle(img, inside, inner, card, P, pct, charging):
+    """The battery's candle clock (plan_render.c candle), drawn once the face is: a candle banded as the hour-candles
+    were, burnt down as far as the charge, its figure in the tiny type beneath; in the first clear place of the card's
+    upper right, row by row from the top, each from the ring's side inward, where its block and a pixel round lie
+    inside the ring's rule by two, out of the window, on nothing but the card (`card`, as laid) or what is faint in
+    it."""
     H, W = inside.shape
-    rows = np.nonzero(inside.any(axis=1))[0]
-    win_bottom = int(rows[-1])
-    right_inner = [int(np.nonzero(inner[y])[0][-1]) if inner[y].any() else -1 for y in range(H)]
-    right_win = [int(np.nonzero(inside[y])[0][-1]) if inside[y].any() else None for y in range(H)]
-    base = x0 = None
-    for y in range(min(win_bottom, H - 1), 11, -1):
-        lim, ok = W, True
-        for yy in range(y - 11, y + 1):
-            if right_inner[yy] < 0:
-                ok = False
+    tint = tint_of(P)
+    spans = [(int(np.nonzero(inner[y])[0][0]), int(np.nonzero(inner[y])[0][-1])) if inner[y].any() else None
+             for y in range(H)]
+
+    def clear(bx, by):
+        for y in range(by - 1, by + CANDLE_H + 1):
+            if not 0 <= y < H or spans[y] is None:
+                return False
+            for x in range(bx - 1, bx + CANDLE_W + 1):
+                if x < spans[y][0] + 2 or x > spans[y][1] - 2 or inside[y, x]:
+                    return False
+                c = img[y, x]
+                if not ((c == card[y, x]).all() or (c == tint).all()):
+                    return False
+        return True
+    spot = None
+    for y in range(1, H - CANDLE_H):
+        if spans[y] is None:
+            continue
+        right = spans[y][1] - 3 - CANDLE_W
+        for x in range(right, max(right - 25, W // 2 - 1), -1):
+            if clear(x, y):
+                spot = (x, y)
                 break
-            lim = min(lim, right_inner[yy] - 3)
-            if right_win[yy] is not None and lim - 5 <= right_win[yy] + 3:
-                ok = False
-        if ok:
-            base, x0 = y, lim - 5
+        if spot:
             break
-    if base is None:
+    if not spot:
         return
-    n = (pct * 7 + 50) // 100 if pct else 0
+    bx, by = spot
+    n = (pct + 5) // 10
     if pct and n < 1:
         n = 1
-    ink, ghost, flame = P["ink"], tint_of(P), P["accent"] if pct <= 20 else P["planet"]
+    x0, base = bx + CANDLE_W // 2 - 2, by + CANDLE_UP
+    t = sprites.tiny(f"{pct}%", 1)
+    fw = t.shape[1]
+    fx = x0 + 2 - fw // 2
+    for y in range(base - n - (5 if charging else 4), base + 8):     # the card round the candle and its figure
+        for x in range((fx if y > base else x0) - 1, (fx + fw if y > base else x0 + 5) + 1):
+            img[y, x] = card[y, x]
+    light_paper = P["window"] == "paper" and int(np.asarray(P["night"]).sum()) > 400   # (as r->light_paper)
+    ink, wax, flame = P["ink"], (tint if light_paper else P["line"]), P["accent"] if pct <= 20 else P["planet"]
     for i in range(5):
         img[base, x0 + i] = ink
-    for j in range(7):
-        y, lit = base - 7 + j, j >= 7 - n
+    for j in range(10):
+        y, lit = base - 10 + j, j >= 10 - n
         for i in (1, 2, 3):
             if lit:
                 img[y, x0 + i] = ink
             elif i != 2 or j == 0:
-                img[y, x0 + i] = ghost
-    if not n:
-        return
-    img[base - n - 1, x0 + 2] = ink
-    for k in range(2, (4 if charging else 3) + 1):
-        img[base - n - k, x0 + 2] = flame
+                img[y, x0 + i] = wax
+        if lit and j % 2:
+            img[y, x0] = ink
+    if n:
+        img[base - n - 1, x0 + 2] = ink
+        for k in range(2, (4 if charging else 3) + 1):
+            img[base - n - k, x0 + 2] = flame
+    for j, i in zip(*np.nonzero(t)):
+        img[base + 2 + j, fx + i] = ink
 
 
 def gild_of(P):
@@ -2020,7 +2046,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         first = np.array([screen.round2_row(y)[0] for y in range(H)])
         img[(xx < first[:, None]) | (xx > W - 1 - first[:, None])] = 0
     if battery is not None:                              # the battery's candle (plan_render.c candle)
-        candle(img, inside, inner_region(dial), P, battery, charging)
+        candle(img, inside, inner_region(dial), ground, P, battery, charging)
     return nearest(img)
 
 

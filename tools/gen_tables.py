@@ -134,7 +134,7 @@ def shared(h):
              " * the ring's flat colour or wash, ring_ink its lettering, fox_c and fox (in 4096ths) the foxing, tint\n"
              " * the tone a step from the card's own for what is drawn faint in it (proto/plates.py tint_of), gild the\n"
              " * colour the time's figures are outlined in when it is gilt (gild_of). */")
-    h.append("typedef struct {\n  uint8_t " + ", ".join("cons" if f == "const" else f for f in fields) + ";\n"
+    h.append("typedef struct Plate {\n  uint8_t " + ", ".join("cons" if f == "const" else f for f in fields) + ";\n"
              "  uint8_t window, ring, figures, glyph, corner, fill, fill_c, ring_ink, fox_c, tint, gild;\n"
              "  uint16_t fox;\n  uint8_t rete, throne, unequal, woodcut, dragon, thread;\n} Plate;")
     rows = []
@@ -355,6 +355,7 @@ def shared(h):
         data += struct.pack("<HHH", r, d, (m100 + 200) << 3 | cls)
     blob.add("STARS", data)
     h.append(f"#define STAR_COUNT {len(stars)}")
+    h.append(f"#define BRIGHT_STARS {sum(1 for s in stars if int(round(s[2] * 100)) < 210)}   /* (brighter than 2.1) */")
     # the figures' lines, between stars of magnitude 3.8 or brighter (as the prototype draws them): star pairs
     where = {}
     for i, (ra, de, mg, bv) in enumerate(stars):

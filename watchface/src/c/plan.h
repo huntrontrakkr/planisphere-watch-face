@@ -326,6 +326,11 @@ typedef struct DecorCtx {
   const Tides *tides;          /* the tide here (NULL: none), and the minute (since 1970), for the sea's water */
   uint32_t minute;
   uint8_t moon_phase;          /* the Moon's phase as the sea's corner draws it, 0 new .. 4 full .. 7 (mirrored south) */
+  /* the battery's candle, drawn by the scene blob once the face is (candle set: nothing else drawn): the charge
+   * and its charging, the plate's colours, the card's foxing (the blue noise), whether its paper is light */
+  bool candle, charging, light_paper;
+  uint8_t battery, line, planet;
+  const struct Plate *plate;
 } DecorCtx;
 #define DECOR_API_MAGIC 0x524F4344u          /* "DCOR" */
 typedef struct {

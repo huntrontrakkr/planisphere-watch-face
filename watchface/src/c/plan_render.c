@@ -13,6 +13,7 @@
 #define C8(r, g, b) ((uint8_t)(0xC0 | (r) << 4 | (g) << 2 | (b)))
 #define LV(c, s) (((c) >> (s)) & 3)
 #define MAX_BOXES 80
+#define LAND_NONE 255
 #define VILLAGE_DX 72                    /* the village and hills reach this far either side of the south point */
 #define NONE16 0x7fff
 enum { FALL_NONE, FALL_DRIZZLE, FALL_RAIN, FALL_SNOW, FALL_HAIL };
@@ -57,12 +58,13 @@ typedef struct {
   uint16_t goff[MAX_H / 4 + 2];              /* and where it starts in ga and gb */
   float ik, ssd, csd, csh, ssh, sl0, cl0;
   SkyK sk, sk6;                              /* the sky's Sun-dependent parts, now and (under an eclipse) at -6 */
-  int16_t bright[96][2];                     /* the stars brighter than 2.1 on the screen, for the zodiac to avoid */
+  int16_t bright[BRIGHT_STARS][2];           /* the stars brighter than 2.1 on the screen, for the zodiac to avoid */
   int nbright;
   /* what names keep clear of */
   int16_t box[MAX_BOXES][4];
   int nbox;
-  int16_t btop[MAX_W];                       /* the land's top in each column (hills, village), NONE16 none */
+  uint8_t btop[MAX_W];                       /* the land's top in each column (hills, village), LAND_NONE none: a
+                                              * row of the window, which never reaches 255 on either screen */
   int col;
   /* the weather, as the sky shows it */
   bool wx, fog, falls, rain_or_hail, thunder, snow_lying, frost, smoke, snow_falls, halo;
@@ -75,7 +77,8 @@ typedef struct {
   int16_t strat[28][3];                      /* y, x0, x1 */
   int nstrat;
   uint8_t cc[3], c_line, c_hair, c_rain[2], c_snow;   /* the clouds' colours for the hour (K, W, S roles; 0 the sky) */
-  int16_t drawn[96][3];                      /* the drawn bright stars (x, y, half their size): the clouds keep off */
+  int16_t drawn[BRIGHT_STARS][3];            /* the drawn bright stars (x, y, half their size): the clouds keep off
+                                              * (each brighter than 2.1: there can be no more than the table has) */
   int ndrawn;
   int16_t chimney_x, chimney_y;
   bool chimney, night_land;
@@ -998,7 +1001,7 @@ static bool blocked(R *r, const int16_t b[4]) {
   for (int x = b[0] - 1; x <= b[2]; x++) {
     if (x < 0 || x >= r->W) continue;
     int top = r->btop[x];
-    if (top != NONE16 && top - 1 < b[3]) return true;
+    if (top != LAND_NONE && top - 1 < b[3]) return true;
   }
   return false;
 }
@@ -1465,12 +1468,12 @@ static void stars(R *r, float faint, float mx, float my, float moon_reach) {
     float x, y;
     project_star(r, s, &x, &y);
     int xi = pyf_floor(x), yi = pyf_floor(y);
-    if (mg < 210 && r->nbright < 96) r->bright[r->nbright][0] = (int16_t)xi, r->bright[r->nbright][1] = (int16_t)yi, r->nbright++;
+    if (mg < 210 && r->nbright < BRIGHT_STARS) r->bright[r->nbright][0] = (int16_t)xi, r->bright[r->nbright][1] = (int16_t)yi, r->nbright++;
     if (too_faint) continue;
     if (r->lit_moon && mg > 220 && (x - mx) * (x - mx) + (y - my) * (y - my) < (6 + moon_reach) * (6 + moon_reach)) continue;
     if (on_screen(r, xi, yi) && (hidden(r, xi, yi) || (mg > 160 && in_band(r, xi, yi)))) continue;
     int half = r->rete ? 2 : mg < 50 ? 3 : mg < 140 ? 2 : mg < 210 ? 1 : 0;
-    if (half && r->ndrawn < 96 && (!r->rete || mg < 200))
+    if (half && r->ndrawn < BRIGHT_STARS && (!r->rete || mg < 200))
       r->drawn[r->ndrawn][0] = (int16_t)xi, r->drawn[r->ndrawn][1] = (int16_t)yi, r->drawn[r->ndrawn][2] = (int16_t)half, r->ndrawn++;
     uint8_t c = (r->paper || r->red) ? P->star
                 : STAR_COLOURS[cls];
@@ -1527,7 +1530,7 @@ static void window_edge(R *r) {
 }
 
 static void land(R *r, int x, int y) {
-  if (x >= 0 && x < r->W && (r->btop[x] == NONE16 || y < r->btop[x])) r->btop[x] = (int16_t)y;
+  if (x >= 0 && x < r->W && y < LAND_NONE && (r->btop[x] == LAND_NONE || y < r->btop[x])) r->btop[x] = (uint8_t)y;
 }
 
 /* the distant hills behind the village, low and far, one quiet tone taking the hour's light; by night the ridge */
@@ -2548,45 +2551,6 @@ static void tide_marks(R *r) {
  * band, both stand either side of the fleur-de-lis instead, along the window's top, five pixels from it, each the
  * longest form whose letters all fall on the card there, the two spread to the same width (the longer's), in the
  * card's ink. */
-/* the battery's candle (proto/plates.py candle), an option: standing in the card's lower right, on the lowest row
- * where its five columns lie three clear of the ring's inner rule and of the window for its twelve rows; a saucer,
- * the wax at its full seven rows in the card's faint tone, inked from the base as far as the charge (a row a
- * seventh), the wick on the wax and the flame above it, gold, red when a fifth or less is left; charging, the flame a
- * pixel taller */
-static void candle(R *r) {
-  const Face *f = r->f;
-  Plan *p = r->p;
-  if (!f->candle || f->battery > 100) return;
-  const int16_t *inner = sec16(p->geom, GEO_INNER);
-  int base = -1, x0 = 0;
-  for (int y = p->win_bottom; y >= 12 && base < 0; y--) {
-    if (y >= r->H) continue;
-    int lim = r->W;
-    bool ok = true;
-    for (int yy = y - 11; yy <= y && ok; yy++) {
-      if (inner[2 * yy] > inner[2 * yy + 1]) { ok = false; break; }
-      if (inner[2 * yy + 1] - 3 < lim) lim = inner[2 * yy + 1] - 3;
-      if (p->wx0[yy] <= p->wx1[yy] && lim - 5 <= p->wx1[yy] + 3) ok = false;
-    }
-    if (ok) base = y, x0 = lim - 5;
-  }
-  if (base < 0) return;
-  int pct = f->battery, n = pct ? (pct * 7 + 50) / 100 : 0;
-  if (pct && n < 1) n = 1;
-  uint8_t ink = r->P->ink, flame = pct <= 20 ? r->P->accent : r->P->planet;
-  for (int i = 0; i < 5; i++) put(r, x0 + i, base, ink);
-  for (int j = 0; j < 7; j++) {
-    int y = base - 7 + j;
-    bool lit = j >= 7 - n;
-    for (int i = 1; i <= 3; i++)
-      if (lit) put(r, x0 + i, y, ink);
-      else if (i != 2 || j == 0) put(r, x0 + i, y, r->tint);
-  }
-  if (!n) return;
-  put(r, x0 + 2, base - n - 1, ink);
-  for (int k = 2; k <= (f->charging ? 4 : 3); k++) put(r, x0 + 2, base - n - k, flame);
-}
-
 static void inscriptions(R *r, int style) {
   char dms[2][16], form[40], pick[2][40];
   for (int k = 0; k < 2; k++) {
@@ -2638,7 +2602,6 @@ static void inscriptions(R *r, int style) {
     if (ok) engrave(r, form, lo + hi - width * 16, width, curves + (slot < 2 ? 0 : r->W), r->P->ring_ink, true, false);
   }
   tide_marks(r);
-  candle(r);
 }
 
 static void put_thread(R *r, int x, int y, void *ctx) {
@@ -3220,7 +3183,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   weather_sky(r);
   r->secs = r->local.hour * 3600 + r->local.minute * 60 + r->local.second;
   weather_layer(r);
-  for (int x = 0; x < MAX_W; x++) r->btop[x] = NONE16;
+  memset(r->btop, LAND_NONE, sizeof r->btop);
   r->closed_sky = P->window == WIN_SKY && r->wx && (r->stratus >= 0.6f || r->fog || r->falls);
 
   /* where the numerals stand on the ring for this clock (worked out once, from the ring alone), before the window's
@@ -3243,7 +3206,8 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
                    (uint8_t)((int)(r->sky.sun_lon / 30) % 12), (uint8_t)((int)(mlon / 30) % 12), f->theme,
                    (uint8_t)(r->rect && f->corners < THEME_COUNT ? f->corners : 0), r->paper || r->red, alloc, release,
                    NULL, {255, 255, 255, 255},
-                   f->tides, (uint32_t)utc / 60u, moon_phase8(r)};   /* (32 bits: no 64-bit division) */
+                   f->tides, (uint32_t)utc / 60u, moon_phase8(r), false, false, false, 0, 0, 0, NULL};   /* (32 bits:
+                                                                                     no 64-bit division) */
     brightest_up(r, (float)f->lat, dc.planets);
     f->decor(f->decor_ctx, &dc);
   }
@@ -3459,6 +3423,15 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   ring(r, season);
   time_block(r, fy0, season, alloc, release);
   release(r->ga);
+  /* the battery's candle, last: by the scene blob (plan_decor.c candle), now the sky's grid is let go */
+  if (f->decor && f->candle && f->battery <= 100) {
+    DecorCtx dc;
+    memset(&dc, 0, sizeof dc);
+    dc.p = p, dc.tone = r->tint, dc.ink = P->ink, dc.accent = P->accent, dc.line = P->line, dc.planet = P->planet;
+    dc.candle = true, dc.battery = f->battery, dc.charging = f->charging, dc.light_paper = r->light_paper;
+    dc.plate = P, dc.alloc = alloc, dc.release = release;
+    f->decor(f->decor_ctx, &dc);
+  }
   release(r);
   return true;
 }

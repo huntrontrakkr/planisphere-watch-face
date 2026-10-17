@@ -96,8 +96,9 @@
        descHtml: 'The hours on the ring, and the time as an astronomer writes it: 9<sup>h</sup> 30<sup>m</sup>, or ' +
                  '21<sup>h</sup> 30<sup>m</sup>.'},
       {key: 'CANDLE', type: 'switch', label: 'The battery’s candle',
-       desc: 'A candle in the card’s lower corner, burnt down as far as the battery has: its wax inked as far as the ' +
-             'charge, the rest a ghost, its flame red when a fifth or less is left and taller while it charges.'},
+       desc: 'A candle clock in the card’s upper corner, banded as the hour-candles were, burnt down as far as the ' +
+             'battery has, with the charge in figures beneath it; its flame red when a fifth or less is left, and ' +
+             'taller while the watch charges.'},
       {key: 'GILD', type: 'switch', label: 'Gild the time',
        desc: 'The figures of the time outlined in the plate’s own gilding, so they stand clear of the sky and the ' +
              'scenes behind: red ink on the paper planisphere, gold on the Book of Hours, silver on the shagreen.'},

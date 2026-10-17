@@ -185,7 +185,99 @@ static void astronomer_corners(const DecorCtx *r) {
   for (int k = 0; k < 4; k++) which[k] = r->planets[k] < 5 ? (uint8_t)(14 + r->planets[k]) : 19;
   roundels(r, which);
 }
+/* ---- the battery's candle clock (proto/plates.py candle), an option, drawn once the face is: a candle banded as the
+ * hour-candles were, burnt down as far as the charge, its figure in the tiny type beneath. Placed in the first clear
+ * place of the card's upper right: row by row from the top, each from the ring's side inward, where its block
+ * (CANDLE_W wide, the widest figure's, CANDLE_H tall) and a pixel round lie inside the ring's rule by two, out of the
+ * window, on nothing but the card or what is faint in it ---------------------------------------------------------- */
+#define CANDLE_W 15
+#define CANDLE_UP 14                             /* rows above the saucer: the wax, the wick, the tallest flame */
+#define CANDLE_H (CANDLE_UP + 7)                 /* and the figure below it, two down, five tall */
+typedef struct { uint32_t bit; uint8_t w, h; uint16_t pad; } MaskIndex;
+static inline uint8_t get(const DecorCtx *r, int x, int y) {
+  const Plan *p = r->p;
+  return (unsigned)y < (unsigned)p->h && x >= p->rx0[y] && x <= p->rx1[y] ? ROW(p, y)[x] : 0;
+}
+/* the card where nothing is drawn: the jacket, foxed on the old rag paper (plan_render.c card_at) */
+static uint8_t card_at(const DecorCtx *r, int x, int y) {
+  const Plate *P = r->plate;
+  if (P->fox) {
+    const uint8_t *bn = sec(r->p->data, SEC_BLUE_NOISE);
+    int fy = (r->p->h - 1 - y) & 63, fx = (r->p->w - 1 - x) & 63;
+    if ((bn[fy * 64 + fx] * 16 + 8) < P->fox) return P->fox_c;
+  }
+  return P->jacket;
+}
+static const MaskIndex *tiny_glyph(const DecorCtx *r, char ch) {
+  for (int i = 0; TINY_CHARS[i]; i++)
+    if (TINY_CHARS[i] == ch) return (const MaskIndex *)(const void *)sec(r->p->data, SEC_MASK_INDEX) + M_TINY0 + i;
+  return NULL;
+}
+static bool candle_clear(const DecorCtx *r, const int16_t *inner, int bx, int by) {
+  for (int y = by - 1; y <= by + CANDLE_H; y++) {
+    if ((unsigned)y >= (unsigned)r->p->h || inner[2 * y] > inner[2 * y + 1]) return false;
+    for (int x = bx - 1; x <= bx + CANDLE_W; x++) {
+      if (x < inner[2 * y] + 2 || x > inner[2 * y + 1] - 2 || inside(r, x, y)) return false;
+      uint8_t c = get(r, x, y);
+      if (c != card_at(r, x, y) && c != r->tone) return false;
+    }
+  }
+  return true;
+}
+static void candle(const DecorCtx *r) {
+  const int16_t *inner = sec16(r->p->geom, GEO_INNER);
+  int bx = -1, by = -1, W = r->p->w, H = r->p->h;
+  for (int y = 1; y + CANDLE_H < H && bx < 0; y++) {
+    if (inner[2 * y] > inner[2 * y + 1]) continue;
+    int right = inner[2 * y + 1] - 3 - CANDLE_W;
+    for (int x = right; x >= right - 24 && x >= W / 2 && bx < 0; x--)
+      if (candle_clear(r, inner, x, y)) bx = x, by = y;
+  }
+  if (bx < 0) return;
+  /* set off from what is behind it by the card round the candle and round its figure, then drawn */
+  int pct = r->battery, n = (pct + 5) / 10, x0 = bx + CANDLE_W / 2 - 2, base = by + CANDLE_UP;
+  if (pct && n < 1) n = 1;
+  char fig[6];
+  int k = 0;
+  if (pct >= 100) fig[k++] = '1';
+  if (pct >= 10) fig[k++] = (char)('0' + pct / 10 % 10);
+  fig[k++] = (char)('0' + pct % 10), fig[k++] = '%', fig[k] = 0;
+  int fw = -1;
+  for (const char *c = fig; *c; c++) fw += tiny_glyph(r, *c)->w + 1;
+  int fx = x0 + 2 - fw / 2;
+  for (int y = base - n - (r->charging ? 5 : 4); y <= base + 7; y++)
+    for (int x = (y > base ? fx : x0) - 1; x <= (y > base ? fx + fw : x0 + 5); x++) put(r, x, y, card_at(r, x, y));
+  uint8_t ink = r->ink, wax = r->light_paper ? r->tone : r->line, flame = pct <= 20 ? r->accent : r->planet;
+  for (int i = 0; i < 5; i++) put(r, x0 + i, base, ink);           /* the saucer */
+  for (int j = 0; j < 10; j++) {                                    /* the wax: inked as far as the charge, else faint */
+    int y = base - 10 + j;
+    bool lit = j >= 10 - n;
+    for (int i = 1; i <= 3; i++)
+      if (lit) put(r, x0 + i, y, ink);
+      else if (i != 2 || j == 0) put(r, x0 + i, y, wax);
+    if (lit && j % 2) put(r, x0, y, ink);                           /* the bands, a fifth each */
+  }
+  if (n) {
+    put(r, x0 + 2, base - n - 1, ink);                              /* the wick, the flame */
+    for (int q = 2; q <= (r->charging ? 4 : 3); q++) put(r, x0 + 2, base - n - q, flame);
+  }
+  const uint8_t *bits = sec(r->p->data, SEC_MASK_DATA);
+  for (const char *c = fig; *c; c++) {                              /* the figure */
+    const MaskIndex *mi = tiny_glyph(r, *c);
+    for (int j = 0; j < mi->h; j++)
+      for (int i = 0; i < mi->w; i++) {
+        uint32_t b = mi->bit + (uint32_t)(j * mi->w + i);
+        if ((bits[b >> 3] >> (b & 7)) & 1) put(r, fx + i, base + 2 + j, ink);
+      }
+    fx += mi->w + 1;
+  }
+}
+
 bool plan_decor(const DecorCtx *dc, const FeastReader *tools, const FeastReader *scenes) {
+  if (dc->candle) {                              /* (the candle's own call, once the face is drawn) */
+    candle(dc);
+    return true;
+  }
   DecorCtx copy = *dc;                           /* (the woodcuts' table with it) */
   copy.scenes = scenes;
   const DecorCtx *d = &copy;
