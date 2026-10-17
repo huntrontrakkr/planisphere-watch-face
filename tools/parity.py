@@ -109,6 +109,15 @@ CASES = {
                        {"theme": 5, "corners": 5}),
     "herbal-moon-sydney-t2": ("emery", "planisphere", datetime(2026, 10, 25, 10, 30, tzinfo=timezone.utc),
                               (-33.87, 151.21, 660), {"theme": 5, "corners": 5}),
+    # the lantern slide (Flamsteed reversed) and the shagreen case
+    "lantern-t2": ("emery", "lantern", datetime(2026, 10, 15, 1, 30, tzinfo=timezone.utc), NY, {}),
+    "lantern-sea-r2": ("gabbro", "lantern", datetime(2026, 2, 16, 2, 30, tzinfo=timezone.utc), NY,
+                       {"theme": 4, "tides": [(-90, True, 170), (282, False, 20)]}),
+    "lantern-tools-t2": ("emery", "lantern", datetime(2026, 6, 16, 2, 30, tzinfo=timezone.utc), NY, {"corners": 1}),
+    "shagreen-t2": ("emery", "shagreen", datetime(2026, 10, 15, 1, 30, tzinfo=timezone.utc), NY, {}),
+    "shagreen-day-r2": ("gabbro", "shagreen", datetime(2026, 10, 15, 16, 0, tzinfo=timezone.utc), NY, {}),
+    "shagreen-herbal-t2": ("emery", "shagreen", datetime(2026, 5, 16, 1, 30, tzinfo=timezone.utc), NY,
+                           {"theme": 5, "corners": 5}),
     # the corners apart from the backdrop: each blob's backdrop with the other's corners, a backdrop with the sprigs,
     # the plain card with a theme's corners
     "mix-labours-sea-t2": ("emery", "planisphere", datetime(2026, 7, 16, 1, 30, tzinfo=timezone.utc), NY,

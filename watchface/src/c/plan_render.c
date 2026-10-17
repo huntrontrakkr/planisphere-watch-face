@@ -1020,14 +1020,6 @@ static void piece_colours(R *r) {
   if (!r->red && r->light_paper) r->planet_c[1] = P->ink, r->moon_c[1] = P->ink;
 }
 
-/* a colour a step from the card's own, for the engraver's hatching on it */
-static uint8_t tint_of(const Plate *P) {
-  if (P->jacket == C8(2, 2, 1)) return C8(1, 1, 0);
-  if (P->jacket == C8(3, 3, 3)) return C8(2, 2, 2);
-  if (level_sum(P->jacket) * 85 > 400) return C8(2, 2, 1);
-  if (P->window == WIN_RED) return C8(1, 0, 0);
-  return LV(P->jacket, 0) > 0 ? C8(0, 0, 2) : C8(1, 1, 1);
-}
 
 /* ---- the weather, as the sky shows it (proto/weather.py sky_of) ------------------------------------------------ */
 static void weather_sky(R *r) {
@@ -3113,7 +3105,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   r->sdec = (float)(r->south ? -r->sky.sun_dec : r->sky.sun_dec);
   r->sha = (float)pyf_mod(r->south ? -(r->sky.lst - r->sky.sun_ra) : r->sky.lst - r->sky.sun_ra, 360.0f);
   r->mphase = (float)r->sky.moon_phase;
-  r->tint = tint_of(P);
+  r->tint = P->tint;                             /* (a step from the card's own: proto/plates.py tint_of) */
   r->ramp[r->nramp++] = P->night;
   for (int i = 0; i < 6; i++)
     if (level_sum(COOL[i]) > level_sum(P->night)) r->ramp[r->nramp++] = COOL[i];

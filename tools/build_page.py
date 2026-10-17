@@ -45,6 +45,12 @@ PLATES = {
               dict(paper="#ead9ae", ink="#1b140d", accent="#b02c1c", deep="#3f7fb8", rule="#1b140d")),
     "night": ("Night", "The first take: white type on a black card",
               dict(paper="#0d0d0f", ink="#ecebe6", accent="#ecebe6", deep="#1e2330", rule="#5a5a62", dark=True)),
+    "lantern": ("Lantern slide", "A magic-lantern slide, as Victorian lecturers threw the heavens on a screen: "
+                                 "Flamsteed’s chart reversed, white on black glass",
+                dict(paper="#0e0e0e", ink="#f2f2ee", accent="#f2f2ee", deep="#2a2a2a", rule="#8c8c8c", dark=True)),
+    "shagreen": ("Shagreen", "The green shagreen that cased pocket watches, telescopes and sundials (1630s–1700s): its "
+                             "pale grain, silver mounts, the sky as through the telescope",
+                 dict(paper="#6f9a72", ink="#14201a", accent="#f4f4f0", deep="#1d2b5e", rule="#d0d0d0"))
 }
 
 # the face's pieces' roles (proto/sprites.py ROLE) as the page draws them: in its own inks, or the Sun's gilding

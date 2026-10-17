@@ -4,7 +4,7 @@
 
 enum { GEO_OUTER, GEO_OUTER1, GEO_INNER, GEO_TRACKS, GEO_BEADS, GEO_WORDS, GEO_WORD_BITS, GEO_WORD_LOZENGES, GEO_WALKS, GEO_CURVES, GEO_CORNERS, GEO_COUNT };
 enum { SEC_DRAW_INDEX, SEC_DRAW_DATA, SEC_MASK_INDEX, SEC_MASK_DATA, SEC_GLYPHS, SEC_FONT_DATA, SEC_FIGURE_INDEX, SEC_FIGURE_DATA, SEC_STARS, SEC_LINES, SEC_STAR_NAMES, SEC_CONSTELLATIONS, SEC_MILKY, SEC_BLUE_NOISE, SEC_COUNT };
-enum { PLATE_PLANISPHERE, PLATE_BURRITT, PLATE_FLAMSTEED, PLATE_OBSERVATORY, PLATE_ASTROLABE, PLATE_HOURS, PLATE_ORLOJ, PLATE_CYANOTYPE, PLATE_APIAN, PLATE_NIGHT, PLATE_COUNT };
+enum { PLATE_PLANISPHERE, PLATE_BURRITT, PLATE_FLAMSTEED, PLATE_OBSERVATORY, PLATE_ASTROLABE, PLATE_HOURS, PLATE_ORLOJ, PLATE_CYANOTYPE, PLATE_APIAN, PLATE_NIGHT, PLATE_LANTERN, PLATE_SHAGREEN, PLATE_COUNT };
 enum { WIN_SKY, WIN_PAPER, WIN_RED, WIN_ORLOJ };
 enum { RING_ROMAN, RING_HOURS, RING_GOTHIC, RING_MINUSCULE };
 enum { FIG_MODERN, FIG_COPPERPLATE, FIG_CASLON };
@@ -12,24 +12,27 @@ enum { GLYPH_CROSS, GLYPH_RAYS, GLYPH_POINTER, GLYPH_WOODCUT };
 enum { CORNER_SEASON, CORNER_IVY, CORNER_FROND };
 enum { FILL_HATCH, FILL_COLOUR, FILL_ZONES, FILL_WASH };
 /* A plate: its colours (GColor8), and what kind of window, ring, figures, stars and corners it has; fill_c
- * the ring's flat colour or wash, ring_ink its lettering, fox_c and fox (in 4096ths) the foxing. */
+ * the ring's flat colour or wash, ring_ink its lettering, fox_c and fox (in 4096ths) the foxing, tint
+ * the tone a step from the card's own for what is drawn faint in it (proto/plates.py tint_of). */
 typedef struct {
   uint8_t jacket, ink, accent, night, star, line, milky, label, cons, planet, rule;
-  uint8_t window, ring, figures, glyph, corner, fill, fill_c, ring_ink, fox_c;
+  uint8_t window, ring, figures, glyph, corner, fill, fill_c, ring_ink, fox_c, tint;
   uint16_t fox;
   uint8_t rete, throne, unequal, woodcut, dragon, thread;
 } Plate;
 static const Plate PLATES[PLATE_COUNT] = {
-  {254, 192, 224, 193, 255, 214, 214, 254, 235, 249, 192, 0, 0, 0, 0, 0, 0, 0, 192, 0, 0, 0, 0, 0, 0, 0, 0},  /* planisphere */
-  {193, 254, 249, 198, 255, 235, 219, 255, 254, 253, 254, 1, 0, 1, 1, 0, 0, 0, 254, 0, 0, 0, 0, 0, 0, 0, 0},  /* burritt */
-  {255, 192, 192, 255, 192, 213, 234, 192, 213, 192, 192, 1, 0, 2, 1, 0, 0, 0, 192, 0, 0, 0, 0, 0, 0, 0, 0},  /* flamsteed */
-  {192, 224, 240, 192, 240, 208, 208, 224, 208, 244, 208, 2, 1, 0, 0, 0, 0, 0, 224, 0, 0, 0, 0, 0, 0, 0, 0},  /* observatory */
-  {233, 192, 254, 212, 254, 192, 212, 254, 254, 248, 192, 1, 2, 2, 2, 0, 0, 0, 192, 0, 0, 1, 1, 1, 0, 0, 0},  /* astrolabe */
-  {254, 192, 244, 194, 248, 215, 198, 248, 248, 253, 248, 1, 3, 2, 1, 1, 1, 194, 248, 0, 0, 0, 0, 0, 0, 0, 0},  /* hours */
-  {192, 248, 244, 192, 248, 228, 212, 248, 248, 253, 248, 3, 0, 0, 1, 0, 2, 0, 248, 0, 0, 0, 0, 0, 0, 0, 0},  /* orloj */
-  {198, 255, 239, 193, 255, 219, 198, 255, 239, 255, 255, 1, 0, 0, 0, 2, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0},  /* cyanotype */
-  {254, 192, 244, 219, 253, 192, 239, 192, 244, 244, 192, 1, 0, 2, 3, 0, 3, 253, 192, 249, 164, 0, 0, 0, 1, 1, 1},  /* apian */
-  {192, 255, 248, 193, 255, 198, 214, 234, 214, 249, 213, 0, 1, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0},  /* night */
+  {254, 192, 224, 193, 255, 214, 214, 254, 235, 249, 192, 0, 0, 0, 0, 0, 0, 0, 192, 0, 233, 0, 0, 0, 0, 0, 0, 0},  /* planisphere */
+  {193, 254, 249, 198, 255, 235, 219, 255, 254, 253, 254, 1, 0, 1, 1, 0, 0, 0, 254, 0, 194, 0, 0, 0, 0, 0, 0, 0},  /* burritt */
+  {255, 192, 192, 255, 192, 213, 234, 192, 213, 192, 192, 1, 0, 2, 1, 0, 0, 0, 192, 0, 234, 0, 0, 0, 0, 0, 0, 0},  /* flamsteed */
+  {192, 224, 240, 192, 240, 208, 208, 224, 208, 244, 208, 2, 1, 0, 0, 0, 0, 0, 224, 0, 208, 0, 0, 0, 0, 0, 0, 0},  /* observatory */
+  {233, 192, 254, 212, 254, 192, 212, 254, 254, 248, 192, 1, 2, 2, 2, 0, 0, 0, 192, 0, 212, 0, 1, 1, 1, 0, 0, 0},  /* astrolabe */
+  {254, 192, 244, 194, 248, 215, 198, 248, 248, 253, 248, 1, 3, 2, 1, 1, 1, 194, 248, 0, 233, 0, 0, 0, 0, 0, 0, 0},  /* hours */
+  {192, 248, 244, 192, 248, 228, 212, 248, 248, 253, 248, 3, 0, 0, 1, 0, 2, 0, 248, 0, 213, 0, 0, 0, 0, 0, 0, 0},  /* orloj */
+  {198, 255, 239, 193, 255, 219, 198, 255, 239, 255, 255, 1, 0, 0, 0, 2, 0, 0, 255, 0, 194, 0, 0, 0, 0, 0, 0, 0},  /* cyanotype */
+  {254, 192, 244, 219, 253, 192, 239, 192, 244, 244, 192, 1, 0, 2, 3, 0, 3, 253, 192, 249, 233, 164, 0, 0, 0, 1, 1, 1},  /* apian */
+  {192, 255, 248, 193, 255, 198, 214, 234, 214, 249, 213, 0, 1, 0, 0, 0, 0, 0, 255, 0, 213, 0, 0, 0, 0, 0, 0, 0},  /* night */
+  {192, 255, 255, 192, 255, 234, 213, 255, 234, 255, 255, 1, 0, 2, 1, 0, 0, 0, 255, 0, 213, 0, 0, 0, 0, 0, 0, 0},  /* lantern */
+  {217, 192, 255, 193, 255, 214, 214, 254, 235, 249, 192, 0, 0, 2, 0, 0, 1, 234, 192, 238, 238, 287, 0, 0, 0, 0, 0, 0},  /* shagreen */
 };
 
 enum { D_STAR0, D_STAR1, D_STAR2, D_STAR3, D_SUN, D_SUN_HAND, D_FLEUR, D_THRONE, D_LOZENGE, D_SOUTH_STAR, D_STUD, D_ZENITH, D_RADIANT, D_DIAMOND, D_PEARL, D_DRAGON_HEAD, D_DRAGON_TAIL, D_PLANET_VENUS, D_PLANET_JUPITER, D_PLANET_MARS, D_PLANET_SATURN, D_PLANET_MERCURY, D_MOON_NEW, D_MOON_NEW_WANING, D_MOON_THIN, D_MOON_THIN_WANING, D_MOON_CRESCENT, D_MOON_CRESCENT_WANING, D_MOON_QUARTER, D_MOON_QUARTER_WANING, D_MOON_GIBBOUS, D_MOON_GIBBOUS_WANING, D_MOON_FAT, D_MOON_FAT_WANING, D_MOON_FULL, D_MOON_FULL_WANING, D_MOON_RABBIT, D_CORNER_BLOSSOM, D_CORNER_LEAF, D_CORNER_AUTUMN, D_CORNER_BARE, D_CORNER_IVY, D_CORNER_FROND, D_FLAME0, D_FLAME1, D_FLAME2, D_FLAME3, D_FLAME4, D_FLAME5, D_FLAME6, D_FLAME7, D_V_CHURCH, D_V_HOUSE, D_V_TREE, D_V_TREE_BLOSSOM, D_V_TREE_TURNING, D_V_TREE_AUTUMN, D_V_TREE_BARE, D_V_POPLAR, D_V_POPLAR_TURNING, D_V_POPLAR_AUTUMN, D_V_POPLAR_BARE, D_V_FIR, D_V_SMALL, D_V_SMALL_BLOSSOM, D_V_SMALL_TURNING, D_V_SMALL_AUTUMN, D_V_SMALL_BARE, D_CUMULUS0, D_CUMULUS1, D_CUMULUS2, D_STRATUS0, D_STRATUS1, D_STRATUS2, D_CIRRUS0, D_CIRRUS1, D_CIRRUS2, D_SNOWFLAKE, D_COUNT };

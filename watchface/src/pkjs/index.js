@@ -139,6 +139,10 @@ function refresh() {
     var m = {};
     m[keys.LAT] = Math.round(lat * 1e4);
     m[keys.LON] = Math.round(lon * 1e4);
+    if (!moved && place.city) {                               // (its name with it, each time: a watch that missed
+      m[keys.CITY] = names.cityLadder(place.city);            // it, or was reinstalled, has it again)
+      m[keys.COUNTRY] = names.regionLadder(place.cc, place.regionCode || place.region, place.country);
+    }
     send(m);
     if (moved || !place.city || place.cc === undefined) named(lat, lon);
     weather(lat, lon);
@@ -173,13 +177,19 @@ function tide(lat, lon, cc) {
   var s = saved(STORE) || {};
   if (!s.TIDE_TIMES && s.LABOURS !== 4 && corners(s) !== 4) return;   // (the tide's times, nor the sea's backdrop or
                                                                       // corners)
-  var t = saved(TIDES);
-  if (t && Math.abs(t.lat - lat) < 0.05 && Math.abs(t.lon - lon) < 0.05 && Date.now() - t.time < 6 * 3600 * 1000) return;
-  tides.fetch(get, lat, lon, cc === undefined || cc === 'US', function (bytes) {
-    localStorage.setItem(TIDES, JSON.stringify({lat: lat, lon: lon, time: Date.now(), bytes: bytes}));
+  var sendTides = function (bytes) {
     var m = {};
     m[keys.TIDES] = bytes.length ? bytes : [0];          // (one byte: no tide here)
     send(m);
+  };
+  var t = saved(TIDES);                                  // (asked again after six hours; till then sent again as
+  if (t && Math.abs(t.lat - lat) < 0.05 && Math.abs(t.lon - lon) < 0.05 && Date.now() - t.time < 6 * 3600 * 1000) {
+    sendTides(t.bytes || []);                            // they were, for a watch that missed them)
+    return;
+  }
+  tides.fetch(get, lat, lon, cc === undefined || cc === 'US', function (bytes) {
+    localStorage.setItem(TIDES, JSON.stringify({lat: lat, lon: lon, time: Date.now(), bytes: bytes}));
+    sendTides(bytes);
   });
 }
 

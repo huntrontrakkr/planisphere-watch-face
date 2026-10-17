@@ -78,6 +78,20 @@ check(got.WX_TEMP === -34 && got.WX_CODE === 73 && got.WX_SNOW === 80 && got.WX_
 const inbox = Number(readFileSync(path.join(root, 'watchface/src/c/main.c'), 'utf8').match(/#define INBOX (\d+)/)[1]);
 const size = (m) => 1 + Object.values(m).reduce((n, v) => n + 7 + (typeof v === 'string' ? v.length + 1 : 4), 0);
 check(sent.every((m) => size(m) <= inbox), `every message fits the watch's inbox (${inbox} bytes)`);
+// asked again in the same place (the face opened again): the name comes with the place each time, so a watch that
+// missed it, or was reinstalled, has it again; and the tide, where the face shows it, sent again from what was kept
+store['plan-settings'] = store['plan-settings'] || JSON.stringify({ TIDE_TIMES: 1 });
+const s0 = JSON.parse(store['plan-settings']); s0.TIDE_TIMES = 1; store['plan-settings'] = JSON.stringify(s0);
+const n1 = sent.length;
+fire('ready');
+await sleep(300);
+const again = Object.assign({}, ...sent.slice(n1).map(byName));
+check(again.CITY === 'ZURICH|ZUR.' && again.LAT === 473769, `the name sent again with the place (${again.CITY})`);
+const n2 = sent.length;
+fire('ready');
+await sleep(300);
+const third = Object.assign({}, ...sent.slice(n2).map(byName));
+check(third.TIDES !== undefined, `the tide sent again from what the phone kept (${JSON.stringify(third.TIDES)})`);
 
 // the watch tells its own clock (24-hour here, while the test's phone guesses 12): the page follows the watch
 fire('appmessage', { payload: { CLOCK24: 1 } });
@@ -270,7 +284,7 @@ const us = byName((() => {
   fire('webviewclosed', { response: encodeURIComponent(JSON.stringify(Object.assign({}, JSON.parse(answer),
     { PLACE: 1, PLACE_CITY: 'NORFOLK', PLACE_COUNTRY: 'VIRGINIA', PLACE_CC: 'US' }))) });
   return n;
-})() >= 0 ? (await sleep(100), sent[sent.length - 1]) : {});
+})() >= 0 ? (await sleep(100), [...sent].reverse().find((m) => byName(m).PLACE_CITY !== undefined)) : {});
 check(us.PLACE_CITY === 'NORFOLK|NORF.' && us.PLACE_COUNTRY === 'VIRGINIA|VA.|VA',
       `a place in Virginia: ${us.PLACE_CITY}, ${us.PLACE_COUNTRY}`);
 process.exitCode = failed ? 1 : 0;

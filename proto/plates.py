@@ -22,6 +22,11 @@ the type of its time, the way Groundtrack's plates follow real charts:
                 a yellow zodiac band across a light blue sky, a yellow-washed ring, the dragon at the Moon's nodes
                 in eclipse seasons, a silk thread and a seed pearl for the Sun's index
   night         the first take: a black jacket, white type
+  lantern       a magic-lantern slide, as Victorian lecturers threw the heavens on a screen: Flamsteed's plate
+                reversed, white on black glass (Libre Caslon)
+  shagreen      a green shagreen case, the dyed ray-skin that cased pocket watches, telescopes and sundials in the
+                17th and 18th centuries (Grinkin's astronomical watch, c. 1635; Langlois's Butterfield dial, c. 1740):
+                its pale grain, the silver of its mounts, the sky as through the telescope it held
 
 Each shows the time as almanacs and astronomers write it, 9ʰ 30ᵐ (21ʰ 30ᵐ on
 the 24-hour clock), large in the jacket above the window, the date in italic, the Sun's next rising or setting in
@@ -106,6 +111,15 @@ PLATES = {
                   star=c8(3, 3, 3), glyph="cross", line=c8(0, 1, 2), milky=c8(1, 1, 2), label=c8(2, 2, 2),
                   const=c8(1, 1, 2), planet=c8(3, 2, 1), rule=c8(1, 1, 1), font=(OLD, None), italic=(OLD_I, None),
                   ring="hours", figures="modern"),
+    "lantern": dict(jacket=c8(0, 0, 0), ink=c8(3, 3, 3), accent=c8(3, 3, 3), window="paper", night=c8(0, 0, 0),
+                    star=c8(3, 3, 3), glyph="rays", line=c8(2, 2, 2), milky=c8(1, 1, 1), label=c8(3, 3, 3),
+                    const=c8(2, 2, 2), planet=c8(3, 3, 3), rule=c8(3, 3, 3), font=("LibreCaslonText[wght].ttf", 450),
+                    italic=("LibreCaslonText-Italic[wght].ttf", 450), ring="roman", figures="caslon"),
+    "shagreen": dict(jacket=c8(1, 2, 1), ink=c8(0, 0, 0), accent=c8(3, 3, 3), window="sky", night=c8(0, 0, 1),
+                     star=c8(3, 3, 3), glyph="cross", line=c8(1, 1, 2), milky=c8(1, 1, 2), label=c8(3, 3, 2),
+                     const=c8(2, 2, 3), planet=c8(3, 2, 1), rule=c8(0, 0, 0), font=(OLD, None), italic=(OLD_I, None),
+                     ring="roman", figures="caslon", ringfill=c8(2, 2, 2), ring_ink=c8(0, 0, 0),
+                     foxing=(c8(2, 3, 2), 0.07), tint=c8(2, 3, 2)),   # (what is faint in it, its grain's pale green)
 }
 
 CONSTELLATIONS = None
@@ -275,14 +289,14 @@ HATCH = (9, 7, 5, 4)                    # the night's hatching on the ring: ever
 
 
 def tint_of(P):
-    """A colour a step from the card's own, for the engraver's hatching on it."""
+    """A colour a step from the card's own, for the engraver's hatching on it: on a light card its own colour a step
+    darker in each (cream's khaki, white paper's grey, brass's darker line, shagreen's deeper green); on a dark one a
+    step of light (the red plate's red, a blue card's blue, else grey). A plate may name its own (`tint`)."""
+    if "tint" in P:
+        return P["tint"]
     jacket = P["jacket"]
-    if (jacket == c8(2, 2, 1)).all():
-        return c8(1, 1, 0)                              # on brass, the engraver's darker line
-    if (jacket == c8(3, 3, 3)).all():
-        return c8(2, 2, 2)                              # on white paper, an engraving's grey
-    if jacket.sum() > 400:
-        return c8(2, 2, 1)
+    if jacket.sum() > 255:
+        return np.maximum(jacket.astype(int) - 85, 0).astype(jacket.dtype)
     if P["window"] == "red":
         return c8(1, 0, 0)
     return c8(0, 0, 2) if jacket[2] > 0 else c8(1, 1, 1)
