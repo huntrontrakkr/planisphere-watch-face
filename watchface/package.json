@@ -1,7 +1,7 @@
 {
   "name": "planisphere",
   "author": "huntrontrakkr",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "private": true,
   "keywords": [
     "pebble-app"
@@ -55,7 +55,9 @@
       "REQUEST",
       "CORNERS",
       "GILD",
-      "FIGURES"
+      "FIGURES",
+      "FLICK",
+      "CANDLE"
     ],
     "resources": {
       "media": [

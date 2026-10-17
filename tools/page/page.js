@@ -21,7 +21,7 @@
   // events (0.1.5, ANIMV 2) turned on in settings from before them
   var ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32;
   var ANIM_EVENTS = 60;
-  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CORNERS: 0, GILD: 0, FIGURES: 0, TIDE_TIMES: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
+  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CORNERS: 0, GILD: 0, FIGURES: 0, FLICK: 0, CANDLE: 1, TIDE_TIMES: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
                   WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: '', PLACE_CC: ''};
   var settings = {};
   function reset(from) {
@@ -95,6 +95,9 @@
       {key: 'CLOCK', type: 'seg', options: [[0, 'As the watch'], [1, '12-hour'], [2, '24-hour']],
        descHtml: 'The hours on the ring, and the time as an astronomer writes it: 9<sup>h</sup> 30<sup>m</sup>, or ' +
                  '21<sup>h</sup> 30<sup>m</sup>.'},
+      {key: 'CANDLE', type: 'switch', label: 'The battery’s candle',
+       desc: 'A candle in the card’s lower corner, burnt down as far as the battery has: its wax inked as far as the ' +
+             'charge, the rest a ghost, its flame red when a fifth or less is left and taller while it charges.'},
       {key: 'GILD', type: 'switch', label: 'Gild the time',
        desc: 'The figures of the time outlined in the plate’s own gilding, so they stand clear of the sky and the ' +
              'scenes behind: red ink on the paper planisphere, gold on the Book of Hours, silver on the shagreen.'},
@@ -121,6 +124,11 @@
       {key: 'ANIMATIONS', bit: ANIM_BIRDS, type: 'switch', label: 'Birds at twilight',
        desc: 'In the months birds migrate (March to May, September to November), a skein of them may cross low ' +
              'through the window at dawn or dusk, once a twilight.'},
+      {key: 'FLICK', type: 'seg', label: 'A flick of the wrist', options: [
+        [0, 'Nothing', 'The face takes no notice of a flick.'],
+        [1, 'Draws the figures in', 'A flick of the wrist draws the constellations’ figures in again, star to star.'],
+        [2, 'Spins the sky', 'A flick of the wrist spins the sky on, and it settles back to its place over a second, ' +
+         'as a planisphere’s disc does when it is turned.']]},
       {key: 'ANIMATIONS', bit: ANIM_VILLAGE, type: 'switch', label: 'The village’s life',
        desc: 'The windows lit and dark as the village’s people come and go, ten minutes at a time, and smoke from ' +
              'the hearth on a cool evening. All the animations are left out while the battery runs low.'}

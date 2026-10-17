@@ -125,6 +125,10 @@ CASES = {
     "gild-shagreen-24-t2": ("emery", "shagreen", datetime(2026, 4, 16, 1, 30, tzinfo=timezone.utc), NY,
                             {"theme": 5, "gild": True, "clock24": True}),
     "gild-lantern-r2": ("gabbro", "lantern", datetime(2026, 10, 16, 1, 30, tzinfo=timezone.utc), NY, {"gild": True}),
+    # the battery's candle in the card: a charge, and a low one charging
+    "candle-t2": ("emery", "planisphere", datetime(2026, 10, 15, 1, 30, tzinfo=timezone.utc), NY, {"battery": 65}),
+    "candle-low-r2": ("gabbro", "hours", datetime(2026, 10, 15, 1, 30, tzinfo=timezone.utc), NY,
+                      {"battery": 12, "charging": True}),
     # the corners apart from the backdrop: each blob's backdrop with the other's corners, a backdrop with the sprigs,
     # the plain card with a theme's corners
     "mix-labours-sea-t2": ("emery", "planisphere", datetime(2026, 7, 16, 1, 30, tzinfo=timezone.utc), NY,
@@ -202,6 +206,8 @@ def c_render(screen, plate, when, place, opts, path):
         args.append("--tools")
     if opts.get("gild"):
         args.append("--gild")
+    if opts.get("battery") is not None:
+        args += ["--battery", str(opts["battery"]) + ("c" if opts.get("charging") else "")]
     if opts.get("corners") is not None:
         args += ["--corners", str(opts["corners"])]
     if opts.get("theme"):
@@ -237,6 +243,7 @@ def py_render(screen, plate, when, place, opts, sky):
                              clock24=opts.get("clock24", False), weather=w, labours=opts.get("labours", False),
                              calendars=opts.get("calendars", 0), tools=opts.get("tools", False),
                              theme=opts.get("theme"), corners=opts.get("corners"), gild=opts.get("gild", False),
+                             battery=opts.get("battery"), charging=opts.get("charging", False),
                              tides=[(int(when.timestamp()) // 60 + m, hi, cm) for m, hi, cm in opts.get("tides", [])],
                              extras=extras).astype(np.uint8)
     if opts.get("show") is None:

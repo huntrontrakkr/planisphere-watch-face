@@ -11,7 +11,7 @@
 /* Nothing here is in a hot loop: built for size. */
 #pragma GCC optimize("Os")
 
-#define SETTINGS_VERSION 10
+#define SETTINGS_VERSION 11
 /* the animations, a bit each (Settings.animations): the passing events (from version 5) are Face.events' bits, two up */
 enum { ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32 };
 #define ANIM_ALL 63
@@ -38,6 +38,8 @@ typedef struct {
   uint8_t gild;                         /* the time gilt (from version 9, in the record's last spare byte) */
   uint8_t figures;                      /* the figures drawn in again: 0 at dusk alone, 1 each hour, 2 each half hour,
                                          * 3 each quarter (from version 10) */
+  uint8_t flick;                        /* a flick of the wrist: 0 nothing, 1 the figures drawn in, 2 the sky spun (11) */
+  uint8_t candle;                       /* the battery's candle in the card (from version 11; before it, on) */
 } Settings;
 typedef struct {                        /* versions 2 to 6, the names' room smaller (version 2's ends at animations) */
   uint8_t version, plate, clock, names, weather, units, place, labours;
@@ -47,7 +49,7 @@ typedef struct {                        /* versions 2 to 6, the names' room smal
   uint8_t animations, tools;
 } SettingsOld;
 _Static_assert(offsetof(SettingsOld, city) == offsetof(Settings, city), "the settings' head as before");
-_Static_assert(sizeof(Settings) == ((offsetof(Settings, figures) + 1 + 3) & ~3u), "the settings' record: no stray padding");
+_Static_assert(sizeof(Settings) == ((offsetof(Settings, candle) + 1 + 3) & ~3u), "the settings' record: no stray padding");
 
 typedef struct {                        /* where the phone last was */
   int32_t lat_e4, lon_e4;
@@ -84,7 +86,7 @@ static uint32_t s_asked;
 
 static void defaults(Settings *s) {
   memset(s, 0, sizeof *s);
-  s->version = SETTINGS_VERSION;
+  s->version = SETTINGS_VERSION, s->candle = 1;
   s->plate = PLATE_PLANISPHERE, s->names = 1, s->weather = 1, s->animations = ANIM_ALL;
 }
 
@@ -205,6 +207,12 @@ static bool decor_call(void *ctx, bool labours, const DecorCtx *dc) {
 }
 static bool decor_draw(void *ctx, const DecorCtx *dc) { return decor_run(ctx, dc, decor_call); }
 
+/* a flick of the wrist (the accelerometer's tap): the figures drawn in, or the sky spun on and settling over a second
+ * in these turns, a frame each 160 ms, then the face at rest */
+static int s_flick;                     /* a flick's wish, till the next frame takes it: Settings.flick */
+static int s_spin_k;                    /* the spin's frames drawn (0: none playing) */
+static const float SPIN[5] = {72, 40, 20, 9, 3};
+#define SPIN_FRAMES 5
 static int32_t s_where[2];              /* the face's place as face_of sets it, 1e-4 degrees (latitude, longitude) */
 static void face_of(Face *f) {
   memset(f, 0, sizeof *f);
@@ -226,6 +234,9 @@ static void face_of(Face *f) {
   }
   s_api->place(f, s_where[0], s_where[1]);
   f->gild = s_settings.gild != 0, f->figures_every = s_settings.figures & 3;
+  BatteryChargeState bat = battery_state_service_peek();
+  f->battery = bat.charge_percent, f->charging = bat.is_charging, f->candle = s_settings.candle != 0;
+  f->turn = s_spin_k ? SPIN[s_spin_k - 1] : 0;
   f->corners = PBL_IF_RECT_ELSE(s_settings.corners < THEME_COUNT ? s_settings.corners : 0, 0);
   f->decor = decor_draw;
   uint32_t now = (uint32_t)time(NULL);
@@ -302,7 +313,7 @@ static int s_event_k;                   /* the meteor or the birds: its next fra
 static ShowUndo *s_event_undo;
 static int s_figs_k;                    /* the figures drawn in: the frames drawn (0: none playing) */
 
-static bool animating(void) { return s_show || s_scribe_k || s_event_k || s_figs_k; }
+static bool animating(void) { return s_show || s_scribe_k || s_event_k || s_figs_k || s_spin_k; }
 
 static void redraw(void) {
   if (animating()) s_redraw_after = true;
@@ -336,12 +347,12 @@ static void scribe_end(void) {
 
 static void show_end(void) { free(s_undo), s_undo = NULL, s_show = false; }
 
-static void event_end(void) { free(s_event_undo), s_event_undo = NULL, s_event_k = 0, s_figs_k = 0; }
+static void event_end(void) { free(s_event_undo), s_event_undo = NULL, s_event_k = 0, s_figs_k = 0, s_spin_k = 0; }
 
 /* when nothing plays: the timer stopped, the blob let go, and a drawing that waited made */
 static void anims_settle(bool redraw_now) {
   if (animating()) {
-    if (!s_anim_timer) s_anim_timer = app_timer_register(s_figs_k ? 150 : 1000 / SHOW_FPS, anim_tick, NULL);
+    if (!s_anim_timer) s_anim_timer = app_timer_register(s_figs_k ? 150 : s_spin_k ? 160 : 1000 / SHOW_FPS, anim_tick, NULL);
     return;
   }
   if (s_anim_timer) app_timer_cancel(s_anim_timer), s_anim_timer = NULL;
@@ -361,7 +372,7 @@ static void scribe_begin(const Target *tg) {
 }
 
 static void show_begin(void) {
-  if (s_show || s_figs_k || s_plan->show_hour < 0 || !(animations() & ANIM_FIREWORKS)) return;
+  if (s_show || s_figs_k || s_spin_k || s_plan->show_hour < 0 || !(animations() & ANIM_FIREWORKS)) return;
   if (s_plan->show_hour != s_show_played) s_show_played = s_plan->show_hour, s_show_last = -1, s_show_done = false;
   else if (s_show_done) return;                  /* (else it gave way, and goes on from its last frame) */
   s_undo = malloc(sizeof(ShowUndo) + SHOW_UNDO * sizeof(uint32_t));
@@ -426,6 +437,9 @@ static void update(Layer *layer, GContext *ctx) {
     s_anim_due = false;
     figs = ++s_figs_k < EVENT_FIGS_FRAMES ? s_figs_k : 0;
     if (!figs) s_figs_k = 0;
+  } else if (s_anim_due && s_spin_k) {           /* the spin's next turn; past the last, the face at rest */
+    s_anim_due = false;
+    if (++s_spin_k > SPIN_FRAMES) s_spin_k = 0;
   } else if (s_anim_due) {
     s_anim_due = false;
     animate(ctx);
@@ -434,6 +448,11 @@ static void update(Layer *layer, GContext *ctx) {
     if (s_show) g_show_end = 2;
     scribe_end(), show_end(), event_end(), s_redraw_after = false;
   }
+  if (s_flick && !animating()) {                 /* a flick of the wrist: the figures drawn in, or the sky spun */
+    if (s_flick == 1) scribe_end(), s_figs_k = 1, figs = 1;
+    else s_spin_k = 1;
+  }
+  s_flick = 0;
   time_t now = time(NULL);
   if (s_plan && !s_geom) {                       /* (the geometry not loaded again after a lookup: once more) */
     ResHandle g = resource_get_handle(RESOURCE_ID_PLAN_GEOM);
@@ -457,13 +476,14 @@ static void update(Layer *layer, GContext *ctx) {
   Face f;
   face_of(&f);
   if (s_figs_k) f.scribe = false, f.figs_part = (uint8_t)figs;
+  if (s_spin_k) f.scribe = false;
   Target tg = {fb_row, fb};
   if (heap_bytes_free() < g_heap_low || !g_heap_low) g_heap_low = heap_bytes_free();
   g_utc = (uint32_t)now, g_offset = utc_offset(now);
   g_stack_at = (uint32_t)((uintptr_t)__pbl_app_info - (uintptr_t)&tg);
   feast_of_day(&f, now, g_offset);
   bool drawn = s_api->render(s_plan, &f, (int64_t)now, g_offset, &tg, alloc, free);
-  if (drawn && !s_figs_k && s_plan->event == EV_FIGURES) event_begin();   /* (frame 1 of the figures drawn in) */
+  if (drawn && !s_figs_k && !s_spin_k && s_plan->event == EV_FIGURES) event_begin();   /* (frame 1 of the figures drawn in) */
   /* a fireworks display due takes its memory first; the minute's figures then simply appear (written, they would
    * hold the motion blob's and their record's room while the display asks for its own, and the display went
    * without: the heap is short, and in pieces by then) */
@@ -474,9 +494,16 @@ static void update(Layer *layer, GContext *ctx) {
   g_render_ms = now_ms() - t0;
   if (g_render_ms > g_render_max) g_render_max = g_render_ms;
   g_stack = stack_deepest();
-  if (drawn && !s_figs_k && s_plan->event != EV_FIGURES) event_begin();
+  if (drawn && !s_figs_k && !s_spin_k && s_plan->event != EV_FIGURES) event_begin();
   anims_settle(false);
 }
+
+static void tap(AccelAxisType axis, int32_t direction) {
+  if (!s_settings.flick || !animations() || animating()) return;
+  s_flick = s_settings.flick;
+  if (s_layer) layer_mark_dirty(s_layer);
+}
+static void on_battery(BatteryChargeState b) { redraw_soon(); }
 
 static void tick(struct tm *t, TimeUnits changed) {
   redraw();
@@ -493,7 +520,8 @@ static const struct { const uint32_t *key; uint8_t rec, type, off, size; } KEYS[
   IN(PLATE, IN_SETTINGS, IN_U8, Settings, plate), IN(CLOCK, IN_SETTINGS, IN_U8, Settings, clock),
   IN(NAMES, IN_SETTINGS, IN_U8, Settings, names), IN(WEATHER, IN_SETTINGS, IN_U8, Settings, weather),
   IN(UNITS, IN_SETTINGS, IN_U8, Settings, units), IN(PLACE, IN_SETTINGS, IN_U8, Settings, place),
-  IN(LABOURS, IN_SETTINGS, IN_U8, Settings, theme), IN(CORNERS, IN_SETTINGS, IN_U8, Settings, corners), IN(GILD, IN_SETTINGS, IN_U8, Settings, gild), IN(FIGURES, IN_SETTINGS, IN_U8, Settings, figures), IN(TIDE_TIMES, IN_SETTINGS, IN_U8, Settings, tide_times), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
+  IN(LABOURS, IN_SETTINGS, IN_U8, Settings, theme), IN(CORNERS, IN_SETTINGS, IN_U8, Settings, corners), IN(GILD, IN_SETTINGS, IN_U8, Settings, gild), IN(FIGURES, IN_SETTINGS, IN_U8, Settings, figures),
+  IN(FLICK, IN_SETTINGS, IN_U8, Settings, flick), IN(CANDLE, IN_SETTINGS, IN_U8, Settings, candle), IN(TIDE_TIMES, IN_SETTINGS, IN_U8, Settings, tide_times), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
   IN(PLACE_LON, IN_SETTINGS, IN_I32, Settings, lon_e4), IN(PLACE_CITY, IN_SETTINGS, IN_TEXT, Settings, city),
   IN(PLACE_COUNTRY, IN_SETTINGS, IN_TEXT, Settings, country), IN(CALENDARS, IN_SETTINGS, IN_I32, Settings, calendars),
   IN(ANIMATIONS, IN_SETTINGS, IN_U8, Settings, animations),
@@ -621,7 +649,9 @@ static void init(void) {
                                                   * (7's corners a switch, the theme's) */
     if (s.version == 7) s_settings.corners = s.corners ? (s.theme && s.theme < THEME_COUNT ? s.theme : THEME_LABOURS) : 0;
     if (s.version < 9) s_settings.gild = 0;
-    s_settings.figures = 0, s_settings.version = SETTINGS_VERSION;
+    if (s.version < 10) s_settings.figures = 0;
+    if (s.version < 11) s_settings.flick = 0, s_settings.candle = 1;
+    s_settings.version = SETTINGS_VERSION;
   }
   else if (got == (int)sizeof(SettingsOld) || got == (int)offsetof(SettingsOld, animations)) {
     SettingsOld o;                               /* versions 2 to 6: the names into their larger room */
@@ -655,6 +685,8 @@ static void init(void) {
   window_set_window_handlers(s_window, (WindowHandlers){.load = window_load, .unload = window_unload});
   window_stack_push(s_window, false);
   tick_timer_service_subscribe(MINUTE_UNIT, tick);
+  accel_tap_service_subscribe(tap);
+  battery_state_service_subscribe(on_battery);
   app_timer_register(4000, ask_later, NULL);     /* once the phone's side has started */
   g_stack_init = stack_deepest();
 }
@@ -662,6 +694,8 @@ static void init(void) {
 static void deinit(void) {
   scribe_end(), show_end(), event_end(), anims_settle(false);
   tick_timer_service_unsubscribe();
+  accel_tap_service_unsubscribe();
+  battery_state_service_unsubscribe();
   window_destroy(s_window);
   free(s_plan), free(s_data), free(s_geom), free(s_code);
 }

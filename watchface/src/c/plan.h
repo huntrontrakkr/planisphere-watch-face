@@ -65,6 +65,10 @@ typedef struct {
   uint8_t corners;             /* the Time 2's corners: whose pieces (THEME_*: the labours' tools, the zodiac's Sun and
                                 * Moon, the astronomer's planets, the sea's Moon and tide), 0 the season's sprigs */
   bool gild;                   /* the time's figures outlined in the plate's gilding */
+  uint8_t battery;             /* the battery's charge, 0..100 (over 100: not known), and whether it is charging, for
+                                * the candle in the card (an option) */
+  bool charging, candle;
+  float turn;                  /* the sky turned on by so many degrees (a flick of the wrist spins it, and it settles) */
   const Tides *tides;          /* the tide here (NULL: none known, or inland) */
   bool tide_times;             /* the next high and low waters set low on the face (on the Round 2 for the coordinates) */
   /* the scene blobs (plan_labours.c, plan_decor.c), called where the card is laid when a backdrop or corner pieces

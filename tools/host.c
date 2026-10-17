@@ -28,6 +28,8 @@
  *     --tools           the theme's pieces in the Time 2's corners (no theme: the labours' tools), as --corners
  *     --corners N       whose pieces in the Time 2's corners, THEME_* (Face.corners)
  *     --gild            the time gilt (Face.gild)
+ *     --battery N[,c]   the battery's charge, and c charging (the candle, Face.battery; else not drawn)
+ *     --turn D          the sky turned on D degrees (a flick's spin, Face.turn)
  *     --figures N       the figures drawn in again: 1 each hour, 2 each half hour, 3 each quarter (Face.figures_every)
  *     --theme N         the card's scene, THEME_* (1 the labours, as --labours)
  *     --tides LIST      the tide's turns: MINUTES-SINCE-1970:H|L:CM, comma-separated
@@ -133,6 +135,9 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--corners") && i + 1 < argc) corners = atoi(argv[++i]);
     else if (!strcmp(argv[i], "--gild")) f.gild = true;
     else if (!strcmp(argv[i], "--figures") && i + 1 < argc) f.figures_every = (uint8_t)atoi(argv[++i]);
+    else if (!strcmp(argv[i], "--battery") && i + 1 < argc) {
+      f.battery = (uint8_t)atoi(argv[++i]), f.charging = strchr(argv[i], 'c') != NULL, f.candle = true;
+    } else if (!strcmp(argv[i], "--turn") && i + 1 < argc) f.turn = (float)atof(argv[++i]);
     else if (!strcmp(argv[i], "--tide-times")) f.tide_times = true;
     else if (!strcmp(argv[i], "--tides") && i + 1 < argc) {       /* turns: "MINUTES:H|L:CM,..." */
       static Tides td;
@@ -162,6 +167,7 @@ int main(int argc, char **argv) {
     int a = ROUND2_TOPLEFT[y < 130 ? y : 259 - y];
     rx0[y] = (int16_t)a, rx1[y] = (int16_t)(259 - a);
   }
+  if (!f.candle) f.battery = 255;
   f.corners = (uint8_t)(corners >= 0 ? corners : tools ? (f.theme ? f.theme : THEME_LABOURS) : 0);
   f.decor = host_decor;
   static Plan p;

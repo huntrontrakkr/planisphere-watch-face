@@ -2548,6 +2548,45 @@ static void tide_marks(R *r) {
  * band, both stand either side of the fleur-de-lis instead, along the window's top, five pixels from it, each the
  * longest form whose letters all fall on the card there, the two spread to the same width (the longer's), in the
  * card's ink. */
+/* the battery's candle (proto/plates.py candle), an option: standing in the card's lower right, on the lowest row
+ * where its five columns lie three clear of the ring's inner rule and of the window for its twelve rows; a saucer,
+ * the wax at its full seven rows in the card's faint tone, inked from the base as far as the charge (a row a
+ * seventh), the wick on the wax and the flame above it, gold, red when a fifth or less is left; charging, the flame a
+ * pixel taller */
+static void candle(R *r) {
+  const Face *f = r->f;
+  Plan *p = r->p;
+  if (!f->candle || f->battery > 100) return;
+  const int16_t *inner = sec16(p->geom, GEO_INNER);
+  int base = -1, x0 = 0;
+  for (int y = p->win_bottom; y >= 12 && base < 0; y--) {
+    if (y >= r->H) continue;
+    int lim = r->W;
+    bool ok = true;
+    for (int yy = y - 11; yy <= y && ok; yy++) {
+      if (inner[2 * yy] > inner[2 * yy + 1]) { ok = false; break; }
+      if (inner[2 * yy + 1] - 3 < lim) lim = inner[2 * yy + 1] - 3;
+      if (p->wx0[yy] <= p->wx1[yy] && lim - 5 <= p->wx1[yy] + 3) ok = false;
+    }
+    if (ok) base = y, x0 = lim - 5;
+  }
+  if (base < 0) return;
+  int pct = f->battery, n = pct ? (pct * 7 + 50) / 100 : 0;
+  if (pct && n < 1) n = 1;
+  uint8_t ink = r->P->ink, flame = pct <= 20 ? r->P->accent : r->P->planet;
+  for (int i = 0; i < 5; i++) put(r, x0 + i, base, ink);
+  for (int j = 0; j < 7; j++) {
+    int y = base - 7 + j;
+    bool lit = j >= 7 - n;
+    for (int i = 1; i <= 3; i++)
+      if (lit) put(r, x0 + i, y, ink);
+      else if (i != 2 || j == 0) put(r, x0 + i, y, r->tint);
+  }
+  if (!n) return;
+  put(r, x0 + 2, base - n - 1, ink);
+  for (int k = 2; k <= (f->charging ? 4 : 3); k++) put(r, x0 + 2, base - n - k, flame);
+}
+
 static void inscriptions(R *r, int style) {
   char dms[2][16], form[40], pick[2][40];
   for (int k = 0; k < 2; k++) {
@@ -2599,6 +2638,7 @@ static void inscriptions(R *r, int style) {
     if (ok) engrave(r, form, lo + hi - width * 16, width, curves + (slot < 2 ? 0 : r->W), r->P->ring_ink, true, false);
   }
   tide_marks(r);
+  candle(r);
 }
 
 static void put_thread(R *r, int x, int y, void *ctx) {
@@ -3149,7 +3189,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   r->alat = (float)f_abs(f->lat);
   r->sl = f_sind(r->alat), r->cl = f_cosd(r->alat);
   r->sl0 = f_sind((float)f->lat), r->cl0 = f_cosd((float)f->lat);
-  r->lst = (float)r->sky.lst;
+  r->lst = pyf_mod((float)r->sky.lst + f->turn, 360);   /* (the sky turned on, as a flick spins it) */
   r->lst20 = (uint32_t)pyf_floor(r->lst * (1048576.0f / 360) + 0.5f) & (BRAD_TURN - 1);
   r->kq = pyf_floor(r->k * (180.0f * 256 * 65536 / 65535) + 0.5f);
   r->cxq = pyf_floor(r->cx * 256 + 0.5f), r->cyq = pyf_floor(r->cy * 256 + 0.5f);

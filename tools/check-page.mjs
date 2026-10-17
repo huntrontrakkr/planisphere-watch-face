@@ -234,6 +234,7 @@ check(nautical > 50, `the sea behind the face (pixels changed from the labours: 
 // the corners apart from the backdrop: the sea's Moon and tide with the zodiac behind (saved so, below)
 await tap('[data-key=CORNERS] .seg button', 'Moon & tide');
 await tap('[data-key=FIGURES] .seg button', 'Every half hour');
+await tap('[data-key=FLICK] .seg button', 'Spins the sky');
 await tap('[data-key=LABOURS] .seg button', 'The zodiac');          // (saved so: the theme reaches the watch as itself, not as a switch)
 await tap('.calendar label.switch', 'The Hebrew calendar');
 await tap('.seg button', 'Snow');
@@ -271,7 +272,7 @@ await sleep(100);
 const msg = byName(sent[before] || {});
 console.log('sent:', JSON.stringify(msg));
 const want = { PLATE: 4, CLOCK: 2, UNITS: 1, PLACE: 1, PLACE_LAT: -338700, PLACE_LON: 1512100, PLACE_CITY: 'SYDNEY|SYD.',
-               PLACE_COUNTRY: 'AUSTRALIA|AUST.', NAMES: 1, LABOURS: 2, CORNERS: 4, FIGURES: 2, CALENDARS: (1 << 6) | (1 << 8), WEATHER: 1,
+               PLACE_COUNTRY: 'AUSTRALIA|AUST.', NAMES: 1, LABOURS: 2, CORNERS: 4, FIGURES: 2, FLICK: 2, CANDLE: 1, CALENDARS: (1 << 6) | (1 << 8), WEATHER: 1,
                ANIMATIONS: 63 };
 const bad = Object.entries(want).filter(([k, v]) => msg[k] !== v);
 check(!bad.length, 'page -> watch: ' + (bad.length ? 'MISMATCH ' + JSON.stringify(bad) : 'the settings as set'));

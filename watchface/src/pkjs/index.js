@@ -57,6 +57,8 @@ function settingsMessage(s) {
   m[keys.CORNERS] = corners(s);
   m[keys.GILD] = s.GILD ? 1 : 0;
   m[keys.FIGURES] = s.FIGURES | 0;
+  m[keys.FLICK] = s.FLICK | 0;
+  m[keys.CANDLE] = s.CANDLE === undefined || s.CANDLE ? 1 : 0;
   m[keys.TIDE_TIMES] = s.TIDE_TIMES ? 1 : 0;
   m[keys.CALENDARS] = s.CALENDARS | 0;
   // a bit an animation: 1 the minute written, 2 fireworks, 4 .. 32 the passing events and the village's life (0.1.3's

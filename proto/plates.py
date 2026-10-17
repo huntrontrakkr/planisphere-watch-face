@@ -644,6 +644,51 @@ def real_range(dial, edge_, sky, most=2.0, room=12.0, least=3.0):
 LABOUR_TONE = "hatch"                                    # "hatch" (the ring hatching's khaki) or "pale" (barely there)
 
 
+def candle(img, inside, inner, P, pct, charging):
+    """The battery's candle in the card's lower right (plan_render.c candle): on the lowest row where its five columns
+    lie three clear of the ring's inner rule and of the window for its twelve rows; a saucer, the wax at its full seven
+    rows in the card's faint tone, inked from the base as far as the charge, the wick and the flame above, gold, red
+    when a fifth or less is left; charging, the flame a pixel taller."""
+    H, W = inside.shape
+    rows = np.nonzero(inside.any(axis=1))[0]
+    win_bottom = int(rows[-1])
+    right_inner = [int(np.nonzero(inner[y])[0][-1]) if inner[y].any() else -1 for y in range(H)]
+    right_win = [int(np.nonzero(inside[y])[0][-1]) if inside[y].any() else None for y in range(H)]
+    base = x0 = None
+    for y in range(min(win_bottom, H - 1), 11, -1):
+        lim, ok = W, True
+        for yy in range(y - 11, y + 1):
+            if right_inner[yy] < 0:
+                ok = False
+                break
+            lim = min(lim, right_inner[yy] - 3)
+            if right_win[yy] is not None and lim - 5 <= right_win[yy] + 3:
+                ok = False
+        if ok:
+            base, x0 = y, lim - 5
+            break
+    if base is None:
+        return
+    n = (pct * 7 + 50) // 100 if pct else 0
+    if pct and n < 1:
+        n = 1
+    ink, ghost, flame = P["ink"], tint_of(P), P["accent"] if pct <= 20 else P["planet"]
+    for i in range(5):
+        img[base, x0 + i] = ink
+    for j in range(7):
+        y, lit = base - 7 + j, j >= 7 - n
+        for i in (1, 2, 3):
+            if lit:
+                img[y, x0 + i] = ink
+            elif i != 2 or j == 0:
+                img[y, x0 + i] = ghost
+    if not n:
+        return
+    img[base - n - 1, x0 + 2] = ink
+    for k in range(2, (4 if charging else 3) + 1):
+        img[base - n - k, x0 + 2] = flame
+
+
 def gild_of(P):
     """The plate's gilding, outlining the time when it is gilt: its own (`gild`), else its red ink."""
     return P.get("gild", P["accent"])
@@ -903,7 +948,7 @@ def widest_time(style, screen, clock24):
 
 def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=False, sky_offset=None, extras=None,
            names=True, weather=None, fahrenheit=False, weather_clock=None, labours=False, feast=None, calendars=0,
-           tools=False, theme=None, tides=(), corners=None, gild=False):
+           tools=False, theme=None, tides=(), corners=None, gild=False, battery=None, charging=False):
     """The face at `when`. Its sky may be drawn at another time (`sky_offset`, for the hourly turn) while the clock
     keeps `when`; `extras(img, ctx)` draws passing things (meteors, birds) into the sky, under the names. With
     `weather` (weather.Weather) the window shows the place's clouds, rain or snow, the village its weather, and
@@ -1974,6 +2019,8 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     if round_screen:                                     # what the Round 2's display lights (proto/screen.py)
         first = np.array([screen.round2_row(y)[0] for y in range(H)])
         img[(xx < first[:, None]) | (xx > W - 1 - first[:, None])] = 0
+    if battery is not None:                              # the battery's candle (plan_render.c candle)
+        candle(img, inside, inner_region(dial), P, battery, charging)
     return nearest(img)
 
 
