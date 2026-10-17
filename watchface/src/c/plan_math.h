@@ -30,6 +30,29 @@ static inline float f_smooth(float e0, float e1, float x) {
   return t * t * (3.0f - 2.0f * t);
 }
 
+/* ---- integer trigonometry (proto/iq.py, the same bits): angles in 2^-20 of a turn (BRAD: 1.24 seconds of arc),
+ * sines in Q30. A quarter wave by an odd polynomial of degree 9 in Q30, within 1e-8: finer than single precision, in
+ * a few integer multiplies, with no floating point. Both sides shift signed values (two's complement, floors). */
+#define BRAD_TURN (1u << 20)
+#define BRAD_QUARTER (1u << 18)
+int32_t isin_q30(uint32_t a);
+static inline int32_t icos_q30(uint32_t a) { return isin_q30(a + BRAD_QUARTER); }
+/* the integer square root, floor(sqrt(v)) */
+static inline uint32_t isqrt32(uint32_t v) {
+  uint32_t r = 0, b = 1u << 30;
+  while (b > v) b >>= 2;
+  while (b) {
+    if (v >= r + b) v -= r + b, r = (r >> 1) + b;
+    else r >>= 1;
+    b >>= 2;
+  }
+  return r;
+}
+/* the angle of (x, y) from the x axis, 2^-20 of a turn, -2^19 < a <= 2^19 (0 for the origin): |x|, |y| <= 32768 */
+int32_t iatan2_brad(int32_t y, int32_t x);
+/* the arcsine of s (Q30), 2^-20 of a turn */
+int32_t iasin_brad(int32_t s);
+
 /* the random numbers the prototype draws too (proto/rng.py, xorshift32), so both scatter the weather, the stars of
  * the labours and the fireworks alike */
 typedef struct { uint32_t x; } Rng;

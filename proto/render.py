@@ -8,6 +8,8 @@ the sky as it is now, deep blue at night and day-blue by day. The Sun rides
 the ecliptic as the hour hand; a pip on the jacket's 24-hour ring reads it.
 """
 import json
+
+import iq
 import math
 import sys
 from datetime import datetime, timedelta, timezone
@@ -26,25 +28,33 @@ SS = 4                                          # supersampling for coverage
 BAYER = (np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]) + 0.5) / 16
 
 
+def quantised(ra, dec):
+    """A star's place as the watch's table keeps it (tools/gen_tables.py): right ascension in 65536ths of a turn,
+    declination in 65535ths of a half turn from the south pole; the prototype draws the same stars."""
+    r = int(round(ra % 360 / 360 * 65536)) % 65536
+    d = int(round((dec + 90) / 180 * 65535))
+    return r * 360 / 65536, d * 180 / 65535 - 90
+
+
 def load_sky(mag_limit=5.0):
     stars = []
     for f in json.load(open(DATA / "stars.6.json"))["features"]:
         m = f["properties"]["mag"]
         if m > mag_limit:
             continue
-        ra, dec = f["geometry"]["coordinates"]
+        ra, dec = quantised(*f["geometry"]["coordinates"])
         bv = float(f["properties"].get("bv") or 0.6)
-        stars.append((ra % 360, dec, m, bv))
+        stars.append((ra, dec, m, bv))
     lines = []
     for f in json.load(open(DATA / "constellations.lines.json"))["features"]:
         for ls in f["geometry"]["coordinates"]:
-            lines.append([(ra % 360, dec) for ra, dec in ls])
+            lines.append([quantised(ra, dec) for ra, dec in ls])
     named = []
     for f in json.load(open(DATA / "stars.6.json"))["features"]:
         m = f["properties"]["mag"]
         if m <= 2.0:
-            ra, dec = f["geometry"]["coordinates"]
-            named.append((ra % 360, dec, m, float(f["properties"].get("bv") or 0.6), int(f["id"])))
+            ra, dec = quantised(*f["geometry"]["coordinates"])
+            named.append((ra, dec, m, float(f["properties"].get("bv") or 0.6), int(f["id"])))
     mw = []
     for f in json.load(open(DATA / "mw.json"))["features"]:
         polys = []
@@ -78,13 +88,15 @@ class Dial:
         self.k = self.r_disc / self.reach            # pixels per degree
 
     def project(self, ra, dec, lst):
-        """Screen position (pixels) of (ra, dec); a planisphere seen from below, south at the bottom."""
+        """Screen position (pixels) of (ra, dec); a planisphere seen from below, south at the bottom: in integers, to
+        1/256 pixel, as the watch projects (proto/iq.py, plan_render.c project), the same bits."""
         if self.south:
-            dec, h = -dec, -(lst - ra)
-        else:
-            h = lst - ra
-        rho = (90 - dec) * self.k
-        return self.cx + rho * math.sin(h * astro.D2R), self.cy + rho * math.cos(h * astro.D2R)
+            dec = -dec
+        ra20 = iq.floor_half(iq.f32(iq.f32(ra) * iq.f32(1048576.0 / 360)))
+        colat = iq.floor_half(iq.f32(iq.f32(90.0 - iq.f32(dec)) * iq.f32(65535.0 / 180)))
+        xq, yq = iq.project_u(ra20, colat, iq.lst20(lst), self.south, iq.kq(self.k),
+                              iq.floor_half(iq.f32(self.cx) * 256), iq.floor_half(iq.f32(self.cy) * 256))
+        return xq / 256, yq / 256
 
 
 def hour_angle_screen(dial, angle_deg):

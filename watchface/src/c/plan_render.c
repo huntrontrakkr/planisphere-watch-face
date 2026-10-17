@@ -42,6 +42,9 @@ typedef struct {
   int W, H;
   bool rect, south, paper, live, red, light_paper, dark, figs, lit_moon, closed_sky, rete, woodcut, clock24;
   float cx, cy, k, lst, alat, sl, cl;
+  uint32_t lst20;                            /* the sidereal time in 2^-20 of a turn, and the projection's integer */
+  int32_t kq, cxq, cyq;                      /* scale and centre (plan_math.h, project_u) */
+  int32_t cx2, cy2, ikq;                     /* the pole in half pixels, the degrees per pixel Q18 (place_radec) */
   float sun_alt, s_eff, sdec, sha, mphase;   /* the Sun's declination and hour angle in the chart's frame */
   uint8_t sun_c[8], planet_c[8], moon_c[8];  /* colours by role; 0 none */
   uint8_t tint, ramp[6];
@@ -114,11 +117,11 @@ typedef struct {
 /* ---- pixels --------------------------------------------------------------------------------------------------- */
 static inline void put(R *r, int x, int y, uint8_t c) {
   Plan *p = r->p;
-  if ((unsigned)y < (unsigned)r->H && x >= p->rx0[y] && x <= p->rx1[y]) p->rows[y][x] = c;
+  if ((unsigned)y < (unsigned)r->H && x >= p->rx0[y] && x <= p->rx1[y]) ROW(p, y)[x] = c;
 }
 static inline uint8_t get(R *r, int x, int y) {
   Plan *p = r->p;
-  if ((unsigned)y < (unsigned)r->H && x >= p->rx0[y] && x <= p->rx1[y]) return p->rows[y][x];
+  if ((unsigned)y < (unsigned)r->H && x >= p->rx0[y] && x <= p->rx1[y]) return ROW(p, y)[x];
   return 0;
 }
 static inline bool inside(R *r, int x, int y) {
@@ -180,13 +183,26 @@ static void mask_put(R *r, int m, int x0, int y0, uint8_t c, bool in_window, boo
       }
 }
 
-/* the screen position of (ra, dec): a planisphere seen from below, south at the bottom, east on the left */
+/* the screen position of a point of the sky: a planisphere seen from below, south at the bottom, east on the left.
+ * In integers (proto/iq.py project_u, the same bits): the right ascension in 2^-20 of a turn, the distance from the
+ * pole in 65535ths of a half turn (the star table's own unit), the result in 1/256 pixel; the sidereal time (lst20)
+ * and the scale (kq: pixels per unit of colatitude, Q16 of Q8) taken once a frame. */
+static void project_u(R *r, uint32_t ra20, int colat_u, float *x, float *y) {
+  uint32_t h = (r->lst20 - ra20) & (BRAD_TURN - 1);
+  if (r->south) h = (0u - h) & (BRAD_TURN - 1);
+  int64_t rho = ((int64_t)colat_u * r->kq) >> 16;
+  int32_t xq = r->cxq + (int32_t)((rho * isin_q30(h)) >> 30), yq = r->cyq + (int32_t)((rho * icos_q30(h)) >> 30);
+  *x = (float)xq * (1.0f / 256), *y = (float)yq * (1.0f / 256);
+}
 static void project(R *r, float ra, float dec, float *x, float *y) {
-  float h = r->lst - ra;
-  if (r->south) dec = -dec, h = -h;
-  float rho = (90.0f - dec) * r->k;
-  *x = r->cx + rho * (float)f_sind((float)h);
-  *y = r->cy + rho * (float)f_cosd((float)h);
+  if (r->south) dec = -dec;
+  uint32_t ra20 = (uint32_t)pyf_floor(ra * (1048576.0f / 360) + 0.5f);
+  project_u(r, ra20, pyf_floor((90.0f - dec) * (65535.0f / 180) + 0.5f), x, y);
+}
+/* a star of the table, from its own units */
+static void project_star(R *r, const uint8_t *s, float *x, float *y) {
+  int raw = s[2] | s[3] << 8;
+  project_u(r, (uint32_t)(s[0] | s[1] << 8) << 4, r->south ? raw : 65535 - raw, x, y);
 }
 /* pyf_mod(x, 360) for -180 < x < 540 (a sidereal time, 0 to 360, less or plus an angle to 180): the same bits
  * without the division. (x / 360 in single precision never rounds up to 1 for x below 360, nor to 0 for x below 0, so
@@ -194,10 +210,13 @@ static void project(R *r, float ra, float dec, float *x, float *y) {
 static inline float mod360_near(float x) { return x < 0 ? x + 360.0f : x >= 360.0f ? x - 360.0f : x; }
 
 /* a point of the ecliptic at longitude `lon`, as right ascension and declination (for drawing: single precision) */
-static void ecl_point(R *r, float lon, float *ra, float *dec) {
-  float sl = f_sind(lon), e = (float)r->sky.eps;
-  *ra = mod360_near(f_atan2d(sl * f_cosd(e), f_cosd(lon)));
-  *dec = f_asind(sl * f_sind(e));
+static void ecl_point(R *r, float lon, float *ra, float *dec) {   /* (in integers: 2^-20 of a turn, Q30) */
+  uint32_t l = (uint32_t)pyf_floor(lon * (1048576.0f / 360) + 0.5f), e = (uint32_t)pyf_floor((float)r->sky.eps * (1048576.0f / 360) + 0.5f);
+  int32_t sl = isin_q30(l);
+  int32_t y = (int32_t)(((int64_t)sl * icos_q30(e)) >> 30), x = icos_q30(l);
+  int32_t a = iatan2_brad(y >> 15, x >> 15);
+  *ra = (float)(a < 0 ? a + (int32_t)BRAD_TURN : a) * (360.0f / 1048576);
+  *dec = (float)iasin_brad((int32_t)(((int64_t)sl * isin_q30(e)) >> 30)) * (360.0f / 1048576);
 }
 /* a point's altitude here (for drawing's decisions: single precision) */
 static float altitude(R *r, float ra, float dec) {
@@ -592,21 +611,11 @@ static int cell_value(const Cell *c) {
   int l = c->v00 * (4 - c->dy) + c->v01 * c->dy, rr = c->v10 * (4 - c->dy) + c->v11 * c->dy;
   return (l * (4 - c->dx) + rr * c->dx) >> 4;
 }
-static uint32_t isqrt(uint32_t v) {
-  uint32_t r = 0, b = 1u << 30;
-  while (b > v) b >>= 2;
-  while (b) {
-    if (v >= r + b) v -= r + b, r = (r >> 1) + b;
-    else r >>= 1;
-    b >>= 2;
-  }
-  return r;
-}
 /* how fast the value changes at the pixel, per pixel (in the value's units) */
 static int cell_grad(const Cell *c) {
   int gx = ((c->v10 - c->v00) * (4 - c->dy) + (c->v11 - c->v01) * c->dy) >> 4;
   int gy = ((c->v01 - c->v00) * (4 - c->dx) + (c->v11 - c->v10) * c->dx) >> 4;
-  return (int)isqrt((uint32_t)(gx * gx + gy * gy));
+  return (int)isqrt32((uint32_t)(gx * gx + gy * gy));
 }
 
 /* the prototype's banded(), in Q12: flat bands along the value, each edge dithered about 1.6 pixels wide; `wmax`
@@ -722,11 +731,19 @@ static uint8_t ground_at(R *r, int x, int y) {
 
 /* the grid over the window: its nodes' values, and with the Milky Way the nodes' places in the sky */
 /* a node's place in the sky, for the Milky Way: right ascension (1/64 degree) and declination (1/256 degree) */
-static void node_radec(R *r, float x, float y, int16_t *vra, int16_t *vdec) {
-  float dx = x - r->cx, dy = y - r->cy, rho = f_sqrt(dx * dx + dy * dy);
-  float dec = 90.0f - rho * r->ik, ha = f_atan2d(dx, dy), ra = r->south ? r->lst + ha : r->lst - ha;
-  ra = mod360_near(ra);
-  *vra = (int16_t)(int)(ra * 64), *vdec = (int16_t)(int)((r->south ? -dec : dec) * 256);
+/* (in integers: the point in half pixels, x2 = 2x; the distance from the pole in 1/64 pixel, the hour angle in
+ * 2^-20 of a turn, ikq the degrees per pixel Q18) */
+static void place_radec(R *r, int x2, int y2, int *ra, int *dec) {
+  int dx2 = x2 - r->cx2, dy2 = y2 - r->cy2;
+  uint32_t rho = isqrt32((uint32_t)(dx2 * dx2 + dy2 * dy2) << 10);
+  int d = 90 * 256 - (int)(((int64_t)rho * r->ikq) >> 16);
+  uint32_t ha = (uint32_t)iatan2_brad(dx2, dy2), a = (r->south ? r->lst20 + ha : r->lst20 - ha) & (BRAD_TURN - 1);
+  *ra = (int)((a * 45) >> 11), *dec = r->south ? -d : d;
+}
+static void node_radec(R *r, int x2, int y2, int16_t *vra, int16_t *vdec) {
+  int ra, dec;
+  place_radec(r, x2, y2, &ra, &dec);
+  *vra = (int16_t)ra, *vdec = (int16_t)dec;
 }
 
 static bool make_grid(R *r, void *(*alloc)(size_t)) {
@@ -851,18 +868,13 @@ static int milky_level(const uint8_t *g, int ra, int dec) {
 }
 
 /* the sky's place at a pixel's middle: right ascension (Q6, 0..360) and declination (Q8) */
-static void pixel_radec(R *r, int x, int y, int *ra, int *dec) {
-  float dx = x + 0.5f - r->cx, dy = y + 0.5f - r->cy;
-  float rho = f_sqrt(dx * dx + dy * dy), h = f_atan2d(dx, dy), d = 90.0f - rho * r->ik;
-  float a = mod360_near(r->south ? r->lst + h : r->lst - h);
-  *ra = (int)(a * 64), *dec = (int)((r->south ? -d : d) * 256);
-}
+static void pixel_radec(R *r, int x, int y, int *ra, int *dec) { place_radec(r, 2 * x + 1, 2 * y + 1, ra, dec); }
 
 /* the grid's row j of nodes' places in the sky, into the Milky Way's row n (the nodes the window's cells need, as
  * the grid keeps them) */
 static void milky_nodes(R *r, int j, int n) {
   for (int i = r->glo[j]; i <= r->ghi[j]; i++)
-    node_radec(r, r->gx0 + 4 * i + 0.5f, r->gy0 + 4 * j + 0.5f, &r->mra[n][i], &r->mdec[n][i]);
+    node_radec(r, 2 * (r->gx0 + 4 * i) + 1, 2 * (r->gy0 + 4 * j) + 1, &r->mra[n][i], &r->mdec[n][i]);
 }
 static void milky_way(R *r) {
   const Plate *P = r->P;
@@ -1394,20 +1406,21 @@ static void figure_lines(R *r, int part) {
   const uint8_t *st = sec(r->p->data, SEC_STARS);
   const uint16_t *ln = (const uint16_t *)(const void *)sec(r->p->data, SEC_LINES);
   for (int i = 0; i < LINE_COUNT; i++) {
-    float x[2], y[2];
+    int xq[2], yq[2];                                /* (the ends in 1/256 pixel, as projected) */
     for (int e = 0; e < 2; e++) {
-      const uint8_t *s = st + STAR_SIZE * ln[2 * i + e];
-      project(r, star_ra(s), star_dec(s), &x[e], &y[e]);
+      float fx, fy;
+      project_star(r, st + STAR_SIZE * ln[2 * i + e], &fx, &fy);
+      xq[e] = (int)(fx * 256), yq[e] = (int)(fy * 256);
     }
-    float L = f_sqrt((x[1] - x[0]) * (x[1] - x[0]) + (y[1] - y[0]) * (y[1] - y[0]));
-    if (L < 4.5f) continue;
-    float g = 2.6f / L;
-    float ax = x[0] + (x[1] - x[0]) * g, ay = y[0] + (y[1] - y[0]) * g;
-    float bx = x[1] - (x[1] - x[0]) * g, by = y[1] - (y[1] - y[0]) * g;
-    /* the prototype's antialiased line, its coverage over 0.55: within 0.3375 px of a sample point (in 1/256 px) */
-    float adx = f_abs(bx - ax), ady = f_abs(by - ay);
-    int n = (int)((adx > ady ? adx : ady) * 3) + 1;
-    int axq = (int)(ax * 256), ayq = (int)(ay * 256), dxq = (int)(bx * 256) - axq, dyq = (int)(by * 256) - ayq;
+    int dx = xq[1] - xq[0], dy = yq[1] - yq[0], dx4 = dx >> 4, dy4 = dy >> 4;
+    int L4 = (int)isqrt32((uint32_t)(dx4 * dx4 + dy4 * dy4));   /* the length in 1/16 pixel */
+    if (L4 < 72) continue;                                        /* (under 4.5 pixels) */
+    /* the ends drawn in 2.6 pixels; the prototype's antialiased line, its coverage over 0.55: within 0.3375 px of a
+     * sample point (in 1/256 px) */
+    int inx = dx * 208 / (5 * L4), iny = dy * 208 / (5 * L4);   /* (dx within 2^17: no 64-bit division) */
+    int axq = xq[0] + inx, ayq = yq[0] + iny, dxq = xq[1] - inx - axq, dyq = yq[1] - iny - ayq;
+    int adx = dxq < 0 ? -dxq : dxq, ady = dyq < 0 ? -dyq : dyq;
+    int n = (((adx > ady ? adx : ady) * 3) >> 8) + 1;
     for (int k = 0; k <= (part ? n * part / EVENT_FIGS_FRAMES : n); k++) {   /* (drawn in at dusk: so far along) */
       int pxq = axq + dxq * k / n, pyq = ayq + dyq * k / n, xi = pxq >> 8, yi = pyq >> 8;
       for (int dy = 0; dy <= 1; dy++)
@@ -1450,7 +1463,7 @@ static void stars(R *r, float faint, float mx, float my, float moon_reach) {
     bool too_faint = (float)mg * 0.01f > faint;
     if (too_faint && mg >= 210) continue;
     float x, y;
-    project(r, star_ra(s), star_dec(s), &x, &y);
+    project_star(r, s, &x, &y);
     int xi = pyf_floor(x), yi = pyf_floor(y);
     if (mg < 210 && r->nbright < 96) r->bright[r->nbright][0] = (int16_t)xi, r->bright[r->nbright][1] = (int16_t)yi, r->nbright++;
     if (too_faint) continue;
@@ -2047,8 +2060,8 @@ static void feast_sky(R *r) {
     const uint8_t *a = sn + 20 * STAR_WEAVER, *b = sn + 20 * STAR_COWHERD;
     if (altitude(r, star_ra(a), star_dec(a)) < 5 || altitude(r, star_ra(b), star_dec(b)) < 5) return;
     float e[4];
-    project(r, star_ra(a), star_dec(a), &e[0], &e[1]);
-    project(r, star_ra(b), star_dec(b), &e[2], &e[3]);
+    project_star(r, a, &e[0], &e[1]);
+    project_star(r, b, &e[2], &e[3]);
     bridge(r, e[0], e[1], e[2], e[3], r->paper ? r->P->ink : C8(3, 3, 3));
   }
 }
@@ -2068,7 +2081,7 @@ static __attribute__((noinline)) void names(R *r, float mx, float my) {
     const char *say = feast_name(r, i);
     if (!say || altitude(r, star_ra(s), star_dec(s)) < 5) continue;
     float x, y;
-    project(r, star_ra(s), star_dec(s), &x, &y);
+    project_star(r, s, &x, &y);
     pixel_text(&r->t1, r, say, true, 0);
     place(r, &r->t1, pyf_floor(x) + 1, pyf_floor(y), r->first == i + 1 ? P->accent : P->label, false, 0, 0, true);
   }
@@ -2092,7 +2105,7 @@ static __attribute__((noinline)) void names(R *r, float mx, float my) {
     const uint8_t *s = sn + 20 * i;
     if (feast_name(r, i) || altitude(r, star_ra(s), star_dec(s)) < 8) continue;
     float x, y;
-    project(r, star_ra(s), star_dec(s), &x, &y);
+    project_star(r, s, &x, &y);
     pixel_text(&r->t1, r, (const char *)s + 4, true, 0);
     if (place(r, &r->t1, pyf_floor(x) + 1, pyf_floor(y), P->label, false, 0, 0, true)) shown++;
   }
@@ -2102,7 +2115,7 @@ static __attribute__((noinline)) void names(R *r, float mx, float my) {
     const uint8_t *s = cn + 20 * i;
     if (altitude(r, star_ra(s), star_dec(s)) < 12) continue;
     float x, y;
-    project(r, star_ra(s), star_dec(s), &x, &y);
+    project_star(r, s, &x, &y);
     pixel_text(&r->t1, r, (const char *)s + 4, false, 1);
     if (place(r, &r->t1, x, y, P->cons, true, 0, 0, false)) shown++;
   }
@@ -2151,7 +2164,7 @@ static bool near_body(R *r, int xi, int yi) {
       for (int j = STAR_COUNT - 1; j >= 0; j--) {   /* near the edge of the square: the star's exact place decides */
         const uint8_t *s = st + STAR_SIZE * j;
         if (star_mag(s) >= 210) break;
-        project(r, star_ra(s), star_dec(s), &x, &y);
+        project_star(r, s, &x, &y);
         if (f_abs(x - xi) < 7 && f_abs(y - yi) < 7) return true;
       }
       return false;
@@ -3122,12 +3135,9 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   const Plate *P = r->P;
   r->W = p->w, r->H = p->h, r->rect = p->rect;
   r->utc = utc, r->offset = offset, r->clock24 = f->clock24;
-  for (int y = 0; y < r->H; y++) {
-    int x0 = 0, x1 = -1;
-    p->rows[y] = t->row(t->ctx, y, &x0, &x1);
-    p->rx0[y] = (int16_t)x0, p->rx1[y] = (int16_t)x1;
-    if (!p->rows[y]) p->rx0[y] = 1, p->rx1[y] = 0;
-  }
+  plan_rows(p, t);
+
+
   plan_window(p, f->lat);
   plan_sky(&r->sky, utc, f->lon);
   plan_civil(utc + offset, &r->local);
@@ -3140,6 +3150,10 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   r->sl = f_sind(r->alat), r->cl = f_cosd(r->alat);
   r->sl0 = f_sind((float)f->lat), r->cl0 = f_cosd((float)f->lat);
   r->lst = (float)r->sky.lst;
+  r->lst20 = (uint32_t)pyf_floor(r->lst * (1048576.0f / 360) + 0.5f) & (BRAD_TURN - 1);
+  r->kq = pyf_floor(r->k * (180.0f * 256 * 65536 / 65535) + 0.5f);
+  r->cxq = pyf_floor(r->cx * 256 + 0.5f), r->cyq = pyf_floor(r->cy * 256 + 0.5f);
+  r->cx2 = pyf_floor(r->cx * 2 + 0.5f), r->cy2 = pyf_floor(r->cy * 2 + 0.5f);
   r->paper = P->window == WIN_PAPER;
   r->red = P->window == WIN_RED;
   r->live = P->window == WIN_SKY || P->window == WIN_RED;
@@ -3177,8 +3191,8 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
    * window's ground */
   for (int y = 0; y < r->H; y++) {
     if (p->rx0[y] > p->rx1[y]) continue;
-    if (!P->fox) memset(p->rows[y] + p->rx0[y], P->jacket, (size_t)(p->rx1[y] - p->rx0[y] + 1));
-    else for (int x = p->rx0[y]; x <= p->rx1[y]; x++) p->rows[y][x] = card_at(r, x, y);
+    if (!P->fox) memset(ROW(p, y) + p->rx0[y], P->jacket, (size_t)(p->rx1[y] - p->rx0[y] + 1));
+    else for (int x = p->rx0[y]; x <= p->rx1[y]; x++) ROW(p, y)[x] = card_at(r, x, y);
   }
   /* the scene in the card (the labours) and the Time 2's corner tools, by the scene blob (plan_decor.c, Face.decor):
    * now, while the frame's memory is low, before the grid */
@@ -3194,6 +3208,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
     f->decor(f->decor_ctx, &dc);
   }
   r->ik = 1 / r->k;
+  r->ikq = pyf_floor(r->ik * 262144.0f + 0.5f);
   sky_constants(&r->sk, P->window == WIN_RED ? r->s_eff : r->sun_alt);
   sky_constants(&r->sk6, -6);
   r->ssd = f_sind(r->sdec), r->csd = f_cosd(r->sdec), r->csh = f_cosd(r->sha), r->ssh = f_sind(r->sha);

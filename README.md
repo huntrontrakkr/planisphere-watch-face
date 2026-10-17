@@ -418,7 +418,13 @@ type and each watch's ring packed into the app's resources by `tools/gen_tables.
 pixels: `tools/parity.py` compares the two case by case (every plate, both watches, the south, the weather, the
 eclipses, the labours), and no case differs in more than 0.7% of its pixels. The watch has no room for double
 precision, so the Sun, the Moon and the planets are worked out in single precision, their large angles kept exact as
-fractions of a turn in whole numbers.
+fractions of a turn in whole numbers. The drawing itself keeps to integers where the work is: the watch has no
+floating-point unit, so each float operation is a few dozen instructions of software, and a frame once spent nearly
+half its time in them. The stars, the constellations' lines, the ecliptic and the Milky Way's grid are projected with
+an integer trigonometry (`plan_math.c`: angles in 2^-20 of a turn, sines in Q30 by a polynomial within 1e-8, an
+arctangent within a unit) to 1/256 of a pixel, and the prototype projects with the very same integers (`proto/iq.py`,
+held bit for bit to the C by `tools/check_iq.py`), drawing from the same 16-bit star table the watch carries; so the
+two land the same stars on the same pixels. A frame takes about half the instructions it did before.
 
 The phone (`watchface/src/pkjs/index.js`) finds where it is, names the place, and fetches the weather there from
 Open-Meteo every half hour; the watch keeps them and draws the face once a minute. The settings page shows the face

@@ -7,7 +7,7 @@
 #define NONE16 0x7fff
 static inline void put(const DecorCtx *r, int x, int y, uint8_t c) {
   Plan *p = r->p;
-  if ((unsigned)y < (unsigned)p->h && x >= p->rx0[y] && x <= p->rx1[y]) p->rows[y][x] = c;
+  if ((unsigned)y < (unsigned)p->h && x >= p->rx0[y] && x <= p->rx1[y]) ROW(p, y)[x] = c;
 }
 static inline bool on_screen(const DecorCtx *r, int x, int y) { return (unsigned)x < (unsigned)r->p->w && (unsigned)y < (unsigned)r->p->h; }
 static inline bool inside(const DecorCtx *r, int x, int y) {

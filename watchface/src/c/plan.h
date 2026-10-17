@@ -211,9 +211,26 @@ typedef struct {
   int32_t event_minute;                /* the minute last chosen for (local minutes since 1970: once a minute) */
   int32_t figs_day, birds_mark;        /* the day the figures were drawn in; the twilight the birds last flew */
   /* while drawing */
-  uint8_t *rows[MAX_H];
+  uint8_t *fb;                           /* the screen's rows: row y at fb + y * stride (every target's rows lie at one
+                                          * stride: the watch's frame buffer, the host's and the preview's images) */
+  int32_t stride;
   int16_t rx0[MAX_H], rx1[MAX_H];
 } Plan;
+/* row y of the screen being drawn */
+#define ROW(p, y) ((p)->fb + (size_t)(y) * (size_t)(p)->stride)
+/* the screen's rows for a drawing: each row's span, and where the rows lie (one stride from the first) */
+static inline void plan_rows(Plan *p, const Target *t) {
+  int ya = -1;
+  p->fb = NULL, p->stride = 0;
+  for (int y = 0; y < p->h; y++) {
+    int x0, x1;
+    uint8_t *row = t->row(t->ctx, y, &x0, &x1);
+    if (!row) { p->rx0[y] = 1, p->rx1[y] = 0; continue; }
+    p->rx0[y] = (int16_t)x0, p->rx1[y] = (int16_t)x1;
+    if (ya < 0) ya = y, p->fb = row;
+    else if (!p->stride) p->stride = (int32_t)(row - p->fb) / (y - ya), p->fb -= (size_t)ya * (size_t)p->stride;
+  }
+}
 
 /* The face's place from the phone's numbers (1e-4 degrees): here, so the app itself does no arithmetic in floats
  * (libgcc's would cost it a kilobyte and more). */

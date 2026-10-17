@@ -60,6 +60,40 @@ static float cos_kernel(float x) {
   float z = x * x;
   return 1.0f + z * (-0.5f + z * (0.0416666679f + z * (-0.00138888892f + z * (2.48015876e-5f + z * -2.75573188e-7f))));
 }
+/* sin of a (2^-20 of a turn), Q30 (proto/iq.py isin_q30, bit for bit) */
+int32_t isin_q30(uint32_t a) {
+  static const int64_t Q[5] = {1686629681, -693597962, 85565130, -5017110, 162088};   /* sin(pi x / 2) on 0..1 */
+  a &= BRAD_TURN - 1;
+  uint32_t q = a >> 18, f = a & (BRAD_QUARTER - 1);
+  if (q & 1) f = BRAD_QUARTER - f;
+  int64_t x = (int64_t)f << 12, x2 = (x * x) >> 30, acc = Q[4];
+  for (int k = 3; k >= 0; k--) acc = Q[k] + ((x2 * acc) >> 30);
+  int64_t s = (x * acc) >> 30;
+  return (int32_t)(q >= 2 ? -s : s);
+}
+
+/* atan z for z in Q16, 0..1, in 2^-20 of a turn (proto/iq.py atan_q): an odd polynomial of degree 11, Q14, within
+ * 1.3 units */
+static int32_t atan_q(uint32_t z) {
+  static const int64_t Q[6] = {2734205957, -909566774, 529544042, -318951500, 144429673, -32182182};
+  int64_t z2 = ((int64_t)z * z) >> 16, acc = Q[5];
+  for (int k = 4; k >= 0; k--) acc = Q[k] + ((z2 * acc) >> 16);
+  return (int32_t)(((int64_t)z * acc) >> 30);
+}
+int32_t iatan2_brad(int32_t y, int32_t x) {
+  uint32_t ax = (uint32_t)(x < 0 ? -x : x), ay = (uint32_t)(y < 0 ? -y : y);
+  if (!ax && !ay) return 0;
+  int32_t a = ay <= ax ? atan_q((ay << 16) / ax) : (int32_t)BRAD_QUARTER - atan_q((ax << 16) / ay);
+  if (x < 0) a = (int32_t)(BRAD_TURN / 2) - a;
+  return y < 0 ? -a : a;
+}
+int32_t iasin_brad(int32_t s) {
+  int32_t s15 = s >> 15;                                       /* (floors: the same on both sides) */
+  if (s15 > 32768) s15 = 32768;
+  if (s15 < -32768) s15 = -32768;
+  return iatan2_brad(s15, (int32_t)isqrt32((uint32_t)((1 << 30) - s15 * s15)));
+}
+
 float f_sind(float deg) {
   float a = deg - 360.0f * (float)(int)(deg * (1.0f / 360));  /* -360 < a < 360 */
   if (a >= 180.0f) a -= 360.0f;

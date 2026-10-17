@@ -37,7 +37,7 @@ static void put(Frame *fr, int x, int y, uint8_t c) {
   Plan *p = fr->p;
   if ((unsigned)y >= (unsigned)p->h || x < p->wx0[y] || x > p->wx1[y] || x < p->rx0[y] || x > p->rx1[y]) return;
   ShowUndo *u = fr->undo;
-  uint8_t *px = &p->rows[y][x];
+  uint8_t *px = ROW(p, y) + x;
   if (*px == c || u->n >= u->cap) return;            /* (as it is; or no room to put it back: left out) */
   u->px[u->n++] = (uint32_t)x | (uint32_t)y << 9 | (uint32_t)*px << 18;
   *px = c;
@@ -112,16 +112,11 @@ static void rocket(Frame *fr, const Rocket *k, int frame) {
 
 /* the screen's rows, and the last frame's pixels put back, last first */
 static void put_back(Plan *p, const Target *t, ShowUndo *undo) {
-  for (int y = 0; y < p->h; y++) {
-    int x0, x1;
-    p->rows[y] = t->row(t->ctx, y, &x0, &x1);
-    p->rx0[y] = (int16_t)x0, p->rx1[y] = (int16_t)x1;
-    if (!p->rows[y]) p->rx0[y] = 1, p->rx1[y] = 0;
-  }
+  plan_rows(p, t);
   while (undo->n) {
     uint32_t v = undo->px[--undo->n];
     int x = v & 511, y = v >> 9 & 511;
-    if (x >= p->rx0[y] && x <= p->rx1[y]) p->rows[y][x] = (uint8_t)(v >> 18);
+    if (x >= p->rx0[y] && x <= p->rx1[y]) ROW(p, y)[x] = (uint8_t)(v >> 18);
   }
 }
 
