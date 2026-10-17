@@ -87,10 +87,12 @@ typedef struct {
   int8_t first;                              /* Christmas Eve's first star, as Plan.feast_first, once it is out */
   int16_t fl_x0, fl_y0, fl_w, fl_h;          /* the fleur-de-lis at the window's top, as rims drew it */
   bool weaver;                               /* Qixi's Weaver and Cowherd, named */
-  /* memory the layers take in turn (the watch's is short): the Milky Way's first; then Jupiter's moons' and the
-   * village's; then the lines of type for the names, the ring and the time. (Only what nothing reads once the names
-   * begin: the halos' ground_at reads the clouds and the stars' places, so those keep their own.) */
+  /* memory the layers take in turn (the watch's is short): the Milky Way's first, then Jupiter's moons' lane in its
+   * room (the moons are drawn after the Milky Way, and the lane read only while they are); then the village's; then
+   * the lines of type for the names, the ring and the time. (Only what nothing reads once the names begin: the halos'
+   * ground_at reads the clouds and the stars' places, so those keep their own.) */
   union {
+    uint64_t lane[40];                       /* the lane cleared round Jupiter for its moons (bit x of row y) */
     struct {
       uint16_t thresh_h[256];                /* each blue-noise level's threshold for the Milky Way, halved, and its
                                               * odd bit (the thresholds past the Milky Way's deepest, 81920, all
@@ -99,7 +101,6 @@ typedef struct {
       int16_t mra[2][MAX_W / 4 + 3], mdec[2][MAX_W / 4 + 3];   /* its nodes' places, two rows at a time */
     };
     struct {
-      uint64_t lane[40];                     /* the lane cleared round Jupiter for its moons (bit x of row y) */
       int16_t edge[2 * VILLAGE_DX + 1];      /* the window's lowest row at each column from the south point, -1 none */
       /* the village's pieces as placed: the ground's top and the buildings' bases by column, and its pixels in
        * each column, a bit a row up from its edge */
