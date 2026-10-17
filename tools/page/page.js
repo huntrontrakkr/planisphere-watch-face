@@ -21,7 +21,7 @@
   // events (0.1.5, ANIMV 2) turned on in settings from before them
   var ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32;
   var ANIM_EVENTS = 60;
-  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CORNERS: 0, GILD: 0, TIDE_TIMES: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
+  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CORNERS: 0, GILD: 0, FIGURES: 0, TIDE_TIMES: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
                   WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: '', PLACE_CC: ''};
   var settings = {};
   function reset(from) {
@@ -109,7 +109,15 @@
        desc: 'Now and then on a clear dark night a meteor crosses the window, as the minute turns: one minute in ' +
              'five at a meteor shower’s peak, flying out of its radiant; rarely on other nights.'},
       {key: 'ANIMATIONS', bit: ANIM_FIGURES, type: 'switch', label: 'The figures drawn in',
-       desc: 'Once an evening, as dusk brings out the stars, the constellations’ figures are drawn in, star to star.'},
+       desc: 'As dusk brings out the stars, the constellations’ figures are drawn in, star to star.'},
+      {key: 'FIGURES', type: 'seg', label: 'And again, while the stars are out', options: [
+        [0, 'At dusk only', 'Once an evening.'],
+        [1, 'Every hour', 'Drawn in again at the top of each hour of the night. Each drawing in is six frames of the ' +
+         'whole face: a little more of the battery.'],
+        [2, 'Every half hour', 'At the top and the half of each hour of the night: six frames of the whole face each ' +
+         'time.'],
+        [3, 'Every quarter', 'Four times an hour through the night: six frames of the whole face each time, a ' +
+         'quarter again on the battery.']]},
       {key: 'ANIMATIONS', bit: ANIM_BIRDS, type: 'switch', label: 'Birds at twilight',
        desc: 'In the months birds migrate (March to May, September to November), a skein of them may cross low ' +
              'through the window at dawn or dusk, once a twilight.'},

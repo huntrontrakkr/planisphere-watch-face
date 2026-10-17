@@ -3297,11 +3297,18 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
       if (inside(r, r->col, y) && (y - zy > 3 || zy - y > 3) && !hidden(r, r->col, y)) put(r, r->col, y, P->line);
   /* the figures, stopping short of their stars; the stars */
   if (r->figs && !r->rete) {
-    /* drawn in as dusk brings them out, once an evening (the event's first frame; the caller draws the rest) */
+    /* drawn in as dusk brings them out, once an evening (the event's first frame; the caller draws the rest); and
+     * again, if asked, at the top of each hour, half hour or quarter while they are out */
     int part = f->figs_part;
+    static const uint8_t EVERY[4] = {0, 60, 30, 15};
+    int every = EVERY[f->figures_every & 3];
+    int32_t minute = r->local.ordinal * 1440 + r->local.hour * 60 + r->local.minute;
     if ((f->events & EV_FIGURES) && !part && !r->paper && r->local.hour >= 12 && r->s_eff > -13 &&
         p->figs_day != r->local.ordinal)
       p->figs_day = r->local.ordinal, p->event = EV_FIGURES, part = 1;
+    else if ((f->events & EV_FIGURES) && !part && !r->paper && every && r->dark && r->local.minute % every == 0 &&
+             p->figs_minute != minute)
+      p->figs_minute = minute, p->event = EV_FIGURES, part = 1;
     figure_lines(r, part);
   }
   stars(r, faint, mx, my, moon_reach);

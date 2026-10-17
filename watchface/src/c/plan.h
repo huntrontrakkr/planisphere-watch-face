@@ -61,6 +61,7 @@ typedef struct {
   bool scribe;                 /* the minute's new figures kept to be written as a scribe writes (plan_scribe) */
   uint8_t events;              /* the passing events the face may bring (EV_*: Plan.event), and the village's life */
   uint8_t figs_part;           /* the figures drawn in at dusk: drawn this many EVENT_FIGS_FRAMES-ths along (0: all) */
+  uint8_t figures_every;       /* and again, while they are out: 0 never, 1 each hour, 2 each half hour, 3 each quarter */
   uint8_t corners;             /* the Time 2's corners: whose pieces (THEME_*: the labours' tools, the zodiac's Sun and
                                 * Moon, the astronomer's planets, the sea's Moon and tide), 0 the season's sprigs */
   bool gild;                   /* the time's figures outlined in the plate's gilding */
@@ -210,6 +211,7 @@ typedef struct {
   int16_t event_x0, event_y0, event_x1, event_y1;
   int32_t event_minute;                /* the minute last chosen for (local minutes since 1970: once a minute) */
   int32_t figs_day, birds_mark;        /* the day the figures were drawn in; the twilight the birds last flew */
+  int32_t figs_minute;                 /* the minute the figures were last drawn in again (Face.figures_every) */
   /* while drawing */
   uint8_t *fb;                           /* the screen's rows: row y at fb + y * stride (every target's rows lie at one
                                           * stride: the watch's frame buffer, the host's and the preview's images) */
