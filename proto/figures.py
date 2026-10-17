@@ -1387,9 +1387,10 @@ def mask(rows):
     return np.array([[c == "#" for c in r.ljust(w, ".")] for r in rows])
 
 
-def compose(style, screen, hh, mm):
+def compose(style, screen, hh, mm, figures_only=False):
     """The time as a mask: the hour's figures, a small raised h, a space, the minutes, a small raised m. Returns
-    (mask, row of the figures' baseline, height of the small figures above it), or None if the set is not drawn."""
+    (mask, row of the figures' baseline, height of the small figures above it), or None if the set is not drawn. With
+    `figures_only`, the same mask with the figures alone (the h and m left out: what the gilding outlines)."""
     s = figure_set(style, screen)
     if s is None:
         return None
@@ -1415,7 +1416,7 @@ def compose(style, screen, hh, mm):
             m = mask(s[ch])
             top = asc - baseline(style, screen, ch, s[ch])
         elif kind == "sup":                                       # raised to the top of the short figures
-            m = mask(s[ch])
+            m = mask(s[ch]) & (not figures_only)
             top = asc - small
         else:
             x += w + 2

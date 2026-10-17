@@ -81,7 +81,8 @@ PLATES = {
     "flamsteed": dict(jacket=c8(3, 3, 3), ink=c8(0, 0, 0), accent=c8(0, 0, 0), window="paper", night=c8(3, 3, 3),
                       star=c8(0, 0, 0), glyph="rays", line=c8(1, 1, 1), milky=c8(2, 2, 2), label=c8(0, 0, 0),
                       const=c8(1, 1, 1), planet=c8(0, 0, 0), rule=c8(0, 0, 0), font=("LibreCaslonText[wght].ttf", 450),
-                      italic=("LibreCaslonText-Italic[wght].ttf", 450), ring="roman", figures="caslon"),
+                      italic=("LibreCaslonText-Italic[wght].ttf", 450), ring="roman", figures="caslon",
+                      gild=c8(2, 2, 2)),
     "observatory": dict(jacket=c8(0, 0, 0), ink=c8(2, 0, 0), accent=c8(3, 0, 0), window="red", night=c8(0, 0, 0),
                         star=c8(3, 0, 0), glyph="cross", line=c8(1, 0, 0), milky=c8(1, 0, 0), label=c8(2, 0, 0),
                         const=c8(1, 0, 0), planet=c8(3, 1, 0), rule=c8(1, 0, 0), font=(OLD, None), italic=(OLD_I, None),
@@ -93,7 +94,8 @@ PLATES = {
     "hours": dict(jacket=c8(3, 3, 2), ink=c8(0, 0, 0), accent=c8(3, 1, 0), window="paper", night=c8(0, 0, 2),
                   star=c8(3, 2, 0), glyph="rays", line=c8(1, 1, 3), milky=c8(0, 1, 2), label=c8(3, 2, 0),
                   const=c8(3, 2, 0), planet=c8(3, 3, 1), rule=c8(3, 2, 0), font=(OLD, None), italic=(OLD_I, None),
-                  ring="minuscule", figures="caslon", corner="ivy", ringfill=c8(0, 0, 2), ring_ink=c8(3, 2, 0)),
+                  ring="minuscule", figures="caslon", corner="ivy", ringfill=c8(0, 0, 2), ring_ink=c8(3, 2, 0),
+                  gild=c8(3, 2, 0)),
     "orloj": dict(jacket=c8(0, 0, 0), ink=c8(3, 2, 0), accent=c8(3, 1, 0), window="orloj", night=c8(0, 0, 0),
                   star=c8(3, 2, 0), glyph="rays", line=c8(2, 1, 0), milky=c8(1, 1, 0), label=c8(3, 2, 0),
                   const=c8(3, 2, 0), planet=c8(3, 3, 1), rule=c8(3, 2, 0), font=(OLD, None), italic=(OLD_I, None),
@@ -114,7 +116,8 @@ PLATES = {
     "lantern": dict(jacket=c8(0, 0, 0), ink=c8(3, 3, 3), accent=c8(3, 3, 3), window="paper", night=c8(0, 0, 0),
                     star=c8(3, 3, 3), glyph="rays", line=c8(2, 2, 2), milky=c8(1, 1, 1), label=c8(3, 3, 3),
                     const=c8(2, 2, 2), planet=c8(3, 3, 3), rule=c8(3, 3, 3), font=("LibreCaslonText[wght].ttf", 450),
-                    italic=("LibreCaslonText-Italic[wght].ttf", 450), ring="roman", figures="caslon"),
+                    italic=("LibreCaslonText-Italic[wght].ttf", 450), ring="roman", figures="caslon",
+                    gild=c8(2, 2, 2)),
     "shagreen": dict(jacket=c8(1, 2, 1), ink=c8(0, 0, 0), accent=c8(3, 3, 3), window="sky", night=c8(0, 0, 1),
                      star=c8(3, 3, 3), glyph="cross", line=c8(1, 1, 2), milky=c8(1, 1, 2), label=c8(3, 3, 2),
                      const=c8(2, 2, 3), planet=c8(3, 2, 1), rule=c8(0, 0, 0), font=(OLD, None), italic=(OLD_I, None),
@@ -641,6 +644,21 @@ def real_range(dial, edge_, sky, most=2.0, room=12.0, least=3.0):
 LABOUR_TONE = "hatch"                                    # "hatch" (the ring hatching's khaki) or "pale" (barely there)
 
 
+def gild_of(P):
+    """The plate's gilding, outlining the time when it is gilt: its own (`gild`), else its red ink."""
+    return P.get("gild", P["accent"])
+
+
+def grow8(m):
+    """A mask grown a pixel round, eight ways, a pixel's margin added each side (its (0, 0) the original's (-1, -1))."""
+    h, w = m.shape
+    out = np.zeros((h + 2, w + 2), bool)
+    for dy in range(3):
+        for dx in range(3):
+            out[dy:dy + h, dx:dx + w] |= m
+    return out
+
+
 def faint_tone(P, how=None):
     """A tone a single step from the card's own, for what is drawn faint in it."""
     how = how or LABOUR_TONE
@@ -885,7 +903,7 @@ def widest_time(style, screen, clock24):
 
 def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=False, sky_offset=None, extras=None,
            names=True, weather=None, fahrenheit=False, weather_clock=None, labours=False, feast=None, calendars=0,
-           tools=False, theme=None, tides=(), corners=None):
+           tools=False, theme=None, tides=(), corners=None, gild=False):
     """The face at `when`. Its sky may be drawn at another time (`sky_offset`, for the hourly turn) while the clock
     keeps `when`; `extras(img, ctx)` draws passing things (meteors, birds) into the sky, under the names. With
     `weather` (weather.Weather) the window shows the place's clouds, rain or snow, the village its weather, and
@@ -1882,6 +1900,12 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
         m, asc, small = comp
         cy_ = ring_in + span * rows_at[0]
         x0_, y0_ = int(round(dial.cx - m.shape[1] / 2)), int(round(cy_ - (asc - small / 2)))
+        if gild:                                         # gilt: each figure outlined a pixel round in the plate's gold
+            figs_ = figures.compose(P.get("figures", "modern"), "time2" if rect else "round2", str(hour(local.hour)),
+                                    f"{local.minute:02d}", figures_only=True)[0]   # (the h and the m not gilt)
+            for j, i in zip(*np.nonzero(grow8(figs_))):
+                if 0 <= y0_ + j - 1 < H and 0 <= x0_ + i - 1 < W:
+                    img[y0_ + j - 1, x0_ + i - 1] = gild_of(P)
         for j, i in zip(*np.nonzero(m)):
             if 0 <= y0_ + j < H and 0 <= x0_ + i < W:
                 img[y0_ + j, x0_ + i] = P["ink"]

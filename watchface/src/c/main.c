@@ -11,7 +11,7 @@
 /* Nothing here is in a hot loop: built for size. */
 #pragma GCC optimize("Os")
 
-#define SETTINGS_VERSION 8
+#define SETTINGS_VERSION 9
 /* the animations, a bit each (Settings.animations): the passing events (from version 5) are Face.events' bits, two up */
 enum { ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32 };
 #define ANIM_ALL 63
@@ -35,6 +35,7 @@ typedef struct {
   uint8_t corners;                      /* the Time 2's corners: whose pieces, THEME_* (Face.corners; 0 the sprigs). To
                                          * version 7 a switch, the theme's (no theme: the labours' tools; to 6, theirs) */
   uint8_t tide_times;                   /* the next high and low waters low on the face (in version 7's spare byte: 0 before) */
+  uint8_t gild;                         /* the time gilt (from version 9, in the record's last spare byte) */
 } Settings;
 typedef struct {                        /* versions 2 to 6, the names' room smaller (version 2's ends at animations) */
   uint8_t version, plate, clock, names, weather, units, place, labours;
@@ -44,6 +45,8 @@ typedef struct {                        /* versions 2 to 6, the names' room smal
   uint8_t animations, tools;
 } SettingsOld;
 _Static_assert(offsetof(SettingsOld, city) == offsetof(Settings, city), "the settings' head as before");
+_Static_assert(sizeof(Settings) == ((offsetof(Settings, tide_times) + 1 + 3) & ~3u),
+               "the gilding in version 8's spare byte: the record the same size");
 
 typedef struct {                        /* where the phone last was */
   int32_t lat_e4, lon_e4;
@@ -209,6 +212,7 @@ static void face_of(Face *f) {
     s_where[0] = 400000, s_where[1] = utc_offset(time(NULL)) / 240 * 10000;
   }
   s_api->place(f, s_where[0], s_where[1]);
+  f->gild = s_settings.gild != 0;
   f->corners = PBL_IF_RECT_ELSE(s_settings.corners < THEME_COUNT ? s_settings.corners : 0, 0);
   f->decor = decor_draw;
   uint32_t now = (uint32_t)time(NULL);
@@ -464,7 +468,7 @@ static const struct { const uint32_t *key; uint8_t rec, type, off, size; } KEYS[
   IN(PLATE, IN_SETTINGS, IN_U8, Settings, plate), IN(CLOCK, IN_SETTINGS, IN_U8, Settings, clock),
   IN(NAMES, IN_SETTINGS, IN_U8, Settings, names), IN(WEATHER, IN_SETTINGS, IN_U8, Settings, weather),
   IN(UNITS, IN_SETTINGS, IN_U8, Settings, units), IN(PLACE, IN_SETTINGS, IN_U8, Settings, place),
-  IN(LABOURS, IN_SETTINGS, IN_U8, Settings, theme), IN(CORNERS, IN_SETTINGS, IN_U8, Settings, corners), IN(TIDE_TIMES, IN_SETTINGS, IN_U8, Settings, tide_times), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
+  IN(LABOURS, IN_SETTINGS, IN_U8, Settings, theme), IN(CORNERS, IN_SETTINGS, IN_U8, Settings, corners), IN(GILD, IN_SETTINGS, IN_U8, Settings, gild), IN(TIDE_TIMES, IN_SETTINGS, IN_U8, Settings, tide_times), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
   IN(PLACE_LON, IN_SETTINGS, IN_I32, Settings, lon_e4), IN(PLACE_CITY, IN_SETTINGS, IN_TEXT, Settings, city),
   IN(PLACE_COUNTRY, IN_SETTINGS, IN_TEXT, Settings, country), IN(CALENDARS, IN_SETTINGS, IN_I32, Settings, calendars),
   IN(ANIMATIONS, IN_SETTINGS, IN_U8, Settings, animations),
@@ -586,10 +590,11 @@ static void init(void) {
   Settings s;
   int got = persist_read_data(KEY_SETTINGS, &s, sizeof s);
   if (got == (int)sizeof s && s.version == SETTINGS_VERSION) s_settings = s;
-  else if (got == (int)sizeof s && s.version == 7) {   /* (the corners a switch: the theme's pieces, as they were) */
+  else if (got == (int)sizeof s && (s.version == 7 || s.version == 8)) {   /* (8: the gilding's byte unset; 7 too,
+                                                                             * and the corners a switch, the theme's) */
     s_settings = s;
-    s_settings.corners = s.corners ? (s.theme && s.theme < THEME_COUNT ? s.theme : THEME_LABOURS) : 0;
-    s_settings.version = SETTINGS_VERSION;
+    if (s.version == 7) s_settings.corners = s.corners ? (s.theme && s.theme < THEME_COUNT ? s.theme : THEME_LABOURS) : 0;
+    s_settings.gild = 0, s_settings.version = SETTINGS_VERSION;
   }
   else if (got == (int)sizeof(SettingsOld) || got == (int)offsetof(SettingsOld, animations)) {
     SettingsOld o;                               /* versions 2 to 6: the names into their larger room */

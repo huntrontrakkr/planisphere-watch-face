@@ -195,6 +195,21 @@ check(platform === 'gabbro' ? corner + elsewhere === 0 : corner > 0 && elsewhere
       `the tools in the corners (pixels changed in the corners: ${corner}; elsewhere: ${elsewhere})`);
 await tap('[data-key=CORNERS] .seg button', 'Sprigs');
 await page.waitForTimeout(300);
+// the time gilt: the time's figures change, and nothing below the time
+const ungilt = await grab();
+await page.locator('label.switch', { hasText: 'Gild the time' }).first().click();
+await page.waitForTimeout(400);
+const gilt = await grab();
+const gw = await page.evaluate(() => document.getElementById('screen').width);
+let nearTime = 0, belowTime = 0;
+for (let i = 0; i < ungilt.length; i += 4) {
+  const y = Math.floor(i / 4 / gw) * 200 / gw;      // (in the watch's pixels)
+  const d = ungilt[i] !== gilt[i] || ungilt[i + 1] !== gilt[i + 1] || ungilt[i + 2] !== gilt[i + 2];
+  if (d && y < 75) nearTime++; else if (d) belowTime++;
+}
+check(nearTime > 30 && belowTime === 0, `the time gilt (pixels changed by the time: ${nearTime}; below it: ${belowTime})`);
+await page.locator('label.switch', { hasText: 'Gild the time' }).first().click();
+await page.waitForTimeout(300);
 // the zodiac behind the face: the card changes from the labours' (its woodcut), and back
 const withLabours = await grab();
 await tap('[data-key=LABOURS] .seg button', 'The zodiac');

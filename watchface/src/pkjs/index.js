@@ -55,6 +55,7 @@ function settingsMessage(s) {
   m[keys.NAMES] = s.NAMES ? 1 : 0;
   m[keys.LABOURS] = s.LABOURS | 0;              // the theme behind the face (THEME_*: 2 the zodiac), not a switch
   m[keys.CORNERS] = corners(s);
+  m[keys.GILD] = s.GILD ? 1 : 0;
   m[keys.TIDE_TIMES] = s.TIDE_TIMES ? 1 : 0;
   m[keys.CALENDARS] = s.CALENDARS | 0;
   // a bit an animation: 1 the minute written, 2 fireworks, 4 .. 32 the passing events and the village's life (0.1.3's

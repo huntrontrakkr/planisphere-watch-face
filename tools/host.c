@@ -27,6 +27,7 @@
  *     --event-check     play all of it and check the face is put back exactly (the meteor, the birds)
  *     --tools           the theme's pieces in the Time 2's corners (no theme: the labours' tools), as --corners
  *     --corners N       whose pieces in the Time 2's corners, THEME_* (Face.corners)
+ *     --gild            the time gilt (Face.gild)
  *     --theme N         the card's scene, THEME_* (1 the labours, as --labours)
  *     --tides LIST      the tide's turns: MINUTES-SINCE-1970:H|L:CM, comma-separated
  *     --tide-times      the next high and low waters set low on the face (as Face.tide_times)
@@ -129,6 +130,7 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--event-check")) event_check = true;
     else if (!strcmp(argv[i], "--tools")) tools = true;
     else if (!strcmp(argv[i], "--corners") && i + 1 < argc) corners = atoi(argv[++i]);
+    else if (!strcmp(argv[i], "--gild")) f.gild = true;
     else if (!strcmp(argv[i], "--tide-times")) f.tide_times = true;
     else if (!strcmp(argv[i], "--tides") && i + 1 < argc) {       /* turns: "MINUTES:H|L:CM,..." */
       static Tides td;

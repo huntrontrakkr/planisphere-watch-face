@@ -2798,7 +2798,8 @@ static bool news_wording(R *r, int w, char *out) {
   return false;
 }
 
-/* the large time in the plate's own figures, its top-left at (x0, y0) (only measured unless `draw`): its width */
+/* the large time in the plate's own figures, its top-left at (x0, y0) (only measured unless `draw`): its width; when
+ * the time is gilt (Face.gild), the figures (not the small h and m) first outlined a pixel round in the plate's gilding */
 /* the time's figures as drawn: each (0..9, 10 h, 11 m) and its top-left corner */
 typedef struct { int n; int8_t c[8]; int16_t x[8], y[8]; } Glyphs;
 static inline __attribute__((always_inline)) int compose(R *r, int style, int screen, int hour, int minute, int *asc_out,
@@ -2820,21 +2821,27 @@ static inline __attribute__((always_inline)) int compose(R *r, int style, int sc
   if (asc_out) *asc_out = asc;
   if (small_out) *small_out = small;
   if (!draw && !pos) return W;
-  int x = 0;
   if (pos) pos->n = 0;
-  for (int i = 0; i < n; i++) {
-    int c = parts[i];
-    if (c < 0) { x += 5 + 2; continue; }
-    const FigureIndex *g = fi + c;
-    int top = c <= 9 ? asc - g->base : asc - small;
-    if (pos) pos->c[pos->n] = (int8_t)c, pos->x[pos->n] = (int16_t)(x0 + x), pos->y[pos->n] = (int16_t)(y0 + top), pos->n++;
-    if (draw)
-      for (int j = 0; j < g->h; j++)
-        for (int i2 = 0; i2 < g->w; i2++) {
-          uint32_t b = g->bit + (uint32_t)(j * g->w + i2);
-          if ((bits[b >> 3] >> (b & 7)) & 1) put(r, x0 + x + i2, y0 + top + j, r->P->ink);
-        }
-    x += g->w + (c == 10 ? 1 : 2);
+  for (int pass = draw && r->f->gild ? 0 : 1; pass < 2; pass++) {   /* (the gilding under all the figures, then ink) */
+    int x = 0;
+    for (int i = 0; i < n; i++) {
+      int c = parts[i];
+      if (c < 0) { x += 5 + 2; continue; }
+      const FigureIndex *g = fi + c;
+      int top = c <= 9 ? asc - g->base : asc - small;
+      if (pos && pass) pos->c[pos->n] = (int8_t)c, pos->x[pos->n] = (int16_t)(x0 + x), pos->y[pos->n] = (int16_t)(y0 + top), pos->n++;
+      if (draw && (pass || c <= 9))
+        for (int j = 0; j < g->h; j++)
+          for (int i2 = 0; i2 < g->w; i2++) {
+            uint32_t b = g->bit + (uint32_t)(j * g->w + i2);
+            if (!((bits[b >> 3] >> (b & 7)) & 1)) continue;
+            int X = x0 + x + i2, Y = y0 + top + j;
+            if (pass) put(r, X, Y, r->P->ink);
+            else
+              for (int d = 0; d < 9; d++) put(r, X + d % 3 - 1, Y + d / 3 - 1, r->P->gild);
+          }
+      x += g->w + (c == 10 ? 1 : 2);
+    }
   }
   return W;
 }

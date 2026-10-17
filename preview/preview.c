@@ -57,13 +57,13 @@ static bool pv_call(void *ctx, bool labours, const DecorCtx *dc) {
 static bool pv_decor(void *ctx, const DecorCtx *dc) { return decor_run(ctx, dc, pv_call); }
 /* What the face shows: the plate, the clock, names in the sky, the temperature's scale, the place, the labours, the
  * minute written, the village's life (of the events, EV_VILLAGE alone: the passing ones are left to the watch) and
- * whose pieces are in the Time 2's corners (THEME_*, 0 the sprigs). */
+ * whose pieces are in the Time 2's corners (THEME_*, 0 the sprigs), and whether the time is gilt. */
 EMSCRIPTEN_KEEPALIVE void pv_face(int plate, int clock24, int names, int fahrenheit, float lat, float lon, int coords,
-                                  int labours, int calendars, int scribe, int events, int corners) {
+                                  int labours, int calendars, int scribe, int events, int corners, int gild) {
   F.plate = (uint8_t)(plate >= 0 && plate < PLATE_COUNT ? plate : 0);
   F.clock24 = clock24 != 0, F.names = names != 0, F.fahrenheit = fahrenheit != 0, F.theme = (uint8_t)(labours >= 0 && labours < THEME_COUNT ? labours : 0);
   F.calendars = (uint32_t)calendars, F.scribe = scribe != 0, F.events = (uint8_t)(events & EV_VILLAGE);
-  F.corners = (uint8_t)(corners > 0 && corners < THEME_COUNT ? corners : 0), F.decor = pv_decor;
+  F.corners = (uint8_t)(corners > 0 && corners < THEME_COUNT ? corners : 0), F.decor = pv_decor, F.gild = gild != 0;
   F.lat = lat, F.lon = lon, F.coords = coords != 0;
   F.city = city, F.country = country;
 }

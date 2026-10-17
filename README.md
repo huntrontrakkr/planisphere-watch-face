@@ -69,6 +69,10 @@ Like Groundtrack's plates, each plate follows a real tradition of sky charts, se
 
 ![The lantern slide and the shagreen, on both watches](docs/plates-lantern-shagreen.png)
 
+**The time gilt** (an option): the time's figures, not the small raised h and m, outlined a pixel round in the plate's own gilding, as a scribe gilt or rubricated a heading, so the time stands clear of the sky and of any scene behind it. Each plate gilds in its red ink unless it names its own: red on the paper planisphere, gold on the Book of Hours, silver on the shagreen, the engraver's grey on Flamsteed and the lantern slide. When the minute is written, the new figures are inked inside their gilding.
+
+![The time gilt: red on the planisphere, gold on the Hours, silver on the shagreen, grey on the lantern slide](docs/gilt-time.png)
+
 The planisphere, observatory, night and shagreen plates show the live sky in their window: night blue, the blue hour with its warm glow, day blue with the Sun in it. Burritt, Flamsteed and its lantern slide, the Hours, the Cyanotype and Apian's woodcut are printed or painted, so their windows keep the stars by day as a chart would, with the Sun drawn among them. The Astrolabe keeps its rete up by day as the instrument does. The Orloj's window takes the clock's zones: blue while the Sun is up, red-brown through the twilight, black at night.
 
 Each new plate brings its own pieces:

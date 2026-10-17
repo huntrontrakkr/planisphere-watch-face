@@ -132,9 +132,10 @@ def shared(h):
     h.append("enum { FILL_HATCH, FILL_COLOUR, FILL_ZONES, FILL_WASH };")
     h.append("/* A plate: its colours (GColor8), and what kind of window, ring, figures, stars and corners it has; fill_c\n"
              " * the ring's flat colour or wash, ring_ink its lettering, fox_c and fox (in 4096ths) the foxing, tint\n"
-             " * the tone a step from the card's own for what is drawn faint in it (proto/plates.py tint_of). */")
+             " * the tone a step from the card's own for what is drawn faint in it (proto/plates.py tint_of), gild the\n"
+             " * colour the time's figures are outlined in when it is gilt (gild_of). */")
     h.append("typedef struct {\n  uint8_t " + ", ".join("cons" if f == "const" else f for f in fields) + ";\n"
-             "  uint8_t window, ring, figures, glyph, corner, fill, fill_c, ring_ink, fox_c, tint;\n"
+             "  uint8_t window, ring, figures, glyph, corner, fill, fill_c, ring_ink, fox_c, tint, gild;\n"
              "  uint16_t fox;\n  uint8_t rete, throne, unequal, woodcut, dragon, thread;\n} Plate;")
     rows = []
     for n in names:
@@ -157,7 +158,7 @@ def shared(h):
         fox = P.get("foxing")
         fox_c, fox_n = (g8(fox[0]), int(round(fox[1] * 4096))) if fox else (0, 0)
         vals = [g8(P[f]) for f in fields] + [win, ring, fig, glyph, corner, fill, fill_c, ring_ink, fox_c,
-                                             g8(plates.tint_of(P)), fox_n,
+                                             g8(plates.tint_of(P)), g8(plates.gild_of(P)), fox_n,
                                              int(bool(P.get("rete"))), int(P.get("north") == "throne"),
                                              int(P.get("beads") == "unequal"), int(bool(P.get("woodcut"))),
                                              int(bool(P.get("dragon"))), int(P.get("hand") == "thread")]

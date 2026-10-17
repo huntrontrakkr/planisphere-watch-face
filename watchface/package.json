@@ -1,7 +1,7 @@
 {
   "name": "planisphere",
   "author": "huntrontrakkr",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "keywords": [
     "pebble-app"
@@ -53,7 +53,8 @@
       "WX_SNOW",
       "WX_VIS",
       "REQUEST",
-      "CORNERS"
+      "CORNERS",
+      "GILD"
     ],
     "resources": {
       "media": [

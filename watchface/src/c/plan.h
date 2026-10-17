@@ -61,6 +61,7 @@ typedef struct {
   uint8_t figs_part;           /* the figures drawn in at dusk: drawn this many EVENT_FIGS_FRAMES-ths along (0: all) */
   uint8_t corners;             /* the Time 2's corners: whose pieces (THEME_*: the labours' tools, the zodiac's Sun and
                                 * Moon, the astronomer's planets, the sea's Moon and tide), 0 the season's sprigs */
+  bool gild;                   /* the time's figures outlined in the plate's gilding */
   const Tides *tides;          /* the tide here (NULL: none known, or inland) */
   bool tide_times;             /* the next high and low waters set low on the face (on the Round 2 for the coordinates) */
   /* the scene blobs (plan_labours.c, plan_decor.c), called where the card is laid when a backdrop or corner pieces

@@ -21,7 +21,7 @@
   // events (0.1.5, ANIMV 2) turned on in settings from before them
   var ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32;
   var ANIM_EVENTS = 60;
-  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CORNERS: 0, TIDE_TIMES: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
+  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CORNERS: 0, GILD: 0, TIDE_TIMES: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
                   WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: '', PLACE_CC: ''};
   var settings = {};
   function reset(from) {
@@ -95,6 +95,9 @@
       {key: 'CLOCK', type: 'seg', options: [[0, 'As the watch'], [1, '12-hour'], [2, '24-hour']],
        descHtml: 'The hours on the ring, and the time as an astronomer writes it: 9<sup>h</sup> 30<sup>m</sup>, or ' +
                  '21<sup>h</sup> 30<sup>m</sup>.'},
+      {key: 'GILD', type: 'switch', label: 'Gild the time',
+       desc: 'The figures of the time outlined in the plate’s own gilding, so they stand clear of the sky and the ' +
+             'scenes behind: red ink on the paper planisphere, gold on the Book of Hours, silver on the shagreen.'},
     ]},
     {title: 'Animations', items: [
       {key: 'ANIMATIONS', bit: ANIM_MINUTE, type: 'switch', label: 'The minute written',
@@ -471,7 +474,7 @@
     M._pv_face(plate, settings.CLOCK === 2 || (settings.CLOCK === 0 && clock24Here()) ? 1 : 0, settings.NAMES ? 1 : 0,
                fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0, settings.LABOURS | 0, settings.CALENDARS >>> 0,
                main && settings.ANIMATIONS & ANIM_MINUTE ? 1 : 0, settings.ANIMATIONS & ANIM_VILLAGE ? 8 : 0,
-               settings.CORNERS | 0);
+               settings.CORNERS | 0, settings.GILD ? 1 : 0);
     M.stringToUTF8(p.city || '', M._pv_city(), 48);
     M.stringToUTF8(p.country || '', M._pv_country(), 48);
     var w = !settings.WEATHER ? null : trySky === 'phone' ? phoneWeather && [phoneWeather.code, phoneWeather.temp10,

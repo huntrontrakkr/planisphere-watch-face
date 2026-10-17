@@ -118,6 +118,13 @@ CASES = {
     "shagreen-day-r2": ("gabbro", "shagreen", datetime(2026, 10, 15, 16, 0, tzinfo=timezone.utc), NY, {}),
     "shagreen-herbal-t2": ("emery", "shagreen", datetime(2026, 5, 16, 1, 30, tzinfo=timezone.utc), NY,
                            {"theme": 5, "corners": 5}),
+    # the time gilt: its figures outlined in the plate's gilding (not the h and m), over a scene and on its own
+    "gild-planisphere-zodiac-t2": ("emery", "planisphere", datetime(2026, 10, 16, 1, 30, tzinfo=timezone.utc), NY,
+                                   {"theme": 2, "gild": True}),
+    "gild-hours-r2": ("gabbro", "hours", datetime(2026, 7, 16, 1, 30, tzinfo=timezone.utc), NY, {"gild": True}),
+    "gild-shagreen-24-t2": ("emery", "shagreen", datetime(2026, 4, 16, 1, 30, tzinfo=timezone.utc), NY,
+                            {"theme": 5, "gild": True, "clock24": True}),
+    "gild-lantern-r2": ("gabbro", "lantern", datetime(2026, 10, 16, 1, 30, tzinfo=timezone.utc), NY, {"gild": True}),
     # the corners apart from the backdrop: each blob's backdrop with the other's corners, a backdrop with the sprigs,
     # the plain card with a theme's corners
     "mix-labours-sea-t2": ("emery", "planisphere", datetime(2026, 7, 16, 1, 30, tzinfo=timezone.utc), NY,
@@ -193,6 +200,8 @@ def c_render(screen, plate, when, place, opts, path):
         args.append("--labours")
     if opts.get("tools"):
         args.append("--tools")
+    if opts.get("gild"):
+        args.append("--gild")
     if opts.get("corners") is not None:
         args += ["--corners", str(opts["corners"])]
     if opts.get("theme"):
@@ -227,7 +236,7 @@ def py_render(screen, plate, when, place, opts, sky):
         return plates.render(when, dial, sky, tz, plate, round_screen=screen == "gabbro",
                              clock24=opts.get("clock24", False), weather=w, labours=opts.get("labours", False),
                              calendars=opts.get("calendars", 0), tools=opts.get("tools", False),
-                             theme=opts.get("theme"), corners=opts.get("corners"),
+                             theme=opts.get("theme"), corners=opts.get("corners"), gild=opts.get("gild", False),
                              tides=[(int(when.timestamp()) // 60 + m, hi, cm) for m, hi, cm in opts.get("tides", [])],
                              extras=extras).astype(np.uint8)
     if opts.get("show") is None:
