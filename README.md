@@ -6,6 +6,8 @@ planisphere and the year's days after the old calendars. **[Planisphere on the P
 The Python prototype (`proto/`) is where it is designed; the watch runs the same drawing in C (`watchface/`), and its
 settings page shows the face live, the same C built to WebAssembly. See [On the watch](#on-the-watch).
 
+![Planisphere: the Time 2 beside the Round 2, its features one after another](docs/showcase.gif)
+
 ## Gallery
 
 Drawn by the watch's own C (`tools/store_gallery.py`, which also makes the store's gallery), the Time 2 beside the
