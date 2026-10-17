@@ -40,6 +40,8 @@ EMSCRIPTEN_KEEPALIVE int pv_height(void) { return H; }
 EMSCRIPTEN_KEEPALIVE int pv_row_x0(int y) { return row_x0[y]; }
 EMSCRIPTEN_KEEPALIVE int pv_row_x1(int y) { return row_x1[y]; }
 EMSCRIPTEN_KEEPALIVE int pv_plates(void) { return PLATE_COUNT; }
+/* whether a plate's figures are drawn in at dusk (not on a printed chart's, always there, nor under a rete) */
+EMSCRIPTEN_KEEPALIVE int pv_draws_in(int plate) { return PLATES[plate].window != WIN_PAPER && !PLATES[plate].rete; }
 
 /* the scene blobs, linked in: the labours and the corner tools (tools.bin from memory), the woodcuts (scenes.bin) */
 /* a table in memory, read as the watch reads its resources (zeros past its end) */
@@ -128,6 +130,47 @@ EMSCRIPTEN_KEEPALIVE int pv_show_frames(void) {
 EMSCRIPTEN_KEEPALIVE uint8_t *pv_show_frame(int frame) {
   plan_show(&P, &(Target){pv_row, NULL}, frame, &undo.u);
   return fb;
+}
+
+/* The animations when asked (the page's "Play"): the face with the figures drawn in so far (k of EVENT_FIGS_FRAMES,
+ * 0 all), or the sky turned on (degrees, as a flick spins it); a passing event planned (EV_METEOR, EV_BIRDS: its
+ * frames, then each over the face as drawn, pv_event_frame), or a display at the hour (pv_show_frames after
+ * pv_render_show); and the Sun's altitude at a moment, to choose an hour that suits them. */
+extern int pv_force_show, pv_force_event;
+/* the battery's candle (Face.candle), at the charge given (percent) */
+EMSCRIPTEN_KEEPALIVE void pv_candle(int on, int pct) { F.candle = on != 0, F.battery = (uint8_t)pct, F.charging = false; }
+EMSCRIPTEN_KEEPALIVE uint8_t *pv_render_figs(double utc, int offset, int k) {
+  F.figs_part = (uint8_t)k;
+  uint8_t *out = pv_render(utc, offset);
+  F.figs_part = 0;
+  return out;
+}
+EMSCRIPTEN_KEEPALIVE uint8_t *pv_render_turn(double utc, int offset, float degrees) {
+  F.turn = degrees;
+  uint8_t *out = pv_render(utc, offset);
+  F.turn = 0;
+  return out;
+}
+EMSCRIPTEN_KEEPALIVE uint8_t *pv_render_show(double utc, int offset) {
+  pv_force_show = 1;
+  uint8_t *out = pv_render(utc, offset);
+  pv_force_show = 0;
+  return out;
+}
+EMSCRIPTEN_KEEPALIVE int pv_event(double utc, int offset, int kind) {
+  pv_force_event = kind, P.event = 0;
+  uint8_t *out = pv_render(utc, offset);
+  pv_force_event = 0, undo.u.n = 0;
+  return out && P.event ? P.event_frames : 0;
+}
+EMSCRIPTEN_KEEPALIVE uint8_t *pv_event_frame(int frame) {
+  plan_event(&P, &(Target){pv_row, NULL}, frame, &undo.u);
+  return fb;
+}
+EMSCRIPTEN_KEEPALIVE float pv_sun(double utc) {
+  Sky sky;
+  plan_sky(&sky, (int64_t)utc, (float)F.lon);
+  return plan_altitude(sky.sun_ra, sky.sun_dec, sky.lst, (float)F.lat);
 }
 
 /* The minute written, when the face last drawn has new figures kept (pv_face's scribe): its frames (0: none); then each

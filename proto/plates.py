@@ -694,17 +694,16 @@ def candle(img, inside, inner, card, P, pct, charging):
     for y in range(base - n - (5 if charging else 4), base + 8):     # the card round the candle and its figure
         for x in range((fx if y > base else x0) - 1, (fx + fw if y > base else x0 + 5) + 1):
             img[y, x] = card[y, x]
-    light_paper = P["window"] == "paper" and int(np.asarray(P["night"]).sum()) > 400   # (as r->light_paper)
-    ink, wax, flame = P["ink"], (tint if light_paper else P["line"]), P["accent"] if pct <= 20 else P["planet"]
+    ink, flame = P["ink"], P["accent"] if pct <= 20 else P["planet"]
     for i in range(5):
         img[base, x0 + i] = ink
-    for j in range(10):
+    for j in range(10):                                   # inked as far as the charge; the rest its outline, dotted
         y, lit = base - 10 + j, j >= 10 - n
-        for i in (1, 2, 3):
-            if lit:
-                img[y, x0 + i] = ink
-            elif i != 2 or j == 0:
-                img[y, x0 + i] = wax
+        if lit:
+            img[y, x0 + 1:x0 + 4] = ink
+        elif j % 2 == 0:
+            img[y, x0 + 1] = ink
+            img[y, x0 + 3] = ink
         if lit and j % 2:
             img[y, x0] = ink
     if n:

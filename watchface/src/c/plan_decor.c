@@ -247,14 +247,14 @@ static void candle(const DecorCtx *r) {
   int fx = x0 + 2 - fw / 2;
   for (int y = base - n - (r->charging ? 5 : 4); y <= base + 7; y++)
     for (int x = (y > base ? fx : x0) - 1; x <= (y > base ? fx + fw : x0 + 5); x++) put(r, x, y, card_at(r, x, y));
-  uint8_t ink = r->ink, wax = r->light_paper ? r->tone : r->line, flame = pct <= 20 ? r->accent : r->planet;
+  uint8_t ink = r->ink, flame = pct <= 20 ? r->accent : r->planet;
   for (int i = 0; i < 5; i++) put(r, x0 + i, base, ink);           /* the saucer */
-  for (int j = 0; j < 10; j++) {                                    /* the wax: inked as far as the charge, else faint */
-    int y = base - 10 + j;
+  for (int j = 0; j < 10; j++) {                                    /* the wax: inked as far as the charge; the rest */
+    int y = base - 10 + j;                                          /* burnt away, its outline dotted in the ink */
     bool lit = j >= 10 - n;
-    for (int i = 1; i <= 3; i++)
-      if (lit) put(r, x0 + i, y, ink);
-      else if (i != 2 || j == 0) put(r, x0 + i, y, wax);
+    if (lit) for (int i = 1; i <= 3; i++) put(r, x0 + i, y, ink);
+    else if (j == 0) put(r, x0 + 1, y, ink), put(r, x0 + 3, y, ink);
+    else if (j % 2 == 0) put(r, x0 + 1, y, ink), put(r, x0 + 3, y, ink);
     if (lit && j % 2) put(r, x0, y, ink);                           /* the bands, a fifth each */
   }
   if (n) {

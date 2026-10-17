@@ -39,7 +39,7 @@ typedef struct {
   uint8_t figures;                      /* the figures drawn in again: 0 at dusk alone, 1 each hour, 2 each half hour,
                                          * 3 each quarter (from version 10) */
   uint8_t flick;                        /* a flick of the wrist: 0 nothing, 1 the figures drawn in, 2 the sky spun (11) */
-  uint8_t candle;                       /* the battery's candle in the card (from version 11; before it, on) */
+  uint8_t candle;                       /* the battery's candle in the card (from version 11; off unless chosen) */
 } Settings;
 typedef struct {                        /* versions 2 to 6, the names' room smaller (version 2's ends at animations) */
   uint8_t version, plate, clock, names, weather, units, place, labours;
@@ -86,7 +86,7 @@ static uint32_t s_asked;
 
 static void defaults(Settings *s) {
   memset(s, 0, sizeof *s);
-  s->version = SETTINGS_VERSION, s->candle = 1;
+  s->version = SETTINGS_VERSION;
   s->plate = PLATE_PLANISPHERE, s->names = 1, s->weather = 1, s->animations = ANIM_ALL;
 }
 
@@ -650,7 +650,7 @@ static void init(void) {
     if (s.version == 7) s_settings.corners = s.corners ? (s.theme && s.theme < THEME_COUNT ? s.theme : THEME_LABOURS) : 0;
     if (s.version < 9) s_settings.gild = 0;
     if (s.version < 10) s_settings.figures = 0;
-    if (s.version < 11) s_settings.flick = 0, s_settings.candle = 1;
+    if (s.version < 11) s_settings.flick = 0, s_settings.candle = 0;
     s_settings.version = SETTINGS_VERSION;
   }
   else if (got == (int)sizeof(SettingsOld) || got == (int)offsetof(SettingsOld, animations)) {

@@ -164,3 +164,4 @@ footer .primary { flex: 1; }
 .calendar .desc { margin-top: 4px; }
 .calendar .next { display: block; margin-top: 5px; padding: 0; color: var(--accent); font-size: 14px; text-align: left; }
 .calendar .next:empty { display: none; }
+.seg button:disabled { opacity: 0.4; cursor: default; }

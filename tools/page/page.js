@@ -21,7 +21,7 @@
   // events (0.1.5, ANIMV 2) turned on in settings from before them
   var ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32;
   var ANIM_EVENTS = 60;
-  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CORNERS: 0, GILD: 0, FIGURES: 0, FLICK: 0, CANDLE: 1, TIDE_TIMES: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
+  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CORNERS: 0, GILD: 0, FIGURES: 0, FLICK: 0, CANDLE: 0, TIDE_TIMES: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
                   WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: '', PLACE_CC: ''};
   var settings = {};
   function reset(from) {
@@ -125,6 +125,8 @@
       {key: 'ANIMATIONS', bit: ANIM_BIRDS, type: 'switch', label: 'Birds at twilight',
        desc: 'In the months birds migrate (March to May, September to November), a skein of them may cross low ' +
              'through the window at dawn or dusk, once a twilight.'},
+      {type: 'play', label: 'See them play', desc: 'In the preview above, on the plate and the card as you have them; ' +
+        'those that want the dark, or the twilight, play at an hour of the preview’s own day that has it.'},
       {key: 'FLICK', type: 'seg', label: 'A flick of the wrist', options: [
         [0, 'Nothing', 'The face takes no notice of a flick.'],
         [1, 'Draws the figures in', 'A flick of the wrist draws the constellations’ figures in again, star to star.'],
@@ -214,7 +216,21 @@
     var box = el('div', 'item');
     if (it.label && it.type !== 'switch') box.appendChild(el('div', 'label', it.label));
     if (it.key) box.setAttribute('data-key', it.key);
-    if (it.type === 'seg') {
+    if (it.type === 'play') {                     // the animations, each played in the preview when asked
+      var row = el('div', 'seg small play');
+      [['Minute', 'minute'], ['Figures', 'figures'], ['Spin', 'spin'], ['Shooting star', 'meteor'], ['Birds', 'birds'],
+       ['Fireworks', 'fireworks']].forEach(function (o) {
+        var b = el('button', null, o[0]);
+        b.type = 'button';
+        b.onclick = function () { play(o[1]); };
+        row.appendChild(b);
+        if (o[1] === 'figures') dirty.push(function () {   // (a printed chart's figures are always there, a rete's never)
+          b.disabled = !!M && !M._pv_draws_in(settings.PLATE);
+          b.title = b.disabled ? 'This plate’s figures are not drawn in' : '';
+        });
+      });
+      box.appendChild(row);
+    } else if (it.type === 'seg') {
       var seg = el('div', 'seg');
       it.options.forEach(function (o) {
         var b = el('button', null, o[1]);
@@ -486,12 +502,13 @@
                                                         phonePlace.country), coords: true};
     return {lat: 40, lon: -new Date().getTimezoneOffset() / 4, city: '', country: '', coords: false};
   }
-  function setup(plate, main) {
+  function setup(plate, main, play) {
     var p = place();
     M._pv_face(plate, settings.CLOCK === 2 || (settings.CLOCK === 0 && clock24Here()) ? 1 : 0, settings.NAMES ? 1 : 0,
                fahrenheit() ? 1 : 0, p.lat, p.lon, p.coords ? 1 : 0, settings.LABOURS | 0, settings.CALENDARS >>> 0,
-               main && settings.ANIMATIONS & ANIM_MINUTE ? 1 : 0, settings.ANIMATIONS & ANIM_VILLAGE ? 8 : 0,
+               main && (play || settings.ANIMATIONS & ANIM_MINUTE) ? 1 : 0, settings.ANIMATIONS & ANIM_VILLAGE ? 8 : 0,
                settings.CORNERS | 0, settings.GILD ? 1 : 0);
+    M._pv_candle(settings.CANDLE ? 1 : 0, 64);    // (the candle at a plausible charge)
     M.stringToUTF8(p.city || '', M._pv_city(), 48);
     M.stringToUTF8(p.country || '', M._pv_country(), 48);
     var w = !settings.WEATHER ? null : trySky === 'phone' ? phoneWeather && [phoneWeather.code, phoneWeather.temp10,
@@ -577,6 +594,43 @@
     $('caption').innerHTML = PLATES[settings.PLATE] ? '<b>Plate ' + roman(settings.PLATE + 1) + '</b>' +
       escapeHtml(PLATES[settings.PLATE].name) + ' · ' + Math.abs(p.lat).toFixed(1) + '° ' + (p.lat >= 0 ? 'N' : 'S') +
       ', ' + Math.abs(p.lon).toFixed(1) + '° ' + (p.lon >= 0 ? 'E' : 'W') : '';
+  }
+  // an animation played in the preview when asked (the "See them play" row): at the preview's moment, or, for those that
+  // want the dark (or the twilight), at an hour of the same local day that has it
+  function play(kind) {
+    if (!M) return;
+    stopShow();
+    window.scrollTo({top: 0, behavior: 'smooth'});
+    setup(settings.PLATE, true, true);
+    var t = moment(), u = t.utc, k;
+    var midnight = Math.floor((u + t.offset * 60) / 86400) * 86400 - t.offset * 60;
+    var sun = function (m) { return M._pv_sun(midnight + m * 60); };
+    var first = function (from, to, ok) {      // the first ten minutes of the day from `from` (minutes) that suit
+      for (var m = from; m <= to; m += 10) if (ok(sun(m))) return midnight + m * 60;
+      return u;
+    };
+    if ((kind === 'figures' || kind === 'meteor' || kind === 'spin') && !(M._pv_sun(u) < -12))
+      u = first(12 * 60, 30 * 60, function (a) { return a < -12; });
+    else if (kind === 'birds') u = first(12 * 60, 24 * 60, function (a) { return a > -6 && a < 4; });
+    else if (kind === 'fireworks') u = midnight + 21 * 3600;
+    var frames = [], at = function (f, k) { frames.push(function () { return f(k); }); };
+    if (kind === 'figures') for (k = 1; k <= 6; k++) at(function (k) { return M._pv_render_figs(u, t.offset, k % 6); }, k);
+    else if (kind === 'spin') [72, 40, 20, 9, 3, 0].forEach(function (d) {
+      at(function (d) { return M._pv_render_turn(u, t.offset, d); }, d); });
+    else {
+      var n = 0;
+      if (kind === 'minute') M._pv_render(u - 60, t.offset), M._pv_render(u, t.offset), n = M._pv_scribe_frames() - 1;
+      else if (kind === 'fireworks') M._pv_render_show(u, t.offset), n = M._pv_show_frames();
+      else n = M._pv_event(u, t.offset, kind === 'meteor' ? 1 : 4);
+      var step = kind === 'minute' ? M._pv_scribe_frame : kind === 'fireworks' ? M._pv_show_frame : M._pv_event_frame;
+      for (k = 0; k <= n; k++) at(step, k);
+    }
+    var s = show = {i: 0};
+    s.timer = setInterval(function () {
+      if (s.i >= frames.length) { stopShow(); draw(); return; }
+      var ptr = frames[s.i++]();
+      if (ptr) blit($('screen'), ptr);
+    }, kind === 'figures' ? 150 : kind === 'spin' ? 160 : 1000 / 12);
   }
   var thumbTimer = null;
   function refreshThumbs() {

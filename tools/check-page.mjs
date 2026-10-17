@@ -210,6 +210,38 @@ for (let i = 0; i < ungilt.length; i += 4) {
 check(nearTime > 30 && belowTime === 0, `the time gilt (pixels changed by the time: ${nearTime}; below it: ${belowTime})`);
 await page.locator('label.switch', { hasText: 'Gild the time' }).first().click();
 await page.waitForTimeout(300);
+// the animations played when asked ("See them play"): each moves the preview over several frames, then the face comes
+// back as it was, still (on a plate whose figures are drawn in; the Astrolabe's, under its rete, never are)
+const greyed = await page.locator('.play button', { hasText: 'Figures' }).first().isDisabled();
+check(greyed, 'the figures not offered to play on the Astrolabe');
+await tap('.plate', 'Planisphere');
+await page.waitForTimeout(300);
+const atRest = await grab();
+for (const name of ['Minute', 'Figures', 'Spin', 'Shooting star', 'Birds', 'Fireworks']) {
+  await page.locator('.play button', { hasText: name }).first().click();
+  const seen = [];                               // (as fast as the page can be read, for the first second and a half)
+  for (const t0 = Date.now(); Date.now() - t0 < 1500;) seen.push(await grab());
+  await page.waitForTimeout(name === 'Fireworks' ? 9000 : name === 'Birds' ? 7000 : 500);
+  const back = await grab();
+  const moving = seen.slice(1).map((f, i) => differ(f, seen[i])).filter((n) => n > 0).length;
+  await page.waitForTimeout(300);
+  check(moving >= 2 && differ(back, atRest) === 0 && differ(back, await grab()) === 0,
+        `${name} played in the preview (frames that moved: ${moving}; the face back after: ${differ(back, atRest)})`);
+}
+// the candle, when chosen: drawn in the card's upper corner, nothing else changed far from it
+await page.locator('label.switch', { hasText: 'candle' }).first().click();
+await page.waitForTimeout(400);
+const lit2 = await grab();
+const lw = await page.evaluate(() => document.getElementById('screen').width);
+let up = 0, low = 0;
+for (let i = 0; i < atRest.length; i += 4) {
+  const d = atRest[i] !== lit2[i] || atRest[i + 1] !== lit2[i + 1] || atRest[i + 2] !== lit2[i + 2];
+  if (d && Math.floor(i / 4 / lw) < lw / 2) up++; else if (d) low++;
+}
+check(up > 20 && low === 0, `the candle in the preview (pixels changed in the upper half: ${up}; lower: ${low})`);
+await page.locator('label.switch', { hasText: 'candle' }).first().click();
+await tap('.plate', 'Astrolabe');
+await page.waitForTimeout(300);
 // the zodiac behind the face: the card changes from the labours' (its woodcut), and back
 const withLabours = await grab();
 await tap('[data-key=LABOURS] .seg button', 'The zodiac');
@@ -272,7 +304,7 @@ await sleep(100);
 const msg = byName(sent[before] || {});
 console.log('sent:', JSON.stringify(msg));
 const want = { PLATE: 4, CLOCK: 2, UNITS: 1, PLACE: 1, PLACE_LAT: -338700, PLACE_LON: 1512100, PLACE_CITY: 'SYDNEY|SYD.',
-               PLACE_COUNTRY: 'AUSTRALIA|AUST.', NAMES: 1, LABOURS: 2, CORNERS: 4, FIGURES: 2, FLICK: 2, CANDLE: 1, CALENDARS: (1 << 6) | (1 << 8), WEATHER: 1,
+               PLACE_COUNTRY: 'AUSTRALIA|AUST.', NAMES: 1, LABOURS: 2, CORNERS: 4, FIGURES: 2, FLICK: 2, CANDLE: 0, CALENDARS: (1 << 6) | (1 << 8), WEATHER: 1,
                ANIMATIONS: 63 };
 const bad = Object.entries(want).filter(([k, v]) => msg[k] !== v);
 check(!bad.length, 'page -> watch: ' + (bad.length ? 'MISMATCH ' + JSON.stringify(bad) : 'the settings as set'));

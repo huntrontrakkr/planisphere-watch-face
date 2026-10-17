@@ -1589,11 +1589,18 @@ static int halo_colour(R *r, int x, int y) {
   }
   return best;
 }
+#ifdef PLAN_PREVIEW
+/* the settings page's preview plays each animation when asked (preview/preview.c): a display, a passing event */
+int pv_force_show, pv_force_event;
+#endif
 static void show_plan(R *r) {
   Plan *p = r->p;
   int hour = r->local.hour, flags = 0;
   if (hour == 0) flags = p->feast_day == r->local.ordinal ? p->feast_eve : 0;
   else if (feast_brings(r, FF_FIREWORKS) && r->sun_alt < -1 && hour >= 19 && hour <= 23) flags = p->feast_flags;
+#ifdef PLAN_PREVIEW
+  if (pv_force_show && !flags) flags = FF_FIREWORKS;
+#endif
   p->show_hour = -1;
   if (!flags || r->local.minute != 0) return;
   const uint8_t *sparks = SPARK_COLOURS[(flags >> 4) & 3];
@@ -1631,24 +1638,28 @@ static void show_plan(R *r) {
 static void passing(R *r, int rad_x, int rad_y) {
   Plan *p = r->p;
   const Face *f = r->f;
+  int ask = 0;                                     /* (the event the settings page asks for, whatever the odds) */
+#ifdef PLAN_PREVIEW
+  ask = pv_force_event;
+#endif
   int32_t minute = r->local.ordinal * 1440 + r->local.hour * 60 + r->local.minute;
-  if (f->figs_part || p->event || p->show_hour >= 0 || p->event_minute == minute) return;
+  if (f->figs_part || (!ask && (p->event || p->show_hour >= 0 || p->event_minute == minute))) return;
   p->event_minute = minute;
-  if (r->closed_sky || (r->wx && (r->falls || r->fog))) return;
+  if (!ask && (r->closed_sky || (r->wx && (r->falls || r->fog)))) return;
   Rng g;
   rng_seed(&g, r, 7 + r->local.hour * 60 + r->local.minute);
   int top = p->win_top, span = p->win_bottom - p->win_top, month = r->local.month;
   int32_t twilight = r->local.ordinal * 2 + (r->local.hour >= 12);
-  if ((f->events & EV_METEOR) && r->sun_alt < -12 && !(r->wx && r->live && r->stratus + r->cumulus > 0.45f) &&
-      rng_int(&g, 0, plan_shower(r->sky.sun_lon) >= 0 ? 5 : 45) == 0) {
+  if (ask ? ask == EV_METEOR : (f->events & EV_METEOR) && r->sun_alt < -12 &&
+      !(r->wx && r->live && r->stratus + r->cumulus > 0.45f) && rng_int(&g, 0, plan_shower(r->sky.sun_lon) >= 0 ? 5 : 45) == 0) {
     int y = top + 6 + rng_int(&g, 0, span / 2 + 1), w = p->wx1[y] - p->wx0[y] - 12;
     int x = p->wx0[y] + 6 + rng_int(&g, 0, w > 1 ? w : 1);
     int dx = rng_int(&g, -16, 17), dy = rng_int(&g, -4, 17);           /* (falling, as a rule) */
     if (r->shower >= 0 && (x - rad_x) * (x - rad_x) + (y - rad_y) * (y - rad_y) > 64) dx = x - rad_x, dy = y - rad_y;
     p->event = EV_METEOR, p->event_frames = 6, p->event_ink = (r->paper || r->red) ? r->P->star : 0;
     p->event_x0 = (int16_t)x, p->event_y0 = (int16_t)y, p->event_x1 = (int16_t)dx, p->event_y1 = (int16_t)dy;
-  } else if ((f->events & EV_BIRDS) && r->sun_alt > -6 && r->sun_alt < 4 && month % 6 >= 3 && p->birds_mark != twilight &&
-             rng_int(&g, 0, 12) == 0) {
+  } else if (ask ? ask == EV_BIRDS : (f->events & EV_BIRDS) && r->sun_alt > -6 && r->sun_alt < 4 && month % 6 >= 3 &&
+             p->birds_mark != twilight && rng_int(&g, 0, 12) == 0) {
     int y = top + span * 2 / 3 + rng_int(&g, 0, span / 8 + 1), w = p->wx1[y] - p->wx0[y];
     p->birds_mark = twilight;
     p->event = EV_BIRDS, p->event_frames = (uint8_t)((w + 38) * 2 / 5 < 90 ? (w + 38) * 2 / 5 : 90);

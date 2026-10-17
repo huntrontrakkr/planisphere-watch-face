@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 . "${EMSDK:-$HOME/code/ext/emsdk}/emsdk_env.sh" >/dev/null 2>&1
 C=watchface/src/c
 python3 tools/blobs_h.py
-emcc -O2 -ffp-contract=off -I$C -Ibuild preview/preview.c $C/plan_render.c $C/plan_astro.c $C/plan_math.c $C/plan_feasts.c \
+emcc -O2 -ffp-contract=off -DPLAN_PREVIEW -I$C -Ibuild preview/preview.c $C/plan_render.c $C/plan_astro.c $C/plan_math.c $C/plan_feasts.c \
   $C/plan_show.c $C/plan_decor.c $C/plan_labours.c \
   -o preview/plan-preview.js \
   -sMODULARIZE=1 -sEXPORT_NAME=PlanPreview -sSINGLE_FILE=1 -sENVIRONMENT=web,node -sFILESYSTEM=0 \
