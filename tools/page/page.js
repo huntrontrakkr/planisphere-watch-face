@@ -625,11 +625,16 @@
       var step = kind === 'minute' ? M._pv_scribe_frame : kind === 'fireworks' ? M._pv_show_frame : M._pv_event_frame;
       for (k = 0; k <= n; k++) at(step, k);
     }
-    var s = show = {i: 0};
+    var s = show = {i: 0}, seen = window.planPlayed = {kind: kind, frames: 0, moved: 0, done: false}, last = null;
     s.timer = setInterval(function () {
-      if (s.i >= frames.length) { stopShow(); draw(); return; }
+      if (s.i >= frames.length) { stopShow(); draw(); seen.done = true; return; }
       var ptr = frames[s.i++]();
-      if (ptr) blit($('screen'), ptr);
+      if (!ptr) return;
+      blit($('screen'), ptr);
+      var now = M.HEAPU8.slice(ptr, ptr + M._pv_width() * M._pv_height());   // (what was played, for the page's tests)
+      seen.frames++;
+      if (last && now.some(function (v, i) { return v !== last[i]; })) seen.moved++;
+      last = now;
     }, kind === 'figures' ? 150 : kind === 'spin' ? 160 : 1000 / 12);
   }
   var thumbTimer = null;

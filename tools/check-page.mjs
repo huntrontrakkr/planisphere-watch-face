@@ -219,12 +219,10 @@ await page.waitForTimeout(300);
 const atRest = await grab();
 for (const name of ['Minute', 'Figures', 'Spin', 'Shooting star', 'Birds', 'Fireworks']) {
   await page.locator('.play button', { hasText: name }).first().click();
-  const seen = [];                               // (as fast as the page can be read, for the first second and a half)
-  for (const t0 = Date.now(); Date.now() - t0 < 1500;) seen.push(await grab());
-  await page.waitForTimeout(name === 'Fireworks' ? 9000 : name === 'Birds' ? 7000 : 500);
-  const back = await grab();
-  const moving = seen.slice(1).map((f, i) => differ(f, seen[i])).filter((n) => n > 0).length;
+  await page.waitForFunction(() => window.planPlayed && window.planPlayed.done, null, { timeout: 30000 });
+  const { moved: moving } = await page.evaluate(() => window.planPlayed);
   await page.waitForTimeout(300);
+  const back = await grab();
   check(moving >= 2 && differ(back, atRest) === 0 && differ(back, await grab()) === 0,
         `${name} played in the preview (frames that moved: ${moving}; the face back after: ${differ(back, atRest)})`);
 }
