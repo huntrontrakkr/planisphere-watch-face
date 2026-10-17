@@ -40,8 +40,8 @@ EMSCRIPTEN_KEEPALIVE int pv_height(void) { return H; }
 EMSCRIPTEN_KEEPALIVE int pv_row_x0(int y) { return row_x0[y]; }
 EMSCRIPTEN_KEEPALIVE int pv_row_x1(int y) { return row_x1[y]; }
 EMSCRIPTEN_KEEPALIVE int pv_plates(void) { return PLATE_COUNT; }
-/* whether a plate's figures are drawn in at dusk (not on a printed chart's, always there, nor under a rete) */
-EMSCRIPTEN_KEEPALIVE int pv_draws_in(int plate) { return PLATES[plate].window != WIN_PAPER && !PLATES[plate].rete; }
+/* whether a plate's figures can be drawn in (not under a rete) */
+EMSCRIPTEN_KEEPALIVE int pv_draws_in(int plate) { return !PLATES[plate].rete; }
 
 /* the scene blobs, linked in: the labours and the corner tools (tools.bin from memory), the woodcuts (scenes.bin) */
 /* a table in memory, read as the watch reads its resources (zeros past its end) */
@@ -140,10 +140,16 @@ extern int pv_force_show, pv_force_event;
 /* the battery's candle (Face.candle), at the charge given (percent) */
 EMSCRIPTEN_KEEPALIVE void pv_candle(int on, int pct) { F.candle = on != 0, F.battery = (uint8_t)pct, F.charging = false; }
 EMSCRIPTEN_KEEPALIVE uint8_t *pv_render_figs(double utc, int offset, int k) {
-  F.figs_part = (uint8_t)k;
+  F.figs_part = (uint8_t)k, F.chart = k != 0;     /* (as a flick draws them: over the chart, whatever the hour) */
   uint8_t *out = pv_render(utc, offset);
-  F.figs_part = 0;
+  F.figs_part = 0, F.chart = false;
   return out;
+}
+static const float SPIN[SPIN_FRAMES] = SPIN_TURNS;
+uint8_t *pv_render_turn(double utc, int offset, float degrees);
+EMSCRIPTEN_KEEPALIVE int pv_spin_frames(void) { return SPIN_FRAMES; }
+EMSCRIPTEN_KEEPALIVE uint8_t *pv_render_spin(double utc, int offset, int k) {   /* (k of SPIN_FRAMES; past them, at rest) */
+  return pv_render_turn(utc, offset, k >= 1 && k <= SPIN_FRAMES ? SPIN[k - 1] : 0);
 }
 EMSCRIPTEN_KEEPALIVE uint8_t *pv_render_turn(double utc, int offset, float degrees) {
   F.turn = degrees;

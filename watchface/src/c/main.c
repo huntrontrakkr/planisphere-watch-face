@@ -11,7 +11,7 @@
 /* Nothing here is in a hot loop: built for size. */
 #pragma GCC optimize("Os")
 
-#define SETTINGS_VERSION 11
+#define SETTINGS_VERSION 12
 /* the animations, a bit each (Settings.animations): the passing events (from version 5) are Face.events' bits, two up */
 enum { ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32 };
 #define ANIM_ALL 63
@@ -40,6 +40,8 @@ typedef struct {
                                          * 3 each quarter (from version 10) */
   uint8_t flick;                        /* a flick of the wrist: 0 nothing, 1 the figures drawn in, 2 the sky spun (11) */
   uint8_t candle;                       /* the battery's candle in the card (from version 11; off unless chosen) */
+  uint8_t flicks;                       /* the flicks it takes: 1, or 2 (the second within FLICK_PAIR_MS of the first,
+                                         * which may only have lit the screen) (from version 12) */
 } Settings;
 typedef struct {                        /* versions 2 to 6, the names' room smaller (version 2's ends at animations) */
   uint8_t version, plate, clock, names, weather, units, place, labours;
@@ -49,7 +51,7 @@ typedef struct {                        /* versions 2 to 6, the names' room smal
   uint8_t animations, tools;
 } SettingsOld;
 _Static_assert(offsetof(SettingsOld, city) == offsetof(Settings, city), "the settings' head as before");
-_Static_assert(sizeof(Settings) == ((offsetof(Settings, candle) + 1 + 3) & ~3u), "the settings' record: no stray padding");
+_Static_assert(sizeof(Settings) == ((offsetof(Settings, flicks) + 1 + 3) & ~3u), "the settings' record: no stray padding");
 
 typedef struct {                        /* where the phone last was */
   int32_t lat_e4, lon_e4;
@@ -87,7 +89,7 @@ static uint32_t s_asked;
 static void defaults(Settings *s) {
   memset(s, 0, sizeof *s);
   s->version = SETTINGS_VERSION;
-  s->plate = PLATE_PLANISPHERE, s->names = 1, s->weather = 1, s->animations = ANIM_ALL;
+  s->plate = PLATE_PLANISPHERE, s->names = 1, s->weather = 1, s->animations = ANIM_ALL, s->flicks = 2;
 }
 
 static uint32_t now_ms(void) {
@@ -207,12 +209,14 @@ static bool decor_call(void *ctx, bool labours, const DecorCtx *dc) {
 }
 static bool decor_draw(void *ctx, const DecorCtx *dc) { return decor_run(ctx, dc, decor_call); }
 
-/* a flick of the wrist (the accelerometer's tap): the figures drawn in, or the sky spun on and settling over a second
- * in these turns, a frame each 160 ms, then the face at rest */
+/* a flick of the wrist (the accelerometer's tap): the figures drawn in over the sky as a chart shows it (Face.chart),
+ * held a moment; or the sky spun a day round (SPIN_TURNS), then the face at rest */
 static int s_flick;                     /* a flick's wish, till the next frame takes it: Settings.flick */
 static int s_spin_k;                    /* the spin's frames drawn (0: none playing) */
-static const float SPIN[5] = {72, 40, 20, 9, 3};
-#define SPIN_FRAMES 5
+static const float SPIN[SPIN_FRAMES] = SPIN_TURNS;
+static bool s_chart;                    /* the figures being drawn in are a flick's: over the chart, and held */
+#define CHART_HOLD_MS 2000
+#define FLICK_PAIR_MS 4000           /* (two flicks: the second within four seconds, time to see the screen lit) */
 static int32_t s_where[2];              /* the face's place as face_of sets it, 1e-4 degrees (latitude, longitude) */
 static void face_of(Face *f) {
   memset(f, 0, sizeof *f);
@@ -347,12 +351,15 @@ static void scribe_end(void) {
 
 static void show_end(void) { free(s_undo), s_undo = NULL, s_show = false; }
 
-static void event_end(void) { free(s_event_undo), s_event_undo = NULL, s_event_k = 0, s_figs_k = 0, s_spin_k = 0; }
+static void event_end(void) {
+  free(s_event_undo), s_event_undo = NULL, s_event_k = 0, s_figs_k = 0, s_spin_k = 0, s_chart = false;
+}
 
 /* when nothing plays: the timer stopped, the blob let go, and a drawing that waited made */
 static void anims_settle(bool redraw_now) {
   if (animating()) {
-    if (!s_anim_timer) s_anim_timer = app_timer_register(s_figs_k ? 150 : s_spin_k ? 160 : 1000 / SHOW_FPS, anim_tick, NULL);
+    int ms = s_figs_k ? (s_chart && s_figs_k == EVENT_FIGS_FRAMES ? CHART_HOLD_MS : 150) : s_spin_k ? SPIN_MS : 1000 / SHOW_FPS;
+    if (!s_anim_timer) s_anim_timer = app_timer_register(ms, anim_tick, NULL);
     return;
   }
   if (s_anim_timer) app_timer_cancel(s_anim_timer), s_anim_timer = NULL;
@@ -435,8 +442,8 @@ static void update(Layer *layer, GContext *ctx) {
   int figs = 0;                                  /* the figures' frame drawn in, if they are being (Face.figs_part) */
   if (s_anim_due && s_figs_k) {
     s_anim_due = false;
-    figs = ++s_figs_k < EVENT_FIGS_FRAMES ? s_figs_k : 0;
-    if (!figs) s_figs_k = 0;
+    figs = ++s_figs_k < EVENT_FIGS_FRAMES + s_chart ? s_figs_k : 0;   /* (a flick's to the whole, then held) */
+    if (!figs) s_figs_k = 0, s_chart = false;
   } else if (s_anim_due && s_spin_k) {           /* the spin's next turn; past the last, the face at rest */
     s_anim_due = false;
     if (++s_spin_k > SPIN_FRAMES) s_spin_k = 0;
@@ -449,7 +456,7 @@ static void update(Layer *layer, GContext *ctx) {
     scribe_end(), show_end(), event_end(), s_redraw_after = false;
   }
   if (s_flick && !animating()) {                 /* a flick of the wrist: the figures drawn in, or the sky spun */
-    if (s_flick == 1) scribe_end(), s_figs_k = 1, figs = 1;
+    if (s_flick == 1) scribe_end(), s_figs_k = 1, figs = 1, s_chart = true;
     else s_spin_k = 1;
   }
   s_flick = 0;
@@ -475,7 +482,7 @@ static void update(Layer *layer, GContext *ctx) {
   if (!fb) return;
   Face f;
   face_of(&f);
-  if (s_figs_k) f.scribe = false, f.figs_part = (uint8_t)figs;
+  if (s_figs_k) f.scribe = false, f.figs_part = (uint8_t)figs, f.chart = s_chart;
   if (s_spin_k) f.scribe = false;
   Target tg = {fb_row, fb};
   if (heap_bytes_free() < g_heap_low || !g_heap_low) g_heap_low = heap_bytes_free();
@@ -500,6 +507,10 @@ static void update(Layer *layer, GContext *ctx) {
 
 static void tap(AccelAxisType axis, int32_t direction) {
   if (!s_settings.flick || !animations() || animating()) return;
+  static uint32_t first;                         /* (the first of two flicks, when two are asked: its time, 0 none) */
+  uint32_t now = now_ms();
+  if (s_settings.flicks != 1 && (!first || now - first > FLICK_PAIR_MS)) { first = now ? now : 1; return; }
+  first = 0;
   s_flick = s_settings.flick;
   if (s_layer) layer_mark_dirty(s_layer);
 }
@@ -521,7 +532,7 @@ static const struct { const uint32_t *key; uint8_t rec, type, off, size; } KEYS[
   IN(NAMES, IN_SETTINGS, IN_U8, Settings, names), IN(WEATHER, IN_SETTINGS, IN_U8, Settings, weather),
   IN(UNITS, IN_SETTINGS, IN_U8, Settings, units), IN(PLACE, IN_SETTINGS, IN_U8, Settings, place),
   IN(LABOURS, IN_SETTINGS, IN_U8, Settings, theme), IN(CORNERS, IN_SETTINGS, IN_U8, Settings, corners), IN(GILD, IN_SETTINGS, IN_U8, Settings, gild), IN(FIGURES, IN_SETTINGS, IN_U8, Settings, figures),
-  IN(FLICK, IN_SETTINGS, IN_U8, Settings, flick), IN(CANDLE, IN_SETTINGS, IN_U8, Settings, candle), IN(TIDE_TIMES, IN_SETTINGS, IN_U8, Settings, tide_times), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
+  IN(FLICK, IN_SETTINGS, IN_U8, Settings, flick), IN(CANDLE, IN_SETTINGS, IN_U8, Settings, candle), IN(FLICKS, IN_SETTINGS, IN_U8, Settings, flicks), IN(TIDE_TIMES, IN_SETTINGS, IN_U8, Settings, tide_times), IN(PLACE_LAT, IN_SETTINGS, IN_I32, Settings, lat_e4),
   IN(PLACE_LON, IN_SETTINGS, IN_I32, Settings, lon_e4), IN(PLACE_CITY, IN_SETTINGS, IN_TEXT, Settings, city),
   IN(PLACE_COUNTRY, IN_SETTINGS, IN_TEXT, Settings, country), IN(CALENDARS, IN_SETTINGS, IN_I32, Settings, calendars),
   IN(ANIMATIONS, IN_SETTINGS, IN_U8, Settings, animations),
@@ -651,6 +662,7 @@ static void init(void) {
     if (s.version < 9) s_settings.gild = 0;
     if (s.version < 10) s_settings.figures = 0;
     if (s.version < 11) s_settings.flick = 0, s_settings.candle = 0;
+    if (s.version < 12) s_settings.flicks = 2;
     s_settings.version = SETTINGS_VERSION;
   }
   else if (got == (int)sizeof(SettingsOld) || got == (int)offsetof(SettingsOld, animations)) {

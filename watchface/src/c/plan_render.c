@@ -58,7 +58,9 @@ typedef struct {
   uint16_t goff[MAX_H / 4 + 2];              /* and where it starts in ga and gb */
   float ik, ssd, csd, csh, ssh, sl0, cl0;
   SkyK sk, sk6;                              /* the sky's Sun-dependent parts, now and (under an eclipse) at -6 */
-  int16_t bright[BRIGHT_STARS][2];           /* the stars brighter than 2.1 on the screen, for the zodiac to avoid */
+  int16_t bright[BRIGHT_STARS][3];           /* the stars brighter than 2.1 on the screen (x, y), for the zodiac to
+                                              * avoid; and half the size each is drawn, 0 not drawn: the clouds and
+                                              * Jupiter's lane keep off those drawn */
   int nbright;
   /* what names keep clear of */
   int16_t box[MAX_BOXES][4];
@@ -77,9 +79,6 @@ typedef struct {
   int16_t strat[28][3];                      /* y, x0, x1 */
   int nstrat;
   uint8_t cc[3], c_line, c_hair, c_rain[2], c_snow;   /* the clouds' colours for the hour (K, W, S roles; 0 the sky) */
-  int16_t drawn[BRIGHT_STARS][3];            /* the drawn bright stars (x, y, half their size): the clouds keep off
-                                              * (each brighter than 2.1: there can be no more than the table has) */
-  int ndrawn;
   int16_t chimney_x, chimney_y;
   bool chimney, night_land;
   /* the sky's events: an eclipse under way here, the umbra's dimming, Jupiter's moons' reach, a shower */
@@ -1248,9 +1247,10 @@ static bool in_band(R *r, int x, int y) {
 }
 /* a pixel the clouds keep off: round a bright star a stratus line or a hair stroke passes */
 static bool kept(R *r, int x, int y) {
-  for (int i = 0; i < r->ndrawn; i++) {
-    int h = r->drawn[i][2];
-    if (x >= r->drawn[i][0] - h - 1 && x <= r->drawn[i][0] + h + 1 && y >= r->drawn[i][1] - h - 1 && y <= r->drawn[i][1] + h + 1)
+  for (int i = 0; i < r->nbright; i++) {
+    int h = r->bright[i][2];
+    if (h && x >= r->bright[i][0] - h - 1 && x <= r->bright[i][0] + h + 1 && y >= r->bright[i][1] - h - 1 &&
+        y <= r->bright[i][1] + h + 1)
       return true;
   }
   return false;
@@ -1408,6 +1408,10 @@ static inline __attribute__((always_inline)) bool span_has(const int16_t *s, int
 static void figure_lines(R *r, int part) {
   const uint8_t *st = sec(r->p->data, SEC_STARS);
   const uint16_t *ln = (const uint16_t *)(const void *)sec(r->p->data, SEC_LINES);
+  /* a chart's figures stand out: the plate's constellation ink, or its labels' where that is too near the sky's */
+  int chart = r->f->chart, near = level_sum(r->P->cons) - level_sum(r->P->night);
+  uint8_t ink = !chart ? r->P->line : near >= 3 || near <= -3 ? r->P->cons : r->P->label;
+  int reach = chart ? 30000 : 7465;                 /* (a chart's solid and bold: within 0.68 px, not 0.34) */
   for (int i = 0; i < LINE_COUNT; i++) {
     int xq[2], yq[2];                                /* (the ends in 1/256 pixel, as projected) */
     for (int e = 0; e < 2; e++) {
@@ -1420,7 +1424,8 @@ static void figure_lines(R *r, int part) {
     if (L4 < 72) continue;                                        /* (under 4.5 pixels) */
     /* the ends drawn in 2.6 pixels; the prototype's antialiased line, its coverage over 0.55: within 0.3375 px of a
      * sample point (in 1/256 px) */
-    int inx = dx * 208 / (5 * L4), iny = dy * 208 / (5 * L4);   /* (dx within 2^17: no 64-bit division) */
+    int inset = 208 - chart * 88;                   /* (in 1/80 px: a chart's come nearer their stars, 1.5 px) */
+    int inx = dx * inset / (5 * L4), iny = dy * inset / (5 * L4);   /* (dx within 2^17: no 64-bit division) */
     int axq = xq[0] + inx, ayq = yq[0] + iny, dxq = xq[1] - inx - axq, dyq = yq[1] - iny - ayq;
     int adx = dxq < 0 ? -dxq : dxq, ady = dyq < 0 ? -dyq : dyq;
     int n = (((adx > ady ? adx : ady) * 3) >> 8) + 1;
@@ -1429,7 +1434,7 @@ static void figure_lines(R *r, int part) {
       for (int dy = 0; dy <= 1; dy++)
         for (int dx = 0; dx <= 1; dx++) {
           int X = xi + dx, Y = yi + dy, ex = pxq - (X * 256 + 128), ey = pyq - (Y * 256 + 128);
-          if (ex * ex + ey * ey < 7465 && inside(r, X, Y) && !hidden(r, X, Y) && !in_band(r, X, Y)) put(r, X, Y, r->P->line);
+          if (ex * ex + ey * ey < reach && inside(r, X, Y) && !hidden(r, X, Y) && !in_band(r, X, Y)) put(r, X, Y, ink);
         }
     }
   }
@@ -1468,13 +1473,13 @@ static void stars(R *r, float faint, float mx, float my, float moon_reach) {
     float x, y;
     project_star(r, s, &x, &y);
     int xi = pyf_floor(x), yi = pyf_floor(y);
-    if (mg < 210 && r->nbright < BRIGHT_STARS) r->bright[r->nbright][0] = (int16_t)xi, r->bright[r->nbright][1] = (int16_t)yi, r->nbright++;
+    int16_t *b = mg < 210 && r->nbright < BRIGHT_STARS ? r->bright[r->nbright++] : NULL;
+    if (b) b[0] = (int16_t)xi, b[1] = (int16_t)yi, b[2] = 0;
     if (too_faint) continue;
     if (r->lit_moon && mg > 220 && (x - mx) * (x - mx) + (y - my) * (y - my) < (6 + moon_reach) * (6 + moon_reach)) continue;
     if (on_screen(r, xi, yi) && (hidden(r, xi, yi) || (mg > 160 && in_band(r, xi, yi)))) continue;
     int half = r->rete ? 2 : mg < 50 ? 3 : mg < 140 ? 2 : mg < 210 ? 1 : 0;
-    if (half && r->ndrawn < BRIGHT_STARS && (!r->rete || mg < 200))
-      r->drawn[r->ndrawn][0] = (int16_t)xi, r->drawn[r->ndrawn][1] = (int16_t)yi, r->drawn[r->ndrawn][2] = (int16_t)half, r->ndrawn++;
+    if (half && b && (!r->rete || mg < 200)) b[2] = (int16_t)half;
     uint8_t c = (r->paper || r->red) ? P->star
                 : STAR_COLOURS[cls];
     if (r->rete) {                                /* the rete's flame pointers, for the bright stars only */
@@ -1882,8 +1887,9 @@ static void jupiter_moons(R *r, int xi, int yi, int hw) {
       if (on_screen(r, cx, cy)) to_lane(r, cx, cy, lx, ly);
     }
   }
-  for (int i = 0; i < r->ndrawn; i++) {
-    int sx = r->drawn[i][0], sy = r->drawn[i][1], h = r->drawn[i][2];
+  for (int i = 0; i < r->nbright; i++) {
+    int sx = r->bright[i][0], sy = r->bright[i][1], h = r->bright[i][2];
+    if (!h) continue;
     bool touch = false;
     for (int dy = -h; dy <= h && !touch; dy++)
       for (int dx = -h; dx <= h && !touch; dx++) touch = in_lane(r, sx + dx, sy + dy, lx, ly);
@@ -2086,6 +2092,22 @@ static const char *feast_name(R *r, int i) {
   return !r->weaver ? NULL : i == STAR_WEAVER ? "Weaver" : i == STAR_COWHERD ? "Cowherd" : NULL;
 }
 
+/* the constellations' names, centred on their figures, the first `most` that fit at `low` degrees up or more */
+static void constellation_names(R *r, int most, int low, uint8_t colour) {
+  const uint8_t *cn = sec(r->p->data, SEC_CONSTELLATIONS);
+  int shown = 0;
+  for (int i = 0; i < CONSTELLATION_COUNT && shown < most; i++) {
+    const uint8_t *s = cn + 20 * i;
+    if (altitude(r, star_ra(s), star_dec(s)) < low) continue;
+    float x, y;
+    project_star(r, s, &x, &y);
+    pixel_text(&r->t1, r, (const char *)s + 4, false, 1);
+    /* (centred on it; on a chart, where that is taken, beside it, above or below) */
+    if (place(r, &r->t1, x, y, colour, true, 0, 0, false) || (most > 3 && place(r, &r->t1, x, y, colour, false, 0, 0, true)))
+      shown++;
+  }
+}
+
 static __attribute__((noinline)) void names(R *r, float mx, float my) {
   const Plate *P = r->P;
   Sky *k = &r->sky;
@@ -2123,16 +2145,7 @@ static __attribute__((noinline)) void names(R *r, float mx, float my) {
     pixel_text(&r->t1, r, (const char *)s + 4, true, 0);
     if (place(r, &r->t1, pyf_floor(x) + 1, pyf_floor(y), P->label, false, 0, 0, true)) shown++;
   }
-  const uint8_t *cn = sec(r->p->data, SEC_CONSTELLATIONS);
-  shown = 0;
-  for (int i = 0; i < CONSTELLATION_COUNT && shown < 3; i++) {
-    const uint8_t *s = cn + 20 * i;
-    if (altitude(r, star_ra(s), star_dec(s)) < 12) continue;
-    float x, y;
-    project_star(r, s, &x, &y);
-    pixel_text(&r->t1, r, (const char *)s + 4, false, 1);
-    if (place(r, &r->t1, x, y, P->cons, true, 0, 0, false)) shown++;
-  }
+  constellation_names(r, 3, 12, P->cons);
 }
 
 /* a 7 x 7 sign (or 5 x 5 glyph) with a pixel of the ground cleared round it */
@@ -3173,7 +3186,8 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   r->live = P->window == WIN_SKY || P->window == WIN_RED;
   r->light_paper = r->paper && level_sum(P->night) * 85 > 400;
   r->rete = P->rete, r->woodcut = P->woodcut;
-  r->sun_alt = plan_altitude(r->sky.sun_ra, r->sky.sun_dec, r->sky.lst, (float)f->lat);
+  /* (the sky spun: its light follows, through dusk, the night and dawn, home) */
+  r->sun_alt = plan_altitude(r->sky.sun_ra, r->sky.sun_dec, f->turn != 0 ? r->lst : (float)r->sky.lst, (float)f->lat);
   /* an eclipse under way here: the sky dims toward twilight as the last of the Sun goes, deepest in totality; or
    * the Moon is in the Earth's shadow */
   r->have_sol = plan_solar(&r->sky, f->lat, &r->sol);
@@ -3224,7 +3238,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   }
   r->ik = 1 / r->k;
   r->ikq = pyf_floor(r->ik * 262144.0f + 0.5f);
-  sky_constants(&r->sk, P->window == WIN_RED ? r->s_eff : r->sun_alt);
+  sky_constants(&r->sk, f->chart ? -18 : P->window == WIN_RED ? r->s_eff : r->sun_alt);   /* (a chart's: night) */
   sky_constants(&r->sk6, -6);
   r->ssd = f_sind(r->sdec), r->csd = f_cosd(r->sdec), r->csh = f_cosd(r->sha), r->ssh = f_sind(r->sha);
   bool milky = !r->rete && (r->paper || (r->sun_alt < -15 &&
@@ -3232,9 +3246,10 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   if (!make_grid(r, alloc)) { release(r); return false; }
   window_ground(r);
   r->dark = r->paper ? true : r->s_eff < -12;
-  r->figs = r->paper || r->s_eff < -10.5f;
+  r->figs = r->paper || r->s_eff < -10.5f || f->chart;
   float faint = 4.6f;
-  if (!r->paper) {
+  if (f->chart) faint = 3.6f;                    /* (a chart's: the faintest left off, for the figures' sake) */
+  else if (!r->paper) {
     float s = r->s_eff;
     faint = s <= -16 ? 4.6f : s <= -10 ? 4.6f + (s + 16) / 6 * (3.4f - 4.6f) : s <= -5 ? 3.4f + (s + 10) / 5 * (2.0f - 3.4f)
           : s <= -1.5f ? 2.0f + (s + 5) / 3.5f * (0.4f - 2.0f) : 0.4f;
@@ -3423,8 +3438,9 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   passing(r, rad_x, rad_y);
   /* names in the sky; the ornaments where no name is */
   feast_sky(r);
-  if (f->names) names(r, mx, my);
-  if (f->names && r->shower >= 0) {
+  if (f->chart) constellation_names(r, CONSTELLATION_COUNT, 6, P->label);   /* (a chart's: its names, and no others) */
+  else if (f->names) names(r, mx, my);
+  if (f->names && !f->chart && r->shower >= 0) {
     pixel_text(&r->t1, r, SHOWERS[r->shower].name, true, 0);
     place(r, &r->t1, rad_x + 3, rad_y, P->accent, false, 0, 0, false);
   }
@@ -3432,8 +3448,10 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   /* the window's edge, the ring, the time */
   int fy0 = rims(r);
   ring(r, season);
+  /* the sky's grid let go before the time (which reads none of it), so the minute's new figures kept for the scribe
+   * never stand in memory beside it: the frame's most, some 1.3 KB less */
+  release(r->ga), r->ga = r->gb = NULL;
   time_block(r, fy0, season, alloc, release);
-  release(r->ga);
   /* the battery's candle, last: by the scene blob (plan_decor.c candle), now the sky's grid is let go */
   if (f->decor && f->candle && f->battery <= 100) {
     DecorCtx dc;

@@ -302,7 +302,7 @@ await sleep(100);
 const msg = byName(sent[before] || {});
 console.log('sent:', JSON.stringify(msg));
 const want = { PLATE: 4, CLOCK: 2, UNITS: 1, PLACE: 1, PLACE_LAT: -338700, PLACE_LON: 1512100, PLACE_CITY: 'SYDNEY|SYD.',
-               PLACE_COUNTRY: 'AUSTRALIA|AUST.', NAMES: 1, LABOURS: 2, CORNERS: 4, FIGURES: 2, FLICK: 2, CANDLE: 0, CALENDARS: (1 << 6) | (1 << 8), WEATHER: 1,
+               PLACE_COUNTRY: 'AUSTRALIA|AUST.', NAMES: 1, LABOURS: 2, CORNERS: 4, FIGURES: 2, FLICK: 2, FLICKS: 2, CANDLE: 0, CALENDARS: (1 << 6) | (1 << 8), WEATHER: 1,
                ANIMATIONS: 63 };
 const bad = Object.entries(want).filter(([k, v]) => msg[k] !== v);
 check(!bad.length, 'page -> watch: ' + (bad.length ? 'MISMATCH ' + JSON.stringify(bad) : 'the settings as set'));

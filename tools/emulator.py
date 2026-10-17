@@ -302,7 +302,8 @@ def main():
     ap.add_argument("--poke", nargs="*", default=[], help="app variables to set over gdb, e.g. g_debug_stamp=1")
     ap.add_argument("--poke-at", type=float, default=1.0)
     ap.add_argument("--relaunch-at", type=float, default=None, help="start the app again (leave and come back)")
-    ap.add_argument("--tap-at", type=float, default=None, help="a wrist flick (accelerometer tap)")
+    ap.add_argument("--tap-at", type=float, nargs="+", default=[], help="wrist flicks (accelerometer taps), each at its "
+                    "second after start, e.g. --tap-at 4 5.5 for two")
     ap.add_argument("--pbw", default=None, help="package to install first (default: the build)")
     ap.add_argument("--elf", default=None, help="the installed package's app ELF, for --gdb/--poke (default: the build's)")
     ap.add_argument("--update", default=None, help="a package to install over the running face")
@@ -329,7 +330,7 @@ def main():
             pokes = list(a.poke)
             if pokes:
                 e.gdb_setup()
-            relaunch, tap, update, press = a.relaunch_at, a.tap_at, a.update, a.press
+            relaunch, taps, update, press = a.relaunch_at, sorted(a.tap_at), a.update, a.press
             phone_off, batt = a.phone_off_at, a.battery
             for s in [float(x) for x in a.shots.split(",")]:
                 from libpebble2.communication.transports.qemu import MessageTargetQemu
@@ -364,14 +365,14 @@ def main():
                         time.sleep(0.05)
                     e.push(update)
                     update = None
-                if tap is not None and s >= tap:
-                    while time.time() - t0 < tap:
+                while taps and s >= taps[0]:
+                    while time.time() - t0 < taps[0]:
                         time.sleep(0.05)
                     from libpebble2.communication.transports.qemu import MessageTargetQemu
                     from libpebble2.communication.transports.qemu.protocol import QemuTap
                     e.conn.transport.send_packet(QemuTap(axis=QemuTap.Axis.X, direction=1), target=MessageTargetQemu())
-                    print("tapped", flush=True)
-                    tap = None
+                    print(f"tapped at {time.time() - t0:.1f}s", flush=True)
+                    taps.pop(0)
                 if relaunch is not None and s >= relaunch:
                     while time.time() - t0 < relaunch:
                         time.sleep(0.05)

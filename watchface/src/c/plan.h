@@ -68,6 +68,8 @@ typedef struct {
   uint8_t battery;             /* the battery's charge, 0..100 (over 100: not known), and whether it is charging, for
                                 * the candle in the card (an option) */
   bool charging, candle;
+  bool chart;                  /* the sky as a printed chart shows it, whatever the hour: every star, the figures (as far
+                                * as figs_part has drawn them), no names; for the figures drawn in when asked */
   float turn;                  /* the sky turned on by so many degrees (a flick of the wrist spins it, and it settles) */
   const Tides *tides;          /* the tide here (NULL: none known, or inland) */
   bool tide_times;             /* the next high and low waters set low on the face (on the Round 2 for the coordinates) */
@@ -87,6 +89,11 @@ typedef struct {
  * dark as its people come and go. */
 enum { EV_METEOR = 1, EV_FIGURES = 2, EV_BIRDS = 4, EV_VILLAGE = 8 };
 #define EVENT_FIGS_FRAMES 6
+/* the sky spun when asked: a whole day round, forward, gently away and gently home (smoothstep), a frame each SPIN_MS;
+ * the face at rest after the last */
+#define SPIN_FRAMES 15
+#define SPIN_TURNS {-356, -345, -327, -304, -277, -246, -214, -180, -146, -114, -83, -56, -33, -15, -4}
+#define SPIN_MS 120
 
 /* Where things are in the sky at a moment (degrees). The planets in the order they are drawn. */
 enum { VENUS, JUPITER, MARS, SATURN, MERCURY, PLANETS };

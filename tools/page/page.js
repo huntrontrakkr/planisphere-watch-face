@@ -21,7 +21,7 @@
   // events (0.1.5, ANIMV 2) turned on in settings from before them
   var ANIM_MINUTE = 1, ANIM_FIREWORKS = 2, ANIM_METEORS = 4, ANIM_FIGURES = 8, ANIM_BIRDS = 16, ANIM_VILLAGE = 32;
   var ANIM_EVENTS = 60;
-  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CORNERS: 0, GILD: 0, FIGURES: 0, FLICK: 0, CANDLE: 0, TIDE_TIMES: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
+  var DEFAULTS = {PLATE: 0, CLOCK: 0, NAMES: 1, LABOURS: 0, CORNERS: 0, GILD: 0, FIGURES: 0, FLICK: 0, FLICKS: 2, CANDLE: 0, TIDE_TIMES: 0, CALENDARS: 0, ANIMATIONS: 63, ANIMV: 2,
                   WEATHER: 1, UNITS: 0, PLACE: 0, PLACE_LAT: 0, PLACE_LON: 0, PLACE_CITY: '', PLACE_COUNTRY: '', PLACE_CC: ''};
   var settings = {};
   function reset(from) {
@@ -129,9 +129,14 @@
         'those that want the dark, or the twilight, play at an hour of the preview’s own day that has it.'},
       {key: 'FLICK', type: 'seg', label: 'A flick of the wrist', options: [
         [0, 'Nothing', 'The face takes no notice of a flick.'],
-        [1, 'Draws the figures in', 'A flick of the wrist draws the constellations’ figures in again, star to star.'],
-        [2, 'Spins the sky', 'A flick of the wrist spins the sky on, and it settles back to its place over a second, ' +
-         'as a planisphere’s disc does when it is turned.']]},
+        [1, 'Shows the constellations', 'The sky as a printed chart shows it, whatever the hour: the constellations’ ' +
+         'figures drawn in, star to star, with their names, held a moment, then the face again.'],
+        [2, 'Spins the sky', 'The sky turned a whole day round, through dusk, the night and dawn, and home to the ' +
+         'hour, as a planisphere’s disc is turned.']]},
+      {key: 'FLICKS', type: 'seg', label: 'How many flicks', options: [
+        [2, 'Two', 'A second flick within four seconds of the first: two quick flicks, or one to light the screen ' +
+         'and one more. Not set off by chance.'],
+        [1, 'One', 'A single flick.']]},
       {key: 'ANIMATIONS', bit: ANIM_VILLAGE, type: 'switch', label: 'The village’s life',
        desc: 'The windows lit and dark as the village’s people come and go, ten minutes at a time, and smoke from ' +
              'the hearth on a cool evening. All the animations are left out while the battery runs low.'}
@@ -609,14 +614,13 @@
       for (var m = from; m <= to; m += 10) if (ok(sun(m))) return midnight + m * 60;
       return u;
     };
-    if ((kind === 'figures' || kind === 'meteor' || kind === 'spin') && !(M._pv_sun(u) < -12))
-      u = first(12 * 60, 30 * 60, function (a) { return a < -12; });
+    if (kind === 'meteor' && !(M._pv_sun(u) < -12)) u = first(12 * 60, 30 * 60, function (a) { return a < -12; });
     else if (kind === 'birds') u = first(12 * 60, 24 * 60, function (a) { return a > -6 && a < 4; });
     else if (kind === 'fireworks') u = midnight + 21 * 3600;
     var frames = [], at = function (f, k) { frames.push(function () { return f(k); }); };
-    if (kind === 'figures') for (k = 1; k <= 6; k++) at(function (k) { return M._pv_render_figs(u, t.offset, k % 6); }, k);
-    else if (kind === 'spin') [72, 40, 20, 9, 3, 0].forEach(function (d) {
-      at(function (d) { return M._pv_render_turn(u, t.offset, d); }, d); });
+    if (kind === 'figures') for (k = 1; k <= 7; k++) at(function (k) { return M._pv_render_figs(u, t.offset, k % 7); }, k);
+    else if (kind === 'spin') for (k = 1; k <= M._pv_spin_frames() + 1; k++) at(function (k) {
+      return M._pv_render_spin(u, t.offset, k); }, k);
     else {
       var n = 0;
       if (kind === 'minute') M._pv_render(u - 60, t.offset), M._pv_render(u, t.offset), n = M._pv_scribe_frames() - 1;
@@ -626,16 +630,22 @@
       for (k = 0; k <= n; k++) at(step, k);
     }
     var s = show = {i: 0}, seen = window.planPlayed = {kind: kind, frames: 0, moved: 0, done: false}, last = null;
-    s.timer = setInterval(function () {
-      if (s.i >= frames.length) { stopShow(); draw(); seen.done = true; return; }
-      var ptr = frames[s.i++]();
-      if (!ptr) return;
-      blit($('screen'), ptr);
-      var now = M.HEAPU8.slice(ptr, ptr + M._pv_width() * M._pv_height());   // (what was played, for the page's tests)
-      seen.frames++;
-      if (last && now.some(function (v, i) { return v !== last[i]; })) seen.moved++;
-      last = now;
-    }, kind === 'figures' ? 150 : kind === 'spin' ? 160 : 1000 / 12);
+    var gap = function () { return kind === 'figures' ? (s.i === 6 ? 2000 : 150) : kind === 'spin' ? 120 : 1000 / 12; };
+    (function next() {                            // a frame at a time (the finished chart held a moment)
+      s.timer = setTimeout(function () {
+        if (show !== s) return;
+        if (s.i >= frames.length) { stopShow(); draw(); seen.done = true; return; }
+        var ptr = frames[s.i++]();
+        if (ptr) {
+          blit($('screen'), ptr);
+          var now = M.HEAPU8.slice(ptr, ptr + M._pv_width() * M._pv_height());   // (what was played, for the tests)
+          seen.frames++;
+          if (last && now.some(function (v, i) { return v !== last[i]; })) seen.moved++;
+          last = now;
+        }
+        next();
+      }, gap());
+    })();
   }
   var thumbTimer = null;
   function refreshThumbs() {

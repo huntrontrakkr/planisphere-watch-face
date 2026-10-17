@@ -138,6 +138,7 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--battery") && i + 1 < argc) {
       f.battery = (uint8_t)atoi(argv[++i]), f.charging = strchr(argv[i], 'c') != NULL, f.candle = true;
     } else if (!strcmp(argv[i], "--turn") && i + 1 < argc) f.turn = (float)atof(argv[++i]);
+    else if (!strcmp(argv[i], "--chart") && i + 1 < argc) f.chart = true, f.figs_part = (uint8_t)atoi(argv[++i]);
     else if (!strcmp(argv[i], "--tide-times")) f.tide_times = true;
     else if (!strcmp(argv[i], "--tides") && i + 1 < argc) {       /* turns: "MINUTES:H|L:CM,..." */
       static Tides td;
