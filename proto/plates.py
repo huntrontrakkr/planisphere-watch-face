@@ -1476,7 +1476,7 @@ def render(when, dial, sky, tz, plate="planisphere", round_screen=True, clock24=
     if wsky is not None and wsky.smoke and "chimney" in anchors:
         cx_, cy_ = anchors["chimney"]
         x_c, y_c = col + cx_, cy_
-        lean_ = math.sin(math.radians(wsky.wind_from)) * min(1.6, wsky.wind / 12.0)
+        lean_ = -math.sin(math.radians(wsky.wind_from)) * min(1.6, wsky.wind / 12.0)   # downwind, east to the left
         smoke_c = (P["line"] if paper else c8(1, 1, 1) if night_land else c8(2, 2, 2))
         for h_ in range(1, 9):
             if (h_ + int(secs * 2)) % 4 == 0:

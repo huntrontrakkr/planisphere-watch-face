@@ -1372,7 +1372,7 @@ static void paint_falls(R *r) {
   rng_seed(&g, r, 4);
   /* a day's fall carries a streak millions of pixels before it wraps: the fall itself wrapped in whole pixels, the lean
    * wrapped before the start is added */
-  float east = -f_sind(r->wind_from + 180), lean = -east * r->wind / 45.0f;
+  float east = f_sind(r->wind_from + 180), lean = -east * r->wind / 45.0f;   /* the wind's push, east (left) + */
   lean = lean > 0.7f ? 0.7f : lean < -0.7f ? -0.7f : lean;
   bool drizzle = r->fall_kind == FALL_DRIZZLE, rain = drizzle || r->fall_kind == FALL_RAIN;
   int n = (int)((rain ? (drizzle ? 22 : 34) : (r->fall_kind == FALL_SNOW ? 22 : 30)) * r->heavy * b.area / 14000);
@@ -1856,7 +1856,7 @@ static void village_weather(R *r) {
   if (!r->wx && !r->smoke) return;
   const Plate *P = r->P;
   if (r->smoke && r->chimney) {
-    float lean = f_sind(r->wind_from) * (r->wind / 12.0f < 1.6f ? r->wind / 12.0f : 1.6f), t = (float)r->secs;
+    float lean = -f_sind(r->wind_from) * (r->wind / 12.0f < 1.6f ? r->wind / 12.0f : 1.6f), t = (float)r->secs;   /* downwind, east left */
     uint8_t c = r->paper ? P->line : r->night_land ? C8(1, 1, 1) : C8(2, 2, 2);
     for (int h = 1; h <= 8; h++) {
       if ((h + r->secs * 2) % 4 == 0) continue;

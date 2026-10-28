@@ -126,7 +126,7 @@ def layer(inside, wsky, t, day, lat, lon, t_falls=None):
     # rain and snow, falling down the screen past the village, leaning with the wind
     if wsky.falls:
         rng = Rng(seed_of(day, lat, lon, 4))
-        east = -math.sin(math.radians(wsky.wind_from + 180))          # the wind's push across the chart (left +)
+        east = math.sin(math.radians(wsky.wind_from + 180))           # the wind's push across the chart (left +)
         lean = max(-0.7, min(0.7, -east * wsky.wind / 45.0))          # pixels across per pixel down
         if wsky.falls in ("rain", "drizzle"):
             n = int((22 if wsky.falls == "drizzle" else 34) * wsky.heavy * area / 14000)
