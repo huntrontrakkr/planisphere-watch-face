@@ -150,6 +150,11 @@
              'the hearth on a cool evening. All the animations are left out while the battery runs low.'}
     ]},
     {title: 'The sky', items: [
+      {label: 'Reading the chart',
+       desc: 'The window shows the sky as you see it looking up, the mirror of a map: south at the bottom under NOON, ' +
+             'north at the top, east on the left and west on the right. Face south and the chart matches the sky in ' +
+             'front of you; facing north, left and right swap, as with any star chart. South of the equator the chart ' +
+             'is turned over, north at the bottom and east on the right, and you face north.'},
       {key: 'NAMES', type: 'switch', label: 'Names in the sky',
        desc: 'The Moon and the planets, the brightest stars and three constellations, set where there is room.'},
       {key: 'TIDE_TIMES', type: 'switch', label: 'High and low water',

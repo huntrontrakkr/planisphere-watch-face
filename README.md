@@ -44,6 +44,15 @@ twilight, and meteors out of the Orionids' radiant on the night of their peak (t
 
 ![The passing events](docs/gallery-events.gif)
 
+## Reading the chart
+
+The window shows the sky as you see it looking up, so it is the mirror of a map: south is at the bottom under NOON,
+north at the top under MIDNIGHT, east on the left and west on the right. Face south, hold the watch as you would to
+read the time, and the chart matches the sky in front of you: the Sun rises at the window's left, crosses its bottom at
+noon and sets at its right, and the Moon, the planets and the stars keep their sides. Face north and left and right
+swap, as they do with any star chart; turn back, or picture the chart held up over your head with NOON toward the
+south. South of the equator the chart is turned over, north at the bottom and east on the right, and you face north.
+
 ## Plates
 
 Like Groundtrack's plates, each plate follows a real tradition of sky charts, set in the type of its time. Every plate sets the time in hours and minutes the way almanacs and astronomers write it, **9ʰ 30ᵐ**, large in the card above the window (or **21ʰ 30ᵐ** on the 24-hour clock, below). Its figures are drawn by hand, pixel by pixel, after each plate's type and for each watch. The small type is pixel type, every letter in whole pixels: Not Jam Old Style (CC0), a pixel serif after the old Garalde faces, with star names leaning in an oblique cut from it a pixel at a time. Under it are the date in italic and the Sun's next rising or setting in small capitals, with the temperature after it when the weather is known. The sky carries names the way the old atlases letter them: constellations in spaced capitals, stars in italic, planets in small capitals.
