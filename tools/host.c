@@ -11,6 +11,8 @@
  *     --labours         the labours of the months
  *     --no-coords       no latitude and longitude on the ring
  *     --calendars MASK  the calendars whose days it keeps (bit n for CAL_* n), as a number
+ *     PLAN_MEM_CAP=N    (environment) a heap of N bytes, as the watch counts them: a frame that would need more fails
+                       as it does on the watch, and OUT.ppm shows what it left
  *     --mem             print the most memory the drawing held at once (as the watch's heap counts it: each block
  *                       rounded to 4 bytes, with its 4-byte header), and its blocks
  *     --show FRAME      the fireworks display due at the top of this hour, played over the face (plan_show, as the
@@ -52,6 +54,8 @@ static size_t decor_peak[2];              /* the most held while each scene blob
                                            * the woodcuts' and the candle's (decor_code), the labours' (labours_code) */
 static int in_decor;                      /* (0 none, 1 decor_code's, 2 labours_code's) */
 static void *counted(size_t n) {
+  const char *cap = getenv("PLAN_MEM_CAP");          /* a heap this small, as the watch's: the block refused */
+  if (cap && mem_now + ((n + 3) & ~(size_t)3) + 4 > (size_t)atol(cap)) return NULL;
   size_t *b = malloc(n + sizeof(size_t));
   if (!b) return NULL;
   *b = ((n + 3) & ~(size_t)3) + 4;
@@ -92,6 +96,20 @@ static uint8_t *row(void *ctx, int y, int *x0, int *x1) {
   *x0 = rx0[y], *x1 = rx1[y];
   return fb + y * W;
 }
+
+/* the screen to a PPM (also after a render that failed: what it left, for looking at) */
+static bool write_ppm(const char *out) {
+  FILE *o = fopen(out, "wb");
+  if (!o) { perror(out); return false; }
+  fprintf(o, "P6\n%d %d\n255\n", W, H);
+  for (int i = 0; i < W * H; i++) {
+    uint8_t c = fb[i], px[3] = {(uint8_t)(((c >> 4) & 3) * 85), (uint8_t)(((c >> 2) & 3) * 85), (uint8_t)((c & 3) * 85)};
+    fwrite(px, 1, 3, o);
+  }
+  fclose(o);
+  return true;
+}
+#define RENDER_FAILED() do { fprintf(stderr, "render failed\n"); write_ppm(out); return 1; } while (0)
 
 int main(int argc, char **argv) {
   if (argc < 8) {
@@ -184,15 +202,15 @@ int main(int argc, char **argv) {
   FeastReader rd;
   plan_feast_memory(&rd, BLOB_FEASTS);
   plan_feast(&p, &f, utc, offset, &rd);
-  if (f.scribe && !plan_render(&p, &f, utc - 60, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
+  if (f.scribe && !plan_render(&p, &f, utc - 60, offset, &t, counted, uncounted)) RENDER_FAILED();
   if (f.reveal || f.window_only) {              /* an animation's frame: over the face (without the chart) as drawn */
     Face face = f;
     face.reveal = 0, face.chart = false, face.figs_part = 0, face.window_only = false, face.turn = 0;
-    if (!plan_render(&p, &face, utc, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
+    if (!plan_render(&p, &face, utc, offset, &t, counted, uncounted)) RENDER_FAILED();
     f.window_only = true;
   }
   for (int i = 0; i < repeat; i++)
-    if (!plan_render(&p, &f, utc, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
+    if (!plan_render(&p, &f, utc, offset, &t, counted, uncounted)) RENDER_FAILED();
   if (mem) printf("peak %zu bytes in %zu blocks; the scene blob drawing %zu, the labours' %zu\n", mem_peak, mem_peak_blocks,
                   decor_peak[0], decor_peak[1]);
   if (getenv("PLAN_ROOMS"))                     /* the room each inscription has along the ring, in pixels */
@@ -203,7 +221,7 @@ int main(int argc, char **argv) {
            p.event_x0, p.event_y0, p.event_x1, p.event_y1);
   if ((event_frame >= 0 || event_check) && p.event == EV_FIGURES) {
     f.figs_part = (uint8_t)(event_frame < EVENT_FIGS_FRAMES ? event_frame + 1 : 0);
-    if (f.figs_part != 1 && !plan_render(&p, &f, utc, offset, &t, counted, uncounted)) { fprintf(stderr, "render failed\n"); return 1; }
+    if (f.figs_part != 1 && !plan_render(&p, &f, utc, offset, &t, counted, uncounted)) RENDER_FAILED();
   } else if ((event_frame >= 0 || event_check) && p.event) {
     static uint8_t base[MAX_W * MAX_H];
     memcpy(base, fb, sizeof fb);
@@ -258,13 +276,5 @@ int main(int argc, char **argv) {
   clock_gettime(CLOCK_MONOTONIC, &t1);
   if (repeat > 1)
     printf("%.2f ms a render\n", ((t1.tv_sec - t0.tv_sec) * 1e3 + (t1.tv_nsec - t0.tv_nsec) / 1e6) / repeat);
-  FILE *o = fopen(out, "wb");
-  if (!o) { perror(out); return 1; }
-  fprintf(o, "P6\n%d %d\n255\n", W, H);
-  for (int i = 0; i < W * H; i++) {
-    uint8_t c = fb[i], px[3] = {(uint8_t)(((c >> 4) & 3) * 85), (uint8_t)(((c >> 2) & 3) * 85), (uint8_t)((c & 3) * 85)};
-    fwrite(px, 1, 3, o);
-  }
-  fclose(o);
-  return 0;
+  return write_ppm(out) ? 0 : 1;
 }

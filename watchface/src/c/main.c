@@ -65,6 +65,7 @@ typedef struct { Weather w; uint32_t time; } Stored;
 /* diagnostics, readable over GDB in the emulator (g_code: where the renderer's code was loaded; g_utc, g_offset:
  * the moment last drawn, for tools/host to draw again) */
 volatile uint32_t g_render_ms = 0, g_render_max = 0, g_heap_free = 0, g_heap_low = 0, g_code = 0, g_utc = 0;
+volatile uint32_t g_frames_failed = 0;   /* frames the renderer had no room for */
 volatile int32_t g_offset = 0;
 /* the stack's deepest (stack_deepest), ever and by the end of init; and how deep it is where the renderer is called */
 volatile uint32_t g_stack = 0, g_stack_init = 0, g_stack_at = 0;
@@ -345,6 +346,10 @@ static bool motion_load(void) {
   return false;
 }
 
+/* the motion blob let go (anims_settle, once nothing plays; and when the animations give way to a whole face, which
+ * has no room beside it) */
+static void motion_unload(void) { free(s_motion_mem), s_motion_mem = NULL, s_motion = NULL; }
+
 static void anim_tick(void *data) {
   s_anim_timer = NULL, s_anim_due = true;
   if (s_layer) layer_mark_dirty(s_layer);
@@ -371,7 +376,7 @@ static void anims_settle(bool redraw_now) {
   }
   if (s_anim_timer) app_timer_cancel(s_anim_timer), s_anim_timer = NULL;
   s_anim_due = false;
-  free(s_motion_mem), s_motion_mem = NULL, s_motion = NULL;
+  motion_unload();
   if (s_redraw_after && redraw_now && s_layer) layer_mark_dirty(s_layer);
   s_redraw_after = false;
 }
@@ -465,6 +470,7 @@ static void update(Layer *layer, GContext *ctx) {
   } else if (animating()) {                      /* the system asks for the whole face: the animations give way */
     if (s_show) g_show_end = 2;
     scribe_end(), show_end(), event_end(), s_redraw_after = false;
+    if (!animating()) motion_unload();           /* (their code too: the face has no room beside it) */
   }
   if (s_flick && !animating()) {                 /* a flick of the wrist: the figures drawn in, or the sky spun */
     if (s_flick == 1) scribe_end(), s_chart_k = 1;
@@ -504,6 +510,10 @@ static void update(Layer *layer, GContext *ctx) {
   g_stack_at = (uint32_t)((uintptr_t)__pbl_app_info - (uintptr_t)&tg);
   feast_of_day(&f, now, g_offset);
   bool drawn = s_api->render(s_plan, &f, (int64_t)now, g_offset, &tg, alloc, free);
+  /* no room for the frame (the face stays as it was): tried again soon, twice at most, then at the next minute */
+  static int failed;
+  if (!drawn) { g_frames_failed++; if (++failed <= 2) redraw_soon(); }
+  else failed = 0;
   if (drawn && !s_figs_k && !s_spin_k && !s_chart_k && s_plan->event == EV_FIGURES) event_begin();   /* (frame 1 of the figures drawn in) */
   /* a fireworks display due takes its memory first; the minute's figures then simply appear (written, they would
    * hold the motion blob's and their record's room while the display asks for its own, and the display went

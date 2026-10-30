@@ -757,7 +757,9 @@ static void node_radec(R *r, int x2, int y2, int16_t *vra, int16_t *vdec) {
   *vra = (int16_t)ra, *vdec = (int16_t)dec;
 }
 
-static bool make_grid(R *r, void *(*alloc)(size_t), void (*release)(void *)) {
+/* the window's grid laid out (its nodes' rows and their extent, from the window alone): the number of nodes, 0 for
+ * no window */
+static size_t grid_layout(R *r) {
   Plan *p = r->p;
   int minx = r->W, maxx = -1;
   for (int y = p->win_top; y <= p->win_bottom && y >= 0; y++) {
@@ -765,7 +767,7 @@ static bool make_grid(R *r, void *(*alloc)(size_t), void (*release)(void *)) {
     if (p->wx0[y] < minx) minx = p->wx0[y];
     if (p->wx1[y] > maxx) maxx = p->wx1[y];
   }
-  if (maxx < 0) return false;
+  if (maxx < 0) return 0;
   r->gx0 = minx, r->gy0 = p->win_top;
   r->gnx = (maxx - minx) / 4 + 2, r->gny = (p->win_bottom - p->win_top) / 4 + 2;
   /* each node row as far as the cells either side of it hold window pixels (a cell's pixels need its four nodes) */
@@ -790,13 +792,32 @@ static bool make_grid(R *r, void *(*alloc)(size_t), void (*release)(void *)) {
     r->goff[j] = (uint16_t)n;
     if (r->ghi[j] >= r->glo[j]) n += (size_t)(r->ghi[j] - r->glo[j] + 1);
   }
-  /* the same sky as the frame before (a dissolve's frames): its grid as that kept it */
+  return n ? n : 1;
+}
+/* the grid's key: the same sky as the frame before (a dissolve's frames) keeps its grid */
+static uint32_t grid_key(const R *r, size_t n) {
   const Face *f = r->f;
   uint32_t key = (((uint32_t)r->utc / 60u * 31u + (uint32_t)f->turn) * 31u + f->plate) * 4099u + (uint32_t)n;
-  key = key * 2u + f->chart;
+  return key * 2u + f->chart;
+}
+static size_t grid_bytes(size_t n) { return 2 * n * sizeof(int16_t); }
+/* the frame's largest piece of memory, the grid's, tried for and let go before anything is drawn: a frame
+ * without the room for it leaves the face as it was (the time a minute behind) rather than the card blank */
+static bool grid_room(R *r, size_t n, void *(*alloc)(size_t), void (*release)(void *)) {
+  Plan *p = r->p;
+  if (p->grid && p->grid_key == grid_key(r, n)) return true;   /* (kept from the frame before) */
+  void *probe = alloc(grid_bytes(n));
+  if (!probe) return false;
+  release(probe);
+  return true;
+}
+static bool make_grid(R *r, size_t n, void *(*alloc)(size_t), void (*release)(void *)) {
+  Plan *p = r->p;
+  const Face *f = r->f;
+  uint32_t key = grid_key(r, n);
   bool same = p->grid && p->grid_key == key;
   if (p->grid && !same) release(p->grid);
-  r->ga = same ? p->grid : alloc(2 * (n ? n : 1) * sizeof(int16_t));
+  r->ga = same ? p->grid : alloc(grid_bytes(n));
   p->grid = NULL, p->grid_key = key;
   if (!r->ga) return false;
   r->gb = r->ga + n;
@@ -3253,6 +3274,8 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
    * grid takes its memory */
   int style = f->clock24 ? 2 : P->ring == RING_ROMAN ? 0 : P->ring == RING_GOTHIC ? 3 : P->ring == RING_MINUSCULE ? 4 : 1;
   if (!numeral_layout(r, style, alloc, release)) { release(r); return false; }
+  size_t grid_n = grid_layout(r);
+  if (!grid_n || !grid_room(r, grid_n, alloc, release)) { release(r); return false; }
   /* the card, the labours in it (before the grid too: they keep to the card, the grid to the window), and the
    * window's ground */
   for (int y = 0; y < r->H && !f->window_only; y++) {
@@ -3281,7 +3304,7 @@ bool plan_render(Plan *p, const Face *f, int64_t utc, int32_t offset, const Targ
   r->ssd = f_sind(r->sdec), r->csd = f_cosd(r->sdec), r->csh = f_cosd(r->sha), r->ssh = f_sind(r->sha);
   bool milky = !r->rete && (r->paper || (r->sun_alt < -15 &&
                !(r->wx && r->live && (r->haze > 1.0f || r->stratus + r->cumulus > 0.45f))));
-  if (!make_grid(r, alloc, release)) { release(r); return false; }
+  if (!make_grid(r, grid_n, alloc, release)) { release(r); return false; }
   window_ground(r);
   r->dark = r->paper ? true : r->s_eff < -12;
   r->figs = r->paper || r->s_eff < -10.5f || f->chart;
